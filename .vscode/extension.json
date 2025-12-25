@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "rvest.vs-code-prettier-eslint",
+    "vue.volar",
+    "vue.vue3-snippets",
+    "ms-vscode.vscode-typescript-next"
+  ]
+}

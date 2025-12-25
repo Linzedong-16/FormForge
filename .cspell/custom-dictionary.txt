@@ -1,0 +1,9 @@
+monorepo
+linzex
+lintstagedrc
+dbaeumer
+rvest
+esbenp
+Avenir
+unplugin
+acro
