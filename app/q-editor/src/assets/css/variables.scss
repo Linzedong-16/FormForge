@@ -1,0 +1,46 @@
+:root {
+  --primary-color: #fb7299;
+  --success-color: #60ec1b;
+  --warning-color: #ff9f10;
+  --error-color: #ff3131;
+  --info-color: #758096;
+  --border-color: #ebeef5;
+  --background-color: #f5f7fa;
+  --white: #fff;
+  --black: #000;
+  --font-color: #303133;
+  --font-color-light: #606266;
+  --font-color-lighter: #909399;
+  --font-color-lightest: #d4d9e2;
+  --font-size-base: 14px;
+  --font-size-sm: 12px;
+  --font-size-lg: 16px;
+  --border-radius-base: 4px;
+  --border-radius-sm: 2px;
+  --border-radius-md: 4px;
+  --border-radius-lg: 6px;
+  --padding-base: 15px;
+  --padding-sm: 10px;
+  --padding-lg: 20px;
+  --margin-base: 15px;
+  --margin-sm: 10px;
+  --margin-xs: 5px;
+  --margin-lg: 20px;
+  --line-height-base: 1.5;
+  --line-height-sm: 1.33;
+  --line-height-lg: 1.67;
+
+  // elementplus覆盖
+  --el-color-primary: #fb7299;
+  --el-color-primary-light-3: #cf5477; /* 主色浅3度 */
+  --el-color-primary-light-5: #ff6666; /* 主色浅5度 */
+  --el-color-primary-light-7: #8cb3ff; /* 主色浅7度 */
+  --el-color-primary-light-8: #a3c2ff; /* 主色浅8度 */
+  --el-color-primary-light-9: #c7d9ff; /* 主色浅9度 */
+  --el-color-primary-dark-2: #0e42c6; /* 主色深2度 */
+
+  --el-color-success: #01ef38;
+  --el-color-warning: #f3a154;
+  --el-color-danger: #f53f3f;
+  --el-color-info: #7e90a5;
+}

@@ -7,3 +7,4 @@ esbenp
 Avenir
 unplugin
 acro
+elementplus
