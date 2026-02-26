@@ -18,5 +18,6 @@
     "moduleDetection": "force",
     "skipLibCheck": true
   },
-  "exclude": ["node_modules", "dist"]
+  "include": ["packages/**/*.ts", "packages/**/*.vue", "packages/**/*.tsx"],
+  "exclude": ["node_modules", "dist", "app"]
 }

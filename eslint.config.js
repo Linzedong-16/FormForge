@@ -5,6 +5,11 @@ import eslintPluginPrettier from "eslint-plugin-prettier";
 import eslintPluginVue from "eslint-plugin-vue";
 import globals from "globals";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const ignores = ["**/dist/**", "**/node_modules/**", ".*", "scripts/**", "**/*.d.ts", "docs/**/*.md"];
 
@@ -26,7 +31,31 @@ export default defineConfig(
       "no-var": "error" // 禁用var，使用let或const代替
     }
   },
-  // 前端配置
+  // q-editor 配置
+  {
+    ignores,
+    files: ["app/q-editor/**/*.{ts,js,tsx,jsx,vue}"],
+    extends: [...eslintPluginVue.configs["flat/recommended"], eslintConfigPrettier],
+    languageOptions: {
+      globals: {
+        ...globals.browser
+      },
+      parser: eslintPluginVue.parser,
+      parserOptions: {
+        tsconfigRootDir: path.resolve(__dirname, "app/q-editor"),
+        project: ["./tsconfig.app.json", "./tsconfig.node.json"],
+        extraFileExtensions: [".vue"],
+        parser: tseslint.parser,
+        ecmaVersion: "latest",
+        sourceType: "module"
+      }
+    },
+    rules: {
+      "vue/multi-word-component-names": "off",
+      "@typescript-eslint/no-explicit-any": "off"
+    }
+  },
+  // 前端配置 (frontend)
   {
     ignores,
     files: ["app/frontend/**/*.{ts,js,tsx,jsx,vue}", "packages/components/**/*.{ts,js,tsx,jsx,vue}"],
@@ -38,6 +67,14 @@ export default defineConfig(
       },
       parser: eslintPluginVue.parser,
       parserOptions: {
+        tsconfigRootDir: __dirname,
+        project: [
+          "./tsconfig.json",
+          "./app/frontend/tsconfig.json",
+          "./app/frontend/tsconfig.app.json",
+          "./app/frontend/tsconfig.node.json"
+        ],
+        extraFileExtensions: [".vue"],
         parser: tseslint.parser,
         ecmaVersion: "latest",
         sourceType: "module"

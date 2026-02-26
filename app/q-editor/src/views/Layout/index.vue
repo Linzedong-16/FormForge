@@ -27,7 +27,7 @@ const router = useRouter()
         <el-table-column prop="surveyCount" label="题目数" width="150" align="center" />
         <el-table-column prop="updateDate" label="最近更新日期" width="150" align="center" />
         <el-table-column fixed="right" label="操作" width="300" align="center">
-          <template>
+          <template #default>
             <el-button link type="primary" size="small">查看问卷</el-button>
             <el-button link type="primary" size="small">编辑</el-button>
             <el-button link type="primary" size="small">删除</el-button>
