@@ -8,7 +8,7 @@
     <div class="center">
       <Router-View v-slot="{ Component }">
         <!-- 根据当前路由匹配到的组件，动态渲染 -->
-        <component :is="Component" />
+        <component :is="Component" :serial-num="1" :status="store.coms[store.currentMaterialCom]?.status" />
       </Router-View>
     </div>
     <!-- 编辑面板 -->
@@ -16,7 +16,13 @@
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useMaterialStore } from "@/stores/useMaterial";
+// import { computed } from "vue";
+// 数据仓库
+const store = useMaterialStore();
+// const currentCom = computed(() => store.coms[store.currentMaterialCom]);
+</script>
 
 <style scoped lang="scss">
 .layout-container {
