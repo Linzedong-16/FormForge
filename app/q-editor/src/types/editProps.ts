@@ -2,7 +2,7 @@ import type { VueComType } from "./common";
 
 export interface BaseProps {
   id: string;
-  isShown: boolean;
+  isShow: boolean;
   name: string;
   editCom: VueComType;
 }
@@ -18,9 +18,9 @@ export type PicTitleDescStatusArr = Array<{
 export interface TextProps extends BaseProps {
   status: string;
 }
-
+export type OptionsStatusArr = StringStatusArr | ValueStatusArr | PicTitleDescStatusArr;
 export interface OptionsProps extends BaseProps {
-  status: StringStatusArr | ValueStatusArr | PicTitleDescStatusArr;
+  status: OptionsStatusArr;
   currentStatus: number;
 }
 
@@ -42,4 +42,13 @@ export interface BaseStatus {
 // 因为不是所有业务组件都有 options 这个设置项
 export interface OptionsStatus extends BaseStatus {
   options: OptionsProps;
+}
+
+/**
+ * 判断是否为字符串数组
+ * @param status
+ * @returns
+ */
+export function isStringArray(status: OptionsStatusArr): status is string[] {
+  return Array.isArray(status) && typeof status[0] === "string";
 }
