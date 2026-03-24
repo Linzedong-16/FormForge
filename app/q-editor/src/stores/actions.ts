@@ -1,4 +1,4 @@
-import { type OptionsProps, type TextProps } from "@/types";
+import { isPicTitleDescStatusArr, isStringArray, type OptionsProps, type PicLink, type TextProps } from "@/types";
 export function setTextStatus(textProps: TextProps, text: string) {
   textProps.status = text;
 }
@@ -8,20 +8,11 @@ export function setTextStatus(textProps: TextProps, text: string) {
  * @param optionProps
  */
 export function addOption(optionProps: OptionsProps) {
-  //TODO: 处理其他选择项的情况
-  (optionProps.status as string[]).push("新增选项");
-  // 字符串数组
-  // if (isStringArray(optionProps.status)) {
-  //   const lastOption = optionProps.status[optionProps.status.length - 1];
-  //   const lastDigit = lastOption!.split("").reverse()[0];
-  //   // 有可能最后一项拿到的不是数字
-  //   // 比如性别预设值：男、女、保密，这时候就需要手动判断
-  //   if (!isNaN(Number(lastDigit))) {
-  //     optionProps.status.push(`新增选项${Number(lastDigit) + 1}`);
-  //   } else {
-  //     optionProps.status.push(`新增选项1`);
-  //   }
-  // }
+  if (isStringArray(optionProps.status)) {
+    optionProps.status.push("新选项");
+  } else if (isPicTitleDescStatusArr(optionProps.status)) {
+    optionProps.status.push({ picTitle: "图片标题", picDesc: "图片描述", value: "" });
+  }
 }
 
 export function removeOption(optionProps: OptionsProps, index: number) {
@@ -50,4 +41,11 @@ export function setItalic(optionProps: OptionsProps, italic: number) {
 
 export function setColor(textProps: TextProps, color: string) {
   textProps.status = color;
+}
+
+export function setPicLinkByIndex(optionProps: OptionsProps, payload: PicLink) {
+  if (isPicTitleDescStatusArr(optionProps.status)) {
+    // 使用非空断言操作符，因为已通过类型检查确保元素存在
+    optionProps.status[payload.index]!.value = payload.link;
+  }
 }

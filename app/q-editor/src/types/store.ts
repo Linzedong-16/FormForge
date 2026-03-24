@@ -25,16 +25,16 @@ export function isOptionsStatusByIndexPayload(obj: object): obj is optionsStatus
   );
 }
 
-export function isPicLink(obj: object): obj is PicLink {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "link" in obj &&
-    typeof (obj as PicLink).link === "string" &&
-    "index" in obj &&
-    typeof (obj as PicLink).index === "number"
-  );
-}
+// export function isPicLink(obj: object): obj is PicLink {
+//   return (
+//     typeof obj === "object" &&
+//     obj !== null &&
+//     "link" in obj &&
+//     typeof (obj as PicLink).link === "string" &&
+//     "index" in obj &&
+//     typeof (obj as PicLink).index === "number"
+//   );
+// }
 
 export interface Actions {
   addOption: (optionProps: OptionsProps) => void;

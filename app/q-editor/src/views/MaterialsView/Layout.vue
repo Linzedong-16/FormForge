@@ -21,8 +21,10 @@
 <script setup lang="ts">
 import { useMaterialStore } from "@/stores/useMaterial";
 import EditPannel from "@/components/SurveyComs/EditItems/EditPannel.vue";
-import { computed, provide } from "vue";
+import { computed, provide, watch } from "vue";
 import { ElMessage } from "element-plus";
+import { useRoute } from "vue-router";
+import { isPicLink, type PicLink } from "@/types";
 
 // 数据仓库
 const store = useMaterialStore();
@@ -69,6 +71,9 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
         const result = store.removeOption(currentCom.value.status[configKey], payload);
         if (result) ElMessage.success("删除成功");
         else ElMessage.error("至少保留两个选项");
+      } else if (typeof payload === "object" && isPicLink(payload)) {
+        // 处理图片链接
+        store.setPicLinkByIndex(currentCom.value.status[configKey], payload as PicLink);
       } else {
         store.addOption(currentCom.value.status[configKey]);
       }
@@ -106,6 +111,50 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
   }
 };
 provide("updateStatus", updateStatus);
+
+// 从编辑面板的组件中获取获取图片链接的方法函数 getLink
+const getLink = (link: PicLink) => {
+  updateStatus("options", link);
+};
+
+provide("getLink", getLink);
+
+// 路由路径到组件名称的映射
+const routeToComponentMap: Record<string, string> = {
+  "/single-select": "single-select",
+  "/multi-select": "multi-select",
+  "/option-select": "option-select",
+  "/single-pic-select": "single-pic-select",
+  "/multi-pic-select": "multi-pic-select"
+};
+
+const route = useRoute();
+// 监听路由变化，更新当前组件
+watch(
+  () => route.path,
+  newPath => {
+    const componentName = routeToComponentMap[newPath];
+    if (componentName) {
+      store.currentMaterialCom = componentName;
+      // 如果组件不存在，初始化它
+      if (!store.coms[componentName]) {
+        import(
+          /* @vite-ignore */
+          /* webpackChunkName: "default-status" */ `@/configs/defaultStatus/${componentName.charAt(0).toUpperCase() + componentName.slice(1)}`
+        )
+          .then(() => {
+            // const defaultStatusFn = module.default;
+            store.setCurrentMaterialCom(componentName);
+            // store.coms[componentName] = defaultStatusFn();
+          })
+          .catch(error => {
+            console.error(`Failed to load default status for ${componentName}:`, error);
+          });
+      }
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped lang="scss">

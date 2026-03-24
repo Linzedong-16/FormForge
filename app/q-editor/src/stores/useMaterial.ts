@@ -9,7 +9,8 @@ import {
   setSize,
   setWeight,
   setItalic,
-  setColor
+  setColor,
+  setPicLinkByIndex
 } from "./actions";
 
 export const useMaterialStore = defineStore("materialStore", {
@@ -17,11 +18,16 @@ export const useMaterialStore = defineStore("materialStore", {
     currentMaterialCom: "single-select", // 当前选中的组件
     // 记录所有的业务组件
     coms: {
-      "single-select": defaultStatusMap["single-select"]!()
+      "single-select": defaultStatusMap["single-select"]!(),
+      "single-pic-select": defaultStatusMap["single-pic-select"]!()
     } as Record<string, ReturnType<(typeof defaultStatusMap)[string]>>
   }),
   actions: {
+    setCurrentMaterialCom(com: string) {
+      this.currentMaterialCom = com;
+    },
     setTextStatus,
+    setPicLinkByIndex,
     setWeight,
     setItalic,
     setColor,
