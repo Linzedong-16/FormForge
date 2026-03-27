@@ -1,46 +1,40 @@
-// 单选题的 JSON-Schema 配置
-// 单选题（业务组件） ---> 编辑组件有哪些
-
-// 业务组件
-import SingleSelect from "@/components/SurveyComs/Materials/SelectComs/SingleSelect.vue";
-// 编辑组件
+import OptionSelect from "@/components/SurveyComs/Materials/SelectComs/OptionSelect.vue";
+import type { Status } from "@/types";
 import TitleEditor from "@/components/SurveyComs/EditItems/TitleEditor.vue";
 import DescEditor from "@/components/SurveyComs/EditItems/DescEditor.vue";
-import OptionsEditor from "@/components/SurveyComs/EditItems/OptionsEditor.vue";
 import PositionEditor from "@/components/SurveyComs/EditItems/PositionEditor.vue";
 import SizeEditor from "@/components/SurveyComs/EditItems/SizeEditor.vue";
 import WeightEditor from "@/components/SurveyComs/EditItems/WeightEditor.vue";
 import ItalicEditor from "@/components/SurveyComs/EditItems/ItalicEditor.vue";
 import ColorEditor from "@/components/SurveyComs/EditItems/ColorEditor.vue";
+import OptionsEditor from "@/components/SurveyComs/EditItems/OptionsEditor.vue";
 import { markRaw } from "vue";
 import { v4 as uuidv4 } from "uuid";
-import type { Status } from "@/types";
 
 export default function (): Status {
   return {
-    type: markRaw(SingleSelect),
-    name: "single-select",
+    type: markRaw(OptionSelect),
+    name: "option-select",
     id: uuidv4(),
-    // 组件的状态：组件的每一个能够修改的状态都应该对应一个编辑组件
     status: {
       title: {
         id: uuidv4(),
-        status: "单选题默认标题",
+        status: "默认下拉选择题标题内容",
         isShow: true,
         name: "title-editor",
         editCom: markRaw(TitleEditor)
       },
       desc: {
         id: uuidv4(),
-        status: "单选题默认描述",
+        status: "默认下拉选择题描述内容",
         isShow: true,
         name: "desc-editor",
         editCom: markRaw(DescEditor)
       },
       options: {
         id: uuidv4(),
-        status: ["默认选项1", "默认选项2"],
         currentStatus: 0,
+        status: ["默认下拉选项1", "默认下拉选项2"],
         isShow: true,
         name: "options-editor",
         editCom: markRaw(OptionsEditor)

@@ -19,7 +19,10 @@ export const useMaterialStore = defineStore("materialStore", {
     // 记录所有的业务组件
     coms: {
       "single-select": defaultStatusMap["single-select"]!(),
-      "single-pic-select": defaultStatusMap["single-pic-select"]!()
+      "single-pic-select": defaultStatusMap["single-pic-select"]!(),
+      "multi-select": defaultStatusMap["multi-select"]!(),
+      "option-select": defaultStatusMap["option-select"]!(),
+      "multi-pic-select": defaultStatusMap["multi-pic-select"]!()
     } as Record<string, ReturnType<(typeof defaultStatusMap)[string]>>
   }),
   actions: {

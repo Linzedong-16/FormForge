@@ -73,3 +73,9 @@ export type PicLink = { link: string; index: number };
 export function isPicLink(obj: object): obj is PicLink {
   return "link" in obj && "index" in obj;
 }
+
+export function isOptionsProps(props: TextProps | OptionsProps): props is OptionsProps {
+  return props && Array.isArray(props.status);
+}
+
+export type StatusArray = StringStatusArr | ValueStatusArr | PicTitleDescStatusArr;

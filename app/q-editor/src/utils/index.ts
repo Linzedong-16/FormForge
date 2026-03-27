@@ -1,6 +1,13 @@
 // 工具库
-import { type TextProps, type OptionsProps, isPicTitleDescStatusArr } from "@/types";
-
+import {
+  type TextProps,
+  type OptionsProps,
+  isPicTitleDescStatusArr,
+  isOptionsProps,
+  type StatusArray,
+  type ValueStatusArr,
+  type PicTitleDescStatusArr
+} from "@/types";
 /**
  * 获取文本配置项的状态值
  * @param {TextProps} props - 文本配置项
@@ -66,4 +73,31 @@ export function getPicTitleDescStatusArr(props: OptionsProps) {
   if (props && isPicTitleDescStatusArr(props.status)) {
     return props.status;
   }
+}
+export function getValueStatus(props: OptionsProps) {
+  if (props && isOptionsProps(props) && (isValueStatusArray(props.status) || isPicTitleDescArray(props.status))) {
+    return props.status;
+  }
+}
+
+// 类型谓词函数，用于检查 status 是否为 Array<{ value: string; status: string }>
+export function isValueStatusArray(status: StatusArray): status is ValueStatusArr {
+  return (
+    Array.isArray(status) &&
+    status.length > 0 &&
+    typeof status[0] === "object" &&
+    "value" in status[0] &&
+    "status" in status[0]
+  );
+}
+
+// 类型谓词函数，用于检查 status 是否为 Array<{ picTitle: string; picDesc: string }>
+export function isPicTitleDescArray(status: StatusArray): status is PicTitleDescStatusArr {
+  return (
+    Array.isArray(status) &&
+    status.length > 0 &&
+    typeof status[0] === "object" &&
+    "picTitle" in status[0] &&
+    "picDesc" in status[0]
+  );
 }

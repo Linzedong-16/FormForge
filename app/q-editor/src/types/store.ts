@@ -1,4 +1,4 @@
-import type { TextProps, OptionsProps, Status, Material, SurveyDBData } from "@/types";
+import type { TextProps, OptionsProps, Status, Material, SurveyDBData, PicLink } from "@/types";
 
 // 定义 updateStatus 的类型
 export type UpdateStatus = (
@@ -6,7 +6,7 @@ export type UpdateStatus = (
   payload?: number | string | boolean | object,
   isShowChange?: boolean
 ) => void;
-export type PicLink = { link: string; index: number };
+
 export type GetLink = (obj: PicLink) => void;
 
 export type optionsStatusByIndexPayload = {
@@ -24,17 +24,6 @@ export function isOptionsStatusByIndexPayload(obj: object): obj is optionsStatus
     typeof (obj as optionsStatusByIndexPayload).index === "number"
   );
 }
-
-// export function isPicLink(obj: object): obj is PicLink {
-//   return (
-//     typeof obj === "object" &&
-//     obj !== null &&
-//     "link" in obj &&
-//     typeof (obj as PicLink).link === "string" &&
-//     "index" in obj &&
-//     typeof (obj as PicLink).index === "number"
-//   );
-// }
 
 export interface Actions {
   addOption: (optionProps: OptionsProps) => void;
