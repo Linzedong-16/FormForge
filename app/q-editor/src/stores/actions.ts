@@ -9,7 +9,17 @@ export function setTextStatus(textProps: TextProps, text: string) {
  */
 export function addOption(optionProps: OptionsProps) {
   if (isStringArray(optionProps.status)) {
-    optionProps.status.push("新选项");
+    const lastOption = optionProps.status[optionProps.status.length - 1];
+    const lastDigit = lastOption!.split("").reverse()[0];
+    // 有可能最后一项拿到的不是数字
+    // 比如性别预设值：男、女、保密，这时候就需要手动判断
+
+    // 多选题直接使用选项内容作为唯一标识，并不是bug，而是设计选择，如果重复内容就会导致选项关联问题，可以间接提示用户修改
+    if (!isNaN(Number(lastDigit))) {
+      optionProps.status.push(`新增选项${Number(lastDigit) + 1}`);
+    } else {
+      optionProps.status.push(`新增选项1`);
+    }
   } else if (isPicTitleDescStatusArr(optionProps.status)) {
     optionProps.status.push({ picTitle: "图片标题", picDesc: "图片描述", value: "" });
   }
