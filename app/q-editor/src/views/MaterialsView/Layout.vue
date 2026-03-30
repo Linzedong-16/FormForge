@@ -32,14 +32,18 @@ const store = useMaterialStore();
 const currentCom = computed(() => store.coms[store.currentMaterialCom]);
 
 // 从编辑面板的组件中获取更新状态的方法函数 updateStatus
-const updateStatus = (configKey: string, payload?: number | string | boolean | object) => {
+const updateStatus = (configKey: string, payload?: number | string | boolean | object, keepStatus?: boolean) => {
   if (!currentCom.value) {
     console.error("Current component is not available");
     return;
   }
   switch (configKey) {
     case "type": {
-      changeEditorIsShowStatus(currentCom.value.status as unknown as TypeStatus, payload as number);
+      console.log("type", payload);
+      console.log("type", typeof payload);
+      if (!keepStatus) {
+        changeEditorIsShowStatus(currentCom.value.status as unknown as TypeStatus, payload as number);
+      }
       store.setPosition(currentCom.value.status[configKey] as OptionsProps, payload as number);
       break;
     }
@@ -131,7 +135,9 @@ const routeToComponentMap: Record<string, string> = {
   "/single-pic-select": "single-pic-select",
   "/multi-pic-select": "multi-pic-select",
   // 备注组件
-  "/text-note": "text-node"
+  "/text-note": "text-node",
+  // 输入框组件
+  "/text-input": "text-input"
 };
 
 const route = useRoute();

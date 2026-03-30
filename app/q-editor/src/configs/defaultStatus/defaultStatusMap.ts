@@ -5,6 +5,7 @@ import multiSelectDefaultStatus from "./selector/MultiSelect";
 import optionSelectDefaultStatus from "./selector/OptionSelect";
 import multiPicSelectDefaultStatus from "./selector/MultiPicSelect";
 import textNodeDefaultStatus from "./remark/TextNote";
+import textInputDefaultStatus from "./input/TextInput";
 
 import type { Status } from "@/types";
 
@@ -20,5 +21,7 @@ export const defaultStatusMap: DefaultStatusMap = {
   "option-select": optionSelectDefaultStatus,
   "multi-pic-select": multiPicSelectDefaultStatus,
   // 备注组件
-  "text-node": textNodeDefaultStatus
+  "text-node": textNodeDefaultStatus,
+  // 输入框组件
+  "text-input": textInputDefaultStatus
 };

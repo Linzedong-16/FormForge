@@ -24,7 +24,9 @@ export const useMaterialStore = defineStore("materialStore", {
       "option-select": defaultStatusMap["option-select"]!(),
       "multi-pic-select": defaultStatusMap["multi-pic-select"]!(),
       // 备注组件
-      "text-node": defaultStatusMap["text-node"]!()
+      "text-node": defaultStatusMap["text-node"]!(),
+      // 输入框组件
+      "text-input": defaultStatusMap["text-input"]!()
     } as Record<string, ReturnType<(typeof defaultStatusMap)[string]>>
   }),
   actions: {
