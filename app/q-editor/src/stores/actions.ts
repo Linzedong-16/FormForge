@@ -33,6 +33,7 @@ export function removeOption(optionProps: OptionsProps, index: number) {
   return true;
 }
 
+// TODO: 优化为 setCurrentStatus
 export function setPosition(optionProps: OptionsProps, index: number) {
   optionProps.currentStatus = index;
 }

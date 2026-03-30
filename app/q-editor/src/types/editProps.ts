@@ -43,6 +43,10 @@ export interface BaseStatus {
 export interface OptionsStatus extends BaseStatus {
   options: OptionsProps;
 }
+// 备注组件的设置项
+export interface TypeStatus extends BaseStatus {
+  type: OptionsProps;
+}
 
 /**
  * 判断是否为字符串数组

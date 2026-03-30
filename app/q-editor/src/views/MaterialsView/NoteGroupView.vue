@@ -1,11 +1,9 @@
 <template>
   <Layout>
-    <Router-link to="/" class="link-item mb-15">备注说明</Router-link>
+    <Router-Link to="/text-note" class="link-item mb-15" exact-active-class="link-item-active">备注说明</Router-Link>
   </Layout>
 </template>
 
 <script setup lang="ts">
-import Layout from './Layout.vue'
+import Layout from "./Layout.vue";
 </script>
-
-<style scoped></style>

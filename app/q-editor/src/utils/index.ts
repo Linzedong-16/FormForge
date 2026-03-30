@@ -6,7 +6,8 @@ import {
   isOptionsProps,
   type StatusArray,
   type ValueStatusArr,
-  type PicTitleDescStatusArr
+  type PicTitleDescStatusArr,
+  type TypeStatus
 } from "@/types";
 /**
  * 获取文本配置项的状态值
@@ -100,4 +101,20 @@ export function isPicTitleDescArray(status: StatusArray): status is PicTitleDesc
     "picTitle" in status[0] &&
     "picDesc" in status[0]
   );
+}
+
+export function changeEditorIsShowStatus(status: TypeStatus, type: number) {
+  if (type !== status.type.currentStatus) {
+    status.title.isShow = !status.title.isShow;
+    status.desc.isShow = !status.desc.isShow;
+    status.position.isShow = !status.position.isShow;
+    status.titleSize.isShow = !status.titleSize.isShow;
+    status.descSize.isShow = !status.descSize.isShow;
+    status.titleWeight.isShow = !status.titleWeight.isShow;
+    status.descWeight.isShow = !status.descWeight.isShow;
+    status.titleItalic.isShow = !status.titleItalic.isShow;
+    status.descItalic.isShow = !status.descItalic.isShow;
+    status.titleColor.isShow = !status.titleColor.isShow;
+    status.descColor.isShow = !status.descColor.isShow;
+  }
 }

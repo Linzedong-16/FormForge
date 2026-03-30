@@ -24,7 +24,8 @@ import EditPannel from "@/components/SurveyComs/EditItems/EditPannel.vue";
 import { computed, provide, watch } from "vue";
 import { ElMessage } from "element-plus";
 import { useRoute } from "vue-router";
-import { isPicLink, type PicLink } from "@/types";
+import { isPicLink, type OptionsProps, type PicLink, type TextProps, type TypeStatus } from "@/types";
+import { changeEditorIsShowStatus } from "@/utils";
 
 // 数据仓库
 const store = useMaterialStore();
@@ -36,16 +37,19 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
     console.error("Current component is not available");
     return;
   }
-
-  console.log(configKey, payload);
   switch (configKey) {
+    case "type": {
+      changeEditorIsShowStatus(currentCom.value.status as unknown as TypeStatus, payload as number);
+      store.setPosition(currentCom.value.status[configKey] as OptionsProps, payload as number);
+      break;
+    }
     case "title":
     case "desc": {
       if (typeof payload !== "string") {
         console.error('Invalid payload type for "title or desc". Expected string.');
         break;
       }
-      store.setTextStatus(currentCom.value.status[configKey], payload as string);
+      store.setTextStatus(currentCom.value.status[configKey] as TextProps, payload as string);
       break;
     }
     case "titleWeight":
@@ -54,7 +58,7 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
         console.error('Invalid payload type for "titleWeight or descWeight". Expected number.');
         break;
       }
-      store.setWeight(currentCom.value.status[configKey], payload);
+      store.setWeight(currentCom.value.status[configKey] as OptionsProps, payload);
       break;
     }
     case "titleItalic":
@@ -63,19 +67,19 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
         console.error('Invalid payload type for "titleItalic or descItalic". Expected number.');
         break;
       }
-      store.setItalic(currentCom.value.status[configKey], payload);
+      store.setItalic(currentCom.value.status[configKey] as OptionsProps, payload);
       break;
     }
     case "options": {
       if (typeof payload === "number") {
-        const result = store.removeOption(currentCom.value.status[configKey], payload);
+        const result = store.removeOption(currentCom.value.status[configKey] as OptionsProps, payload);
         if (result) ElMessage.success("删除成功");
         else ElMessage.error("至少保留两个选项");
-      } else if (typeof payload === "object" && isPicLink(payload)) {
+      } else if (typeof payload === "object" && payload !== null && isPicLink(payload)) {
         // 处理图片链接
-        store.setPicLinkByIndex(currentCom.value.status[configKey], payload as PicLink);
+        store.setPicLinkByIndex(currentCom.value.status[configKey] as OptionsProps, payload);
       } else {
-        store.addOption(currentCom.value.status[configKey]);
+        store.addOption(currentCom.value.status[configKey] as OptionsProps);
       }
       break;
     }
@@ -84,7 +88,7 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
         console.error('Invalid payload type for "position". Expected number.');
         break;
       }
-      store.setPosition(currentCom.value.status[configKey], payload);
+      store.setPosition(currentCom.value.status[configKey] as OptionsProps, payload);
       break;
     }
     case "titleColor":
@@ -93,7 +97,7 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
         console.error('Invalid payload type for "titleColor or descColor". Expected string.');
         break;
       }
-      store.setColor(currentCom.value.status[configKey], payload as string);
+      store.setColor(currentCom.value.status[configKey] as TextProps, payload as string);
       break;
     }
     case "titleSize":
@@ -102,7 +106,7 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
         console.error('Invalid payload type for "titleSize or descSize". Expected number.');
         break;
       }
-      store.setSize(currentCom.value.status[configKey], payload);
+      store.setSize(currentCom.value.status[configKey] as OptionsProps, payload);
       break;
     }
     default: {
@@ -125,7 +129,9 @@ const routeToComponentMap: Record<string, string> = {
   "/multi-select": "multi-select",
   "/option-select": "option-select",
   "/single-pic-select": "single-pic-select",
-  "/multi-pic-select": "multi-pic-select"
+  "/multi-pic-select": "multi-pic-select",
+  // 备注组件
+  "/text-note": "text-node"
 };
 
 const route = useRoute();
