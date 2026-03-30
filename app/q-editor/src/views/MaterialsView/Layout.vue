@@ -137,7 +137,10 @@ const routeToComponentMap: Record<string, string> = {
   // 备注组件
   "/text-note": "text-node",
   // 输入框组件
-  "/text-input": "text-input"
+  "/text-input": "text-input",
+  // 个人信息组件
+  "/personal-info-gender": "personal-info-gender",
+  "/personal-info-education": "personal-info-education"
 };
 
 const route = useRoute();

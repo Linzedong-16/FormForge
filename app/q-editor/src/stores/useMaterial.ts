@@ -12,6 +12,20 @@ import {
   setColor,
   setPicLinkByIndex
 } from "./actions";
+import type { Material, Status } from "@/types";
+import { updateInitStatusBeforeAdd } from "@/utils";
+
+// 哪些业务组件需要初始化
+const keyToInit = ["personal-info-gender", "personal-info-education"] as Material[];
+
+// 初始化后的状态
+const initializedStates: { [key: string]: Status } = {};
+
+keyToInit.forEach(key => {
+  const defaultStatus = defaultStatusMap[key as string]!() as Status;
+  updateInitStatusBeforeAdd(defaultStatus, key);
+  initializedStates[key] = defaultStatus;
+});
 
 export const useMaterialStore = defineStore("materialStore", {
   state: () => ({
@@ -26,7 +40,10 @@ export const useMaterialStore = defineStore("materialStore", {
       // 备注组件
       "text-node": defaultStatusMap["text-node"]!(),
       // 输入框组件
-      "text-input": defaultStatusMap["text-input"]!()
+      "text-input": defaultStatusMap["text-input"]!(),
+      // 个人信息组件
+      "personal-info-gender": initializedStates["personal-info-gender"],
+      "personal-info-education": initializedStates["personal-info-education"]
     } as Record<string, ReturnType<(typeof defaultStatusMap)[string]>>
   }),
   actions: {

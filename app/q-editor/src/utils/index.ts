@@ -1,4 +1,5 @@
 // 工具库
+import { educationStatus, genderStatus } from "@/configs/defaultStatus/initStatus";
 import {
   type TextProps,
   type OptionsProps,
@@ -7,7 +8,9 @@ import {
   type StatusArray,
   type ValueStatusArr,
   type PicTitleDescStatusArr,
-  type TypeStatus
+  type TypeStatus,
+  type Status,
+  type Material
 } from "@/types";
 /**
  * 获取文本配置项的状态值
@@ -116,5 +119,51 @@ export function changeEditorIsShowStatus(status: TypeStatus, type: number) {
     status.descItalic.isShow = !status.descItalic.isShow;
     status.titleColor.isShow = !status.titleColor.isShow;
     status.descColor.isShow = !status.descColor.isShow;
+  }
+}
+
+// export function updateInitStatusBeforeAdd(comStatus: Status, newMaterialName: Material) {
+//   switch (newMaterialName) {
+//     case "personal-info-gender": {
+//       comStatus.name = "personal-info-gender";
+//       comStatus.status.title!.status = "您的性别是？";
+//       if (IsOptionsStatus(comStatus.status)) comStatus.status.options.status = genderStatus();
+//       break;
+//     }
+//     case "personal-info-education": {
+//       comStatus.name = "personal-info-education";
+//       comStatus.status.title.status = "到目前为止，您的最高学历是？";
+//       if (IsOptionsStatus(comStatus.status)) comStatus.status.options.status = educationStatus();
+//       break;
+//     }
+//   }
+// }
+
+export function updateInitStatusBeforeAdd(comStatus: Status, newMaterialName: Material) {
+  switch (newMaterialName) {
+    case "personal-info-gender": {
+      comStatus.name = "personal-info-gender";
+      // 确保 title 属性存在
+      if (comStatus.status.title) {
+        comStatus.status.title.status = "您的性别是？";
+      }
+      // 检查是否为选项组件并确保 options 属性存在
+      if ("options" in comStatus.status && comStatus.status.options) {
+        comStatus.status.options.status = genderStatus();
+      }
+      break;
+    }
+    case "personal-info-education": {
+      comStatus.name = "personal-info-education";
+      // 确保 title 属性存在
+      if (comStatus.status.title) {
+        comStatus.status.title.status = "到目前为止，您的最高学历是？";
+      }
+      // 检查是否为选项组件并确保 options 属性存在
+      if ("options" in comStatus.status && comStatus.status.options) {
+        comStatus.status.options.status = educationStatus();
+      }
+      break;
+    }
   }
 }

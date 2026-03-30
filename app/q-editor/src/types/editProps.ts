@@ -83,3 +83,8 @@ export function isOptionsProps(props: TextProps | OptionsProps): props is Option
 }
 
 export type StatusArray = StringStatusArr | ValueStatusArr | PicTitleDescStatusArr;
+
+// 判断是否为选项组件的设置项
+export function IsOptionsStatus(status: BaseStatus): status is OptionsStatus {
+  return "options" in status;
+}

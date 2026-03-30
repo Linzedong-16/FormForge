@@ -23,5 +23,8 @@ export const defaultStatusMap: DefaultStatusMap = {
   // 备注组件
   "text-node": textNodeDefaultStatus,
   // 输入框组件
-  "text-input": textInputDefaultStatus
+  "text-input": textInputDefaultStatus,
+  // 个人信息组件
+  "personal-info-gender": singleSelectDefaultStatus,
+  "personal-info-education": singleSelectDefaultStatus
 };
