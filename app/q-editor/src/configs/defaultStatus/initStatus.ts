@@ -18,3 +18,5 @@ export const careerStatus = () => [
   "暂无职业",
   "其他"
 ];
+
+export const ageStatus = () => ["18岁以下", "25～30岁", "31～40岁", "41～50岁", "51～60岁", "61岁及以上"];

@@ -1,5 +1,5 @@
 // 工具库
-import { educationStatus, genderStatus } from "@/configs/defaultStatus/initStatus";
+import { ageStatus, careerStatus, educationStatus, genderStatus } from "@/configs/defaultStatus/initStatus";
 import {
   type TextProps,
   type OptionsProps,
@@ -165,5 +165,97 @@ export function updateInitStatusBeforeAdd(comStatus: Status, newMaterialName: Ma
       }
       break;
     }
+    case "personal-info-name": {
+      comStatus.name = "personal-info-name";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的姓名是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+    case "personal-info-id": {
+      comStatus.name = "personal-info-id";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的身份证号是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+    case "personal-info-address": {
+      comStatus.name = "personal-info-address";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的地址是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+    case "personal-info-age": {
+      comStatus.name = "personal-info-age";
+      // 确保 title 属性存在
+      if (comStatus.status.title) {
+        comStatus.status.title.status = "您的年龄是？";
+        comStatus.status.options!.status = ageStatus();
+      }
+      break;
+    }
+    case "personal-info-career": {
+      comStatus.name = "personal-info-career";
+      // 确保 title 属性存在
+      if (comStatus.status.title) {
+        comStatus.status.title.status = "您目前的职业是？";
+        comStatus.status.options!.status = careerStatus();
+      }
+      break;
+    }
+    case "personal-info-collage": {
+      comStatus.name = "personal-info-collage";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的学校是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+    case "personal-info-major": {
+      comStatus.name = "personal-info-major";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的专业是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+    case "personal-info-industry": {
+      comStatus.name = "personal-info-industry";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的行业是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+    case "personal-info-company": {
+      comStatus.name = "personal-info-company";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的公司是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+    case "personal-info-position": {
+      comStatus.name = "personal-info-position";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的职位是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+    // "date-time": markRaw(DateTime),
+    // "personal-info-birth": markRaw(DateTime),
   }
 }

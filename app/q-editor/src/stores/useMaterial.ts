@@ -16,7 +16,20 @@ import type { Material, Status } from "@/types";
 import { updateInitStatusBeforeAdd } from "@/utils";
 
 // 哪些业务组件需要初始化
-const keyToInit = ["personal-info-gender", "personal-info-education"] as Material[];
+const keyToInit = [
+  "personal-info-gender",
+  "personal-info-education",
+  "personal-info-name",
+  "personal-info-id",
+  "personal-info-address",
+  "personal-info-age",
+  "personal-info-career",
+  "personal-info-collage",
+  "personal-info-major",
+  "personal-info-industry",
+  "personal-info-company",
+  "personal-info-position"
+] as Material[];
 
 // 初始化后的状态
 const initializedStates: { [key: string]: Status } = {};
@@ -43,7 +56,17 @@ export const useMaterialStore = defineStore("materialStore", {
       "text-input": defaultStatusMap["text-input"]!(),
       // 个人信息组件
       "personal-info-gender": initializedStates["personal-info-gender"],
-      "personal-info-education": initializedStates["personal-info-education"]
+      "personal-info-education": initializedStates["personal-info-education"],
+      "personal-info-name": initializedStates["personal-info-name"],
+      "personal-info-id": initializedStates["personal-info-id"],
+      "personal-info-address": initializedStates["personal-info-address"],
+      "personal-info-age": initializedStates["personal-info-age"],
+      "personal-info-career": initializedStates["personal-info-career"],
+      "personal-info-collage": initializedStates["personal-info-collage"],
+      "personal-info-major": initializedStates["personal-info-major"],
+      "personal-info-industry": initializedStates["personal-info-industry"],
+      "personal-info-company": initializedStates["personal-info-company"],
+      "personal-info-position": initializedStates["personal-info-position"]
     } as Record<string, ReturnType<(typeof defaultStatusMap)[string]>>
   }),
   actions: {

@@ -140,7 +140,17 @@ const routeToComponentMap: Record<string, string> = {
   "/text-input": "text-input",
   // 个人信息组件
   "/personal-info-gender": "personal-info-gender",
-  "/personal-info-education": "personal-info-education"
+  "/personal-info-education": "personal-info-education",
+  "/personal-info-name": "personal-info-name",
+  "/personal-info-id": "personal-info-id",
+  "/personal-info-address": "personal-info-address",
+  "/personal-info-age": "personal-info-age",
+  "/personal-info-career": "personal-info-career",
+  "/personal-info-collage": "personal-info-collage",
+  "/personal-info-major": "personal-info-major",
+  "/personal-info-industry": "personal-info-industry",
+  "/personal-info-company": "personal-info-company",
+  "/personal-info-position": "personal-info-position"
 };
 
 const route = useRoute();

@@ -26,5 +26,17 @@ export const defaultStatusMap: DefaultStatusMap = {
   "text-input": textInputDefaultStatus,
   // 个人信息组件
   "personal-info-gender": singleSelectDefaultStatus,
-  "personal-info-education": singleSelectDefaultStatus
+  "personal-info-education": singleSelectDefaultStatus,
+  "personal-info-name": textInputDefaultStatus,
+  "personal-info-id": textInputDefaultStatus,
+  "personal-info-address": textInputDefaultStatus,
+  "personal-info-age": singleSelectDefaultStatus,
+  "personal-info-career": singleSelectDefaultStatus,
+  "personal-info-collage": textInputDefaultStatus,
+  "personal-info-major": textInputDefaultStatus,
+  "personal-info-industry": textInputDefaultStatus,
+  "personal-info-company": textInputDefaultStatus,
+  "personal-info-position": textInputDefaultStatus
+  // "date-time": markRaw(DateTime),
+  // "personal-info-birth": markRaw(DateTime),
 };
