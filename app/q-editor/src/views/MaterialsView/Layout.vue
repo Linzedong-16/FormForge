@@ -150,7 +150,10 @@ const routeToComponentMap: Record<string, string> = {
   "/personal-info-major": "personal-info-major",
   "/personal-info-industry": "personal-info-industry",
   "/personal-info-company": "personal-info-company",
-  "/personal-info-position": "personal-info-position"
+  "/personal-info-position": "personal-info-position",
+  // 高级组件
+  "/date-time": "date-time",
+  "/rate-score": "rate-score"
 };
 
 const route = useRoute();

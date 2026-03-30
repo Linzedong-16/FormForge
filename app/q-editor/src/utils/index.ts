@@ -64,6 +64,12 @@ export function getStringStatusByCurrentStatus(props: OptionsProps) {
   return props.status[props.currentStatus];
 }
 
+export function getValueStatusByCurrentStatus(props: OptionsProps) {
+  if (props && isOptionsProps(props) && (isValueStatusArray(props.status) || isPicTitleDescArray(props.status))) {
+    return props.status[props.currentStatus];
+  }
+}
+
 /**
  * 获取图片标题描述类型的选项配置
  * @param {OptionsProps} props - 选项配置项

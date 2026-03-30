@@ -5,6 +5,7 @@ export interface BaseProps {
   isShow: boolean;
   name: string;
   editCom: VueComType;
+  isUse?: boolean;
 }
 
 export type StringStatusArr = string[];

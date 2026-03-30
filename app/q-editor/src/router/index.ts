@@ -63,7 +63,20 @@ const router = createRouter({
         {
           path: "/advanced-group",
           name: "advanced-group",
-          component: () => import("@/views/MaterialsView/AdvancedGroupView.vue")
+          component: () => import("@/views/MaterialsView/AdvancedGroupView.vue"),
+          redirect: "/date-time",
+          children: [
+            {
+              path: "/date-time",
+              name: "date-time",
+              component: () => import("@/components/SurveyComs/Materials/AdvancedComs/DateTime.vue")
+            },
+            {
+              path: "/rate-score",
+              name: "rate-score",
+              component: () => import("@/components/SurveyComs/Materials/AdvancedComs/RateScore.vue")
+            }
+          ]
         },
         {
           path: "/note-group",

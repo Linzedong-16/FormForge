@@ -6,6 +6,8 @@ import optionSelectDefaultStatus from "./selector/OptionSelect";
 import multiPicSelectDefaultStatus from "./selector/MultiPicSelect";
 import textNodeDefaultStatus from "./remark/TextNote";
 import textInputDefaultStatus from "./input/TextInput";
+import dateTimeDefaultStatus from "./advanced/DateTime";
+import rateScoreDefaultStatus from "./advanced/RateScore";
 
 import type { Status } from "@/types";
 
@@ -36,7 +38,10 @@ export const defaultStatusMap: DefaultStatusMap = {
   "personal-info-major": textInputDefaultStatus,
   "personal-info-industry": textInputDefaultStatus,
   "personal-info-company": textInputDefaultStatus,
-  "personal-info-position": textInputDefaultStatus
+  "personal-info-position": textInputDefaultStatus,
   // "date-time": markRaw(DateTime),
   // "personal-info-birth": markRaw(DateTime),
+  // 高级组件
+  "date-time": dateTimeDefaultStatus,
+  "rate-score": rateScoreDefaultStatus
 };

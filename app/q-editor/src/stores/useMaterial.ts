@@ -66,7 +66,10 @@ export const useMaterialStore = defineStore("materialStore", {
       "personal-info-major": initializedStates["personal-info-major"],
       "personal-info-industry": initializedStates["personal-info-industry"],
       "personal-info-company": initializedStates["personal-info-company"],
-      "personal-info-position": initializedStates["personal-info-position"]
+      "personal-info-position": initializedStates["personal-info-position"],
+      // 高级组件
+      "date-time": defaultStatusMap["date-time"]!(),
+      "rate-score": defaultStatusMap["rate-score"]!()
     } as Record<string, ReturnType<(typeof defaultStatusMap)[string]>>
   }),
   actions: {
