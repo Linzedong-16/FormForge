@@ -79,6 +79,10 @@ export function isPicLink(obj: object): obj is PicLink {
   return "link" in obj && "index" in obj;
 }
 
+export function isRateScoreDesc(payload: object): payload is { index: number; val: string } {
+  return "index" in payload && "val" in payload;
+}
+
 export function isOptionsProps(props: TextProps | OptionsProps): props is OptionsProps {
   return props && Array.isArray(props.status);
 }

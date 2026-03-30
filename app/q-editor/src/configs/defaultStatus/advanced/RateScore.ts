@@ -36,7 +36,7 @@ export default function (): Status {
         currentStatus: 0,
         status: ["非常不满意", "不满意", "一般", "满意", "非常满意"],
         isShow: true,
-        isUse: false,
+        isUse: false, // 辅助文字开关
         name: "rate-text-editor",
         editCom: markRaw(rateTextEditor)
       },

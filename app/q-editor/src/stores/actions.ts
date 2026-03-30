@@ -1,4 +1,11 @@
-import { isPicTitleDescStatusArr, isStringArray, type OptionsProps, type PicLink, type TextProps } from "@/types";
+import {
+  isPicTitleDescStatusArr,
+  isRateScoreDesc,
+  isStringArray,
+  type OptionsProps,
+  type PicLink,
+  type TextProps
+} from "@/types";
 export function setTextStatus(textProps: TextProps, text: string) {
   textProps.status = text;
 }
@@ -58,5 +65,15 @@ export function setPicLinkByIndex(optionProps: OptionsProps, payload: PicLink) {
   if (isPicTitleDescStatusArr(optionProps.status)) {
     // 使用非空断言操作符，因为已通过类型检查确保元素存在
     optionProps.status[payload.index]!.value = payload.link;
+  }
+}
+
+export function setIsUse(optionProps: OptionsProps, isUse: boolean) {
+  optionProps.isUse = isUse;
+}
+
+export function setRateScoreDesc(optionProps: OptionsProps, payload: { index: number; val: string }) {
+  if (isRateScoreDesc(optionProps.status)) {
+    optionProps.status[payload.index] = payload.val;
   }
 }

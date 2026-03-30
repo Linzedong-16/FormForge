@@ -10,7 +10,9 @@ import {
   setWeight,
   setItalic,
   setColor,
-  setPicLinkByIndex
+  setPicLinkByIndex,
+  setIsUse,
+  setRateScoreDesc
 } from "./actions";
 import type { Material, Status } from "@/types";
 import { updateInitStatusBeforeAdd } from "@/utils";
@@ -84,6 +86,9 @@ export const useMaterialStore = defineStore("materialStore", {
     addOption,
     removeOption,
     setPosition,
-    setSize
+    setSize,
+    // 比分选项组件的设置项
+    setIsUse,
+    setRateScoreDesc
   }
 });

@@ -24,7 +24,7 @@ import EditPannel from "@/components/SurveyComs/EditItems/EditPannel.vue";
 import { computed, provide, watch } from "vue";
 import { ElMessage } from "element-plus";
 import { useRoute } from "vue-router";
-import { isPicLink, type OptionsProps, type PicLink, type TextProps, type TypeStatus } from "@/types";
+import { isPicLink, isRateScoreDesc, type OptionsProps, type PicLink, type TextProps, type TypeStatus } from "@/types";
 import { changeEditorIsShowStatus } from "@/utils";
 
 // 数据仓库
@@ -82,6 +82,12 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
       } else if (typeof payload === "object" && payload !== null && isPicLink(payload)) {
         // 处理图片链接
         store.setPicLinkByIndex(currentCom.value.status[configKey] as OptionsProps, payload);
+      } else if (typeof payload === "boolean") {
+        store.setIsUse(currentCom.value.status[configKey] as OptionsProps, payload);
+      } else if (typeof payload === "object" && payload !== null && isRateScoreDesc(payload)) {
+        // 处理辅助文字选项修改
+        store.setRateScoreDesc(currentCom.value.status[configKey] as OptionsProps, payload);
+        break;
       } else {
         store.addOption(currentCom.value.status[configKey] as OptionsProps);
       }
@@ -102,6 +108,14 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
         break;
       }
       store.setColor(currentCom.value.status[configKey] as TextProps, payload as string);
+      break;
+    }
+    case "isUse": {
+      if (typeof payload !== "boolean") {
+        console.error('Invalid payload type for "isUse". Expected boolean.');
+        break;
+      }
+      store.setTextStatus(currentCom.value.status[configKey] as TextProps, payload.toString());
       break;
     }
     case "titleSize":
