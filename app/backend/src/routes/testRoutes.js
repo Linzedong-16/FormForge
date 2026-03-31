@@ -1,4 +1,5 @@
 import express from "express";
+import qEditorRoutes from "./test/qEditorRoutes.js";
 
 const router = express.Router();
 
@@ -56,5 +57,8 @@ router.get("/test/random", (req, res) => {
     data: randomData
   });
 });
+
+// q-editor测试路由
+router.use("/q-editor", qEditorRoutes);
 
 export default router;

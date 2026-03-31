@@ -44,6 +44,7 @@ app.use(bodyParser.urlencoded({ extended: true })); // 解析URL编码的请求�
 
 // 静态文件服务
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use("/uploads/q-editor", express.static(path.join(__dirname, "../uploads/q-editor")));
 
 // 注册路由
 app.use("/", router);
