@@ -93,3 +93,7 @@ export type StatusArray = StringStatusArr | ValueStatusArr | PicTitleDescStatusA
 export function IsOptionsStatus(status: BaseStatus): status is OptionsStatus {
   return "options" in status;
 }
+
+export function IsTypeStatus(status: BaseStatus): status is TypeStatus {
+  return "type" in status;
+}

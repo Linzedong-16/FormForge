@@ -1,6 +1,19 @@
 import { defineStore } from "pinia";
 import { isSurveyComName, type Status } from "@/types";
-import { addOption, removeOption, setCurrentStatus, setPicLinkByIndex, setPosition, setTextStatus } from "./actions";
+import {
+  addOption,
+  removeOption,
+  setColor,
+  setCurrentStatus,
+  setIsUse,
+  setItalic,
+  setPicLinkByIndex,
+  setPosition,
+  setRateScoreDesc,
+  setSize,
+  setTextStatus,
+  setWeight
+} from "./actions";
 
 export const useEditorStore = defineStore("editor", {
   state: () => ({
@@ -15,12 +28,21 @@ export const useEditorStore = defineStore("editor", {
     setPosition,
     setCurrentStatus,
     setPicLinkByIndex,
+    setSize,
+    setWeight,
+    setItalic,
+    setColor,
+    setIsUse,
+    setRateScoreDesc,
     addCom(newCom: Status) {
       this.coms.push(newCom);
       this.currentComponentIndex = -1;
       if (isSurveyComName(newCom.name)) {
         this.surveyCount++;
       }
+    },
+    setCurrentComponentIndex(index: number) {
+      this.currentComponentIndex = index;
     }
   }
 });

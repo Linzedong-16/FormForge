@@ -1,6 +1,14 @@
 <template>
   <div ref="centerContainer" class="center-container">
-    <div v-for="(item, index) in store.coms" :key="index">
+    <div
+      v-for="(item, index) in store.coms"
+      :key="index"
+      class="content mb-10 relative"
+      :class="{
+        active: store.currentComponentIndex === index
+      }"
+      @click="clickHandle(index)"
+    >
       <component :is="item.type" :status="item.status" :serial-num="1" />
     </div>
   </div>
@@ -28,6 +36,14 @@ const scrollToBottom = () => {
 };
 // 通过事件总线提供滚动方法给外部调用
 EventBus.on("scrollToBottom", scrollToBottom);
+
+const clickHandle = (index: number) => {
+  if (store.currentComponentIndex === index) {
+    store.setCurrentComponentIndex(-1);
+  } else {
+    store.setCurrentComponentIndex(index);
+  }
+};
 </script>
 
 <style scoped>
