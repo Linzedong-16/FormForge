@@ -134,7 +134,7 @@ provide("getLink", getLink);
   position: fixed;
   right: 20px;
   top: 70px;
-  background-color: var(--white);
+  background-color: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
   overflow-y: scroll;

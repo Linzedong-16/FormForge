@@ -52,7 +52,7 @@ const switchOutline = () => {
   position: fixed;
   left: 20px;
   top: 70px;
-  background: var(--white);
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
   > .tabs {

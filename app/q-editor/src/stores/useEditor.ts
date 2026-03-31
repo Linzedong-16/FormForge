@@ -43,6 +43,13 @@ export const useEditorStore = defineStore("editor", {
     },
     setCurrentComponentIndex(index: number) {
       this.currentComponentIndex = index;
+    },
+    removeCom(index: number) {
+      // 先判断是否是问卷题目组件
+      if (isSurveyComName(this.coms[index]!.name)) {
+        this.surveyCount--;
+      }
+      this.coms.splice(index, 1);
     }
   }
 });

@@ -105,3 +105,13 @@
 .fixed {
   position: fixed;
 }
+
+.ghost {
+  opacity: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
+.chosen {
+  cursor: grabbing !important;
+  opacity: 0.9 !important;
+}
