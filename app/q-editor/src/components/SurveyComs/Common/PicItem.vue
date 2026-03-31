@@ -3,10 +3,9 @@
     <div class="container mb-10">
       <!-- 添加图片 -->
       <div class="top flex justify-content-center align-items-center">
-        <!-- TODO: 上传图片到服务器 -->
         <el-upload
           class="avatar-uploader"
-          action="/api/upload"
+          action="/api/q-editor/upload"
           name="image"
           :show-file-list="false"
           :on-success="handleAvatarSuccess"
@@ -65,7 +64,7 @@ const handleAvatarSuccess: UploadProps["onSuccess"] = async response => {
       index: props.index,
       link: response.imageUrl
     });
-    imageUrl.value = props.value;
+    imageUrl.value = response.imageUrl;
   }
 };
 // 上传之前的回调
