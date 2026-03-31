@@ -53,7 +53,7 @@ export const useMaterialStore = defineStore("materialStore", {
       "option-select": defaultStatusMap["option-select"]!(),
       "multi-pic-select": defaultStatusMap["multi-pic-select"]!(),
       // 备注组件
-      "text-node": defaultStatusMap["text-node"]!(),
+      "text-note": defaultStatusMap["text-note"]!(),
       // 输入框组件
       "text-input": defaultStatusMap["text-input"]!(),
       // 个人信息组件

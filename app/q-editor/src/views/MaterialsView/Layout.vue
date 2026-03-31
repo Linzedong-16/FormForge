@@ -149,7 +149,7 @@ const routeToComponentMap: Record<string, string> = {
   "/single-pic-select": "single-pic-select",
   "/multi-pic-select": "multi-pic-select",
   // 备注组件
-  "/text-note": "text-node",
+  "/text-note": "text-note",
   // 输入框组件
   "/text-input": "text-input",
   // 个人信息组件

@@ -23,7 +23,7 @@ export const defaultStatusMap: DefaultStatusMap = {
   "option-select": optionSelectDefaultStatus,
   "multi-pic-select": multiPicSelectDefaultStatus,
   // 备注组件
-  "text-node": textNodeDefaultStatus,
+  "text-note": textNodeDefaultStatus,
   // 输入框组件
   "text-input": textInputDefaultStatus,
   // 个人信息组件

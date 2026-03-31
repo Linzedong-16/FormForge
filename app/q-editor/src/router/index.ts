@@ -169,7 +169,19 @@ const router = createRouter({
     {
       path: "/editor",
       name: "editor",
-      component: () => import("@/views/EditorView/index.vue")
+      component: () => import("@/views/EditorView/index.vue"),
+      children: [
+        {
+          path: "survey-type",
+          name: "survey-type",
+          component: () => import("@/views/EditorView/LeftSide/SurveyType.vue")
+        },
+        {
+          path: "outline",
+          name: "outline",
+          component: () => import("@/views/EditorView/LeftSide/Outline.vue")
+        }
+      ]
     }
   ]
 });

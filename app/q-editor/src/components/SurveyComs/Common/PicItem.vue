@@ -54,7 +54,9 @@ const props = defineProps({
 interface GetLinkFn {
   (data: { index: number; link: string }): void;
 }
-const getLink = inject("getLink") as GetLinkFn;
+const getLink = inject("getLink", () => {
+  console.warn("getLink not provided, image upload functionality will be limited");
+}) as GetLinkFn;
 // 上传成功的回调
 const handleAvatarSuccess: UploadProps["onSuccess"] = async response => {
   console.log(response, "response");
