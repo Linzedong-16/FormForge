@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="header">
-      <Header :is-editor="true" />
+      <Header :id="id" :is-editor="true" />
     </div>
     <!-- 编辑器主体区域 -->
     <div class="container">
@@ -19,6 +19,25 @@ import Header from "@/components/Common/Header.vue";
 import LeftSide from "@/views/EditorView/LeftSide/Index.vue";
 import Center from "@/views/EditorView/Center.vue";
 import RightSide from "@/views/EditorView/RightSide.vue";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+import { getSurveyById } from "@/db/operation";
+import { restoreComponentStatus } from "@/utils";
+const route = useRoute();
+// 仓库
+import { useEditorStore } from "@/stores/useEditor";
+const store = useEditorStore();
+
+const id = computed(() => (route.params.id ? String(route.params.id) : ""));
+if (id.value) {
+  // 接下来应该根据拿到的 id 去获取存储的问卷题目
+  getSurveyById(Number(id.value)).then(res => {
+    if (res) {
+      restoreComponentStatus(res.coms);
+      store.setStore(res);
+    }
+  });
+}
 </script>
 
 <style scoped lang="scss">

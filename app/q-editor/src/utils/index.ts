@@ -1,4 +1,5 @@
 // 工具库
+import { componentMap } from "@/configs/componentMap";
 import { ageStatus, careerStatus, educationStatus, genderStatus } from "@/configs/defaultStatus/initStatus";
 import {
   type TextProps,
@@ -317,3 +318,17 @@ export function formatDate(row: SurveyDBData, column: TableColumnCtx<SurveyDBDat
   };
   return new Intl.DateTimeFormat("zh-CN", options).format(new Date(cellValue));
 }
+
+// 还原组件状态
+export const restoreComponentStatus = (coms: Status[]) => {
+  coms.forEach(com => {
+    // 业务组件的还原
+    // console.log(com.name, 'com.name');
+    com.type = componentMap[com.name as keyof typeof componentMap]; // 这一步就做了组件的还原
+    // 接下来还原编辑组件
+    for (const key in com.status) {
+      const name = com.status[key]?.name;
+      com.status[key]!.editCom = componentMap[name as keyof typeof componentMap];
+    }
+  });
+};

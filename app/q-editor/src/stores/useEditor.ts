@@ -14,13 +14,14 @@ import {
   setTextStatus,
   setWeight
 } from "./actions";
-import { saveSurvey } from "@/db/operation";
+import { saveSurvey, updateSurveyById } from "@/db/operation";
 import { initStore } from "@/configs/defaultStatus/initStatus";
 
 // 编辑器初始化状态
 
 export const useEditorStore = defineStore("editor", {
   state: () => ({
+    // 维护当前选中的组件，用于编辑页面、预览页面的渲染
     currentComponentIndex: -1, // 当前选中的组件索引，一开始都没有选中，所以是-1
     surveyCount: 0, // 问卷题目的数量
     coms: initStore() as Status[] // 问卷题目组件数组
@@ -62,6 +63,16 @@ export const useEditorStore = defineStore("editor", {
         this.surveyCount--;
       }
       this.coms.splice(index, 1);
+    },
+    // 还原仓库状态
+    setStore(data: SurveyDBData) {
+      this.surveyCount = data.surveyCount;
+      this.currentComponentIndex = -1;
+      this.coms = data.coms;
+    },
+    // 更新问卷
+    updateComs(id: number, data: SurveyDBData) {
+      return updateSurveyById(id, data);
     }
   }
 });

@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory } from "vue-router";
-
+import Layout from "@/views/Layout/index.vue";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: "/",
       name: "home",
-      component: () => import("@/views/Layout/index.vue")
+      component: Layout
     },
     {
       path: "/materials",
@@ -195,7 +195,12 @@ const router = createRouter({
       ]
     },
     {
-      path: "/editor",
+      path: "/preview/:id(\\d+)",
+      name: "preview",
+      component: () => import("@/views/preview/index.vue")
+    },
+    {
+      path: "/editor/:id(\\d+)?",
       name: "editor",
       component: () => import("@/views/EditorView/index.vue"),
       children: [

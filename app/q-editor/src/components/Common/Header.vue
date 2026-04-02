@@ -8,10 +8,16 @@
       <div class="center flex align-items-center space-between pl-15 pr-15">
         <div v-if="isEditor">
           <!-- 说明是编辑器，需要显示额外的按钮 -->
-          <div>
+          <div v-if="id">
+            <el-button type="warning" size="small" @click="updateSurvey">更新问卷</el-button>
+          </div>
+          <div v-else>
             <el-button type="danger" size="small" @click="reset">重置问卷</el-button>
             <el-button type="success" size="small" @click="saveSurvey">保存问卷</el-button>
           </div>
+        </div>
+        <div v-if="id">
+          <el-button type="primary" size="small" @click="preview">预览</el-button>
         </div>
       </div>
       <div class="right flex justify-content-center align-items-center">
@@ -28,13 +34,17 @@ const router = useRouter();
 import { ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useEditorStore } from "@/stores/useEditor";
-defineProps({
+import type { SurveyDBData } from "@/types";
+const props = defineProps({
   isEditor: {
     type: Boolean,
     required: true
+  },
+  id: {
+    type: String,
+    default: ""
   }
 });
-
 const store = useEditorStore();
 
 // 重置问卷
@@ -84,6 +94,51 @@ const saveSurvey = () => {
     })
     .catch(() => {
       ElMessage.info("已取消保存");
+    });
+};
+
+// 更新问卷
+const updateSurvey = () => {
+  ElMessageBox.confirm("是否确定更新问卷", "提示", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "warning"
+  })
+    .then(() => {
+      store
+        .updateComs(Number(props.id), {
+          updateDate: new Date().getTime(),
+          surveyCount: store.surveyCount,
+          coms: JSON.parse(JSON.stringify(store.coms))
+        } as SurveyDBData)
+        .then(() => {
+          ElMessage.success("问卷已更新");
+        })
+        .catch(() => {
+          ElMessage.error("问卷更新失败");
+        });
+    })
+    .catch(() => {
+      ElMessage.info("已取消更新");
+    });
+};
+
+// 预览问卷
+const preview = () => {
+  ElMessageBox.confirm("预览会自动保存问卷，是否跳转预览？", "提示", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "info"
+  })
+    .then(() => {
+      updateSurvey();
+      router.push({
+        path: `/preview/${props.id}`,
+        state: { from: "editor" }
+      });
+    })
+    .catch(() => {
+      ElMessage.info("已取消跳转");
     });
 };
 
