@@ -5,7 +5,15 @@
       <div class="left flex justify-content-center align-items-center">
         <el-button :icon="ArrowLeft" circle size="small" @click="goHome" />
       </div>
-      <div class="center flex align-items-center space-between pl-15 pr-15"></div>
+      <div class="center flex align-items-center space-between pl-15 pr-15">
+        <div v-if="isEditor">
+          <!-- 说明是编辑器，需要显示额外的按钮 -->
+          <div>
+            <el-button type="danger" size="small" @click="reset">重置问卷</el-button>
+            <el-button type="success" size="small" @click="saveSurvey">保存问卷</el-button>
+          </div>
+        </div>
+      </div>
       <div class="right flex justify-content-center align-items-center">
         <el-avatar :size="30" :src="avatar" />
       </div>
@@ -14,16 +22,76 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
-const router = useRouter()
-import { ref } from 'vue'
+import { ArrowLeft } from "@element-plus/icons-vue";
+import { useRouter } from "vue-router";
+const router = useRouter();
+import { ref } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { useEditorStore } from "@/stores/useEditor";
+defineProps({
+  isEditor: {
+    type: Boolean,
+    required: true
+  }
+});
+
+const store = useEditorStore();
+
+// 重置问卷
+const reset = () => {
+  ElMessageBox.confirm("确定要重置问卷吗？", "提示", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "warning"
+  })
+    .then(() => {
+      store.resetComs();
+      ElMessage.success("重置成功");
+    })
+    .catch(() => {
+      ElMessage.info("已取消重置");
+    });
+};
+
+interface PromptItem {
+  value: string;
+}
+// 保存问卷
+const saveSurvey = () => {
+  ElMessageBox.prompt("请输入问卷的标题", "提示", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "info"
+  })
+    .then(item => {
+      const safeItem = item as unknown as PromptItem;
+      const surveyToSave = {
+        createDate: new Date().getTime(),
+        title: safeItem?.value as string,
+        updateDate: new Date().getTime(),
+        surveyCount: store.surveyCount,
+        coms: JSON.parse(JSON.stringify(store.coms))
+      };
+      store
+        .saveComs(surveyToSave)
+        .then(() => {
+          console.log(store.coms);
+          ElMessage.success("问卷已保存");
+        })
+        .catch(() => {
+          ElMessage.error("问卷保存失败");
+        });
+    })
+    .catch(() => {
+      ElMessage.info("已取消保存");
+    });
+};
 
 const goHome = () => {
-  router.push('/')
-}
+  router.push("/");
+};
 
-const avatar = ref('http://47.94.168.252/upload/1759642363899.gif')
+const avatar = ref("http://47.94.168.252/upload/1759642363899.gif");
 </script>
 
 <style scoped lang="scss">

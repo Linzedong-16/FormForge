@@ -10,8 +10,10 @@ import {
   type PicTitleDescStatusArr,
   type TypeStatus,
   type Status,
-  type Material
+  type Material,
+  type SurveyDBData
 } from "@/types";
+import type { TableColumnCtx } from "element-plus";
 /**
  * 获取文本配置项的状态值
  * @param {TextProps} props - 文本配置项
@@ -301,4 +303,17 @@ export function updateInitStatusBeforeAdd(comStatus: Status, newMaterialName: Ma
     // "date-time": markRaw(DateTime),
     // "personal-info-birth": markRaw(DateTime),
   }
+}
+
+// 处理日期格式的辅助方法
+export function formatDate(row: SurveyDBData, column: TableColumnCtx<SurveyDBData>, cellValue: number) {
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  };
+  return new Intl.DateTimeFormat("zh-CN", options).format(new Date(cellValue));
 }

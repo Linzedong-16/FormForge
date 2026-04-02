@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { isSurveyComName, type Status } from "@/types";
+import { isSurveyComName, type Status, type SurveyDBData } from "@/types";
 import {
   addOption,
   removeOption,
@@ -14,14 +14,26 @@ import {
   setTextStatus,
   setWeight
 } from "./actions";
+import { saveSurvey } from "@/db/operation";
+import { initStore } from "@/configs/defaultStatus/initStatus";
+
+// 编辑器初始化状态
 
 export const useEditorStore = defineStore("editor", {
   state: () => ({
     currentComponentIndex: -1, // 当前选中的组件索引，一开始都没有选中，所以是-1
     surveyCount: 0, // 问卷题目的数量
-    coms: [] as Status[] // 问卷题目组件数组
+    coms: initStore() as Status[] // 问卷题目组件数组
   }),
   actions: {
+    resetComs() {
+      this.coms = initStore();
+      this.currentComponentIndex = -1;
+      this.surveyCount = 0;
+    },
+    saveComs(survey: SurveyDBData) {
+      return saveSurvey(survey);
+    },
     setTextStatus,
     addOption,
     removeOption,
