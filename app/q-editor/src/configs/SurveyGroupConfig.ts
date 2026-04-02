@@ -1,5 +1,5 @@
 // 该文件是题型面板对应的配置文件，用于配置题型面板的题型信息
-import { CircleCheck, ChatLineSquare, User, EditPen, Files } from "@element-plus/icons-vue";
+import { CircleCheck, ChatLineSquare, User, EditPen, Files, Message } from "@element-plus/icons-vue";
 export const SurveyComsList = [
   {
     title: "选择题",
@@ -45,6 +45,17 @@ export const SurveyComsList = [
       { materialName: "personal-info-company", comName: "公司" },
       { materialName: "personal-info-position", comName: "岗位" },
       { materialName: "personal-info-id", comName: "身份证号" }
+    ]
+  },
+  {
+    title: "联系信息",
+    icon: Message,
+    list: [
+      { materialName: "personal-info-address", comName: "地址" },
+      { materialName: "personal-info-tel", comName: "电话" },
+      { materialName: "personal-info-wechat", comName: "微信" },
+      { materialName: "personal-info-qq", comName: "QQ" },
+      { materialName: "personal-info-email", comName: "邮箱" }
     ]
   }
 ];
