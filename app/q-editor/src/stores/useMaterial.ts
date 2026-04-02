@@ -30,7 +30,11 @@ const keyToInit = [
   "personal-info-major",
   "personal-info-industry",
   "personal-info-company",
-  "personal-info-position"
+  "personal-info-position",
+  "personal-info-tel",
+  "personal-info-wechat",
+  "personal-info-qq",
+  "personal-info-email"
 ] as Material[];
 
 // 初始化后的状态
@@ -61,7 +65,6 @@ export const useMaterialStore = defineStore("materialStore", {
       "personal-info-education": initializedStates["personal-info-education"],
       "personal-info-name": initializedStates["personal-info-name"],
       "personal-info-id": initializedStates["personal-info-id"],
-      "personal-info-address": initializedStates["personal-info-address"],
       "personal-info-age": initializedStates["personal-info-age"],
       "personal-info-career": initializedStates["personal-info-career"],
       "personal-info-collage": initializedStates["personal-info-collage"],
@@ -71,7 +74,13 @@ export const useMaterialStore = defineStore("materialStore", {
       "personal-info-position": initializedStates["personal-info-position"],
       // 高级组件
       "date-time": defaultStatusMap["date-time"]!(),
-      "rate-score": defaultStatusMap["rate-score"]!()
+      "rate-score": defaultStatusMap["rate-score"]!(),
+      // 联系信息组件
+      "personal-info-address": initializedStates["personal-info-address"],
+      "personal-info-tel": initializedStates["personal-info-tel"],
+      "personal-info-wechat": initializedStates["personal-info-wechat"],
+      "personal-info-qq": initializedStates["personal-info-qq"],
+      "personal-info-email": initializedStates["personal-info-email"]
     } as Record<string, ReturnType<(typeof defaultStatusMap)[string]>>
   }),
   actions: {

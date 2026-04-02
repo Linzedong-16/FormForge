@@ -31,7 +31,6 @@ export const defaultStatusMap: DefaultStatusMap = {
   "personal-info-education": singleSelectDefaultStatus,
   "personal-info-name": textInputDefaultStatus,
   "personal-info-id": textInputDefaultStatus,
-  "personal-info-address": textInputDefaultStatus,
   "personal-info-age": singleSelectDefaultStatus,
   "personal-info-career": singleSelectDefaultStatus,
   "personal-info-collage": textInputDefaultStatus,
@@ -43,5 +42,11 @@ export const defaultStatusMap: DefaultStatusMap = {
   // "personal-info-birth": markRaw(DateTime),
   // 高级组件
   "date-time": dateTimeDefaultStatus,
-  "rate-score": rateScoreDefaultStatus
+  "rate-score": rateScoreDefaultStatus,
+  // 联系信息组件
+  "personal-info-address": textInputDefaultStatus,
+  "personal-info-tel": textInputDefaultStatus,
+  "personal-info-wechat": textInputDefaultStatus,
+  "personal-info-qq": textInputDefaultStatus,
+  "personal-info-email": textInputDefaultStatus
 };

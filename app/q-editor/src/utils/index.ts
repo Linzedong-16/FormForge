@@ -261,6 +261,43 @@ export function updateInitStatusBeforeAdd(comStatus: Status, newMaterialName: Ma
       }
       break;
     }
+    case "personal-info-tel": {
+      comStatus.name = "personal-info-tel";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的手机号是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+    case "personal-info-wechat": {
+      comStatus.name = "personal-info-wechat";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的微信是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+    case "personal-info-qq": {
+      comStatus.name = "personal-info-qq";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的QQ是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+    case "personal-info-email": {
+      comStatus.name = "personal-info-email";
+      // 确保 title 属性存在
+      if (comStatus.status.title && comStatus.status.type) {
+        comStatus.status.title.status = "您的邮箱是？";
+        comStatus.status.type.isShow = false;
+      }
+      break;
+    }
+
     // "date-time": markRaw(DateTime),
     // "personal-info-birth": markRaw(DateTime),
   }

@@ -157,7 +157,6 @@ const routeToComponentMap: Record<string, string> = {
   "/personal-info-education": "personal-info-education",
   "/personal-info-name": "personal-info-name",
   "/personal-info-id": "personal-info-id",
-  "/personal-info-address": "personal-info-address",
   "/personal-info-age": "personal-info-age",
   "/personal-info-career": "personal-info-career",
   "/personal-info-collage": "personal-info-collage",
@@ -167,7 +166,13 @@ const routeToComponentMap: Record<string, string> = {
   "/personal-info-position": "personal-info-position",
   // 高级组件
   "/date-time": "date-time",
-  "/rate-score": "rate-score"
+  "/rate-score": "rate-score",
+  // 联系信息组件
+  "/personal-info-tel": "personal-info-tel",
+  "/personal-info-wechat": "personal-info-wechat",
+  "/personal-info-qq": "personal-info-qq",
+  "/personal-info-email": "personal-info-email",
+  "/personal-info-address": "personal-info-address"
 };
 
 const route = useRoute();

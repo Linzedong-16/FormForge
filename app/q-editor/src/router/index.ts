@@ -162,7 +162,35 @@ const router = createRouter({
         {
           path: "/contact-group",
           name: "contact-group",
-          component: () => import("@/views/MaterialsView/ContactGroupView.vue")
+          component: () => import("@/views/MaterialsView/ContactGroupView.vue"),
+          redirect: "/personal-info-tel",
+          children: [
+            {
+              path: "/personal-info-tel",
+              name: "personal-info-tel",
+              component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+            },
+            {
+              path: "/personal-info-wechat",
+              name: "personal-info-wechat",
+              component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+            },
+            {
+              path: "/personal-info-qq",
+              name: "personal-info-qq",
+              component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+            },
+            {
+              path: "/personal-info-email",
+              name: "personal-info-email",
+              component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+            },
+            {
+              path: "/personal-info-address",
+              name: "personal-info-address",
+              component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+            }
+          ]
         }
       ]
     },
