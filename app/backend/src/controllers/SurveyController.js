@@ -1,4 +1,4 @@
-import { Survey, SurveyComponent, sequelize } from "../models/index.js";
+import { Survey, SurveyComponent, SurveyResponse, sequelize } from "../models/index.js";
 
 class SurveyController {
   // 生成在线问卷
@@ -15,7 +15,7 @@ class SurveyController {
       }
 
       // 先删除引用了surveys表的表，然后删除surveys和survey_components表
-      await sequelize.query("DROP TABLE IF EXISTS responses CASCADE");
+      await sequelize.query("DROP TABLE IF EXISTS survey_responses CASCADE");
       await sequelize.query("DROP TABLE IF EXISTS survey_components CASCADE");
       await sequelize.query("DROP TABLE IF EXISTS surveys CASCADE");
 
@@ -67,7 +67,116 @@ class SurveyController {
     }
   }
 
-  // 获取问卷详情
+  // 提交问卷答案
+  static async submitAnswers(req, res) {
+    try {
+      const { surveyId, answers } = req.body;
+
+      // 验证请求数据
+      if (!surveyId || !answers) {
+        return res.status(400).json({
+          success: false,
+          message: "请求数据无效，缺少必要参数"
+        });
+      }
+
+      // 验证问卷是否存在
+      const survey = await Survey.findOne({ where: { survey_id: surveyId } });
+      if (!survey) {
+        return res.status(404).json({
+          success: false,
+          message: "问卷不存在"
+        });
+      }
+
+      // 在控制台打印接收到的数据
+      console.log(`[${new Date().toISOString()}] 收到问卷答案:`);
+      console.log(`问卷ID: ${surveyId}`);
+      console.log(`答案数据:`, answers);
+      console.log(`答案数量: ${Object.keys(answers).length}`);
+      console.log(`数据完整性: ${typeof answers === "object" && answers !== null ? "完整" : "不完整"}`);
+
+      // 存储问卷答案到数据库
+      await SurveyResponse.create({
+        survey_id: surveyId,
+        answers: answers
+      });
+
+      // 返回符合RESTful规范的响应
+      res.status(200).json({
+        success: true,
+        message: "问卷答案提交成功",
+        data: {
+          surveyId,
+          answerCount: Object.keys(answers).length,
+          submittedAt: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      console.error("提交问卷答案失败:", error);
+      res.status(500).json({
+        success: false,
+        message: "提交问卷答案失败",
+        error: error.message
+      });
+    }
+  }
+
+  // 获取问卷详情（用于在线问卷展示）
+  static async getSurveyForOnline(req, res) {
+    try {
+      const { surveyId } = req.params;
+
+      if (!surveyId) {
+        return res.status(400).json({
+          success: false,
+          message: "问卷ID不能为空"
+        });
+      }
+
+      const survey = await Survey.findOne({
+        where: { survey_id: surveyId },
+        include: [
+          {
+            model: SurveyComponent,
+            as: "components",
+            order: [["order_index", "ASC"]]
+          }
+        ]
+      });
+
+      if (!survey) {
+        return res.status(404).json({
+          success: false,
+          message: "问卷不存在"
+        });
+      }
+
+      // 转换组件数据格式，适应前端需求
+      const coms = survey.components.map(component => ({
+        type: JSON.parse(component.component_type || "{}"), // 将字符串转换回对象
+        name: component.component_name,
+        id: component.component_id,
+        status: component.status
+      }));
+
+      // 返回前端期望的数据格式
+      res.status(200).json({
+        success: true,
+        coms: JSON.stringify(coms), // 将coms数组转换为JSON字符串
+        surveyCount: coms.length
+      });
+    } catch (error) {
+      console.error("获取问卷详情失败:", error);
+      res.status(500).json({
+        success: false,
+        message: "获取问卷详情失败",
+        error: error.message
+      });
+    }
+  }
+
+  // 获取问卷详情（用于问卷管理）
   static async getSurvey(req, res) {
     try {
       const { surveyId } = req.params;

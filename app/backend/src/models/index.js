@@ -2,6 +2,7 @@ import { sequelize, testConnection } from "../config/db.js";
 import User from "./User.js";
 import Survey from "./Survey.js";
 import SurveyComponent from "./SurveyComponent.js";
+import SurveyResponse from "./SurveyResponse.js";
 
 // 同步数据库模型
 async function syncDatabase() {
@@ -13,4 +14,4 @@ async function syncDatabase() {
   }
 }
 
-export { sequelize, testConnection, syncDatabase, User, Survey, SurveyComponent };
+export { sequelize, testConnection, syncDatabase, User, Survey, SurveyComponent, SurveyResponse };
