@@ -215,6 +215,11 @@ const router = createRouter({
           component: () => import("@/views/EditorView/LeftSide/Outline.vue")
         }
       ]
+    },
+    {
+      path: "/survey/:id",
+      name: "survey",
+      component: () => import("@/views/online/SurveyView.vue")
     }
   ]
 });

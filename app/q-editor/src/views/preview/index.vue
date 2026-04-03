@@ -6,7 +6,7 @@
         <!-- 左边按钮 -->
         <div class="flex space-between">
           <el-button type="danger" @click="gobackHandle">返回</el-button>
-          <el-button type="success">生成在线问卷</el-button>
+          <el-button type="success" @click="generateOnlineSurvey">生成在线问卷</el-button>
           <el-button type="warning" @click="generatePDF">生成本地PDF</el-button>
         </div>
         <!-- 题目数量 -->
@@ -20,6 +20,14 @@
           <component :is="com.type" :status="com.status" :serial-num="serialNum[index]" />
         </div>
       </div>
+      <el-dialog v-model="dialogVisible" title="在线问卷" width="500">
+        分享链接: <a :href="shareLink" target="_blank">{{ shareLink }}</a>
+        <template #footer>
+          <div class="dialog-footer">
+            <el-button type="primary" @click="copyLink">复制链接</el-button>
+          </div>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -33,11 +41,24 @@ import { useEditorStore } from "@/stores/useEditor";
 const store = useEditorStore();
 // 工具方法;
 import { restoreComponentStatus } from "@/utils";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useSurveyNo } from "@/utils/hooks";
 import router from "@/router";
 import { canUsedForPDF } from "@/types";
 import { ElMessage } from "element-plus";
+import { v4 as uuidv4 } from "uuid";
+
+const dialogVisible = ref(true);
+const shareLink = ref("");
+
+const copyLink = () => {
+  const link = shareLink.value;
+  if (link) {
+    navigator.clipboard.writeText(link);
+    ElMessage.success("链接复制成功");
+  }
+};
+
 // 获取序号
 const serialNum = computed(() => useSurveyNo(store.coms).value);
 // 获取路由参数
@@ -75,6 +96,27 @@ const generatePDF = () => {
   // 生成PDF
   window.print();
   ElMessage.success("PDF生成成功");
+};
+
+// 生成在线问卷
+const generateOnlineSurvey = () => {
+  // 发送数组组件到服务端
+  const surveyId = uuidv4();
+  // 发送数组组件到服务端
+  fetch(`/api/generateSurvey`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      surveyId,
+      coms: store.coms
+    })
+  });
+  // 生成成功之后，将分享链接设置为 surveyId
+  shareLink.value = `${window.location.origin}/survey/${surveyId}`;
+  dialogVisible.value = true;
+  ElMessage.success("在线问卷生成成功");
 };
 </script>
 

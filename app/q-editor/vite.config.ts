@@ -16,8 +16,17 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": "http://localhost:3000",
-      "/uploads": "http://localhost:3000"
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        secure: false
+        // rewrite: path => path.replace(/^\/api/, "")
+      },
+      "/uploads": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        secure: false
+      }
     }
   }
 });
