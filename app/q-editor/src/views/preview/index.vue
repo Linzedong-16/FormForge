@@ -2,12 +2,12 @@
   <div class="preview-container pb-40">
     <div class="center mc">
       <!-- 上面的按钮组 -->
-      <div class="button-group flex space-between align-items-center">
+      <div class="button-group flex space-between align-items-center no-print">
         <!-- 左边按钮 -->
         <div class="flex space-between">
           <el-button type="danger" @click="gobackHandle">返回</el-button>
           <el-button type="success">生成在线问卷</el-button>
-          <el-button type="warning">生成本地PDF</el-button>
+          <el-button type="warning" @click="generatePDF">生成本地PDF</el-button>
         </div>
         <!-- 题目数量 -->
         <div class="mr-15">
@@ -36,6 +36,8 @@ import { restoreComponentStatus } from "@/utils";
 import { computed } from "vue";
 import { useSurveyNo } from "@/utils/hooks";
 import router from "@/router";
+import { canUsedForPDF } from "@/types";
+import { ElMessage } from "element-plus";
 // 获取序号
 const serialNum = computed(() => useSurveyNo(store.coms).value);
 // 获取路由参数
@@ -62,6 +64,18 @@ const gobackHandle = () => {
     }
   });
 };
+
+// 生成本地PDF
+const generatePDF = () => {
+  // 检查是否有题目类型不能生成PDF的
+  if (!store.coms.every(com => canUsedForPDF(com.type))) {
+    ElMessage.error("问卷中包含不能生成PDF的题目类型");
+    return;
+  }
+  // 生成PDF
+  window.print();
+  ElMessage.success("PDF生成成功");
+};
 </script>
 
 <style scoped lang="scss">
@@ -86,5 +100,43 @@ const gobackHandle = () => {
   border-radius: var(--border-radius-lg);
   background: var(--white);
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+// 打印样式
+@media print {
+  // 隐藏不需要打印的元素
+  .no-print {
+    display: none !important;
+  }
+
+  // 调整打印时的容器样式
+  .preview-container {
+    width: 100%;
+    min-height: auto;
+  }
+
+  .center {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  // 调整内容组的打印样式
+  .content-group {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  // 调整内容的打印样式
+  .content {
+    page-break-inside: avoid;
+    margin-bottom: 20px !important;
+  }
+
+  // 隐藏滚动条
+  ::-webkit-scrollbar {
+    display: none;
+  }
 }
 </style>
