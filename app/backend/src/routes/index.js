@@ -3,6 +3,7 @@ import userRoutes from "./userRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
 import testRoutes from "./testRoutes.js";
 import surveyRoutes from "./surveyRoutes.js";
+import qEditorRoutes from "./test/qEditorRoutes.js";
 
 const router = express.Router();
 
@@ -24,7 +25,8 @@ router.get("/api", (req, res) => {
       health: "/health",
       users: "/api/users",
       upload: "/api/upload",
-      survey: "/api/survey"
+      survey: "/api/survey",
+      qEditor: "/api/q-editor"
     }
   });
 });
@@ -33,6 +35,7 @@ router.get("/api", (req, res) => {
 router.use("/api/users", userRoutes);
 router.use("/api/upload", uploadRoutes);
 router.use("/api/test", testRoutes);
+router.use("/api/q-editor", qEditorRoutes);
 router.use("/api", surveyRoutes);
 
 export default router;
