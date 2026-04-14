@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import draggable from "vuedraggable";
 
-import { computed, nextTick, ref, type ComponentPublicInstance } from "vue";
+import { computed, nextTick, ref, type ComponentPublicInstance, onMounted, onUnmounted } from "vue";
 import { useEditorStore } from "@/stores/useEditor";
 const store = useEditorStore();
 // 事件总监
@@ -39,7 +39,19 @@ import { ElMessage, ElMessageBox } from "element-plus";
 
 const centerContainer = ref<HTMLElement | null>(null);
 
-const scrollToBottom = () => {
+// 节流函数
+function throttle(callback: (...args: any[]) => void, interval: number) {
+  let last = 0;
+  return (...args: any[]) => {
+    const now = Date.now();
+    if (now - last >= interval) {
+      callback(...args);
+      last = now;
+    }
+  };
+}
+
+const scrollToBottom = throttle(() => {
   nextTick(() => {
     const container = centerContainer.value; // 获取容器的dom元素
     if (container) {
@@ -49,11 +61,11 @@ const scrollToBottom = () => {
       });
     }
   });
-};
+}, 100);
 
 const componentsRefs = ref<(Element | ComponentPublicInstance | null)[]>([]);
 
-const scrollToCenter = (index: number) => {
+const scrollToCenter = throttle((index: number) => {
   nextTick(() => {
     const item = componentsRefs.value[index] as HTMLElement;
     if (item instanceof HTMLElement) {
@@ -63,7 +75,41 @@ const scrollToCenter = (index: number) => {
       });
     }
   });
-};
+}, 100);
+
+// 鼠标滚轮事件节流处理
+const handleWheel = throttle((e: WheelEvent) => {
+  // 阻止默认滚动行为，避免频繁触发窗口滚动
+  e.preventDefault();
+  console.log("节流函数触发");
+  // 获取容器元素
+  const container = centerContainer.value;
+  if (container) {
+    // 计算新的滚动位置
+    const newScrollTop = container.scrollTop + e.deltaY * 0.5; // 0.5 是滚动速度系数，可以根据需要调整
+
+    // 设置新的滚动位置
+    container.scrollTop = Math.max(0, Math.min(newScrollTop, container.scrollHeight - container.clientHeight));
+  }
+}, 100);
+
+// 组件挂载时添加事件监听器
+onMounted(() => {
+  // 为编辑器容器添加滚轮事件监听
+  const container = centerContainer.value;
+  if (container) {
+    container.addEventListener("wheel", handleWheel, { passive: false });
+  }
+});
+
+// 组件卸载时移除事件监听器
+onUnmounted(() => {
+  const container = centerContainer.value;
+  if (container) {
+    container.removeEventListener("wheel", handleWheel);
+  }
+});
+
 // 通过事件总线提供滚动方法给外部调用
 EventBus.on("scrollToBottom", scrollToBottom);
 EventBus.on("scrollToCenter", scrollToCenter);
@@ -107,6 +153,7 @@ const removeCom = (index: number) => {
   background: rgba(255, 255, 255, 0.9);
   position: relative;
   overflow: auto;
+  max-height: calc(100vh - 140px); /* 70px margin top + 70px margin bottom */
   .content {
     cursor: pointer;
     padding: 10px;
