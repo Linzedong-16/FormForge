@@ -1,0 +1,14 @@
+{
+  "name": "monorepo-code-common",
+  "version": "1.0.0",
+  "description": "问卷系统前后端共享类型声明",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.4"
+}

@@ -1,0 +1,30 @@
+// 组件名称类型
+export type { SurveyComName, Material } from "./material.js";
+export { NON_QUESTION_MATERIALS } from "./material.js";
+
+// 组件结构类型（传输格式）
+export type {
+  StringOptionsArr,
+  ValueStatusArr,
+  PicTitleDescArr,
+  OptionsStatusArr,
+  SerializedTextProp,
+  SerializedOptionsProp,
+  SurveyComponentStatus,
+  SurveyComponentPayload
+} from "./component.js";
+
+// API 请求/响应类型
+export type {
+  ApiResponse,
+  GenerateSurveyRequest,
+  GenerateSurveyResponse,
+  GetSurveyOnlineResponse,
+  GetSurveyDetailResponse,
+  SurveyListItem,
+  GetSurveysResponse,
+  SurveyAnswerValue,
+  SurveyAnswers,
+  SubmitAnswersRequest,
+  SubmitAnswersResponse
+} from "./api.js";
