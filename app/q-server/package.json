@@ -1,0 +1,44 @@
+{
+  "name": "questionnaire-server",
+  "version": "0.1.0",
+  "description": "Questionnaire system API server — Fastify + Prisma + Redis + TypeScript",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.4",
+  "engines": {
+    "node": ">=22.17.0"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "@fastify/helmet": "^13.0.0",
+    "@fastify/redis": "^7.0.0",
+    "@langchain/anthropic": "^0.3.0",
+    "@langchain/core": "^0.3.0",
+    "@langchain/openai": "^0.3.0",
+    "@prisma/client": "^6.8.2",
+    "amqplib": "^0.10.5",
+    "dotenv": "^16.5.0",
+    "fastify": "^5.2.2",
+    "fastify-plugin": "^5.0.0",
+    "langchain": "^0.3.0"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.7",
+    "@types/node": "^24.0.0",
+    "prisma": "^6.8.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.9.3"
+  }
+}
