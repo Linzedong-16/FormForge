@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, inject } from "vue";
+import { computed, inject } from "vue";
 import { Plus, Minus } from "@element-plus/icons-vue";
 import type { VueComType, PicTitleDescStatusArr, PicLink } from "@/types";
 import { ElMessage, ElMessageBox } from "element-plus";
@@ -46,7 +46,7 @@ const props = defineProps<{
   editCom: VueComType;
   id: string;
 }>();
-const textArr = ref(props.status);
+const textArr = computed(() => props.status);
 interface UpdateStatusFn {
   (key: string, payload?: number | PicLink): void;
 }

@@ -53,9 +53,7 @@ const props = defineProps({
 interface GetLinkFn {
   (data: { index: number; link: string }): void;
 }
-const getLink = inject("getLink", () => {
-  console.warn("getLink not provided, image upload functionality will be limited");
-}) as GetLinkFn;
+const getLink = inject<GetLinkFn | null>("getLink", null);
 // 自定义上传：使用 api 层提取出的 uploadImage 接口替代 el-upload 的默认上传逻辑
 // 上传成功后，通过 options.onSuccess 触发组件的 on-success 回调（handleAvatarSuccess），复用原有处理链路
 const customUpload = async (options: UploadRequestOptions) => {
@@ -71,13 +69,16 @@ const customUpload = async (options: UploadRequestOptions) => {
 };
 // 上传成功的回调
 const handleAvatarSuccess: UploadProps["onSuccess"] = async response => {
-  console.log(response, "response");
-  if (getLink) {
+  console.log("图片上传响应:", response);
+  if (getLink && response.imageUrl) {
     getLink({
       index: props.index,
       link: response.imageUrl
     });
     imageUrl.value = response.imageUrl;
+    ElMessage.success("图片上传成功");
+  } else {
+    ElMessage.error("图片上传成功但无法保存，请先选中组件");
   }
 };
 // 上传之前的回调

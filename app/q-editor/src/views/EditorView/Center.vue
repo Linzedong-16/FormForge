@@ -50,6 +50,11 @@ const getLink = (payload: PicLink) => {
   }
   const optionsProps = store.coms[index]!.status.options as OptionsProps;
   store.setPicLinkByIndex(optionsProps, payload);
+
+  // 强制触发响应式更新，确保编辑面板和预览同步更新
+  nextTick(() => {
+    store.setCurrentComponentIndex(index);
+  });
 };
 provide("getLink", getLink);
 
