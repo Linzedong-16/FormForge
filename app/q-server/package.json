@@ -1,5 +1,5 @@
 {
-  "name": "questionnaire-server",
+  "name": "q-server",
   "version": "0.1.0",
   "description": "Questionnaire system API server — Fastify + Prisma + Redis + TypeScript",
   "type": "module",
@@ -32,7 +32,8 @@
     "dotenv": "^16.5.0",
     "fastify": "^5.2.2",
     "fastify-plugin": "^5.0.0",
-    "langchain": "^0.3.0"
+    "langchain": "^0.3.0",
+    "monorepo-code-common": "workspace:*"
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.7",
