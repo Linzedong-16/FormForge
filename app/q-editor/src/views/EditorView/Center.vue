@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import draggable from "vuedraggable";
 
-import { computed, nextTick, ref, type ComponentPublicInstance, onMounted, onUnmounted } from "vue";
+import { computed, nextTick, ref, type ComponentPublicInstance, onMounted, onUnmounted, provide } from "vue";
 import { useEditorStore } from "@/stores/useEditor";
 const store = useEditorStore();
 // 事件总监
@@ -36,6 +36,22 @@ import EventBus from "@/utils/eventBus";
 import { useSurveyNo } from "@/utils/hooks";
 import { Close } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import type { OptionsProps, PicLink } from "@/types";
+
+// 图片选择组件的图片上传回调
+// 业务组件（如 SinglePicSelect）内部的 PicItem 上传成功后会通过 inject 调用此函数，
+// 这里将图片链接写入「当前选中组件」options 配置中，并经 pinia 持久化到编辑器状态。
+// 说明：编辑图片题目时该组件必然已被选中（右侧才会显示对应编辑面板），故以 currentComponentIndex 定位组件。
+const getLink = (payload: PicLink) => {
+  const index = store.currentComponentIndex;
+  if (index === -1 || !store.coms[index]) {
+    ElMessage.warning("请先选中该图片题目组件后再上传图片");
+    return;
+  }
+  const optionsProps = store.coms[index]!.status.options as OptionsProps;
+  store.setPicLinkByIndex(optionsProps, payload);
+};
+provide("getLink", getLink);
 
 const centerContainer = ref<HTMLElement | null>(null);
 

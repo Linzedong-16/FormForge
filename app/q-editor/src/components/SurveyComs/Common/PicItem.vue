@@ -5,9 +5,8 @@
       <div class="top flex justify-content-center align-items-center">
         <el-upload
           class="avatar-uploader"
-          action="/api/q-editor/upload"
-          name="image"
           :show-file-list="false"
+          :http-request="customUpload"
           :on-success="handleAvatarSuccess"
           :before-upload="beforeAvatarUpload"
         >
@@ -31,7 +30,8 @@
 import { ref, inject, watch } from "vue";
 import { Upload } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import type { UploadProps } from "element-plus";
+import type { UploadProps, UploadRequestOptions } from "element-plus";
+import { uploadImage } from "@/api/upload";
 const props = defineProps({
   picTitle: {
     type: String,
@@ -56,6 +56,19 @@ interface GetLinkFn {
 const getLink = inject("getLink", () => {
   console.warn("getLink not provided, image upload functionality will be limited");
 }) as GetLinkFn;
+// 自定义上传：使用 api 层提取出的 uploadImage 接口替代 el-upload 的默认上传逻辑
+// 上传成功后，通过 options.onSuccess 触发组件的 on-success 回调（handleAvatarSuccess），复用原有处理链路
+const customUpload = async (options: UploadRequestOptions) => {
+  try {
+    const data = await uploadImage(options.file);
+    options.onSuccess?.(data);
+    return data;
+  } catch (error) {
+    ElMessage.error("图片上传失败");
+    options.onError?.(error as Parameters<NonNullable<typeof options.onError>>[0]);
+    throw error;
+  }
+};
 // 上传成功的回调
 const handleAvatarSuccess: UploadProps["onSuccess"] = async response => {
   console.log(response, "response");
