@@ -8,6 +8,7 @@ import textNodeDefaultStatus from "./remark/TextNote";
 import textInputDefaultStatus from "./input/TextInput";
 import dateTimeDefaultStatus from "./advanced/DateTime";
 import rateScoreDefaultStatus from "./advanced/RateScore";
+import cascaderDefaultStatus from "./advanced/Cascader";
 
 import type { Status } from "@/types";
 
@@ -43,6 +44,7 @@ export const defaultStatusMap: DefaultStatusMap = {
   // 高级组件
   "date-time": dateTimeDefaultStatus,
   "rate-score": rateScoreDefaultStatus,
+  cascader: cascaderDefaultStatus,
   // 联系信息组件
   "personal-info-address": textInputDefaultStatus,
   "personal-info-tel": textInputDefaultStatus,

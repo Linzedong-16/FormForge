@@ -25,6 +25,7 @@ import { computed, provide, watch } from "vue";
 import { ElMessage } from "element-plus";
 import { useRoute } from "vue-router";
 import { isPicLink, isRateScoreDesc, type OptionsProps, type PicLink, type TextProps, type TypeStatus } from "@/types";
+import type { CascaderEditPayload } from "@/stores/actions";
 import { changeEditorIsShowStatus } from "@/utils";
 
 // 数据仓库
@@ -90,6 +91,15 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
         break;
       } else {
         store.addOption(currentCom.value.status[configKey] as OptionsProps);
+      }
+      break;
+    }
+    case "cascaderOptions": {
+      // 多级联动题：布尔切换地址/自定义模式，对象则为级联树的增删改
+      if (typeof payload === "boolean") {
+        store.setIsUse(currentCom.value.status[configKey] as OptionsProps, payload);
+      } else if (typeof payload === "object" && payload !== null) {
+        store.setCascaderOptions(currentCom.value.status[configKey] as OptionsProps, payload as CascaderEditPayload);
       }
       break;
     }

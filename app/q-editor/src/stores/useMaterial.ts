@@ -12,7 +12,8 @@ import {
   setColor,
   setPicLinkByIndex,
   setIsUse,
-  setRateScoreDesc
+  setRateScoreDesc,
+  setCascaderOptions
 } from "./actions";
 import type { Material, Status } from "@/types";
 import { updateInitStatusBeforeAdd } from "@/utils";
@@ -75,6 +76,7 @@ export const useMaterialStore = defineStore("materialStore", {
       // 高级组件
       "date-time": defaultStatusMap["date-time"]!(),
       "rate-score": defaultStatusMap["rate-score"]!(),
+      cascader: defaultStatusMap["cascader"]!(),
       // 联系信息组件
       "personal-info-address": initializedStates["personal-info-address"],
       "personal-info-tel": initializedStates["personal-info-tel"],
@@ -98,6 +100,7 @@ export const useMaterialStore = defineStore("materialStore", {
     setSize,
     // 比分选项组件的设置项
     setIsUse,
-    setRateScoreDesc
+    setRateScoreDesc,
+    setCascaderOptions
   }
 });

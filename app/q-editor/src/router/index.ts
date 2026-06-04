@@ -75,6 +75,11 @@ const router = createRouter({
               path: "/rate-score",
               name: "rate-score",
               component: () => import("@/components/SurveyComs/Materials/AdvancedComs/RateScore.vue")
+            },
+            {
+              path: "/cascader",
+              name: "cascader",
+              component: () => import("@/components/SurveyComs/Materials/AdvancedComs/Cascader.vue")
             }
           ]
         },

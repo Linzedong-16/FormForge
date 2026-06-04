@@ -13,6 +13,9 @@ export {};
 declare module 'vue' {
   export interface GlobalComponents {
     ButtonGroup: typeof import('./src/components/SurveyComs/EditItems/ButtonGroup.vue')['default']
+    Cascader: typeof import('./src/components/SurveyComs/Materials/AdvancedComs/Cascader.vue')['default']
+    CascaderOptionNode: typeof import('./src/components/SurveyComs/EditItems/CascaderOptionNode.vue')['default']
+    CascaderOptionsEditor: typeof import('./src/components/SurveyComs/EditItems/CascaderOptionsEditor.vue')['default']
     ColorEditor: typeof import('./src/components/SurveyComs/EditItems/ColorEditor.vue')['default']
     DateTime: typeof import('./src/components/SurveyComs/Materials/AdvancedComs/DateTime.vue')['default']
     DateTimeTypeEditor: typeof import('./src/components/SurveyComs/EditItems/DateTimeTypeEditor.vue')['default']
@@ -21,6 +24,7 @@ declare module 'vue' {
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElButtonGroup: typeof import('element-plus/es')['ElButtonGroup']
+    ElCascader: typeof import('element-plus/es')['ElCascader']
     ElCheckbox: typeof import('element-plus/es')['ElCheckbox']
     ElCheckboxGroup: typeof import('element-plus/es')['ElCheckboxGroup']
     ElColorPicker: typeof import('element-plus/es')['ElColorPicker']
@@ -72,6 +76,9 @@ declare module 'vue' {
 // For TSX support
 declare global {
   const ButtonGroup: (typeof import("./src/components/SurveyComs/EditItems/ButtonGroup.vue"))["default"];
+  const Cascader: (typeof import("./src/components/SurveyComs/Materials/AdvancedComs/Cascader.vue"))["default"];
+  const CascaderOptionNode: (typeof import("./src/components/SurveyComs/EditItems/CascaderOptionNode.vue"))["default"];
+  const CascaderOptionsEditor: (typeof import("./src/components/SurveyComs/EditItems/CascaderOptionsEditor.vue"))["default"];
   const ColorEditor: (typeof import("./src/components/SurveyComs/EditItems/ColorEditor.vue"))["default"];
   const DateTime: (typeof import("./src/components/SurveyComs/Materials/AdvancedComs/DateTime.vue"))["default"];
   const DateTimeTypeEditor: (typeof import("./src/components/SurveyComs/EditItems/DateTimeTypeEditor.vue"))["default"];
@@ -80,6 +87,7 @@ declare global {
   const ElAvatar: (typeof import("element-plus/es"))["ElAvatar"];
   const ElButton: (typeof import("element-plus/es"))["ElButton"];
   const ElButtonGroup: (typeof import("element-plus/es"))["ElButtonGroup"];
+  const ElCascader: (typeof import("element-plus/es"))["ElCascader"];
   const ElCheckbox: (typeof import("element-plus/es"))["ElCheckbox"];
   const ElCheckboxGroup: (typeof import("element-plus/es"))["ElCheckboxGroup"];
   const ElColorPicker: (typeof import("element-plus/es"))["ElColorPicker"];

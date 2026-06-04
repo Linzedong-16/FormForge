@@ -29,6 +29,7 @@ export type SurveyComName =
   | "personal-info-career"
   | "rate-score"
   | "date-time"
+  | "cascader"
   | "personal-info-birth"
   | "personal-info-collage"
   | "personal-info-major"
@@ -52,6 +53,7 @@ export type EditComName =
   | "pic-options-editor"
   | "date-time-type-editor"
   | "rate-text-editor"
+  | "cascader-options-editor"
   | "options-editor";
 
 export type componentName = Material | EditComName;
@@ -80,6 +82,7 @@ const SurveyComNameArr: SurveyComName[] = [
   "personal-info-career",
   "rate-score",
   "date-time",
+  "cascader",
   "personal-info-birth",
   "personal-info-collage",
   "personal-info-major",

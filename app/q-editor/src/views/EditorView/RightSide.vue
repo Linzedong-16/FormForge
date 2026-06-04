@@ -19,12 +19,13 @@ import EditPannel from "@/components/SurveyComs/EditItems/EditPannel.vue";
 import { ElMessage } from "element-plus";
 import type { OptionsProps, OptionsStatus, PicLink, TextProps, TypeStatus } from "@/types";
 import { isPicLink, IsTypeStatus, IsOptionsStatus } from "@/types";
+import type { CascaderEditPayload } from "@/stores/actions";
 import { changeEditorIsShowStatus } from "@/utils";
 
 const currentCom = computed(() => store.coms[store.currentComponentIndex]);
 
 // TODO: 完善 updateStatus 方法 -> 映射到EditorStore的方法
-const updateStatus = (configKey: string, payload?: number | string | boolean | PicLink) => {
+const updateStatus = (configKey: string, payload?: number | string | boolean | PicLink | object) => {
   // 拿到新的状态数据之后，就应该去修改仓库里面的数据
   switch (configKey) {
     case "type": {
@@ -58,6 +59,15 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | P
           // 说明是新增选项
           store.addOption(currentCom.value!.status[configKey] as OptionsProps);
         }
+      break;
+    }
+    case "cascaderOptions": {
+      // 多级联动题：布尔切换地址/自定义模式，对象则为级联树的增删改
+      if (typeof payload === "boolean") {
+        store.setIsUse(currentCom.value!.status[configKey] as OptionsProps, payload);
+      } else if (typeof payload === "object" && payload !== null) {
+        store.setCascaderOptions(currentCom.value!.status[configKey] as OptionsProps, payload as CascaderEditPayload);
+      }
       break;
     }
     case "position": {

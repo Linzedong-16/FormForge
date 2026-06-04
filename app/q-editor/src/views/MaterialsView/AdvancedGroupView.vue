@@ -2,6 +2,7 @@
   <Layout>
     <Router-Link to="/rate-score" class="link-item mb-15" exact-active-class="link-item-active">评价/打分</Router-Link>
     <Router-Link to="/date-time" class="link-item mb-15" exact-active-class="link-item-active">日期/时间</Router-Link>
+    <Router-Link to="/cascader" class="link-item mb-15" exact-active-class="link-item-active">多级联动</Router-Link>
   </Layout>
 </template>
 

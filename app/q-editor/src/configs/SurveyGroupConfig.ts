@@ -17,7 +17,8 @@ export const SurveyComsList = [
     icon: Files,
     list: [
       { materialName: "date-time", comName: "日期时间" },
-      { materialName: "rate-score", comName: "评分" }
+      { materialName: "rate-score", comName: "评分" },
+      { materialName: "cascader", comName: "多级联动" }
     ]
   },
   {

@@ -12,7 +12,8 @@ import {
   setRateScoreDesc,
   setSize,
   setTextStatus,
-  setWeight
+  setWeight,
+  setCascaderOptions
 } from "./actions";
 import { saveSurvey, updateSurveyById } from "@/db/operation";
 import { initStore } from "@/configs/defaultStatus/initStatus";
@@ -59,6 +60,7 @@ export const useEditorStore = defineStore("editor", {
     setColor,
     setIsUse,
     setRateScoreDesc,
+    setCascaderOptions,
     addCom(newCom: Status) {
       this.coms.push(newCom);
       this.currentComponentIndex = -1;

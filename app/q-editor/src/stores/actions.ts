@@ -4,8 +4,11 @@ import {
   isStringArray,
   type OptionsProps,
   type PicLink,
-  type TextProps
+  type TextProps,
+  type CascaderOptionItem,
+  type CascaderStatusArr
 } from "@/types";
+import { v4 as uuidv4 } from "uuid";
 export function setTextStatus(textProps: TextProps, text: string) {
   textProps.status = text;
 }
@@ -79,5 +82,50 @@ export function setIsUse(optionProps: OptionsProps, isUse: boolean) {
 export function setRateScoreDesc(optionProps: OptionsProps, payload: { index: number; val: string }) {
   if (isRateScoreDesc(optionProps.status)) {
     optionProps.status[payload.index] = payload.val;
+  }
+}
+
+// 多级联动题：自定义级联树的增/删/改 payload
+export type CascaderEditPayload =
+  | { action: "add"; path: number[] }
+  | { action: "remove"; path: number[] }
+  | { action: "edit"; path: number[]; label: string };
+
+// 按索引路径定位级联树节点
+function getCascaderNodeByPath(tree: CascaderStatusArr, path: number[]): CascaderOptionItem | undefined {
+  let nodes: CascaderStatusArr | undefined = tree;
+  let node: CascaderOptionItem | undefined;
+  for (const i of path) {
+    if (!nodes) return undefined;
+    node = nodes[i];
+    nodes = node?.children;
+  }
+  return node;
+}
+
+// 自定义级联树的增删改：cascaderOptions.status 始终为级联树（CascaderStatusArr）
+export function setCascaderOptions(optionProps: OptionsProps, payload: CascaderEditPayload) {
+  const tree = optionProps.status as CascaderStatusArr;
+  const { action, path } = payload;
+  if (action === "add") {
+    const newNode: CascaderOptionItem = { label: "新选项", value: uuidv4() };
+    if (path.length === 0) {
+      // 顶层新增一级选项
+      tree.push(newNode);
+    } else {
+      const target = getCascaderNodeByPath(tree, path);
+      if (target) {
+        if (!target.children) target.children = [];
+        target.children.push(newNode);
+      }
+    }
+  } else if (action === "remove") {
+    // 定位父级数组与索引后删除
+    const parentArr = path.length === 1 ? tree : getCascaderNodeByPath(tree, path.slice(0, -1))?.children;
+    const idx = path[path.length - 1];
+    if (parentArr && idx !== undefined) parentArr.splice(idx, 1);
+  } else if (action === "edit") {
+    const target = getCascaderNodeByPath(tree, path);
+    if (target) target.label = payload.label;
   }
 }

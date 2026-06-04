@@ -16,10 +16,18 @@ export type PicTitleDescStatusArr = Array<{
   value: string;
 }>;
 
+// 级联选项节点（树形，深度最高 4 级），用于多级联动题的自定义模式
+export interface CascaderOptionItem {
+  label: string;
+  value: string;
+  children?: CascaderOptionItem[];
+}
+export type CascaderStatusArr = CascaderOptionItem[];
+
 export interface TextProps extends BaseProps {
   status: string;
 }
-export type OptionsStatusArr = StringStatusArr | ValueStatusArr | PicTitleDescStatusArr;
+export type OptionsStatusArr = StringStatusArr | ValueStatusArr | PicTitleDescStatusArr | CascaderStatusArr;
 export interface OptionsProps extends BaseProps {
   status: OptionsStatusArr;
   currentStatus: number;
@@ -47,6 +55,12 @@ export interface OptionsStatus extends BaseStatus {
 // 备注组件的设置项
 export interface TypeStatus extends BaseStatus {
   type: OptionsProps;
+}
+
+// 多级联动题的设置项：cascaderOptions 复用 OptionsProps，isUse 表示是否自定义模式，
+// status 在自定义模式下为级联树（CascaderStatusArr）
+export interface CascaderStatus extends BaseStatus {
+  cascaderOptions: OptionsProps;
 }
 
 /**
@@ -79,6 +93,18 @@ export function isPicLink(obj: object): obj is PicLink {
   return "link" in obj && "index" in obj;
 }
 
+// 确定 status 是级联节点数组（含 label + value，且无 status/picTitle，以区别于其它形态）
+export function isCascaderArr(status: OptionsStatusArr): status is CascaderStatusArr {
+  return (
+    Array.isArray(status) &&
+    typeof status[0] === "object" &&
+    "label" in status[0] &&
+    "value" in status[0] &&
+    !("status" in status[0]) &&
+    !("picTitle" in status[0])
+  );
+}
+
 export function isRateScoreDesc(payload: object): payload is { index: number; val: string } {
   return "index" in payload && "val" in payload;
 }
@@ -87,7 +113,7 @@ export function isOptionsProps(props: TextProps | OptionsProps): props is Option
   return props && Array.isArray(props.status);
 }
 
-export type StatusArray = StringStatusArr | ValueStatusArr | PicTitleDescStatusArr;
+export type StatusArray = StringStatusArr | ValueStatusArr | PicTitleDescStatusArr | CascaderStatusArr;
 
 // 判断是否为选项组件的设置项
 export function IsOptionsStatus(status: BaseStatus): status is OptionsStatus {
