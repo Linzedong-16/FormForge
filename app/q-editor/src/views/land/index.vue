@@ -108,6 +108,29 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
 </script>
 
 <style scoped lang="scss">
+// —— 基础变量（与 element-theme.scss 保持一致）——
+$primary-color: #18181b;
+$primary-light-3: #3f3f46;
+$primary-light-5: #52525b;
+$border-color: #e4e4e7;
+$border-color-dark: #a1a1aa;
+$fill-color: #f4f4f5;
+$fill-color-blank: #ffffff;
+$text-color-primary: #18181b;
+$text-color-regular: #3f3f46;
+$border-radius-base: 6px;
+$border-radius-lg: 8px;
+$border-radius-round: 9999px;
+$box-shadow-light: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+$box-shadow:
+  0 4px 6px -1px rgb(0 0 0 / 0.1),
+  0 2px 4px -2px rgb(0 0 0 / 0.1);
+
+// —— 页面特有变量（深色主题）——
+$land-bg-primary: #0a5bd6;
+$land-text-primary: #ffffff;
+$land-accent-color: #1a73e8;
+
 .land-page {
   min-height: 100vh;
   width: 100%;
@@ -116,10 +139,12 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: #0a5bd6;
+  background-color: $land-bg-primary;
 }
 
-/* 顶部导航栏 */
+// ───────────────────────────────────────────────────────────────────────────
+// 顶部导航栏
+// ───────────────────────────────────────────────────────────────────────────
 .land-header {
   width: 100%;
   position: relative;
@@ -144,7 +169,7 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #fff;
+    color: $land-text-primary;
 
     .logo-icon {
       width: 28px;
@@ -156,7 +181,7 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
       svg {
         width: 100%;
         height: 100%;
-        color: #fff;
+        color: $land-text-primary;
       }
     }
 
@@ -174,13 +199,13 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
   }
 
   .nav-item {
-    color: #fff;
+    color: $land-text-primary;
     font-size: 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 2px;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.15s ease;
 
     &:hover {
       opacity: 0.8;
@@ -198,13 +223,13 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
   }
 
   .action-item {
-    color: #fff;
+    color: $land-text-primary;
     font-size: 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 4px;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.15s ease;
 
     &:hover {
       opacity: 0.8;
@@ -215,25 +240,37 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
     }
   }
 
+  // —— el-button 覆盖：白色实心按钮 ——
   .btn-free {
-    background-color: #fff;
-    color: #1a73e8;
+    background-color: $fill-color-blank;
+    color: $land-accent-color;
     border: none;
     font-weight: 500;
-    border-radius: 8px;
+    border-radius: $border-radius-lg;
     padding: 10px 20px;
     height: auto;
     font-size: 14px;
-    transition: all 0.2s ease;
+    box-shadow: $box-shadow-light;
+    transition:
+      background-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.15s ease;
 
     &:hover {
       background-color: rgba(255, 255, 255, 0.9);
       transform: translateY(-1px);
     }
+
+    &:focus-visible {
+      outline: 2px solid $land-accent-color;
+      outline-offset: 2px;
+    }
   }
 }
 
-/* 主体区域 */
+// ───────────────────────────────────────────────────────────────────────────
+// 主体区域
+// ───────────────────────────────────────────────────────────────────────────
 .land-main {
   position: relative;
   min-height: calc(100vh - 80px);
@@ -263,7 +300,7 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
   .hero-title {
     font-size: 42px;
     font-weight: 600;
-    color: #fff;
+    color: $land-text-primary;
     margin: 0 0 20px 0;
     letter-spacing: 2px;
     display: flex;
@@ -281,7 +318,7 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
       svg {
         width: 100%;
         height: 100%;
-        color: #fff;
+        color: $land-text-primary;
       }
     }
   }
@@ -300,44 +337,65 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
     margin-bottom: 48px;
   }
 
+  // —— el-button 覆盖：主操作按钮 ——
   .btn-experience {
-    background-color: #fff;
-    color: #1a73e8;
+    background-color: $fill-color-blank;
+    color: $land-accent-color;
     border: none;
     padding: 14px 28px;
     font-size: 15px;
-    border-radius: 10px;
+    border-radius: $border-radius-lg;
     height: auto;
     font-weight: 500;
-    transition: all 0.2s ease;
+    box-shadow: $box-shadow;
+    transition:
+      background-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.15s ease;
 
     &:hover {
       background-color: rgba(255, 255, 255, 0.9);
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $land-accent-color;
+      outline-offset: 2px;
     }
   }
 
+  // —— el-button 覆盖：次操作按钮（透明边框）——
   .btn-workspace {
     background-color: rgba(0, 30, 80, 0.5);
-    color: #fff;
+    color: $land-text-primary;
     border: 1px solid rgba(255, 255, 255, 0.4);
     padding: 14px 28px;
     font-size: 15px;
-    border-radius: 10px;
+    border-radius: $border-radius-lg;
     height: auto;
     font-weight: 500;
     backdrop-filter: blur(10px);
-    transition: all 0.2s ease;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.15s ease;
 
     &:hover {
       background-color: rgba(0, 30, 80, 0.7);
+      border-color: rgba(255, 255, 255, 0.6);
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba(255, 255, 255, 0.6);
+      outline-offset: 2px;
     }
   }
 
-  /* 搜索框 */
+  // ────────────────────────────────────────────────────────────────────────
+  // el-input 覆盖：搜索框样式
+  // ────────────────────────────────────────────────────────────────────────
   .search-box {
     width: 100%;
     max-width: 720px;
@@ -346,41 +404,60 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
     .search-input {
       :deep(.el-input__wrapper) {
         padding: 0 0 0 20px;
-        box-shadow: none;
+        box-shadow: 0 0 0 1px $border-color inset;
         border-radius: 12px 0 0 12px;
-        background-color: #fff;
+        background-color: $fill-color-blank;
         height: 56px;
+        transition:
+          box-shadow 0.15s ease,
+          background-color 0.15s ease;
+
+        &:hover {
+          box-shadow: 0 0 0 1px $border-color-dark inset;
+        }
+
+        &.is-focus {
+          box-shadow:
+            0 0 0 1px $land-accent-color inset,
+            0 0 0 3px rgba(26, 115, 232, 0.2);
+        }
       }
 
       :deep(.el-input__inner) {
         height: 56px;
         font-size: 16px;
-        color: #333;
+        color: $text-color-primary;
       }
 
       :deep(.el-input-group__append) {
-        background-color: #1a73e8;
-        border-color: #1a73e8;
+        background-color: $land-accent-color;
+        border-color: $land-accent-color;
         padding: 0;
         border-radius: 0 12px 12px 0;
         overflow: hidden;
       }
 
+      // —— el-button 覆盖：搜索按钮 ——
       .search-btn {
-        background-color: #1a73e8;
+        background-color: $land-accent-color;
         border: none;
         width: 64px;
         height: 56px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #fff;
+        color: $land-text-primary;
         border-radius: 0 12px 12px 0;
         padding: 0;
-        transition: background-color 0.2s ease;
+        transition: background-color 0.15s ease;
 
         &:hover {
-          background-color: #1557b0;
+          background-color: darken($land-accent-color, 10%);
+        }
+
+        &:focus-visible {
+          outline: 2px solid $fill-color-blank;
+          outline-offset: 2px;
         }
 
         .el-icon {
@@ -390,7 +467,9 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
     }
   }
 
-  /* 热门搜索标签 */
+  // ────────────────────────────────────────────────────────────────────────
+  // el-tag 覆盖：热门搜索标签（浅色透明样式）
+  // ────────────────────────────────────────────────────────────────────────
   .hot-tags {
     display: flex;
     align-items: center;
@@ -405,23 +484,30 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
     }
 
     .hot-tag {
-      background-color: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.3);
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 12px;
-      padding: 4px 14px;
-      height: auto;
-      border-radius: 12px;
-      transition: all 0.2s ease;
+      :deep(.el-tag) {
+        background-color: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 12px;
+        padding: 4px 14px;
+        height: auto;
+        border-radius: $border-radius-round;
+        transition:
+          background-color 0.15s ease,
+          border-color 0.15s ease;
 
-      &:hover {
-        background-color: rgba(255, 255, 255, 0.25);
-        cursor: pointer;
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.25);
+          border-color: rgba(255, 255, 255, 0.4);
+          cursor: pointer;
+        }
       }
     }
   }
 
-  /* 右侧浮动咨询 */
+  // ────────────────────────────────────────────────────────────────────────
+  // 右侧浮动咨询
+  // ────────────────────────────────────────────────────────────────────────
   .floating-consult {
     position: fixed;
     right: 20px;
@@ -430,12 +516,14 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    background-color: #1a73e8;
+    background-color: $land-accent-color;
     padding: 12px 8px;
     border-radius: 24px;
     cursor: pointer;
     z-index: 100;
-    transition: all 0.2s ease;
+    transition:
+      box-shadow 0.15s ease,
+      transform 0.15s ease;
     box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
 
     &:hover {
@@ -448,7 +536,7 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
       height: 36px;
       border-radius: 50%;
       overflow: hidden;
-      background-color: #fff;
+      background-color: $fill-color-blank;
 
       img {
         width: 100%;
@@ -459,7 +547,7 @@ const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", 
 
     .consult-text {
       font-size: 12px;
-      color: #fff;
+      color: $land-text-primary;
       font-weight: 500;
     }
   }
