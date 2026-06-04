@@ -1,4 +1,6 @@
-@import url('./common.scss');
-@import url('./reset.scss');
-@import url('./variables.scss');
-@import url('./coms.scss');
+@import url("./common.scss");
+@import url("./reset.scss");
+@import url("./variables.scss");
+@import url("./coms.scss");
+// Element Plus 主题覆盖（shadcn 亮色风格）—— 放最后确保覆盖组件库默认样式
+@import url("./element-theme.scss");

@@ -1,0 +1,392 @@
+/**
+ * Element Plus 主题覆盖 —— shadcn 亮色风格
+ *
+ * 设计目标：在不修改组件库源码的前提下，通过覆盖 Element Plus 的设计变量（--el-*）
+ * 与少量组件级样式，使整体 UI 接近 shadcn 的现代亮色主题：
+ *   - 近黑色（zinc-900）作为主色，搭配纯白前景
+ *   - 克制的中性灰（zinc 色阶）边框与填充
+ *   - 统一的小圆角、柔和的多层阴影
+ *   - 输入类组件聚焦时带 focus ring 光晕
+ *
+ * 本文件在 index.scss 中最后引入，确保覆盖 element-plus/dist/index.css 的默认值。
+ * 覆盖范围对应项目中实际使用到的组件：button / input / textarea / select / radio /
+ * checkbox / switch / rate / date-picker / color-picker / upload / table / dialog /
+ * link / tag / avatar / message / message-box / 以及通用弹层 popper。
+ */
+
+// ───────────────────────────────────────────────────────────────────────────
+// 1. 设计变量覆盖（颜色 / 圆角 / 阴影 / 文字 / 边框 / 填充）
+// ───────────────────────────────────────────────────────────────────────────
+:root {
+  // —— 主色：近黑色，hover/active 通过深浅派生 ——
+  --el-color-primary: #18181b; // zinc-900
+  --el-color-primary-light-3: #3f3f46; // hover（按钮主色变浅反馈）
+  --el-color-primary-light-5: #52525b;
+  --el-color-primary-light-7: #a1a1aa; // plain 边框
+  --el-color-primary-light-8: #d4d4d8;
+  --el-color-primary-light-9: #f4f4f5; // plain / default hover 背景
+  --el-color-primary-dark-2: #09090b; // active 更深
+
+  // —— 语义色（shadcn 调性）——
+  --el-color-success: #16a34a;
+  --el-color-warning: #f59e0b;
+  --el-color-danger: #ef4444;
+  --el-color-error: #ef4444;
+  --el-color-info: #71717a;
+
+  // —— 文字色阶 ——
+  --el-text-color-primary: #18181b;
+  --el-text-color-regular: #3f3f46;
+  --el-text-color-secondary: #71717a;
+  --el-text-color-placeholder: #a1a1aa;
+  --el-text-color-disabled: #d4d4d8;
+
+  // —— 边框色阶 ——
+  --el-border-color: #e4e4e7;
+  --el-border-color-light: #e4e4e7;
+  --el-border-color-lighter: #f4f4f5;
+  --el-border-color-extra-light: #fafafa;
+  --el-border-color-dark: #d4d4d8;
+  --el-border-color-darker: #a1a1aa;
+
+  // —— 填充色（hover 背景、占位背景等）——
+  --el-fill-color: #f4f4f5;
+  --el-fill-color-light: #f4f4f5;
+  --el-fill-color-lighter: #fafafa;
+  --el-fill-color-extra-light: #fafafa;
+  --el-fill-color-blank: #ffffff;
+
+  // —— 背景色 ——
+  --el-bg-color: #ffffff;
+  --el-bg-color-page: #f4f4f5;
+  --el-bg-color-overlay: #ffffff;
+
+  // —— 圆角 ——
+  --el-border-radius-base: 6px;
+  --el-border-radius-small: 4px;
+  --el-border-radius-round: 8px;
+  --el-border-radius-circle: 100%;
+
+  // —— 阴影（柔和的多层投影，贴近 shadcn 的 shadow-sm / shadow-md）——
+  --el-box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --el-box-shadow-light: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --el-box-shadow-lighter: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --el-box-shadow-dark: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  // —— 自定义：focus ring 颜色（输入类组件聚焦光晕）——
+  --shadcn-ring: rgb(24 24 27 / 0.12);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 2. Button —— shadcn 按钮质感
+// ───────────────────────────────────────────────────────────────────────────
+.el-button {
+  --el-button-font-weight: 500;
+  border-radius: var(--el-border-radius-base);
+  font-weight: 500;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  // 键盘聚焦时显示 ring，鼠标点击不显示（贴近 shadcn 的 focus-visible 行为）
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+// 默认按钮：白底 + 细边框 + 轻微阴影，hover 浅灰背景
+.el-button--default {
+  background-color: var(--el-fill-color-blank);
+  border-color: var(--el-border-color);
+  color: var(--el-text-color-primary);
+  box-shadow: var(--el-box-shadow-light);
+
+  &:hover,
+  &:focus {
+    background-color: var(--el-fill-color);
+    border-color: var(--el-border-color-dark);
+    color: var(--el-text-color-primary);
+  }
+  &:active {
+    background-color: var(--el-border-color-light);
+  }
+}
+
+// 主要按钮：实心深色 + 白字 + 轻微阴影
+.el-button--primary {
+  box-shadow: var(--el-box-shadow-light);
+}
+
+// 文字按钮去除多余背景
+.el-button.is-text {
+  &:hover {
+    background-color: var(--el-fill-color);
+  }
+}
+
+// 圆角按钮 / 按钮组细化
+.el-button.is-round {
+  border-radius: 9999px;
+}
+.el-button-group .el-button {
+  &:first-child {
+    border-top-left-radius: var(--el-border-radius-base);
+    border-bottom-left-radius: var(--el-border-radius-base);
+  }
+  &:last-child {
+    border-top-right-radius: var(--el-border-radius-base);
+    border-bottom-right-radius: var(--el-border-radius-base);
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 3. Input / Textarea —— 边框 + 聚焦 ring
+// ───────────────────────────────────────────────────────────────────────────
+.el-input {
+  --el-input-border-radius: var(--el-border-radius-base);
+}
+
+.el-input__wrapper {
+  border-radius: var(--el-border-radius-base);
+  box-shadow: 0 0 0 1px var(--el-border-color) inset;
+  transition:
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 0 0 1px var(--el-border-color-dark) inset;
+  }
+  // 聚焦：主色描边 + 外发光 ring
+  &.is-focus {
+    box-shadow:
+      0 0 0 1px var(--el-color-primary) inset,
+      0 0 0 3px var(--shadcn-ring) !important;
+  }
+}
+
+.el-textarea__inner {
+  border-radius: var(--el-border-radius-base);
+  box-shadow: 0 0 0 1px var(--el-border-color) inset;
+  transition: box-shadow 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 0 0 1px var(--el-border-color-dark) inset;
+  }
+  &:focus {
+    box-shadow:
+      0 0 0 1px var(--el-color-primary) inset,
+      0 0 0 3px var(--shadcn-ring);
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 4. Select —— 复用输入框观感 + 下拉项选中态
+// ───────────────────────────────────────────────────────────────────────────
+.el-select__wrapper {
+  border-radius: var(--el-border-radius-base);
+  box-shadow: 0 0 0 1px var(--el-border-color) inset;
+  transition: box-shadow 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 0 0 1px var(--el-border-color-dark) inset;
+  }
+  &.is-focused {
+    box-shadow:
+      0 0 0 1px var(--el-color-primary) inset,
+      0 0 0 3px var(--shadcn-ring) !important;
+  }
+}
+
+.el-select-dropdown__item {
+  border-radius: var(--el-border-radius-small);
+  margin: 2px 6px;
+  padding: 0 8px;
+
+  &.is-selected {
+    color: var(--el-color-primary);
+    font-weight: 600;
+    background-color: var(--el-fill-color);
+  }
+  &.is-hovering,
+  &:hover {
+    background-color: var(--el-fill-color);
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 5. Radio / Checkbox —— 选中态主色，复选框小圆角
+// ───────────────────────────────────────────────────────────────────────────
+.el-radio {
+  --el-radio-input-border-radius: 50%;
+}
+.el-radio__input.is-checked .el-radio__inner {
+  background-color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+}
+.el-radio__input.is-checked + .el-radio__label {
+  color: var(--el-text-color-primary);
+  font-weight: 500;
+}
+.el-radio__inner:hover {
+  border-color: var(--el-color-primary);
+}
+
+.el-checkbox__inner {
+  border-radius: var(--el-border-radius-small);
+}
+.el-checkbox__input.is-checked .el-checkbox__inner,
+.el-checkbox__input.is-indeterminate .el-checkbox__inner {
+  background-color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+}
+.el-checkbox__input.is-checked + .el-checkbox__label {
+  color: var(--el-text-color-primary);
+  font-weight: 500;
+}
+.el-checkbox__inner:hover {
+  border-color: var(--el-color-primary);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 6. Switch —— 开启态深色
+// ───────────────────────────────────────────────────────────────────────────
+.el-switch.is-checked .el-switch__core {
+  background-color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 7. Rate —— 保留温暖的金色高亮
+// ───────────────────────────────────────────────────────────────────────────
+.el-rate {
+  --el-rate-fill-color: #f59e0b;
+  --el-rate-star-color: #f59e0b;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 8. DatePicker / Popper 下拉面板 —— 圆角 + 阴影 + 选中态
+// ───────────────────────────────────────────────────────────────────────────
+.el-picker__popper,
+.el-popper {
+  border-radius: var(--el-border-radius-lg) !important;
+}
+.el-date-picker,
+.el-picker-panel {
+  border-radius: var(--el-border-radius-lg);
+}
+.el-date-table td.today .el-date-table-cell__text {
+  color: var(--el-color-primary);
+  font-weight: 700;
+}
+.el-date-table td.current:not(.disabled) .el-date-table-cell__text {
+  background-color: var(--el-color-primary);
+  border-radius: var(--el-border-radius-base);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 9. ColorPicker —— 圆角触发器
+// ───────────────────────────────────────────────────────────────────────────
+.el-color-picker__trigger {
+  border-radius: var(--el-border-radius-base);
+  border-color: var(--el-border-color);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 10. Upload —— 虚线框 hover 主色高亮
+// ───────────────────────────────────────────────────────────────────────────
+.el-upload {
+  border-radius: var(--el-border-radius-lg);
+}
+.el-upload--picture-card,
+.el-upload-dragger {
+  border-radius: var(--el-border-radius-lg);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--el-color-primary);
+    background-color: var(--el-fill-color-lighter);
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 11. Table —— 表头中性灰、行 hover、柔和分割线
+// ───────────────────────────────────────────────────────────────────────────
+.el-table {
+  --el-table-border-color: var(--el-border-color);
+  --el-table-header-bg-color: var(--el-fill-color-lighter);
+  --el-table-header-text-color: var(--el-text-color-secondary);
+  --el-table-row-hover-bg-color: var(--el-fill-color);
+
+  th.el-table__cell {
+    font-weight: 600;
+    font-size: var(--el-font-size-base);
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 12. Dialog / MessageBox —— 大圆角 + 柔和阴影
+// ───────────────────────────────────────────────────────────────────────────
+.el-dialog {
+  border-radius: var(--el-border-radius-lg);
+  box-shadow: var(--el-box-shadow-dark);
+}
+.el-message-box {
+  border-radius: var(--el-border-radius-lg);
+  box-shadow: var(--el-box-shadow-dark);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 13. Message —— 顶部提示圆角 + 阴影
+// ───────────────────────────────────────────────────────────────────────────
+.el-message {
+  border-radius: var(--el-border-radius-lg);
+  box-shadow: var(--el-box-shadow);
+  border-color: var(--el-border-color);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 14. Tooltip / Dropdown 菜单 —— 圆角 + 阴影
+// ───────────────────────────────────────────────────────────────────────────
+.el-popper.is-light {
+  border-radius: var(--el-border-radius-lg);
+  box-shadow: var(--el-box-shadow);
+  border-color: var(--el-border-color);
+}
+.el-dropdown-menu {
+  border-radius: var(--el-border-radius-lg);
+}
+.el-dropdown-menu__item {
+  border-radius: var(--el-border-radius-small);
+  margin: 2px 6px;
+
+  &:hover {
+    background-color: var(--el-fill-color);
+    color: var(--el-text-color-primary);
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 15. Tag / Link / Avatar —— 圆角与主色链接
+// ───────────────────────────────────────────────────────────────────────────
+.el-tag {
+  border-radius: var(--el-border-radius-base);
+}
+.el-link {
+  font-weight: 500;
+}
+.el-link.el-link--primary {
+  --el-link-text-color: var(--el-color-primary);
+  --el-link-hover-text-color: var(--el-color-primary-light-3);
+}
+.el-avatar {
+  border-radius: var(--el-border-radius-base);
+
+  &.is-circle {
+    border-radius: 50%;
+  }
+}

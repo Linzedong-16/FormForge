@@ -1,24 +1,25 @@
 :root {
-  --primary-color: #fb7299;
-  --success-color: #60ec1b;
-  --warning-color: #ff9f10;
-  --error-color: #ff3131;
-  --info-color: #758096;
-  --border-color: #ebeef5;
-  --background-color: #f5f7fa;
+  // 主色与语义色（shadcn 亮色风格：以近黑色作为主色）
+  --primary-color: #18181b;
+  --success-color: #16a34a;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --info-color: #71717a;
+  --border-color: #e4e4e7;
+  --background-color: #f4f4f5;
   --white: #fff;
   --black: #000;
-  --font-color: #303133;
-  --font-color-light: #606266;
-  --font-color-lighter: #909399;
-  --font-color-lightest: #d4d9e2;
+  --font-color: #18181b;
+  --font-color-light: #3f3f46;
+  --font-color-lighter: #71717a;
+  --font-color-lightest: #d4d4d8;
   --font-size-base: 14px;
   --font-size-sm: 12px;
   --font-size-lg: 16px;
-  --border-radius-base: 4px;
-  --border-radius-sm: 2px;
-  --border-radius-md: 4px;
-  --border-radius-lg: 6px;
+  --border-radius-base: 6px;
+  --border-radius-sm: 4px;
+  --border-radius-md: 6px;
+  --border-radius-lg: 8px;
   --padding-base: 15px;
   --padding-sm: 10px;
   --padding-lg: 20px;
@@ -30,17 +31,5 @@
   --line-height-sm: 1.33;
   --line-height-lg: 1.67;
 
-  // elementplus覆盖
-  --el-color-primary: #fb7299;
-  --el-color-primary-light-3: #cf5477; /* 主色浅3度 */
-  --el-color-primary-light-5: #ff6666; /* 主色浅5度 */
-  --el-color-primary-light-7: #8cb3ff; /* 主色浅7度 */
-  --el-color-primary-light-8: #a3c2ff; /* 主色浅8度 */
-  --el-color-primary-light-9: #c7d9ff; /* 主色浅9度 */
-  --el-color-primary-dark-2: #0e42c6; /* 主色深2度 */
-
-  --el-color-success: #01ef38;
-  --el-color-warning: #f3a154;
-  --el-color-danger: #f53f3f;
-  --el-color-info: #7e90a5;
+  // 注：Element Plus 组件库的变量覆盖与组件样式定制统一收敛到 element-theme.scss
 }
