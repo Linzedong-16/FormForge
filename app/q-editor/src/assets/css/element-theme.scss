@@ -390,3 +390,62 @@
     border-radius: 50%;
   }
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// 16. Pagination —— shadcn 风格分页器（页码圆角、当前页近黑高亮）
+// ───────────────────────────────────────────────────────────────────────────
+.el-pagination {
+  --el-pagination-button-color: var(--el-text-color-regular);
+  --el-pagination-hover-color: var(--el-color-primary);
+  font-weight: 500;
+  column-gap: 4px;
+
+  // 上一页 / 下一页 / 页码按钮统一为细边框白底小圆角
+  .btn-prev,
+  .btn-next,
+  .el-pager li {
+    border-radius: var(--el-border-radius-base);
+    min-width: 28px;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
+
+    &:hover {
+      background-color: var(--el-fill-color);
+      color: var(--el-text-color-primary);
+    }
+  }
+
+  // 带 background 时的页码按钮：浅色底 + 细边
+  &.is-background {
+    .btn-prev,
+    .btn-next,
+    .el-pager li {
+      background-color: var(--el-fill-color-blank);
+      border: 1px solid var(--el-border-color);
+
+      &:hover {
+        background-color: var(--el-fill-color);
+        border-color: var(--el-border-color-dark);
+      }
+    }
+
+    // 当前页：近黑实心 + 白字
+    .el-pager li.is-active {
+      background-color: var(--el-color-primary);
+      border-color: var(--el-color-primary);
+      color: #fff;
+
+      &:hover {
+        background-color: var(--el-color-primary-light-3);
+        color: #fff;
+      }
+    }
+  }
+
+  // 每页条数选择器复用已覆盖的 .el-select 样式，这里仅微调圆角
+  .el-pagination__sizes .el-select__wrapper {
+    border-radius: var(--el-border-radius-base);
+  }
+}

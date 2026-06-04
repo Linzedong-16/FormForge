@@ -16,8 +16,16 @@
       </div>
       <!-- 对应的问卷 -->
       <div class="content-group no-border">
-        <div v-for="(com, index) in store.coms" :key="index" class="content mb-10">
+        <div v-for="(com, index) in store.coms" v-show="isInCurrentPage(index)" :key="index" class="content mb-10">
           <component :is="com.type" :status="com.status" :serial-num="serialNum[index]" />
+        </div>
+        <!-- 分页器 -->
+        <div class="flex justify-content-center mt-20 no-print">
+          <SurveyPagination
+            v-model:current-page="store.currentPage"
+            v-model:page-size="store.pageSize"
+            :total="store.coms.length"
+          />
         </div>
       </div>
       <el-dialog v-model="dialogVisible" title="在线问卷" width="500">
@@ -47,9 +55,16 @@ import router from "@/router";
 import { canUsedForPDF } from "@/types";
 import { ElMessage } from "element-plus";
 import { v4 as uuidv4 } from "uuid";
+import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 
 const dialogVisible = ref(true);
 const shareLink = ref("");
+
+// 判断某个全局索引的组件是否属于当前分页
+const isInCurrentPage = (index: number) => {
+  const start = (store.currentPage - 1) * store.pageSize;
+  return index >= start && index < start + store.pageSize;
+};
 
 const copyLink = () => {
   const link = shareLink.value;
@@ -110,11 +125,12 @@ const generateOnlineSurvey = () => {
     },
     body: JSON.stringify({
       surveyId,
-      coms: store.coms
+      coms: store.coms,
+      pageSize: store.pageSize
     })
   });
-  // 生成成功之后，将分享链接设置为 surveyId
-  shareLink.value = `${window.location.origin}/survey/${surveyId}`;
+  // 生成成功之后，将分享链接设置为 surveyId，并通过 query 携带分页配置
+  shareLink.value = `${window.location.origin}/survey/${surveyId}?pageSize=${store.pageSize}`;
   dialogVisible.value = true;
   ElMessage.success("在线问卷生成成功");
 };

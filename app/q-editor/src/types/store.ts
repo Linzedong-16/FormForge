@@ -61,6 +61,8 @@ export interface EditorStore extends Actions {
 export type QuizData = {
   surveyCount: number;
   coms: Status[];
+  // 分页配置：每页展示的组件数量（在线问卷经分享链接 query 携带）
+  pageSize?: number;
 };
 // 该数组记录适合生成PDF的题目类型
 const PDFExcludeComs = ["rate-score", "date-time", "option-select"];

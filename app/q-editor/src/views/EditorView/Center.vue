@@ -7,6 +7,7 @@
     >
       <template #item="{ element, index }">
         <div
+          v-show="isInCurrentPage(index)"
           :key="element.id"
           :ref="el => (componentsRefs[index] = el)"
           class="content mb-10 relative"
@@ -145,6 +146,12 @@ const clickHandle = (index: number) => {
 
 // 组件编号
 const serialNum = computed(() => useSurveyNo(store.coms).value);
+
+// 判断某个全局索引的组件是否属于当前分页（仅控制可见性，不改变索引与业务逻辑）
+const isInCurrentPage = (index: number) => {
+  const start = (store.currentPage - 1) * store.pageSize;
+  return index >= start && index < start + store.pageSize;
+};
 
 // 删除选中的组件
 const removeCom = (index: number) => {

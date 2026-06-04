@@ -30,6 +30,7 @@ declare module 'vue' {
     ElInput: typeof import('element-plus/es')['ElInput']
     ElLink: typeof import('element-plus/es')['ElLink']
     ElOption: typeof import('element-plus/es')['ElOption']
+    ElPagination: typeof import('element-plus/es')['ElPagination']
     ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']
     ElRate: typeof import('element-plus/es')['ElRate']
@@ -58,6 +59,7 @@ declare module 'vue' {
     SizeEditor: typeof import('./src/components/SurveyComs/EditItems/SizeEditor.vue')['default']
     SurveyComGroup: typeof import('./src/components/Editor/SurveyComGroup.vue')['default']
     SurveyComItem: typeof import('./src/components/Editor/SurveyComItem.vue')['default']
+    SurveyPagination: typeof import('./src/components/Common/SurveyPagination.vue')['default']
     TextInput: typeof import('./src/components/SurveyComs/Materials/InputComs/TextInput.vue')['default']
     TextInputTypeEditor: typeof import('./src/components/SurveyComs/EditItems/TextInputTypeEditor.vue')['default']
     TextNote: typeof import('./src/components/SurveyComs/Materials/NoteComs/TextNote.vue')['default']
@@ -87,6 +89,7 @@ declare global {
   const ElInput: (typeof import("element-plus/es"))["ElInput"];
   const ElLink: (typeof import("element-plus/es"))["ElLink"];
   const ElOption: (typeof import("element-plus/es"))["ElOption"];
+  const ElPagination: (typeof import("element-plus/es"))["ElPagination"];
   const ElRadio: (typeof import("element-plus/es"))["ElRadio"];
   const ElRadioGroup: (typeof import("element-plus/es"))["ElRadioGroup"];
   const ElRate: (typeof import("element-plus/es"))["ElRate"];
@@ -115,6 +118,7 @@ declare global {
   const SizeEditor: (typeof import("./src/components/SurveyComs/EditItems/SizeEditor.vue"))["default"];
   const SurveyComGroup: (typeof import("./src/components/Editor/SurveyComGroup.vue"))["default"];
   const SurveyComItem: (typeof import("./src/components/Editor/SurveyComItem.vue"))["default"];
+  const SurveyPagination: (typeof import("./src/components/Common/SurveyPagination.vue"))["default"];
   const TextInput: (typeof import("./src/components/SurveyComs/Materials/InputComs/TextInput.vue"))["default"];
   const TextInputTypeEditor: (typeof import("./src/components/SurveyComs/EditItems/TextInputTypeEditor.vue"))["default"];
   const TextNote: (typeof import("./src/components/SurveyComs/Materials/NoteComs/TextNote.vue"))["default"];

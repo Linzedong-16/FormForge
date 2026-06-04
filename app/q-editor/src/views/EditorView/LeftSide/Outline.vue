@@ -49,6 +49,8 @@ const clickHandle = (index: number) => {
     store.setCurrentComponentIndex(-1);
   } else {
     store.setCurrentComponentIndex(index);
+    // 先切换到该题目所在的分页，再滚动定位，保证跨页导航可见
+    store.setCurrentPage(Math.floor(index / store.pageSize) + 1);
     EventBus.emit("scrollToCenter", index);
   }
 };

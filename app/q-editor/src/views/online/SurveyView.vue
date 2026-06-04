@@ -2,12 +2,20 @@
   <div v-if="surveyData">
     <div class="survey-container mc">
       <div class="mt-30 mb-20">题目数量：{{ surveyData.surveyCount }}</div>
-      <div v-for="(com, index) in surveyData.coms" :key="index" class="content mb-10">
+      <div v-for="(com, index) in surveyData.coms" v-show="isInCurrentPage(index)" :key="index" class="content mb-10">
         <component
           :is="com.type"
           :status="com.status"
           :serial-num="serialNum[index]"
           @update-answer="updateAnswer(index, $event)"
+        />
+      </div>
+      <!-- 分页器 -->
+      <div class="flex justify-content-center mt-20">
+        <SurveyPagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :total="surveyData.coms.length"
         />
       </div>
       <div class="mt-20 mb-20 text-center">
@@ -29,6 +37,7 @@ import type { QuizData } from "@/types";
 import { restoreComponentStatus } from "@/utils";
 // 组合式函数
 import { useSurveyNo } from "@/utils/hooks";
+import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 // 获取题目编号
 const serialNum = computed(() => useSurveyNo(surveyData.value?.coms).value);
 
@@ -36,6 +45,16 @@ const surveyData = ref<QuizData>({
   coms: [],
   surveyCount: 0
 });
+
+// 分页配置：每页组件数量来自分享链接 query（默认 10），当前页本地维护
+const currentPage = ref(1);
+const pageSize = ref(Number(route.query.pageSize) || 10);
+
+// 判断某个全局索引的组件是否属于当前分页（index 保持全局，答案收集逻辑不受影响）
+const isInCurrentPage = (index: number) => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return index >= start && index < start + pageSize.value;
+};
 
 onMounted(async () => {
   const surveyId = route.params.id;

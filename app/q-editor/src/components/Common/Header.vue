@@ -6,7 +6,7 @@
         <el-button :icon="ArrowLeft" circle size="small" @click="goHome" />
       </div>
       <div class="center flex align-items-center space-between pl-15 pr-15">
-        <div v-if="isEditor">
+        <div v-if="isEditor" class="flex align-items-center">
           <!-- 说明是编辑器，需要显示额外的按钮 -->
           <div v-if="id">
             <el-button type="warning" size="small" @click="updateSurvey">更新问卷</el-button>
@@ -15,6 +15,13 @@
             <el-button type="danger" size="small" @click="reset">重置问卷</el-button>
             <el-button type="success" size="small" @click="saveSurvey">保存问卷</el-button>
           </div>
+          <!-- 分页器：紧邻保存/更新按钮右侧，绑定仓库的分页配置 -->
+          <SurveyPagination
+            v-model:current-page="store.currentPage"
+            v-model:page-size="store.pageSize"
+            :total="store.coms.length"
+            class="ml-15"
+          />
         </div>
         <div v-if="id">
           <el-button type="primary" size="small" @click="preview">预览</el-button>
@@ -35,6 +42,7 @@ import { ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useEditorStore } from "@/stores/useEditor";
 import type { SurveyDBData } from "@/types";
+import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 const props = defineProps({
   isEditor: {
     type: Boolean,
@@ -80,7 +88,8 @@ const saveSurvey = () => {
         title: safeItem?.value as string,
         updateDate: new Date().getTime(),
         surveyCount: store.surveyCount,
-        coms: JSON.parse(JSON.stringify(store.coms))
+        coms: JSON.parse(JSON.stringify(store.coms)),
+        pageSize: store.pageSize
       };
       store
         .saveComs(surveyToSave)
@@ -103,7 +112,8 @@ const updateSurvey = () => {
     .updateComs(Number(props.id), {
       updateDate: new Date().getTime(),
       surveyCount: store.surveyCount,
-      coms: JSON.parse(JSON.stringify(store.coms))
+      coms: JSON.parse(JSON.stringify(store.coms)),
+      pageSize: store.pageSize
     } as SurveyDBData)
     .then(() => {
       ElMessage.success("问卷已更新");
