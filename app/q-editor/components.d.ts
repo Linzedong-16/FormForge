@@ -42,6 +42,7 @@ declare module 'vue' {
     ElSwitch: typeof import('element-plus/es')['ElSwitch']
     ElTable: typeof import('element-plus/es')['ElTable']
     ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
+    ElTag: typeof import('element-plus/es')['ElTag']
     ElText: typeof import('element-plus/es')['ElText']
     ElUpload: typeof import('element-plus/es')['ElUpload']
     Header: typeof import('./src/components/Common/Header.vue')['default']
@@ -105,6 +106,7 @@ declare global {
   const ElSwitch: (typeof import("element-plus/es"))["ElSwitch"];
   const ElTable: (typeof import("element-plus/es"))["ElTable"];
   const ElTableColumn: (typeof import("element-plus/es"))["ElTableColumn"];
+  const ElTag: (typeof import("element-plus/es"))["ElTag"];
   const ElText: (typeof import("element-plus/es"))["ElText"];
   const ElUpload: (typeof import("element-plus/es"))["ElUpload"];
   const Header: (typeof import("./src/components/Common/Header.vue"))["default"];
