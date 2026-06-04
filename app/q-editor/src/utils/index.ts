@@ -332,3 +332,19 @@ export const restoreComponentStatus = (coms: Status[]) => {
     }
   });
 };
+
+/**
+ * 在新标签页打开路由链接
+ * @param path - 路由路径（相对路径或绝对路径）
+ * @param baseUrl - 可选的基础 URL，默认为空（使用相对路径）
+ * @example
+ * // 在新标签页打开当前域名的 /editor 路径
+ * openNewTab('/editor');
+ *
+ * // 在新标签页打开完整 URL
+ * openNewTab('https://example.com/page');
+ */
+export const openNewTab = (path: string, baseUrl?: string): void => {
+  const url = baseUrl ? `${baseUrl}${path}` : path;
+  window.open(url, "_blank");
+};

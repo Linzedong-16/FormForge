@@ -11,7 +11,7 @@
                 <path d="M16 12L8 17l8 5 8-5-8-5z" fill="currentColor" opacity="0.6" />
               </svg>
             </span>
-            <span class="logo-text">腾讯问卷</span>
+            <span class="logo-text">Q问卷</span>
           </div>
           <nav class="nav-menu">
             <div v-for="item in navItems" :key="item.name" class="nav-item">
@@ -54,7 +54,7 @@
           <!-- 操作按钮 -->
           <div class="hero-actions">
             <el-button size="large" class="btn-experience">立即体验AI</el-button>
-            <el-button size="large" class="btn-workspace">进入工作台</el-button>
+            <el-button size="large" class="btn-workspace" @click="openNewTab('/home')">进入工作台</el-button>
           </div>
 
           <!-- 搜索框 -->
@@ -90,6 +90,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { ArrowDown, ChatDotRound, User, Search } from "@element-plus/icons-vue";
+import { openNewTab } from "@/utils";
 
 const searchText = ref("");
 
@@ -126,14 +127,15 @@ $box-shadow:
   0 4px 6px -1px rgb(0 0 0 / 0.1),
   0 2px 4px -2px rgb(0 0 0 / 0.1);
 
-// —— 页面特有变量（深色主题）——
-$land-bg-primary: #0a5bd6;
+// —— 页面特有变量（shadcn UI 黑灰风格）——
+$land-bg-primary: #09090b; // zinc-950
 $land-text-primary: #ffffff;
-$land-accent-color: #1a73e8;
+$land-accent-color: #18181b; // zinc-900
 
 .land-page {
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
+  overflow: hidden;
   position: relative;
   background-image: url("@/assets/imgs/editor_background.jpg");
   background-size: cover;
@@ -154,7 +156,7 @@ $land-accent-color: #1a73e8;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 40px;
+    padding: 12px 40px;
     max-width: 1400px;
     margin: 0 auto;
   }
@@ -262,6 +264,7 @@ $land-accent-color: #1a73e8;
     }
 
     &:focus-visible {
+      // shadcn 风格：使用 zinc 色 outline
       outline: 2px solid $land-accent-color;
       outline-offset: 2px;
     }
@@ -273,12 +276,12 @@ $land-accent-color: #1a73e8;
 // ───────────────────────────────────────────────────────────────────────────
 .land-main {
   position: relative;
-  min-height: calc(100vh - 80px);
+  height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 40px;
+  padding: 20px 40px;
   z-index: 1;
 
   .main-content {
@@ -298,19 +301,19 @@ $land-accent-color: #1a73e8;
   }
 
   .hero-title {
-    font-size: 42px;
+    font-size: 32px;
     font-weight: 600;
     color: $land-text-primary;
-    margin: 0 0 20px 0;
+    margin: 0 0 16px 0;
     letter-spacing: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
 
     .title-icon {
-      width: 48px;
-      height: 48px;
+      width: 36px;
+      height: 36px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -326,7 +329,7 @@ $land-accent-color: #1a73e8;
   .hero-subtitle {
     font-size: 16px;
     color: rgba(255, 255, 255, 0.9);
-    margin: 0 0 32px 0;
+    margin: 0 0 20px 0;
     font-weight: 400;
     letter-spacing: 1px;
   }
@@ -334,7 +337,7 @@ $land-accent-color: #1a73e8;
   .hero-actions {
     display: flex;
     gap: 16px;
-    margin-bottom: 48px;
+    margin-bottom: 24px;
   }
 
   // —— el-button 覆盖：主操作按钮 ——
@@ -342,8 +345,8 @@ $land-accent-color: #1a73e8;
     background-color: $fill-color-blank;
     color: $land-accent-color;
     border: none;
-    padding: 14px 28px;
-    font-size: 15px;
+    padding: 10px 20px;
+    font-size: 14px;
     border-radius: $border-radius-lg;
     height: auto;
     font-weight: 500;
@@ -355,10 +358,11 @@ $land-accent-color: #1a73e8;
 
     &:hover {
       background-color: rgba(255, 255, 255, 0.9);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
 
     &:focus-visible {
+      // shadcn 风格：使用 zinc 色 outline
       outline: 2px solid $land-accent-color;
       outline-offset: 2px;
     }
@@ -366,11 +370,12 @@ $land-accent-color: #1a73e8;
 
   // —— el-button 覆盖：次操作按钮（透明边框）——
   .btn-workspace {
-    background-color: rgba(0, 30, 80, 0.5);
+    // shadcn 风格：使用半透明黑色背景
+    background-color: rgba(0, 0, 0, 0.5);
     color: $land-text-primary;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    padding: 14px 28px;
-    font-size: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    font-size: 14px;
     border-radius: $border-radius-lg;
     height: auto;
     font-weight: 500;
@@ -382,9 +387,10 @@ $land-accent-color: #1a73e8;
       transform 0.15s ease;
 
     &:hover {
-      background-color: rgba(0, 30, 80, 0.7);
-      border-color: rgba(255, 255, 255, 0.6);
-      transform: translateY(-2px);
+      // shadcn 风格：hover 时使用更深的半透明黑色
+      background-color: rgba(0, 0, 0, 0.7);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
     }
 
     &:focus-visible {
@@ -399,7 +405,7 @@ $land-accent-color: #1a73e8;
   .search-box {
     width: 100%;
     max-width: 720px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 
     .search-input {
       :deep(.el-input__wrapper) {
@@ -407,7 +413,7 @@ $land-accent-color: #1a73e8;
         box-shadow: 0 0 0 1px $border-color inset;
         border-radius: 12px 0 0 12px;
         background-color: $fill-color-blank;
-        height: 56px;
+        height: 48px;
         transition:
           box-shadow 0.15s ease,
           background-color 0.15s ease;
@@ -417,19 +423,21 @@ $land-accent-color: #1a73e8;
         }
 
         &.is-focus {
+          // shadcn 风格：使用 zinc 色焦点框
           box-shadow:
             0 0 0 1px $land-accent-color inset,
-            0 0 0 3px rgba(26, 115, 232, 0.2);
+            0 0 0 3px rgba(24, 24, 27, 0.1);
         }
       }
 
       :deep(.el-input__inner) {
-        height: 56px;
-        font-size: 16px;
+        height: 48px;
+        font-size: 15px;
         color: $text-color-primary;
       }
 
       :deep(.el-input-group__append) {
+        // shadcn 风格：使用 zinc-900 背景
         background-color: $land-accent-color;
         border-color: $land-accent-color;
         padding: 0;
@@ -439,10 +447,11 @@ $land-accent-color: #1a73e8;
 
       // —— el-button 覆盖：搜索按钮 ——
       .search-btn {
+        // shadcn 风格：使用 zinc-900 背景
         background-color: $land-accent-color;
         border: none;
-        width: 64px;
-        height: 56px;
+        width: 48px;
+        height: 48px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -452,7 +461,8 @@ $land-accent-color: #1a73e8;
         transition: background-color 0.15s ease;
 
         &:hover {
-          background-color: darken($land-accent-color, 10%);
+          // shadcn 风格：hover 时使用更深的 zinc 色
+          background-color: #27272a;
         }
 
         &:focus-visible {
@@ -511,7 +521,7 @@ $land-accent-color: #1a73e8;
   .floating-consult {
     position: fixed;
     right: 20px;
-    bottom: 200px;
+    bottom: 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -524,11 +534,11 @@ $land-accent-color: #1a73e8;
     transition:
       box-shadow 0.15s ease,
       transform 0.15s ease;
-    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(26, 115, 232, 0.4);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
     }
 
     .consult-avatar {
