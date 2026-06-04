@@ -24,13 +24,18 @@ declare module 'vue' {
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElButtonGroup: typeof import('element-plus/es')['ElButtonGroup']
+    ElCarousel: typeof import('element-plus/es')['ElCarousel']
+    ElCarouselItem: typeof import('element-plus/es')['ElCarouselItem']
     ElCascader: typeof import('element-plus/es')['ElCascader']
     ElCheckbox: typeof import('element-plus/es')['ElCheckbox']
     ElCheckboxGroup: typeof import('element-plus/es')['ElCheckboxGroup']
     ElColorPicker: typeof import('element-plus/es')['ElColorPicker']
     ElDatePicker: typeof import('element-plus/es')['ElDatePicker']
     ElDialog: typeof import('element-plus/es')['ElDialog']
+    ElForm: typeof import('element-plus/es')['ElForm']
+    ElFormItem: typeof import('element-plus/es')['ElFormItem']
     ElIcon: typeof import('element-plus/es')['ElIcon']
+    ElImage: typeof import('element-plus/es')['ElImage']
     ElInput: typeof import('element-plus/es')['ElInput']
     ElLink: typeof import('element-plus/es')['ElLink']
     ElOption: typeof import('element-plus/es')['ElOption']
@@ -88,13 +93,18 @@ declare global {
   const ElAvatar: (typeof import("element-plus/es"))["ElAvatar"];
   const ElButton: (typeof import("element-plus/es"))["ElButton"];
   const ElButtonGroup: (typeof import("element-plus/es"))["ElButtonGroup"];
+  const ElCarousel: (typeof import("element-plus/es"))["ElCarousel"];
+  const ElCarouselItem: (typeof import("element-plus/es"))["ElCarouselItem"];
   const ElCascader: (typeof import("element-plus/es"))["ElCascader"];
   const ElCheckbox: (typeof import("element-plus/es"))["ElCheckbox"];
   const ElCheckboxGroup: (typeof import("element-plus/es"))["ElCheckboxGroup"];
   const ElColorPicker: (typeof import("element-plus/es"))["ElColorPicker"];
   const ElDatePicker: (typeof import("element-plus/es"))["ElDatePicker"];
   const ElDialog: (typeof import("element-plus/es"))["ElDialog"];
+  const ElForm: (typeof import("element-plus/es"))["ElForm"];
+  const ElFormItem: (typeof import("element-plus/es"))["ElFormItem"];
   const ElIcon: (typeof import("element-plus/es"))["ElIcon"];
+  const ElImage: (typeof import("element-plus/es"))["ElImage"];
   const ElInput: (typeof import("element-plus/es"))["ElInput"];
   const ElLink: (typeof import("element-plus/es"))["ElLink"];
   const ElOption: (typeof import("element-plus/es"))["ElOption"];

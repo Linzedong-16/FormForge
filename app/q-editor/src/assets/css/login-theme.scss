@@ -1,0 +1,261 @@
+/**
+ * 登录页面主题覆盖 —— shadcn 亮色风格
+ *
+ * 设计目标：使登录页面符合 shadcn UI 的现代亮色主题规范，
+ * 与 land/index.vue 保持视觉一致性。
+ *
+ * shadcn UI 亮色主题规范：
+ * - 主色：近黑色 zinc-900 (#18181b)
+ * - 边框：中性灰 zinc-200 (#e4e4e7)
+ * - 背景：浅灰 zinc-100 (#f4f4f5)
+ * - 文字：深灰层级
+ * - 圆角：统一 6-8px
+ * - 阴影：柔和多层阴影
+ * - 聚焦：带 ring 光晕
+ */
+
+// ───────────────────────────────────────────────────────────────────────────
+// 登录页面专用设计变量
+// ───────────────────────────────────────────────────────────────────────────
+:root {
+  // shadcn 亮色主题色
+  --login-primary: #18181b; // zinc-900 - 主色
+  --login-primary-light: #3f3f46; // zinc-700 - hover态
+  --login-surface: #ffffff; // 卡片背景
+  --login-surface-hover: #f4f4f5; // 卡片hover背景
+  --login-border: #e4e4e7; // zinc-200 - 边框
+  --login-border-dark: #d4d4d8; // zinc-300 - hover边框
+  --login-text: #18181b; // zinc-900 - 主文字
+  --login-text-light: #3f3f46; // zinc-700 - 次要文字
+  --login-text-muted: #71717a; // zinc-500 - 提示文字
+  --login-bg: #f4f4f5; // zinc-100 - 页面背景
+  --login-focus-ring: rgba(24, 24, 27, 0.12); // 聚焦光晕
+
+  // 轮播图渐变背景 - shadcn 暗色风格
+  --carousel-gradient-start: #18181b;
+  --carousel-gradient-end: #3f3f46;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 登录页面全局样式
+// ───────────────────────────────────────────────────────────────────────────
+.login-page {
+  min-height: 100vh;
+  background-color: var(--login-bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.login-logo {
+  position: fixed;
+  top: 24px;
+  left: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    color: var(--login-primary);
+  }
+  .logo-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--login-primary);
+  }
+}
+
+.carousel-section {
+  background: linear-gradient(135deg, var(--login-primary) 0%, var(--login-primary-light) 100%);
+  border-radius: 16px;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.form-card {
+  background-color: var(--login-surface);
+  border-radius: 16px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.login-footer {
+  color: var(--login-text-muted);
+  text-align: center;
+  padding: 20px 0;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 登录页面 Element Plus 组件覆盖
+// ───────────────────────────────────────────────────────────────────────────
+
+// 按钮 - shadcn 风格
+.login-form .el-button--primary,
+.register-form .el-button--primary {
+  background-color: var(--login-primary);
+  border-color: var(--login-primary);
+  color: #fff;
+  font-weight: 500;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+
+  &:hover {
+    background-color: var(--login-primary-light);
+    border-color: var(--login-primary-light);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--login-primary);
+    outline-offset: 2px;
+  }
+}
+
+// 按钮 - 次按钮/验证码按钮
+.login-form .el-button--default,
+.register-form .el-button--default {
+  background-color: var(--login-surface);
+  border-color: var(--login-border);
+  color: var(--login-text-light);
+  border-radius: 8px;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background-color: var(--login-surface-hover);
+    border-color: var(--login-border-dark);
+  }
+
+  &:disabled {
+    background-color: var(--login-surface-hover);
+    color: var(--login-text-muted);
+    cursor: not-allowed;
+  }
+}
+
+// 输入框 - 边框 + 聚焦 ring
+.login-form .el-input__wrapper,
+.register-form .el-input__wrapper {
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--login-border) inset;
+  background-color: var(--login-surface);
+  transition:
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 0 0 1px var(--login-border-dark) inset;
+  }
+
+  &.is-focus {
+    box-shadow:
+      0 0 0 1px var(--login-primary) inset,
+      0 0 0 3px var(--login-focus-ring);
+  }
+}
+
+// 输入框内部
+.login-form .el-input__inner,
+.register-form .el-input__inner {
+  color: var(--login-text);
+  font-size: 14px;
+}
+
+// 输入框图标
+.login-form .el-input__prefix,
+.register-form .el-input__prefix {
+  color: var(--login-text-muted);
+}
+
+// 复选框 - 选中态主色
+.login-form .el-checkbox__inner,
+.register-form .el-checkbox__inner {
+  border-radius: 4px;
+  border-color: var(--login-border);
+
+  &:hover {
+    border-color: var(--login-primary);
+  }
+}
+
+.login-form .el-checkbox__input.is-checked .el-checkbox__inner,
+.register-form .el-checkbox__input.is-checked .el-checkbox__inner {
+  background-color: var(--login-primary);
+  border-color: var(--login-primary);
+}
+
+.login-form .el-checkbox__label,
+.register-form .el-checkbox__label {
+  color: var(--login-text-muted);
+  font-size: 12px;
+}
+
+// 轮播图指示器
+.login-page :deep(.el-carousel__indicators) {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  margin: 0;
+  padding: 0;
+}
+
+.login-page :deep(.el-carousel__indicator) {
+  width: 20px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.4);
+  margin: 0 6px;
+  border: none;
+  opacity: 1;
+  transition: width 0.2s ease;
+
+  &.is-active {
+    background: #fff;
+    width: 30px;
+  }
+}
+
+// 轮播图容器
+.login-page :deep(.el-carousel) {
+  width: 100%;
+  height: 100%;
+}
+
+.login-page :deep(.el-carousel__container) {
+  height: 100%;
+}
+
+.login-page :deep(.el-carousel__item) {
+  width: 100%;
+  height: calc(100% - 40px);
+  background: transparent;
+}
+
+// 消息提示
+.login-form .el-message,
+.register-form .el-message {
+  border-radius: 8px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+// 弹窗
+.login-form .el-dialog,
+.register-form .el-dialog {
+  border-radius: 12px;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
