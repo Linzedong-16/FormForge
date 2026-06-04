@@ -33,3 +33,39 @@
 
   // 注：Element Plus 组件库的变量覆盖与组件样式定制统一收敛到 element-theme.scss
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// 编辑页三栏布局尺寸（响应式）
+// 单一数据源：左右侧栏宽度与边距统一在此声明，中部通过外边距引用这些变量自动避让，
+// 三栏因此天然不会重叠。媒体查询仅需调整侧栏宽度，中部即随之联动。
+// ───────────────────────────────────────────────────────────────────────────
+:root {
+  --editor-gap: 20px; // 侧栏距视口边缘 / 与中部之间的间距
+  --editor-left-width: 300px; // 左侧栏宽度
+  --editor-right-width: 360px; // 右侧栏宽度
+}
+
+// 中大屏笔记本：适当收窄侧栏
+@media (max-width: 1366px) {
+  :root {
+    --editor-left-width: 260px;
+    --editor-right-width: 300px;
+  }
+}
+
+// 小尺寸笔记本 / 横屏平板
+@media (max-width: 1100px) {
+  :root {
+    --editor-left-width: 220px;
+    --editor-right-width: 260px;
+  }
+}
+
+// 竖屏平板及更小：进一步压缩侧栏与间距，保证中部仍有可用空间
+@media (max-width: 860px) {
+  :root {
+    --editor-gap: 12px;
+    --editor-left-width: 180px;
+    --editor-right-width: 210px;
+  }
+}

@@ -47,10 +47,10 @@ const switchOutline = () => {
 
 <style scoped lang="scss">
 .left-side-container {
-  width: 300px;
+  width: var(--editor-left-width);
   height: calc(100vh - 50px - 40px);
   position: fixed;
-  left: 20px;
+  left: var(--editor-gap);
   top: 70px;
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--border-color);

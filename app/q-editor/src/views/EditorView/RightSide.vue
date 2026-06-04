@@ -129,10 +129,10 @@ provide("getLink", getLink);
 
 <style scoped lang="scss">
 .right-side-container {
-  width: 360px;
+  width: var(--editor-right-width);
   height: calc(100vh - 50px - 40px);
   position: fixed;
-  right: 20px;
+  right: var(--editor-gap);
   top: 70px;
   background-color: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--border-color);

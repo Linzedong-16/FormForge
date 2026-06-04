@@ -166,10 +166,15 @@ const removeCom = (index: number) => {
 
 <style scoped lang="scss">
 .center-container {
-  width: 50%;
+  // 中部区域通过左右外边距为两侧固定定位的侧栏让位，宽度自动填充中间剩余空间，
+  // 因此在各尺寸下都不会与侧栏重叠（侧栏宽度见 variables.scss，三栏由 CSS 变量联动）。
+  width: auto;
+  margin-top: 70px;
+  margin-bottom: 20px;
+  margin-left: calc(var(--editor-left-width) + var(--editor-gap) * 2);
+  margin-right: calc(var(--editor-right-width) + var(--editor-gap) * 2);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
-  margin: 70px auto;
   padding: 20px;
   background: rgba(255, 255, 255, 0.9);
   position: relative;
