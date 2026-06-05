@@ -1,7 +1,7 @@
 <template>
   <div class="login-page">
     <!-- 左上角logo -->
-    <div class="login-logo" style="margin-top: 1.5rem">
+    <div class="login-logo">
       <span class="logo-icon">
         <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M16 2L2 10v12l14 8 14-8V10L16 2z" stroke="currentColor" stroke-width="2" fill="none" />
@@ -17,17 +17,15 @@
         <el-carousel :interval="4000" :autoplay="true" :loop="true" :arrow="'never'" style="height: 100% !important">
           <el-carousel-item v-for="item in carouselItems" :key="item.id">
             <div class="carousel-content">
+              <!-- 图片区：占满整个 item 容器 -->
               <div class="carousel-image-wrapper">
                 <el-image :src="item.image" :alt="item.title" />
-                <div
-                  class="carousel-overlay"
-                  :style="{
-                    background: `linear-gradient(135deg, ${item.color}40 0%, ${item.color}20 100%)`
-                  }"
-                ></div>
+                <!-- 文字描述：半透明灰色蒙版条，紧贴图片底部 -->
+                <div class="carousel-caption">
+                  <h3 class="carousel-title">{{ item.title }}</h3>
+                  <p class="carousel-desc">{{ item.desc }}</p>
+                </div>
               </div>
-              <h3 class="carousel-title">{{ item.title }}</h3>
-              <p class="carousel-desc">{{ item.desc }}</p>
             </div>
           </el-carousel-item>
         </el-carousel>
@@ -119,61 +117,49 @@ const carouselItems = [
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  padding: 20px 30px;
 }
 
+// 图片区：占满整个 item 容器
 .carousel-image-wrapper {
-  position: absolute;
-  top: 40px;
-  left: 60px;
-  right: 60px;
-  height: 280px;
-  border-radius: 12px;
+  position: relative;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
 }
 
 .carousel-image-wrapper :deep(.el-image) {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   background: rgba(255, 255, 255, 0.1);
 }
 
-.carousel-overlay {
+// 文字蒙版条：绝对定位贴图片底部，半透明灰色背景承载文字
+.carousel-caption {
   position: absolute;
-  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  pointer-events: none;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, transparent 50%, rgba(0, 0, 0, 0.3) 100%);
+  box-sizing: border-box;
+  padding: 14px 20px 18px;
+  background: rgba(0, 0, 0, 0.4);
+  text-align: center;
 }
 
 .carousel-title {
-  position: absolute;
-  bottom: 60px;
-  left: 60px;
-  right: 60px;
-  font-size: 28px;
+  margin: 0 0 4px;
+  font-size: 20px;
   font-weight: 600;
+  line-height: 1.2;
   color: #fff;
-  margin: 0;
-  text-align: center;
-  z-index: 1;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .carousel-desc {
-  position: absolute;
-  bottom: 30px;
-  left: 60px;
-  right: 60px;
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.9);
   margin: 0;
-  text-align: center;
-  z-index: 1;
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .form-section {
@@ -301,8 +287,7 @@ const carouselItems = [
   }
 
   .login-logo {
-    top: 16px;
-    left: 20px;
+    padding: 16px 20px;
   }
 }
 </style>

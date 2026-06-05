@@ -57,7 +57,7 @@ import { ElMessage } from "element-plus";
 import { v4 as uuidv4 } from "uuid";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 
-const dialogVisible = ref(true);
+const dialogVisible = ref(false);
 const shareLink = ref("");
 
 // 判断某个全局索引的组件是否属于当前分页
@@ -115,6 +115,8 @@ const generatePDF = () => {
 
 // 生成在线问卷
 const generateOnlineSurvey = () => {
+  // TODO: 是否登录
+
   // 发送数组组件到服务端
   const surveyId = uuidv4();
   // 发送数组组件到服务端

@@ -18,7 +18,18 @@
 
 <script setup lang="ts">
 import SurveyComItem from "./SurveyComItem.vue";
-defineProps(["title", "icon", "list"]);
+import type { VueComType, Material } from "@/types";
+
+interface ListItem {
+  materialName: Material;
+  comName: string;
+}
+
+defineProps<{
+  title: string;
+  icon: VueComType;
+  list: ListItem[];
+}>();
 </script>
 
 <style scoped lang="scss">

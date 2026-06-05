@@ -18,7 +18,14 @@ const store = useEditorStore();
 // 事件总线
 import EventBus from "@/utils/eventBus";
 
-const props = defineProps(["item"]);
+interface Item {
+  materialName: Material;
+  comName: string;
+}
+
+const props = defineProps<{
+  item: Item;
+}>();
 const addSurveyCom = () => {
   const newSurveyComName = props.item.materialName as Material;
   if (!newSurveyComName) {

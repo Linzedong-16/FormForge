@@ -46,14 +46,14 @@
   flex-direction: column;
 }
 
+// logo 置于页面顶部正常文档流（非固定定位），独占一行，
+// 避免在小屏 / 矮屏下被居中的轮播卡片遮挡，且始终落在浅色页面背景上保证可见
 .login-logo {
-  position: fixed;
-  top: 24px;
-  left: 32px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  z-index: 1000;
+  padding: 20px 32px;
 
   .logo-icon {
     width: 32px;
