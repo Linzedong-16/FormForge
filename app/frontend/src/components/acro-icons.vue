@@ -7,6 +7,12 @@
 <script setup lang="ts">
 import {
   IconHome,
+  IconDashboard,
+  IconBarChart,
+  IconFolder,
+  IconHistory,
+  IconLock,
+  IconCloud,
   IconCodeSandbox,
   IconCode,
   IconShrink,
@@ -16,12 +22,21 @@ import {
   IconPhone,
   IconLink,
   IconInfo,
-  IconBook
+  IconBook,
+  IconUser,
+  IconSettings
 } from "@arco-design/web-vue/es/icon";
 import { computed } from "vue";
 
+// 图标名称到 Arco 图标组件的映射表
 const iconMap = {
   home: IconHome,
+  dashboard: IconDashboard,
+  barChart: IconBarChart,
+  folderOpen: IconFolder,
+  history: IconHistory,
+  lock: IconLock,
+  cloud: IconCloud,
   codeSandbox: IconCodeSandbox,
   code: IconCode,
   shrink: IconShrink,
@@ -31,8 +46,11 @@ const iconMap = {
   phone: IconPhone,
   link: IconLink,
   info: IconInfo,
-  book: IconBook
+  book: IconBook,
+  user: IconUser,
+  settings: IconSettings
 };
+
 type IconProps = {
   icon: keyof typeof iconMap;
 };

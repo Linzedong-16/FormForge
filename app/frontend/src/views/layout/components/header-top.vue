@@ -7,7 +7,7 @@
       </a-button>
       <div class="logo">
         <a-icon icon="logo" :size="28" />
-        <span class="logo-text">后台管理系统</span>
+        <span class="logo-text">问卷低代码平台</span>
       </div>
     </div>
     <div class="header-right">

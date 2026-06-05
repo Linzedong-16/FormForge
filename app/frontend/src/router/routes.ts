@@ -2,114 +2,63 @@ import type { RouteRecordRaw } from "vue-router";
 
 export interface RouteMeta {
   title: string; // 路由标题
-  icon: string; // 路由图标
+  icon: string; // 路由图标（对应 acro-icons 中的 key）
 }
 
+// 问卷低代码平台后台管理系统业务路由
 export const childrenRoutes: RouteRecordRaw[] = [
   {
     path: "",
-    name: "home",
-    component: () => import("../views/home/HomeView.vue"),
+    name: "dashboard",
+    component: () => import("../views/dashboard/DashboardView.vue"),
     meta: {
-      title: "首页",
-      icon: "home"
+      title: "平台概览",
+      icon: "dashboard"
     }
   },
   {
-    path: "/autopack",
-    name: "autopack",
-    component: () => import("../views/home/HomeView.vue"),
+    path: "/monitor",
+    name: "monitor",
+    component: () => import("../views/monitor/SurveyMonitorView.vue"),
     meta: {
-      title: "自动打包",
-      icon: "box"
-    },
-    children: [
-      {
-        path: "/seed",
-        name: "seed",
-        component: () => import("../views/home/HomeView.vue"),
-        meta: {
-          title: "Seed",
-          icon: "code"
-        }
-      },
-      {
-        path: "/similarity",
-        name: "similarity",
-        component: () => import("../views/home/HomeView.vue"),
-        meta: {
-          title: "相似度",
-          icon: "shrink"
-        }
-      },
-      {
-        path: "/landing",
-        name: "landing",
-        component: () => import("../views/home/HomeView.vue"),
-        meta: {
-          title: "落地页",
-          icon: "layout"
-        }
-      }
-    ]
-  },
-  {
-    path: "/download",
-    name: "download",
-    component: () => import("../views/home/HomeView.vue"),
-    meta: {
-      title: "包下载",
-      icon: "download"
-    },
-    children: [
-      {
-        path: "/rpk",
-        name: "rpk",
-        component: () => import("../views/home/HomeView.vue"),
-        meta: {
-          title: "RPK下载",
-          icon: "file"
-        }
-      },
-      {
-        path: "/app",
-        name: "app",
-        component: () => import("../views/home/HomeView.vue"),
-        meta: {
-          title: "APP下载",
-          icon: "phone"
-        }
-      }
-    ]
-  },
-  {
-    path: "/navigation",
-    name: "navigation",
-    component: () => import("../views/home/HomeView.vue"),
-    meta: {
-      title: "网站导航",
-      icon: "link"
+      title: "并发监控",
+      icon: "barChart"
     }
   },
   {
-    path: "/document",
-    name: "document",
-    component: () => import("../views/home/HomeView.vue"),
+    path: "/survey-resources",
+    name: "surveyResources",
+    component: () => import("../views/survey-resources/SurveyResourcesView.vue"),
     meta: {
-      title: "文档管理",
-      icon: "book"
+      title: "配置资源管理",
+      icon: "folderOpen"
     }
   },
   {
-    path: "/about",
-    name: "about",
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import("@/views/AboutView.vue"),
+    path: "/audit-logs",
+    name: "auditLogs",
+    component: () => import("../views/audit-logs/AuditLogsView.vue"),
     meta: {
-      title: "关于",
-      icon: "info"
+      title: "日志审计",
+      icon: "history"
+    }
+  },
+  {
+    path: "/statistics",
+    name: "statistics",
+    component: () => import("../views/statistics/SurveyStatisticsView.vue"),
+    meta: {
+      title: "答卷统计",
+      icon: "cloud"
+    }
+  },
+  {
+    path: "/api-tokens",
+    name: "apiTokens",
+    component: () => import("../views/api-tokens/ApiTokensView.vue"),
+    meta: {
+      title: "API Token 管理",
+      icon: "lock"
     }
   }
 ];

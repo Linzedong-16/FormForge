@@ -1,20 +1,21 @@
 <template>
-  <!-- TODO: 处理路由元数据中的图标、默认选中项 -->
   <a-menu
     :style="{ width: '100%', height: '100%' }"
     :inline-collapsed="isCollapsed"
-    breakpoint="xl"
+    :selected-keys="selectedKeys"
     style="border-right: 0"
     mode="vertical"
   >
+    <!-- 遍历路由配置，自动生成导航菜单项 -->
     <div v-for="route in routes" :key="route.path">
+      <!-- 无子路由：直接渲染菜单项 -->
       <a-menu-item v-if="!route.children?.length" :key="route.path" @click="handlePush(route.path)">
         <template #icon>
           <acro-icons :icon="(route.meta?.icon as any) || 'home'" />
         </template>
         {{ route?.meta?.title }}
-        <!-- 二级菜单 -->
       </a-menu-item>
+      <!-- 有子路由：渲染可展开的子菜单 -->
       <a-sub-menu v-else :key="`sub-${route.path}`">
         <template #icon>
           <acro-icons :icon="(route.meta?.icon as any) || 'home'" />
@@ -32,16 +33,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { useRoute } from "vue-router";
 import acroIcons from "@/components/acro-icons.vue";
 import { childrenRoutes } from "@/router/routes";
 import type { RouteRecordRaw } from "vue-router";
 import router from "@/router";
 
-const routes = ref<Array<RouteRecordRaw>>([]);
-onMounted(() => {
-  console.info("childrenRoutes:", childrenRoutes);
-  routes.value = childrenRoutes;
+const routes = ref<Array<RouteRecordRaw>>(childrenRoutes);
+const currentRoute = useRoute();
+
+// 根据当前路由路径计算高亮菜单项
+// 首页子路由 path 为 ""，但 vue-router 解析后为 "/"，需做映射
+const selectedKeys = computed(() => {
+  const path = currentRoute.path;
+  return [path === "/" ? "" : path];
 });
 
 // 定义属性
@@ -49,25 +55,25 @@ const props = defineProps<{
   collapsed?: boolean;
 }>();
 
-const handlePush = (path: string) => {
-  router.push(path);
-};
-
-// 侧边栏折叠状态
+// 侧边栏折叠状态，同步 props
 const isCollapsed = ref(props.collapsed || false);
 
-// 监听侧边栏切换事件
-const handleSidebarToggle = (event: CustomEvent<boolean>) => {
-  isCollapsed.value = event.detail;
-};
-
-// 监听props变化
 watch(
   () => props.collapsed,
   newVal => {
     isCollapsed.value = newVal || false;
   }
 );
+
+const handlePush = (path: string) => {
+  // 空路径对应首页 "/"
+  router.push(path || "/");
+};
+
+// 监听顶部栏折叠事件（window 事件方式兼容）
+const handleSidebarToggle = (event: CustomEvent<boolean>) => {
+  isCollapsed.value = event.detail;
+};
 
 onMounted(() => {
   window.addEventListener("sidebar-toggle", handleSidebarToggle as EventListener);
