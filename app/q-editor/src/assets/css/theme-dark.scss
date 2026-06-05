@@ -1,0 +1,131 @@
+/**
+ * 暗色主题 —— shadcn UI 暗色风格（zinc dark）
+ *
+ * 通过 `html.dark` 覆盖三套设计变量（项目通用 / Element Plus / 登录页），
+ * 配合 useTheme 切换 <html> 的 .dark 类，实现整体亮暗一键切换。
+ *
+ * shadcn dark 关键调性：
+ *   - 背景近黑 zinc-950 (#09090b)，卡片 zinc-900 (#18181b)
+ *   - 前景近白 (#fafafa)，主色为近白（按钮则配深色文字）
+ *   - 边框/填充 zinc-800 (#27272a)
+ */
+html.dark {
+  // ── 项目通用变量（variables.scss 的语义覆盖）──
+  --primary-color: #fafafa;
+  --success-color: #22c55e;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --info-color: #a1a1aa;
+  --border-color: #27272a;
+  --background-color: #09090b;
+  --white: #18181b; // 语义为「前景面板背景」，暗色下为深色卡片
+  --black: #ffffff;
+  --font-color: #fafafa;
+  --font-color-light: #d4d4d8;
+  --font-color-lighter: #a1a1aa;
+  --font-color-lightest: #52525b;
+
+  // ── Element Plus 颜色 ──
+  --el-color-primary: #fafafa;
+  --el-color-primary-light-3: #d4d4d8;
+  --el-color-primary-light-5: #a1a1aa;
+  --el-color-primary-light-7: #52525b;
+  --el-color-primary-light-8: #3f3f46;
+  --el-color-primary-light-9: #27272a;
+  --el-color-primary-dark-2: #ffffff;
+
+  --el-color-success: #22c55e;
+  --el-color-warning: #f59e0b;
+  --el-color-danger: #ef4444;
+  --el-color-error: #ef4444;
+  --el-color-info: #a1a1aa;
+
+  // ── 文字色阶 ──
+  --el-text-color-primary: #fafafa;
+  --el-text-color-regular: #e4e4e7;
+  --el-text-color-secondary: #a1a1aa;
+  --el-text-color-placeholder: #71717a;
+  --el-text-color-disabled: #52525b;
+
+  // ── 边框色阶 ──
+  --el-border-color: #27272a;
+  --el-border-color-light: #27272a;
+  --el-border-color-lighter: #232326;
+  --el-border-color-extra-light: #1f1f22;
+  --el-border-color-dark: #3f3f46;
+  --el-border-color-darker: #52525b;
+
+  // ── 填充色 ──
+  --el-fill-color: #27272a;
+  --el-fill-color-light: #232326;
+  --el-fill-color-lighter: #1f1f22;
+  --el-fill-color-extra-light: #1a1a1d;
+  --el-fill-color-blank: #18181b;
+
+  // ── 背景色 ──
+  --el-bg-color: #18181b;
+  --el-bg-color-page: #09090b;
+  --el-bg-color-overlay: #18181b;
+
+  // ── 聚焦 ring ──
+  --shadcn-ring: rgb(212 212 216 / 0.18);
+
+  // ── 登录页变量 ──
+  --login-primary: #fafafa;
+  --login-primary-light: #e4e4e7;
+  --login-surface: #18181b;
+  --login-surface-hover: #27272a;
+  --login-border: #27272a;
+  --login-border-dark: #3f3f46;
+  --login-text: #fafafa;
+  --login-text-light: #d4d4d8;
+  --login-text-muted: #a1a1aa;
+  --login-bg: #09090b;
+  --login-focus-ring: rgba(212, 212, 216, 0.18);
+  --carousel-gradient-start: #27272a;
+  --carousel-gradient-end: #3f3f46;
+
+  // 页面底色与默认前景
+  background-color: var(--el-bg-color-page);
+  color: var(--el-text-color-primary);
+}
+
+// 主色按钮在暗色下为近白底，文字需用深色（shadcn dark 的 primary-foreground）
+html.dark .el-button--primary {
+  --el-button-text-color: #18181b;
+  --el-button-hover-text-color: #18181b;
+  color: #18181b;
+}
+html.dark .login-form .el-button--primary,
+html.dark .register-form .el-button--primary {
+  color: #18181b;
+}
+
+// 编辑器三栏面板（原为硬编码半透明白）跟随暗色
+html.dark {
+  .left-side-container,
+  .right-side-container,
+  .center-container {
+    background: rgba(24, 24, 27, 0.92);
+  }
+}
+
+// 分页器当前页：暗色下为近白底，文字需深色（否则白底白字看不清）
+html.dark .el-pagination.is-background .el-pager li.is-active {
+  color: #18181b;
+
+  &:hover {
+    color: #18181b;
+  }
+}
+
+// 开关：暗色下 checked 轨道为近白色，圆点需深色；未选中轨道用暗灰 + 浅色圆点
+html.dark .el-switch {
+  --el-switch-off-color: #3f3f46;
+}
+html.dark .el-switch__action {
+  background-color: #fafafa;
+}
+html.dark .el-switch.is-checked .el-switch__action {
+  background-color: #18181b;
+}

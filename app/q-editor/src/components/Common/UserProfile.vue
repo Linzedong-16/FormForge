@@ -24,6 +24,19 @@
 
       <div class="panel-divider"></div>
 
+      <!-- 亮暗主题切换 -->
+      <div class="menu-item theme-item">
+        <div class="theme-label">
+          <el-icon class="menu-icon">
+            <component :is="isDark ? Moon : Sunny" />
+          </el-icon>
+          <span>{{ isDark ? "暗色模式" : "亮色模式" }}</span>
+        </div>
+        <el-switch :model-value="isDark" @change="onToggleTheme" />
+      </div>
+
+      <div class="panel-divider"></div>
+
       <!-- 菜单项 -->
       <div class="menu-item" @click="onSettings">
         <el-icon class="menu-icon"><Setting /></el-icon>
@@ -39,7 +52,14 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { Setting, SwitchButton } from "@element-plus/icons-vue";
+import { Setting, SwitchButton, Sunny, Moon } from "@element-plus/icons-vue";
+import { useTheme } from "@/utils/useTheme";
+
+// 亮暗主题切换
+const { isDark, toggleTheme } = useTheme();
+const onToggleTheme = (val: string | number | boolean) => {
+  toggleTheme(Boolean(val));
+};
 
 // 用户信息（占位数据，待业务 API 对接）
 const avatar = ref("http://47.94.168.252/upload/1759642363899.gif");
@@ -121,6 +141,22 @@ const onLogout = () => {};
   .menu-icon {
     font-size: 16px;
     color: var(--font-color-light);
+  }
+}
+
+// 主题切换项：左侧图标+文字，右侧开关，hover 不变背景（避免与开关交互冲突）
+.theme-item {
+  justify-content: space-between;
+  cursor: default;
+
+  &:hover {
+    background-color: transparent;
+  }
+
+  .theme-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 }
 </style>
