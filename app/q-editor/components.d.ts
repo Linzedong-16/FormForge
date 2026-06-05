@@ -37,6 +37,7 @@ declare module 'vue' {
     ElIcon: typeof import('element-plus/es')['ElIcon']
     ElImage: typeof import('element-plus/es')['ElImage']
     ElInput: typeof import('element-plus/es')['ElInput']
+    ElInputNumber: typeof import('element-plus/es')['ElInputNumber']
     ElLink: typeof import('element-plus/es')['ElLink']
     ElOption: typeof import('element-plus/es')['ElOption']
     ElPagination: typeof import('element-plus/es')['ElPagination']
@@ -44,6 +45,7 @@ declare module 'vue' {
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']
     ElRate: typeof import('element-plus/es')['ElRate']
     ElSelect: typeof import('element-plus/es')['ElSelect']
+    ElSlider: typeof import('element-plus/es')['ElSlider']
     ElSwitch: typeof import('element-plus/es')['ElSwitch']
     ElTable: typeof import('element-plus/es')['ElTable']
     ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
@@ -69,6 +71,8 @@ declare module 'vue' {
     SinglePicSelect: typeof import('./src/components/SurveyComs/Materials/SelectComs/SinglePicSelect.vue')['default']
     SingleSelect: typeof import('./src/components/SurveyComs/Materials/SelectComs/SingleSelect.vue')['default']
     SizeEditor: typeof import('./src/components/SurveyComs/EditItems/SizeEditor.vue')['default']
+    Slider: typeof import('./src/components/SurveyComs/Materials/AdvancedComs/Slider.vue')['default']
+    SliderConfigEditor: typeof import('./src/components/SurveyComs/EditItems/SliderConfigEditor.vue')['default']
     SurveyComGroup: typeof import('./src/components/Editor/SurveyComGroup.vue')['default']
     SurveyComItem: typeof import('./src/components/Editor/SurveyComItem.vue')['default']
     SurveyPagination: typeof import('./src/components/Common/SurveyPagination.vue')['default']
@@ -108,6 +112,7 @@ declare global {
   const ElIcon: (typeof import("element-plus/es"))["ElIcon"];
   const ElImage: (typeof import("element-plus/es"))["ElImage"];
   const ElInput: (typeof import("element-plus/es"))["ElInput"];
+  const ElInputNumber: (typeof import("element-plus/es"))["ElInputNumber"];
   const ElLink: (typeof import("element-plus/es"))["ElLink"];
   const ElOption: (typeof import("element-plus/es"))["ElOption"];
   const ElPagination: (typeof import("element-plus/es"))["ElPagination"];
@@ -115,6 +120,7 @@ declare global {
   const ElRadioGroup: (typeof import("element-plus/es"))["ElRadioGroup"];
   const ElRate: (typeof import("element-plus/es"))["ElRate"];
   const ElSelect: (typeof import("element-plus/es"))["ElSelect"];
+  const ElSlider: (typeof import("element-plus/es"))["ElSlider"];
   const ElSwitch: (typeof import("element-plus/es"))["ElSwitch"];
   const ElTable: (typeof import("element-plus/es"))["ElTable"];
   const ElTableColumn: (typeof import("element-plus/es"))["ElTableColumn"];
@@ -140,6 +146,8 @@ declare global {
   const SinglePicSelect: (typeof import("./src/components/SurveyComs/Materials/SelectComs/SinglePicSelect.vue"))["default"];
   const SingleSelect: (typeof import("./src/components/SurveyComs/Materials/SelectComs/SingleSelect.vue"))["default"];
   const SizeEditor: (typeof import("./src/components/SurveyComs/EditItems/SizeEditor.vue"))["default"];
+  const Slider: (typeof import("./src/components/SurveyComs/Materials/AdvancedComs/Slider.vue"))["default"];
+  const SliderConfigEditor: (typeof import("./src/components/SurveyComs/EditItems/SliderConfigEditor.vue"))["default"];
   const SurveyComGroup: (typeof import("./src/components/Editor/SurveyComGroup.vue"))["default"];
   const SurveyComItem: (typeof import("./src/components/Editor/SurveyComItem.vue"))["default"];
   const SurveyPagination: (typeof import("./src/components/Common/SurveyPagination.vue"))["default"];

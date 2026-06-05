@@ -58,6 +58,11 @@ export interface MatrixStatus extends BaseStatus {
   matrixRows: OptionsProps;
   matrixColumns: OptionsProps;
 }
+
+// 滑块题的设置项：sliderConfig.status 为 [最小值, 最大值, 步长] 的字符串数组
+export interface SliderStatus extends BaseStatus {
+  sliderConfig: OptionsProps;
+}
 // 备注组件的设置项
 export interface TypeStatus extends BaseStatus {
   type: OptionsProps;

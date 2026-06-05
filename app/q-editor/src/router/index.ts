@@ -95,6 +95,11 @@ const router = createRouter({
               path: "/matrix-single",
               name: "matrix-single",
               component: () => import("@/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue")
+            },
+            {
+              path: "/slider",
+              name: "slider",
+              component: () => import("@/components/SurveyComs/Materials/AdvancedComs/Slider.vue")
             }
           ]
         },

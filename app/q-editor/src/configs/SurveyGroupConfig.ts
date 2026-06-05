@@ -20,7 +20,8 @@ export const SurveyComsList: MaterialGroup[] = [
       { materialName: "date-time", comName: "日期时间" },
       { materialName: "rate-score", comName: "评分" },
       { materialName: "cascader", comName: "多级联动" },
-      { materialName: "matrix-single", comName: "矩阵单选" }
+      { materialName: "matrix-single", comName: "矩阵单选" },
+      { materialName: "slider", comName: "滑块" }
     ]
   },
   {

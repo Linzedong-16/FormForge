@@ -65,7 +65,7 @@ export type QuizData = {
   pageSize?: number;
 };
 // 该数组记录适合生成PDF的题目类型
-const PDFExcludeComs = ["rate-score", "date-time", "option-select", "cascader", "matrix-single"];
+const PDFExcludeComs = ["rate-score", "date-time", "option-select", "cascader", "matrix-single", "slider"];
 
 export function canUsedForPDF(value: string): boolean {
   return !PDFExcludeComs.includes(value);

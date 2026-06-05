@@ -6,6 +6,7 @@
     <Router-Link to="/matrix-single" class="link-item mb-15" exact-active-class="link-item-active"
       >矩阵单选</Router-Link
     >
+    <Router-Link to="/slider" class="link-item mb-15" exact-active-class="link-item-active">滑块</Router-Link>
   </Layout>
 </template>
 
