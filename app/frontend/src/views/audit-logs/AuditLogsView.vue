@@ -14,33 +14,25 @@
 
     <!-- 筛选工具栏 -->
     <a-card :bordered="false" :body-style="{ padding: '16px' }">
-      <a-row :gutter="16" align="center">
-        <a-col>
-          <a-range-picker v-model="dateRange" style="width: 280px" />
-        </a-col>
-        <a-col>
-          <a-select v-model="levelFilter" placeholder="日志级别" style="width: 130px" allow-clear>
-            <a-option value="info">INFO</a-option>
-            <a-option value="warn">WARN</a-option>
-            <a-option value="error">ERROR</a-option>
-          </a-select>
-        </a-col>
-        <a-col>
-          <a-select v-model="moduleFilter" placeholder="操作模块" style="width: 150px" allow-clear>
-            <a-option value="auth">认证授权</a-option>
-            <a-option value="survey">问卷管理</a-option>
-            <a-option value="resource">资源管理</a-option>
-            <a-option value="token">Token 管理</a-option>
-          </a-select>
-        </a-col>
-        <a-col>
-          <a-input-search v-model="userKeyword" placeholder="操作用户" style="width: 180px" allow-clear />
-        </a-col>
-        <a-col>
+      <div class="filter-toolbar">
+        <a-range-picker v-model="dateRange" style="width: 280px" />
+        <a-select v-model="levelFilter" placeholder="日志级别" style="width: 130px" allow-clear>
+          <a-option value="info">INFO</a-option>
+          <a-option value="warn">WARN</a-option>
+          <a-option value="error">ERROR</a-option>
+        </a-select>
+        <a-select v-model="moduleFilter" placeholder="操作模块" style="width: 150px" allow-clear>
+          <a-option value="auth">认证授权</a-option>
+          <a-option value="survey">问卷管理</a-option>
+          <a-option value="resource">资源管理</a-option>
+          <a-option value="token">Token 管理</a-option>
+        </a-select>
+        <a-input-search v-model="userKeyword" placeholder="操作用户" style="width: 180px" allow-clear />
+        <div class="filter-actions">
           <a-button type="primary" @click="handleFilter">查询</a-button>
           <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
-        </a-col>
-      </a-row>
+        </div>
+      </div>
     </a-card>
 
     <!-- 日志统计 -->
@@ -221,5 +213,20 @@ const handleExport = () => {
   margin: 0;
   font-size: 14px;
   color: var(--color-text-3);
+}
+
+/* 筛选工具栏：水平排列，自动换行 */
+.filter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 操作按钮组：保持同行 */
+.filter-actions {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
 }
 </style>

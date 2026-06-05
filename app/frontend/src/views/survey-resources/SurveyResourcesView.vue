@@ -14,29 +14,23 @@
 
     <!-- 操作工具栏 -->
     <a-card :bordered="false" :body-style="{ padding: '16px' }">
-      <a-row :gutter="16" align="center">
-        <a-col :flex="1">
-          <a-input-search
-            v-model="searchKeyword"
-            placeholder="搜索文件名或问卷标题..."
-            allow-clear
-            style="max-width: 340px"
-            @search="handleSearch"
-          />
-        </a-col>
-        <a-col>
-          <a-space>
-            <a-select v-model="statusFilter" placeholder="状态筛选" style="width: 120px" allow-clear>
-              <a-option value="active">已启用</a-option>
-              <a-option value="draft">草稿</a-option>
-              <a-option value="archived">已归档</a-option>
-            </a-select>
-            <a-button status="danger" :disabled="selectedRows.length === 0" @click="handleBatchDelete">
-              批量删除 {{ selectedRows.length > 0 ? `(${selectedRows.length})` : "" }}
-            </a-button>
-          </a-space>
-        </a-col>
-      </a-row>
+      <div class="filter-toolbar">
+        <a-input-search
+          v-model="searchKeyword"
+          placeholder="搜索文件名或问卷标题..."
+          allow-clear
+          style="max-width: 340px"
+          @search="handleSearch"
+        />
+        <a-select v-model="statusFilter" placeholder="状态筛选" style="width: 120px" allow-clear>
+          <a-option value="active">已启用</a-option>
+          <a-option value="draft">草稿</a-option>
+          <a-option value="archived">已归档</a-option>
+        </a-select>
+        <a-button status="danger" :disabled="selectedRows.length === 0" @click="handleBatchDelete">
+          批量删除 {{ selectedRows.length > 0 ? `(${selectedRows.length})` : "" }}
+        </a-button>
+      </div>
     </a-card>
 
     <!-- 文件列表 -->
@@ -245,5 +239,13 @@ const handleBatchDelete = () => {
   margin: 0;
   font-size: 14px;
   color: var(--color-text-3);
+}
+
+/* 操作工具栏：水平排列，自动换行 */
+.filter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
 </style>
