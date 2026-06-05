@@ -1,6 +1,6 @@
 <template>
   <div class="register-form">
-    <h2 class="form-title">邮箱注册</h2>
+    <h2 class="form-title" style="text-align: center">邮箱注册</h2>
 
     <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" class="form-content">
       <el-form-item prop="email">
@@ -60,9 +60,11 @@
       </el-form-item>
 
       <el-form-item>
-        <el-button type="primary" class="submit-btn" :loading="isLoading" :disabled="!agreed" @click="handleRegister">
-          注册
-        </el-button>
+        <div style="width: 100%; display: flex; justify-content: center; align-items: center">
+          <el-button type="primary" class="submit-btn" :loading="isLoading" :disabled="!agreed" @click="handleRegister">
+            注册
+          </el-button>
+        </div>
       </el-form-item>
     </el-form>
 

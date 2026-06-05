@@ -1,6 +1,6 @@
 <template>
   <div class="login-form">
-    <h2 class="form-title">邮箱登录</h2>
+    <h2 class="form-title" style="text-align: center">邮箱登录</h2>
 
     <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" class="form-content">
       <el-form-item prop="email">
@@ -26,7 +26,9 @@
       </el-form-item>
 
       <el-form-item>
-        <el-button type="primary" class="submit-btn" :loading="isLoading" @click="handleLogin"> 登录 </el-button>
+        <div style="width: 100%; display: flex; justify-content: center; align-items: center">
+          <el-button type="primary" class="submit-btn" :loading="isLoading" @click="handleLogin"> 登录 </el-button>
+        </div>
       </el-form-item>
     </el-form>
 
