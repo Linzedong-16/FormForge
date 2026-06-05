@@ -11,6 +11,7 @@ import rateScoreDefaultStatus from "./advanced/RateScore";
 import cascaderDefaultStatus from "./advanced/Cascader";
 import matrixSingleDefaultStatus from "./matrix/MatrixSingle";
 import sliderDefaultStatus from "./advanced/Slider";
+import transferDefaultStatus from "./advanced/Transfer";
 
 import type { Status } from "@/types";
 
@@ -49,6 +50,7 @@ export const defaultStatusMap: DefaultStatusMap = {
   cascader: cascaderDefaultStatus,
   "matrix-single": matrixSingleDefaultStatus,
   slider: sliderDefaultStatus,
+  transfer: transferDefaultStatus,
   // 联系信息组件
   "personal-info-address": textInputDefaultStatus,
   "personal-info-tel": textInputDefaultStatus,

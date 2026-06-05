@@ -63,6 +63,11 @@ export interface MatrixStatus extends BaseStatus {
 export interface SliderStatus extends BaseStatus {
   sliderConfig: OptionsProps;
 }
+
+// 排序题的设置项：transferItems.status 为待排序选项的字符串数组
+export interface TransferStatus extends BaseStatus {
+  transferItems: OptionsProps;
+}
 // 备注组件的设置项
 export interface TypeStatus extends BaseStatus {
   type: OptionsProps;

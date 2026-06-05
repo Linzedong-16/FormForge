@@ -100,6 +100,11 @@ const router = createRouter({
               path: "/slider",
               name: "slider",
               component: () => import("@/components/SurveyComs/Materials/AdvancedComs/Slider.vue")
+            },
+            {
+              path: "/transfer",
+              name: "transfer",
+              component: () => import("@/components/SurveyComs/Materials/AdvancedComs/Transfer.vue")
             }
           ]
         },

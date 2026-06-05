@@ -79,6 +79,7 @@ export const useMaterialStore = defineStore("materialStore", {
       cascader: defaultStatusMap["cascader"]!(),
       "matrix-single": defaultStatusMap["matrix-single"]!(),
       slider: defaultStatusMap["slider"]!(),
+      transfer: defaultStatusMap["transfer"]!(),
       // 联系信息组件
       "personal-info-address": initializedStates["personal-info-address"],
       "personal-info-tel": initializedStates["personal-info-tel"],

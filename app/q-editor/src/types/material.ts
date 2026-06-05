@@ -32,6 +32,7 @@ export type SurveyComName =
   | "cascader"
   | "matrix-single"
   | "slider"
+  | "transfer"
   | "personal-info-birth"
   | "personal-info-collage"
   | "personal-info-major"
@@ -89,6 +90,7 @@ const SurveyComNameArr: SurveyComName[] = [
   "cascader",
   "matrix-single",
   "slider",
+  "transfer",
   "personal-info-birth",
   "personal-info-collage",
   "personal-info-major",

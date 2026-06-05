@@ -51,6 +51,7 @@ declare module 'vue' {
     ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
     ElTag: typeof import('element-plus/es')['ElTag']
     ElText: typeof import('element-plus/es')['ElText']
+    ElTransfer: typeof import('element-plus/es')['ElTransfer']
     ElUpload: typeof import('element-plus/es')['ElUpload']
     Header: typeof import('./src/components/Common/Header.vue')['default']
     ItalicEditor: typeof import('./src/components/SurveyComs/EditItems/ItalicEditor.vue')['default']
@@ -81,6 +82,7 @@ declare module 'vue' {
     TextNote: typeof import('./src/components/SurveyComs/Materials/NoteComs/TextNote.vue')['default']
     TextTypeEditor: typeof import('./src/components/SurveyComs/EditItems/TextTypeEditor.vue')['default']
     TitleEditor: typeof import('./src/components/SurveyComs/EditItems/TitleEditor.vue')['default']
+    Transfer: typeof import('./src/components/SurveyComs/Materials/AdvancedComs/Transfer.vue')['default']
     WeightEditor: typeof import('./src/components/SurveyComs/EditItems/WeightEditor.vue')['default']
   }
 }
@@ -126,6 +128,7 @@ declare global {
   const ElTableColumn: (typeof import("element-plus/es"))["ElTableColumn"];
   const ElTag: (typeof import("element-plus/es"))["ElTag"];
   const ElText: (typeof import("element-plus/es"))["ElText"];
+  const ElTransfer: (typeof import("element-plus/es"))["ElTransfer"];
   const ElUpload: (typeof import("element-plus/es"))["ElUpload"];
   const Header: (typeof import("./src/components/Common/Header.vue"))["default"];
   const ItalicEditor: (typeof import("./src/components/SurveyComs/EditItems/ItalicEditor.vue"))["default"];
@@ -156,5 +159,6 @@ declare global {
   const TextNote: (typeof import("./src/components/SurveyComs/Materials/NoteComs/TextNote.vue"))["default"];
   const TextTypeEditor: (typeof import("./src/components/SurveyComs/EditItems/TextTypeEditor.vue"))["default"];
   const TitleEditor: (typeof import("./src/components/SurveyComs/EditItems/TitleEditor.vue"))["default"];
+  const Transfer: (typeof import("./src/components/SurveyComs/Materials/AdvancedComs/Transfer.vue"))["default"];
   const WeightEditor: (typeof import("./src/components/SurveyComs/EditItems/WeightEditor.vue"))["default"];
 }

@@ -12,6 +12,7 @@ import RateScore from "@/components/SurveyComs/Materials/AdvancedComs/RateScore.
 import Cascader from "@/components/SurveyComs/Materials/AdvancedComs/Cascader.vue";
 import MatrixSingle from "@/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue";
 import Slider from "@/components/SurveyComs/Materials/AdvancedComs/Slider.vue";
+import Transfer from "@/components/SurveyComs/Materials/AdvancedComs/Transfer.vue";
 
 // 引入编辑组件
 import TitleEditor from "@/components/SurveyComs/EditItems/TitleEditor.vue";
@@ -62,6 +63,7 @@ export const componentMap = {
   cascader: markRaw(Cascader),
   "matrix-single": markRaw(MatrixSingle),
   slider: markRaw(Slider),
+  transfer: markRaw(Transfer),
   // 编辑组件
   "title-editor": markRaw(TitleEditor),
   "desc-editor": markRaw(DescEditor),

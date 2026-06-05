@@ -104,8 +104,9 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | o
       break;
     }
     case "matrixRows":
-    case "matrixColumns": {
-      // 矩阵单选题：行/列的增删（复用 addOption/removeOption），文本修改由编辑器直接同步
+    case "matrixColumns":
+    case "transferItems": {
+      // 矩阵行/列、排序题选项的增删（复用 addOption/removeOption），文本修改由编辑器直接同步
       if (typeof payload === "number") {
         const result = store.removeOption(currentCom.value.status[configKey] as OptionsProps, payload);
         if (result) ElMessage.success("删除成功");
