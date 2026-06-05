@@ -53,6 +53,23 @@
         </div>
       </div>
 
+      <!-- 色弱模式：下拉选择 -->
+      <div class="menu-item cb-item">
+        <div class="theme-label">
+          <el-icon class="menu-icon"><View /></el-icon>
+          <span>{{ t("header.colorBlind") }}</span>
+        </div>
+        <el-select
+          :model-value="colorBlindMode"
+          size="small"
+          class="cb-select"
+          :teleported="false"
+          @change="onChangeColorBlind"
+        >
+          <el-option v-for="o in cbOptions" :key="o.value" :label="t(o.labelKey)" :value="o.value" />
+        </el-select>
+      </div>
+
       <div class="panel-divider"></div>
 
       <!-- 菜单项 -->
@@ -71,8 +88,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Setting, SwitchButton, Sunny, Moon } from "@element-plus/icons-vue";
+import { Setting, SwitchButton, Sunny, Moon, View } from "@element-plus/icons-vue";
 import { useTheme } from "@/utils/useTheme";
+import { useColorBlind, type ColorBlindMode } from "@/utils/useColorBlind";
 import { setLocale, type SupportLocale } from "@/i18n";
 
 const { t, locale } = useI18n();
@@ -91,6 +109,19 @@ const langs: { value: SupportLocale; short: string }[] = [
 ];
 const onChangeLang = (l: SupportLocale) => {
   setLocale(l);
+};
+
+// 色弱模式切换
+const { mode: colorBlindMode, setColorBlindMode } = useColorBlind();
+const cbOptions: { value: ColorBlindMode; labelKey: string }[] = [
+  { value: "normal", labelKey: "header.cbNormal" },
+  { value: "protanopia", labelKey: "header.cbProtanopia" },
+  { value: "deuteranopia", labelKey: "header.cbDeuteranopia" },
+  { value: "tritanopia", labelKey: "header.cbTritanopia" },
+  { value: "achromatopsia", labelKey: "header.cbAchromatopsia" }
+];
+const onChangeColorBlind = (v: string | number | boolean | undefined) => {
+  setColorBlindMode(v as ColorBlindMode);
 };
 
 // 用户信息（占位数据，待业务 API 对接）
@@ -178,7 +209,8 @@ const onLogout = () => {};
 
 // 主题切换项：左侧图标+文字，右侧开关，hover 不变背景（避免与开关交互冲突）
 .theme-item,
-.lang-item {
+.lang-item,
+.cb-item {
   justify-content: space-between;
   cursor: default;
 
@@ -191,6 +223,11 @@ const onLogout = () => {};
     align-items: center;
     gap: 8px;
   }
+}
+
+// 色弱模式下拉框：限制宽度，避免撑大面板
+.cb-select {
+  width: 110px;
 }
 
 // 语言选项：小号文字，当前语言主色高亮

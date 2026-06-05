@@ -9,5 +9,12 @@ export default {
   logout: "Log out",
   lightMode: "Light",
   darkMode: "Dark",
-  language: "Language"
+  language: "Language",
+  // 色弱模式
+  colorBlind: "Color Vision",
+  cbNormal: "Normal",
+  cbProtanopia: "Protanopia",
+  cbDeuteranopia: "Deuteranopia",
+  cbTritanopia: "Tritanopia",
+  cbAchromatopsia: "Achromatopsia"
 };

@@ -1,0 +1,66 @@
+/**
+ * 色弱模式 —— 通过 <html data-color-blind="..."> 覆盖语义色变量，提供色弱友好配色。
+ *
+ * 设计参照《色弱模式实现方案》：
+ *   - 红/绿色盲（protanopia/deuteranopia）：改用蓝/橙/青等可区分色系
+ *   - 蓝色盲（tritanopia）：主色改紫，信息色改琥珀
+ *   - 全色盲（achromatopsia）：整页灰度滤镜
+ *
+ * 与亮暗主题（html.dark）正交叠加：此处仅覆盖语义色（primary/success/...），
+ * 不改背景/文字底色，故可与亮暗模式同时生效。
+ */
+
+// ── 红绿色盲：避免红绿作为唯一区分色，主色蓝、状态色高可辨 ──
+html[data-color-blind="protanopia"],
+html[data-color-blind="deuteranopia"] {
+  --el-color-primary: #2563eb;
+  --el-color-primary-light-3: #5b86ef;
+  --el-color-primary-light-5: #84a4f3;
+  --el-color-primary-light-7: #adc3f7;
+  --el-color-primary-light-9: #dde7fc;
+  --el-color-success: #059669;
+  --el-color-warning: #d97706;
+  --el-color-danger: #dc2626;
+  --el-color-error: #dc2626;
+  --el-color-info: #0284c7;
+
+  --primary-color: #2563eb;
+  --success-color: #059669;
+  --warning-color: #d97706;
+  --error-color: #dc2626;
+  --info-color: #0284c7;
+}
+
+// ── 蓝色盲：主色改紫，信息色改琥珀 ──
+html[data-color-blind="tritanopia"] {
+  --el-color-primary: #9333ea;
+  --el-color-primary-light-3: #ab5cef;
+  --el-color-primary-light-5: #c184f3;
+  --el-color-primary-light-7: #d7adf7;
+  --el-color-primary-light-9: #f0ddfc;
+  --el-color-info: #f59e0b;
+  --el-color-success: #059669;
+  --el-color-warning: #d97706;
+  --el-color-danger: #dc2626;
+  --el-color-error: #dc2626;
+
+  --primary-color: #9333ea;
+  --info-color: #f59e0b;
+  --success-color: #059669;
+  --warning-color: #d97706;
+  --error-color: #dc2626;
+}
+
+// ── 全色盲：整页灰度 ──
+html[data-color-blind="achromatopsia"] {
+  filter: grayscale(100%);
+}
+
+// 色弱模式下主色为彩色实底，主按钮文字统一为白色（覆盖暗色主题的深色文字）
+html[data-color-blind="protanopia"] .el-button--primary,
+html[data-color-blind="deuteranopia"] .el-button--primary,
+html[data-color-blind="tritanopia"] .el-button--primary {
+  --el-button-text-color: #fff;
+  --el-button-hover-text-color: #fff;
+  color: #fff;
+}

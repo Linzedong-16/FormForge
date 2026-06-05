@@ -9,5 +9,12 @@ export default {
   logout: "退出登录",
   lightMode: "亮色模式",
   darkMode: "暗色模式",
-  language: "语言"
+  language: "语言",
+  // 色弱模式
+  colorBlind: "色弱模式",
+  cbNormal: "正常",
+  cbProtanopia: "红色盲",
+  cbDeuteranopia: "绿色盲",
+  cbTritanopia: "蓝色盲",
+  cbAchromatopsia: "全色盲"
 };
