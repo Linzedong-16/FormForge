@@ -52,6 +52,12 @@ export interface BaseStatus {
 export interface OptionsStatus extends BaseStatus {
   options: OptionsProps;
 }
+
+// 矩阵单选题的设置项：matrixRows 行（评价维度）、matrixColumns 列（评价等级），均为字符串数组
+export interface MatrixStatus extends BaseStatus {
+  matrixRows: OptionsProps;
+  matrixColumns: OptionsProps;
+}
 // 备注组件的设置项
 export interface TypeStatus extends BaseStatus {
   type: OptionsProps;

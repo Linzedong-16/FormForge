@@ -90,6 +90,11 @@ const router = createRouter({
               path: "/cascader",
               name: "cascader",
               component: () => import("@/components/SurveyComs/Materials/AdvancedComs/Cascader.vue")
+            },
+            {
+              path: "/matrix-single",
+              name: "matrix-single",
+              component: () => import("@/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue")
             }
           ]
         },

@@ -9,6 +9,7 @@ import textInputDefaultStatus from "./input/TextInput";
 import dateTimeDefaultStatus from "./advanced/DateTime";
 import rateScoreDefaultStatus from "./advanced/RateScore";
 import cascaderDefaultStatus from "./advanced/Cascader";
+import matrixSingleDefaultStatus from "./matrix/MatrixSingle";
 
 import type { Status } from "@/types";
 
@@ -45,6 +46,7 @@ export const defaultStatusMap: DefaultStatusMap = {
   "date-time": dateTimeDefaultStatus,
   "rate-score": rateScoreDefaultStatus,
   cascader: cascaderDefaultStatus,
+  "matrix-single": matrixSingleDefaultStatus,
   // 联系信息组件
   "personal-info-address": textInputDefaultStatus,
   "personal-info-tel": textInputDefaultStatus,

@@ -143,7 +143,7 @@ const preview = () => {
 };
 
 const goHome = () => {
-  router.push("/");
+  router.push({ name: "home" });
 };
 
 const avatar = ref("http://47.94.168.252/upload/1759642363899.gif");

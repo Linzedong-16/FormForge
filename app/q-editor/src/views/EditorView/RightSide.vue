@@ -70,6 +70,18 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | P
       }
       break;
     }
+    case "matrixRows":
+    case "matrixColumns": {
+      // 矩阵单选题：行/列的增删（复用 addOption/removeOption），文本修改由编辑器直接同步
+      if (typeof payload === "number") {
+        const result = store.removeOption(currentCom.value!.status[configKey] as OptionsProps, payload);
+        if (result) ElMessage.success("删除成功");
+        else ElMessage.error("至少保留两项");
+      } else {
+        store.addOption(currentCom.value!.status[configKey] as OptionsProps);
+      }
+      break;
+    }
     case "position": {
       if (typeof payload !== "number") {
         console.error('Invalid payload type for "position". Expected number.');

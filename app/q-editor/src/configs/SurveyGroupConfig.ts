@@ -1,6 +1,7 @@
 // 该文件是题型面板对应的配置文件，用于配置题型面板的题型信息
 import { CircleCheck, ChatLineSquare, User, EditPen, Files, Message } from "@element-plus/icons-vue";
-export const SurveyComsList = [
+import type { MaterialGroup } from "@/types";
+export const SurveyComsList: MaterialGroup[] = [
   {
     title: "选择题",
     icon: CircleCheck,
@@ -18,7 +19,8 @@ export const SurveyComsList = [
     list: [
       { materialName: "date-time", comName: "日期时间" },
       { materialName: "rate-score", comName: "评分" },
-      { materialName: "cascader", comName: "多级联动" }
+      { materialName: "cascader", comName: "多级联动" },
+      { materialName: "matrix-single", comName: "矩阵单选" }
     ]
   },
   {

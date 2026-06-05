@@ -10,6 +10,7 @@ import MultiPicSelect from "@/components/SurveyComs/Materials/SelectComs/MultiPi
 import MultiSelect from "@/components/SurveyComs/Materials/SelectComs/MultiSelect.vue";
 import RateScore from "@/components/SurveyComs/Materials/AdvancedComs/RateScore.vue";
 import Cascader from "@/components/SurveyComs/Materials/AdvancedComs/Cascader.vue";
+import MatrixSingle from "@/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue";
 
 // 引入编辑组件
 import TitleEditor from "@/components/SurveyComs/EditItems/TitleEditor.vue";
@@ -24,6 +25,7 @@ import PicOptionsEditor from "@/components/SurveyComs/EditItems/PicOptionsEditor
 import DateTimeTypeEditor from "@/components/SurveyComs/EditItems/DateTimeTypeEditor.vue";
 import RateTextEditor from "@/components/SurveyComs/EditItems/RateTextEditor.vue";
 import CascaderOptionsEditor from "@/components/SurveyComs/EditItems/CascaderOptionsEditor.vue";
+import MatrixOptionsEditor from "@/components/SurveyComs/EditItems/MatrixOptionsEditor.vue";
 
 import { markRaw } from "vue";
 
@@ -56,6 +58,7 @@ export const componentMap = {
   "personal-info-position": markRaw(TextInput),
   "rate-score": markRaw(RateScore),
   cascader: markRaw(Cascader),
+  "matrix-single": markRaw(MatrixSingle),
   // 编辑组件
   "title-editor": markRaw(TitleEditor),
   "desc-editor": markRaw(DescEditor),
@@ -68,5 +71,6 @@ export const componentMap = {
   "pic-options-editor": markRaw(PicOptionsEditor),
   "date-time-type-editor": markRaw(DateTimeTypeEditor),
   "rate-text-editor": markRaw(RateTextEditor),
-  "cascader-options-editor": markRaw(CascaderOptionsEditor)
+  "cascader-options-editor": markRaw(CascaderOptionsEditor),
+  "matrix-options-editor": markRaw(MatrixOptionsEditor)
 };

@@ -53,6 +53,8 @@ declare module 'vue' {
     Header: typeof import('./src/components/Common/Header.vue')['default']
     ItalicEditor: typeof import('./src/components/SurveyComs/EditItems/ItalicEditor.vue')['default']
     MaterialsHeader: typeof import('./src/components/SurveyComs/Common/MaterialsHeader.vue')['default']
+    MatrixOptionsEditor: typeof import('./src/components/SurveyComs/EditItems/MatrixOptionsEditor.vue')['default']
+    MatrixSingle: typeof import('./src/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue')['default']
     MultiPicSelect: typeof import('./src/components/SurveyComs/Materials/SelectComs/MultiPicSelect.vue')['default']
     MultiSelect: typeof import('./src/components/SurveyComs/Materials/SelectComs/MultiSelect.vue')['default']
     OptionsEditor: typeof import('./src/components/SurveyComs/EditItems/OptionsEditor.vue')['default']
@@ -122,6 +124,8 @@ declare global {
   const Header: (typeof import("./src/components/Common/Header.vue"))["default"];
   const ItalicEditor: (typeof import("./src/components/SurveyComs/EditItems/ItalicEditor.vue"))["default"];
   const MaterialsHeader: (typeof import("./src/components/SurveyComs/Common/MaterialsHeader.vue"))["default"];
+  const MatrixOptionsEditor: (typeof import("./src/components/SurveyComs/EditItems/MatrixOptionsEditor.vue"))["default"];
+  const MatrixSingle: (typeof import("./src/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue"))["default"];
   const MultiPicSelect: (typeof import("./src/components/SurveyComs/Materials/SelectComs/MultiPicSelect.vue"))["default"];
   const MultiSelect: (typeof import("./src/components/SurveyComs/Materials/SelectComs/MultiSelect.vue"))["default"];
   const OptionsEditor: (typeof import("./src/components/SurveyComs/EditItems/OptionsEditor.vue"))["default"];
