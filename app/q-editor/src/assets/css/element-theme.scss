@@ -66,6 +66,8 @@
   --el-border-radius-small: 4px;
   --el-border-radius-round: 8px;
   --el-border-radius-circle: 100%;
+  // Element Plus 无 --el-border-radius-lg，但主题中多处弹层/卡片引用它做大圆角，此处补充定义
+  --el-border-radius-lg: 10px;
 
   // —— 阴影（柔和的多层投影，贴近 shadcn 的 shadow-sm / shadow-md）——
   --el-box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -448,4 +450,87 @@
   .el-pagination__sizes .el-select__wrapper {
     border-radius: var(--el-border-radius-base);
   }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 17. Cascader —— 触发器复用输入框观感，面板选中态主色
+// ───────────────────────────────────────────────────────────────────────────
+.el-cascader__dropdown {
+  border-radius: var(--el-border-radius-lg);
+}
+.el-cascader-node:not(.is-disabled):hover {
+  background-color: var(--el-fill-color);
+}
+.el-cascader-node.in-active-path,
+.el-cascader-node.is-active,
+.el-cascader-node:not(.is-disabled).is-selectable.in-checked-path {
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+// 选中态的复选/单选标记使用主色
+.el-cascader-node .el-radio__input.is-checked .el-radio__inner,
+.el-cascader-node .el-checkbox__input.is-checked .el-checkbox__inner {
+  background-color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 18. Slider —— 激活轨道与滑块按钮使用主色
+// ───────────────────────────────────────────────────────────────────────────
+.el-slider {
+  --el-slider-main-bg-color: var(--el-color-primary);
+}
+.el-slider__button {
+  border-color: var(--el-color-primary);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 19. InputNumber —— 复用输入框边框 + 步进按钮 hover 主色
+// ───────────────────────────────────────────────────────────────────────────
+.el-input-number__decrease,
+.el-input-number__increase {
+  transition: color 0.15s ease;
+
+  &:hover:not(.is-disabled) {
+    color: var(--el-color-primary);
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 20. Transfer —— 双栏面板圆角 + 边框，按钮/复选复用既有覆盖
+// ───────────────────────────────────────────────────────────────────────────
+.el-transfer-panel {
+  border-radius: var(--el-border-radius-lg);
+  border-color: var(--el-border-color);
+}
+.el-transfer-panel__header {
+  background-color: var(--el-fill-color-lighter);
+  border-top-left-radius: var(--el-border-radius-lg);
+  border-top-right-radius: var(--el-border-radius-lg);
+}
+.el-transfer-panel__item:hover {
+  color: var(--el-color-primary);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 21. Form —— 标签与错误提示
+// ───────────────────────────────────────────────────────────────────────────
+.el-form-item__label {
+  color: var(--el-text-color-regular);
+  font-weight: 500;
+}
+.el-form-item__error {
+  color: var(--el-color-danger);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// 22. Popover —— 弹层圆角与内边距（含用户面板等自定义 popover）
+// ───────────────────────────────────────────────────────────────────────────
+.el-popover.el-popper {
+  border-radius: var(--el-border-radius-lg);
+  border-color: var(--el-border-color);
+  box-shadow: var(--el-box-shadow);
 }

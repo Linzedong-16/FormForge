@@ -28,7 +28,7 @@
         </div>
       </div>
       <div class="right flex justify-content-center align-items-center">
-        <el-avatar :size="30" :src="avatar" />
+        <UserProfile />
       </div>
     </div>
   </div>
@@ -38,11 +38,11 @@
 import { ArrowLeft } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
 const router = useRouter();
-import { ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useEditorStore } from "@/stores/useEditor";
 import type { SurveyDBData } from "@/types";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
+import UserProfile from "@/components/Common/UserProfile.vue";
 const props = defineProps({
   isEditor: {
     type: Boolean,
@@ -145,8 +145,6 @@ const preview = () => {
 const goHome = () => {
   router.push({ name: "home" });
 };
-
-const avatar = ref("http://47.94.168.252/upload/1759642363899.gif");
 </script>
 
 <style scoped lang="scss">

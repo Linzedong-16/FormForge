@@ -41,6 +41,7 @@ declare module 'vue' {
     ElLink: typeof import('element-plus/es')['ElLink']
     ElOption: typeof import('element-plus/es')['ElOption']
     ElPagination: typeof import('element-plus/es')['ElPagination']
+    ElPopover: typeof import('element-plus/es')['ElPopover']
     ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']
     ElRate: typeof import('element-plus/es')['ElRate']
@@ -83,6 +84,7 @@ declare module 'vue' {
     TextTypeEditor: typeof import('./src/components/SurveyComs/EditItems/TextTypeEditor.vue')['default']
     TitleEditor: typeof import('./src/components/SurveyComs/EditItems/TitleEditor.vue')['default']
     Transfer: typeof import('./src/components/SurveyComs/Materials/AdvancedComs/Transfer.vue')['default']
+    UserProfile: typeof import('./src/components/Common/UserProfile.vue')['default']
     WeightEditor: typeof import('./src/components/SurveyComs/EditItems/WeightEditor.vue')['default']
   }
 }
@@ -118,6 +120,7 @@ declare global {
   const ElLink: (typeof import("element-plus/es"))["ElLink"];
   const ElOption: (typeof import("element-plus/es"))["ElOption"];
   const ElPagination: (typeof import("element-plus/es"))["ElPagination"];
+  const ElPopover: (typeof import("element-plus/es"))["ElPopover"];
   const ElRadio: (typeof import("element-plus/es"))["ElRadio"];
   const ElRadioGroup: (typeof import("element-plus/es"))["ElRadioGroup"];
   const ElRate: (typeof import("element-plus/es"))["ElRate"];
@@ -160,5 +163,6 @@ declare global {
   const TextTypeEditor: (typeof import("./src/components/SurveyComs/EditItems/TextTypeEditor.vue"))["default"];
   const TitleEditor: (typeof import("./src/components/SurveyComs/EditItems/TitleEditor.vue"))["default"];
   const Transfer: (typeof import("./src/components/SurveyComs/Materials/AdvancedComs/Transfer.vue"))["default"];
+  const UserProfile: (typeof import("./src/components/Common/UserProfile.vue"))["default"];
   const WeightEditor: (typeof import("./src/components/SurveyComs/EditItems/WeightEditor.vue"))["default"];
 }
