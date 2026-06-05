@@ -55,6 +55,7 @@ declare module 'vue' {
     ElTransfer: typeof import('element-plus/es')['ElTransfer']
     ElUpload: typeof import('element-plus/es')['ElUpload']
     Header: typeof import('./src/components/Common/Header.vue')['default']
+    HeaderNav: typeof import('./src/components/Common/header-nav.vue')['default']
     ItalicEditor: typeof import('./src/components/SurveyComs/EditItems/ItalicEditor.vue')['default']
     MaterialsHeader: typeof import('./src/components/SurveyComs/Common/MaterialsHeader.vue')['default']
     MatrixOptionsEditor: typeof import('./src/components/SurveyComs/EditItems/MatrixOptionsEditor.vue')['default']
@@ -134,6 +135,7 @@ declare global {
   const ElTransfer: (typeof import("element-plus/es"))["ElTransfer"];
   const ElUpload: (typeof import("element-plus/es"))["ElUpload"];
   const Header: (typeof import("./src/components/Common/Header.vue"))["default"];
+  const HeaderNav: (typeof import("./src/components/Common/header-nav.vue"))["default"];
   const ItalicEditor: (typeof import("./src/components/SurveyComs/EditItems/ItalicEditor.vue"))["default"];
   const MaterialsHeader: (typeof import("./src/components/SurveyComs/Common/MaterialsHeader.vue"))["default"];
   const MatrixOptionsEditor: (typeof import("./src/components/SurveyComs/EditItems/MatrixOptionsEditor.vue"))["default"];

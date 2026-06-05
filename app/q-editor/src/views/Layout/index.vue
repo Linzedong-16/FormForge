@@ -1,5 +1,10 @@
 <template>
   <div class="pt-20 pb-20 pl-20 pr-20">
+    <headerNav>
+      <template #left>
+        <el-button :icon="ArrowLeft" circle size="small" @click="goLand" />
+      </template>
+    </headerNav>
     <h1 class="font-weight-100 text-center">低代码问卷系统</h1>
     <!-- 按钮组 -->
     <div class="mb-15">
@@ -24,7 +29,9 @@
 </template>
 
 <script setup lang="ts">
-import { Plus, Compass } from "@element-plus/icons-vue";
+import headerNav from "@/components/Common/header-nav.vue";
+
+import { Plus, Compass, ArrowLeft } from "@element-plus/icons-vue";
 import { ref } from "vue";
 // 路由
 import { useRouter } from "vue-router";
@@ -48,6 +55,11 @@ function getData() {
 getData();
 
 const store = useEditorStore();
+
+const goLand = () => {
+  router.push({ name: "land" });
+};
+
 const goToEditor = () => {
   // 清空当前选中的组件
   store.resetComs();
