@@ -10,6 +10,7 @@ import viteCompression from "vite-plugin-compression";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
 import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
+import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -33,6 +34,10 @@ export default defineConfig({
     // 自动导入Element Plus API
     AutoImport({
       resolvers: [ElementPlusResolver()]
+    }),
+    // Vue I18n：保留运行时编译器，使 JS 对象 messages 可直接编译使用
+    VueI18nPlugin({
+      runtimeOnly: false
     }),
     // Gzip 压缩
     // viteCompression({

@@ -30,9 +30,27 @@
           <el-icon class="menu-icon">
             <component :is="isDark ? Moon : Sunny" />
           </el-icon>
-          <span>{{ isDark ? "暗色模式" : "亮色模式" }}</span>
+          <span>{{ isDark ? t("header.darkMode") : t("header.lightMode") }}</span>
         </div>
         <el-switch :model-value="isDark" @change="onToggleTheme" />
+      </div>
+
+      <!-- 语言切换 -->
+      <div class="menu-item lang-item">
+        <div class="theme-label">
+          <font-awesome-icon :icon="['fas', 'globe']" class="menu-icon" />
+          <span>{{ t("header.language") }}</span>
+        </div>
+        <div class="lang-options">
+          <span
+            v-for="l in langs"
+            :key="l.value"
+            class="lang-opt"
+            :class="{ active: locale === l.value }"
+            @click="onChangeLang(l.value)"
+            >{{ l.short }}</span
+          >
+        </div>
       </div>
 
       <div class="panel-divider"></div>
@@ -40,11 +58,11 @@
       <!-- 菜单项 -->
       <div class="menu-item" @click="onSettings">
         <el-icon class="menu-icon"><Setting /></el-icon>
-        <span>个人设置</span>
+        <span>{{ t("header.settings") }}</span>
       </div>
       <div class="menu-item" @click="onLogout">
         <el-icon class="menu-icon"><SwitchButton /></el-icon>
-        <span>退出登录</span>
+        <span>{{ t("header.logout") }}</span>
       </div>
     </div>
   </el-popover>
@@ -52,13 +70,27 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { Setting, SwitchButton, Sunny, Moon } from "@element-plus/icons-vue";
 import { useTheme } from "@/utils/useTheme";
+import { setLocale, type SupportLocale } from "@/i18n";
+
+const { t, locale } = useI18n();
 
 // 亮暗主题切换
 const { isDark, toggleTheme } = useTheme();
 const onToggleTheme = (val: string | number | boolean) => {
   toggleTheme(Boolean(val));
+};
+
+// 语言切换选项
+const langs: { value: SupportLocale; short: string }[] = [
+  { value: "zh-CN", short: "中" },
+  { value: "en-US", short: "EN" },
+  { value: "ja-JP", short: "日" }
+];
+const onChangeLang = (l: SupportLocale) => {
+  setLocale(l);
 };
 
 // 用户信息（占位数据，待业务 API 对接）
@@ -145,7 +177,8 @@ const onLogout = () => {};
 }
 
 // 主题切换项：左侧图标+文字，右侧开关，hover 不变背景（避免与开关交互冲突）
-.theme-item {
+.theme-item,
+.lang-item {
   justify-content: space-between;
   cursor: default;
 
@@ -157,6 +190,31 @@ const onLogout = () => {};
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+}
+
+// 语言选项：小号文字，当前语言主色高亮
+.lang-options {
+  display: flex;
+  gap: 4px;
+}
+.lang-opt {
+  font-size: 12px;
+  padding: 2px 7px;
+  border-radius: var(--border-radius-sm);
+  color: var(--font-color-lighter);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover {
+    background-color: var(--background-color);
+  }
+  &.active {
+    color: var(--primary-color);
+    font-weight: 600;
+    background-color: var(--background-color);
   }
 }
 </style>

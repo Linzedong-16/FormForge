@@ -6,8 +6,10 @@ import router from "./router";
 
 // elementplus 组件库
 import ElementPlus from "element-plus";
-import { zhCn } from "element-plus/es/locales.mjs";
 import "element-plus/dist/index.css";
+
+// i18n 国际化
+import { setupI18n } from "@/i18n";
 
 // scss样式
 import "@/assets/css/index.scss";
@@ -26,7 +28,8 @@ const app = createApp(App);
 app.component("FontAwesomeIcon", FontAwesomeIcon);
 app.use(createPinia());
 app.use(router);
-app.use(ElementPlus, {
-  locale: zhCn
-});
+// 安装 i18n
+setupI18n(app);
+// Element Plus 语言由 App.vue 的 ElConfigProvider 跟随 i18n 动态切换
+app.use(ElementPlus);
 app.mount("#app");
