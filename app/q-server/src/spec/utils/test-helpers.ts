@@ -27,6 +27,7 @@ interface RedisMock {
   expire: MockFn;
   exists: MockFn;
   ping: MockFn;
+  eval: MockFn;
 }
 
 interface AmqpMock {
@@ -89,6 +90,7 @@ export function createRedisMock(): RedisMock {
     expire: vi.fn(),
     exists: vi.fn(),
     ping: vi.fn(),
+    eval: vi.fn(),
   };
 }
 

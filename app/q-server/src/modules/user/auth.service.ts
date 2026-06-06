@@ -22,6 +22,8 @@ const LOGIN_LOCK_PREFIX = "auth:login_lock:";
 const SEND_RATE_PREFIX = "auth:send_rate:";
 /** JWT 黑名单 Key 前缀 */
 const JWT_BLACKLIST_PREFIX = "auth:jwt:blacklist:";
+/** 用户当前 Access Token JTI（用于 Refresh 时使旧 Token 失效） */
+const USER_ACCESS_PREFIX = "auth:user:access:";
 
 /** 登录失败最大次数 */
 const MAX_LOGIN_FAILS = 5;
@@ -35,6 +37,15 @@ const VERIFY_CODE_TTL = 300;
 const SEND_RATE_TTL = 60;
 /** 每分钟最大发送次数 */
 const SEND_RATE_MAX = 3;
+
+// ─── 工具函数 ────────────────────────────────────────────────
+
+/** 邮箱脱敏：前2字符 + *** + @domain */
+function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  const masked = local.length <= 2 ? local + "***" : local.slice(0, 2) + "***";
+  return `${masked}@${domain}`;
+}
 
 // ─── 类型定义 ────────────────────────────────────────────────
 
@@ -174,6 +185,11 @@ export class AuthService {
     // 7. 生成 Token
     const tokens = await this.generateTokens({ id: user.id.toString(), email: user.email, role });
 
+    // 8. 记录登录审计日志
+    await this.createAuditLog(user.id, "login", "user", user.id, {
+      loginTime: new Date().toISOString()
+    });
+
     return {
       ...tokens,
       user: {
@@ -301,11 +317,49 @@ export class AuthService {
         );
       } catch {
         // 邮件发送失败不影响验证码存储，仅记录日志
-        this.fastify.log.warn(`邮件队列发送失败: ${email}`);
+        this.fastify.log.warn(`邮件队列发送失败: ${maskEmail(email)}`);
       }
     }
 
     return { expireSeconds: VERIFY_CODE_TTL };
+  }
+
+  /** 密码重置 */
+  async resetPassword(email: string, code: string, newPassword: string): Promise<void> {
+    // 1. 从 Redis 取出验证码
+    const stored = await this.fastify.redis.get(`${VERIFY_CODE_PREFIX}${email}`);
+    if (!stored) {
+      throw new AuthError("验证码已过期，请重新获取", BizCode.VERIFY_CODE_EXPIRED);
+    }
+
+    const { code: storedCode, type } = JSON.parse(stored);
+    if (type !== "reset_password" || storedCode !== code) {
+      throw new AuthError("验证码错误", BizCode.VERIFY_CODE_INVALID);
+    }
+
+    // 2. 删除已使用的验证码
+    await this.fastify.redis.del(`${VERIFY_CODE_PREFIX}${email}`);
+
+    // 3. 查找用户
+    const user = await this.fastify.prisma.user.findFirst({
+      where: { email, deleted_at: null }
+    });
+    if (!user) {
+      throw new AuthError("用户不存在", BizCode.EMAIL_NOT_EXISTS);
+    }
+
+    // 4. 更新密码
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.fastify.prisma.user.update({
+      where: { id: user.id },
+      data: { password_hash: passwordHash }
+    });
+
+    // 5. 使该用户所有旧 Token 失效
+    await this.fastify.redis.del(`${USER_ACCESS_PREFIX}${user.id}`);
+
+    // 6. 记录审计日志
+    await this.createAuditLog(user.id, "reset_password", "user", user.id);
   }
 
   /** 验证邮箱并完成注册 */
@@ -395,7 +449,13 @@ export class AuthService {
     // 将旧 Refresh Token 加入黑名单
     await this.blacklistToken(refreshToken);
 
-    // 生成新 Token
+    // 将旧 Access Token 加入黑名单（精准失效）
+    const oldJti = await this.fastify.redis.get(`${USER_ACCESS_PREFIX}${decoded.sub}`);
+    if (oldJti) {
+      await this.blacklistTokenByJti(oldJti, this.accessExpire);
+    }
+
+    // 生成新 Token（generateTokens 内部会更新 USER_ACCESS_PREFIX）
     const roles = await this.getUserRoles(user.id);
     const role = roles.includes("super_admin") ? "super_admin" : "user";
     const tokens = await this.generateTokens({ id: user.id.toString(), email: user.email, role });
@@ -455,10 +515,10 @@ export class AuthService {
 
   /** 生成 Access Token + Refresh Token */
   private async generateTokens(user: { id: string; email: string; role: string }) {
-    // const now = Math.floor(Date.now() / 1000);
+    const accessJti = randomUUID();
 
     const accessToken = jwt.sign(
-      { sub: user.id, email: user.email, role: user.role, type: "access", jti: randomUUID() },
+      { sub: user.id, email: user.email, role: user.role, type: "access", jti: accessJti },
       this.jwtSecret,
       { expiresIn: this.accessExpire }
     );
@@ -467,12 +527,16 @@ export class AuthService {
       expiresIn: this.refreshExpire
     });
 
+    // 记录当前 Access Token JTI，供 Refresh 时精准黑名单旧 Token
+    await this.fastify.redis.set(`${USER_ACCESS_PREFIX}${user.id}`, accessJti, "EX", this.accessExpire);
+
     return {
       token: accessToken,
       tokenType: "Bearer",
       expiresIn: this.accessExpire,
       refreshToken,
-      refreshExpiresIn: this.refreshExpire
+      refreshExpiresIn: this.refreshExpire,
+      accessJti
     };
   }
 
@@ -491,6 +555,17 @@ export class AuthService {
     }
   }
 
+  /** 通过 JTI 将 Token 加入黑名单（用于 Refresh 时精准失效旧 Access Token） */
+  private async blacklistTokenByJti(jti: string, ttlSeconds: number): Promise<void> {
+    try {
+      if (ttlSeconds > 0) {
+        await this.fastify.redis.set(`${JWT_BLACKLIST_PREFIX}${jti}`, "1", "EX", ttlSeconds);
+      }
+    } catch {
+      // 忽略
+    }
+  }
+
   /** 检查 Token 是否在黑名单 */
   private async isTokenBlacklisted(jti: string): Promise<boolean> {
     const exists = await this.fastify.redis.exists(`${JWT_BLACKLIST_PREFIX}${jti}`);
@@ -501,16 +576,35 @@ export class AuthService {
   //  Private — 登录安全
   // ============================================================
 
-  /** 记录登录失败 */
-  private async recordLoginFail(email: string): Promise<void> {
-    const key = `${LOGIN_FAIL_PREFIX}${email}`;
-    const count = await this.fastify.redis.incr(key);
-    if (count === 1) {
-      await this.fastify.redis.expire(key, LOGIN_FAIL_TTL);
-    }
-    if (count >= MAX_LOGIN_FAILS) {
-      await this.fastify.redis.set(`${LOGIN_LOCK_PREFIX}${email}`, String(Date.now()), "EX", LOGIN_LOCK_TTL);
-    }
+  /** 记录登录失败（Lua 脚本保证原子性，避免并发竞态） */
+  private async recordLoginFail(email: string): Promise<number> {
+    const failKey = `${LOGIN_FAIL_PREFIX}${email}`;
+    const lockKey = `${LOGIN_LOCK_PREFIX}${email}`;
+
+    // Lua: 原子 incr + expire + 锁定判定
+    const script = `
+      local count = redis.call('incr', KEYS[1])
+      if count == 1 then
+        redis.call('expire', KEYS[1], tonumber(ARGV[1]))
+      end
+      if count >= tonumber(ARGV[2]) then
+        redis.call('set', KEYS[2], ARGV[3], 'ex', tonumber(ARGV[4]))
+      end
+      return count
+    `;
+
+    const count = (await this.fastify.redis.eval(
+      script,
+      2,
+      failKey,
+      lockKey,
+      LOGIN_FAIL_TTL,
+      MAX_LOGIN_FAILS,
+      String(Date.now()),
+      LOGIN_LOCK_TTL
+    )) as number;
+
+    return count;
   }
 
   /** 获取登录失败次数 */

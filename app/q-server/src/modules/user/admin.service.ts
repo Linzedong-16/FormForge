@@ -4,30 +4,19 @@
 
 import bcrypt from "bcrypt";
 import type { FastifyInstance } from "fastify";
+import type {
+  CreateUserInput,
+  UpdateUserInput,
+  UserListQueryInput,
+  UpdateSmtpConfigInput
+} from "./schemas/user.schemas.js";
 import { AuthError, ValidationError } from "../../utils/errors.js";
 import { BizCode } from "../../utils/response.js";
 
-// ─── 类型定义 ────────────────────────────────────────────────
+// ─── 类型重导出（保持向后兼容） ──────────────────────────────
 
-export interface CreateUserInput {
-  email: string;
-  username: string;
-  role: "user" | "admin";
-  password?: string;
-}
-
-export interface UpdateUserInput {
-  username?: string;
-  role?: "user" | "admin";
-  status?: number;
-}
-
-export interface UserListQuery {
-  page: number;
-  limit: number;
-  email?: string;
-  status?: number;
-}
+export type { CreateUserInput, UpdateUserInput };
+export type UserListQuery = UserListQueryInput;
 
 // ─── 管理员服务类 ────────────────────────────────────────────
 
@@ -229,17 +218,7 @@ export class AdminService {
   }
 
   /** 更新 SMTP 配置 */
-  async updateSmtpConfig(
-    adminId: bigint,
-    smtpConfig: {
-      enabled: boolean;
-      host: string;
-      port: number;
-      username: string;
-      password: string;
-      fromEmail: string;
-    }
-  ) {
+  async updateSmtpConfig(adminId: bigint, smtpConfig: UpdateSmtpConfigInput) {
     await this.verifySuperAdmin(adminId);
 
     const entries = [
@@ -247,7 +226,7 @@ export class AdminService {
       { key: "smtp_host", value: smtpConfig.host, description: "SMTP服务器地址" },
       { key: "smtp_port", value: String(smtpConfig.port), description: "SMTP端口" },
       { key: "smtp_username", value: smtpConfig.username, description: "SMTP用户名" },
-      { key: "smtp_password", value: smtpConfig.password, description: "SMTP密码" },
+      { key: "smtp_password", value: smtpConfig.password ?? "", description: "SMTP密码" },
       { key: "smtp_from_email", value: smtpConfig.fromEmail, description: "发件人邮箱" }
     ];
 

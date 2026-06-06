@@ -28,3 +28,6 @@ export type {
   SubmitAnswersRequest,
   SubmitAnswersResponse
 } from "./api.js";
+
+/// 导出 用户模块前后端通用接口
+export * from "./user/user.interface.js";

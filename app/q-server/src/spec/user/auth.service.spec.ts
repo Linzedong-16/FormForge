@@ -112,18 +112,18 @@ describe("AuthService", () => {
 
     it("用户不存在时抛出 401 并记录失败", async () => {
       fastify.prisma.user.findFirst.mockResolvedValue(null);
-      fastify.redis.incr.mockResolvedValue(1);
+      fastify.redis.eval.mockResolvedValue(1); // Lua 脚本返回 count=1
 
       await expect(authService.login(email, password)).rejects.toMatchObject({
         message: "邮箱或密码错误",
         statusCode: 401,
       });
-      expect(fastify.redis.incr).toHaveBeenCalled();
+      expect(fastify.redis.eval).toHaveBeenCalled();
     });
 
     it("密码错误时抛出 401 并返回剩余尝试次数", async () => {
-      // recordLoginFail 调用 incr→2, getLoginFailCount 读取 get→"1"
-      fastify.redis.incr.mockResolvedValue(2);
+      // recordLoginFail 调用 Lua eval→2, getLoginFailCount 读取 get→"1"
+      fastify.redis.eval.mockResolvedValue(2);
       fastify.redis.get.mockResolvedValue("1");
       vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
 
@@ -409,26 +409,24 @@ describe("AuthService", () => {
     const email = "attacked@example.com";
 
     it("连续失败5次后账户被锁定", async () => {
-      // 第 1-4 次失败
+      // 第 1-4 次失败 → Lua 脚本返回 <5，锁定不触发
       for (let i = 1; i <= 4; i++) {
-        fastify.redis.exists
-          .mockResolvedValueOnce(0)  // 未锁定
-          .mockResolvedValueOnce(0)  // （登录方法内多次调用）
-          .mockResolvedValueOnce(0);
-        fastify.prisma.user.findFirst.mockResolvedValueOnce(null);
-        fastify.redis.incr.mockResolvedValueOnce(i);
+        fastify.redis.exists.mockResolvedValue(0); // 未锁定
+        fastify.prisma.user.findFirst.mockResolvedValue(null);
+        fastify.redis.eval.mockResolvedValue(i);
 
         await expect(authService.login(email, "any")).rejects.toThrow();
       }
 
-      // 第 5 次失败 → 触发锁定
-      fastify.redis.exists.mockResolvedValue(0); // 还未锁定
+      // 第 5 次失败 → Lua 脚本返回 5，内部触发 set 锁定
+      fastify.redis.exists.mockResolvedValue(0);
       fastify.prisma.user.findFirst.mockResolvedValue(null);
-      fastify.redis.incr.mockResolvedValue(5); // 达到阈值
+      fastify.redis.eval.mockResolvedValue(5);
       fastify.redis.set.mockResolvedValue("OK");
 
       await expect(authService.login(email, "any")).rejects.toThrow();
-      expect(fastify.redis.set).toHaveBeenCalled();
+      // Lua 脚本内部已处理锁定 set，这里验证 Lua 被调用
+      expect(fastify.redis.eval).toHaveBeenCalledTimes(5);
     });
   });
 });
