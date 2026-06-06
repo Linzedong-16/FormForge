@@ -25,7 +25,7 @@
  */
 export interface ApiResponse<T = null> {
   /** 业务数据，成功时返回具体数据，失败时为 null */
-  data: T;
+  data: T | null;
   /** 业务状态码，0 表示成功，非 0 表示失败（见 BizCode） */
   code: number;
   /** 提示信息 */
@@ -109,8 +109,12 @@ export interface UserInfo {
   email: string;
   /** 用户名 */
   username: string;
-  /** 角色：`super_admin` | `user` */
-  role: string;
+  /**
+   * 角色
+   * - auth 接口（login/register）返回 `"super_admin" | "user"`
+   * - admin 接口（listUsers）返回 `"admin" | "user"`
+   */
+  role: "super_admin" | "user" | "admin";
 }
 
 /**
@@ -121,10 +125,10 @@ export interface UserInfo {
 export interface UserAdminItem extends UserInfo {
   /** 状态：0 禁用 / 1 启用 */
   status: UserStatus;
-  /** 创建时间（ISO 8601） */
-  createdAt: string;
+  /** 创建时间（ISO 8601，后端返回 Prisma snake_case 字段） */
+  created_at: string;
   /** 最后登录时间（ISO 8601），可能为 null */
-  lastLoginAt: string | null;
+  last_login_at: string | null;
 }
 
 /**
@@ -215,6 +219,18 @@ export interface VerifyRegisterRequest {
 export interface RefreshTokenRequest {
   /** Refresh Token */
   refreshToken: string;
+}
+
+/**
+ * POST /api/auth/reset-password — 重置密码请求体
+ */
+export interface ResetPasswordRequest {
+  /** 邮箱地址 */
+  email: string;
+  /** 6 位数字验证码 */
+  code: string;
+  /** 新密码（至少 8 位，含大小写和数字） */
+  newPassword: string;
 }
 
 // ============================================================
@@ -464,6 +480,12 @@ export interface AuthApi {
     request: RefreshTokenRequest;
     response: LoginResponse;
   };
+  /** POST /api/auth/reset-password */
+  resetPassword: {
+    request: ResetPasswordRequest;
+    /** 无数据返回 */
+    response: null;
+  };
   /** POST /api/auth/logout */
   logout: {
     request: void;
@@ -518,8 +540,8 @@ export interface AdminApi {
 export interface ServiceCheck {
   /** 是否正常 */
   ok: boolean;
-  /** 延迟（毫秒） */
-  latencyMs: number;
+  /** 延迟（毫秒，后端返回 snake_case 字段） */
+  latency_ms: number;
 }
 
 /**
