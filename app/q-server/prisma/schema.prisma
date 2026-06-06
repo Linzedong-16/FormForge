@@ -189,7 +189,6 @@ model AuditLog {
   @@index([created_at])
   @@index([resource_type, resource_id])
   @@map("audit_logs")
-  surveys Survey[]
 }
 
 // ============================================================

@@ -19,7 +19,7 @@ export interface ApiResponse<T = unknown> {
   msg: string;
 }
 
-/** 预设的业务状态码 */
+/** 预设的 HTTP 业务状态码 */
 export enum StatusCode {
   /** 成功 */
   OK = 0,
@@ -33,8 +33,34 @@ export enum StatusCode {
   NOT_FOUND = 404,
   /** 资源冲突（如重复创建） */
   CONFLICT = 409,
+  /** 请求过于频繁 */
+  RATE_LIMITED = 429,
   /** 服务器内部错误 */
   INTERNAL_ERROR = 500
+}
+
+/** 认证模块业务错误码 */
+export enum BizCode {
+  /** 邮箱已被注册 */
+  EMAIL_EXISTS = 1001,
+  /** 邮箱不存在 */
+  EMAIL_NOT_EXISTS = 1002,
+  /** 验证码无效 */
+  VERIFY_CODE_INVALID = 1003,
+  /** 验证码已过期 */
+  VERIFY_CODE_EXPIRED = 1004,
+  /** 账户已锁定 */
+  ACCOUNT_LOCKED = 1005,
+  /** 账户已禁用 */
+  ACCOUNT_DISABLED = 1006,
+  /** 密码错误 */
+  INVALID_PASSWORD = 1007,
+  /** 系统未初始化 */
+  SYSTEM_NOT_INITIALIZED = 1008,
+  /** 注册已关闭 */
+  REGISTRATION_CLOSED = 1009,
+  /** SMTP 未配置 */
+  SMTP_NOT_CONFIGURED = 1010
 }
 
 // ─── 构建函数 ────────────────────────────────────────────────

@@ -1,7 +1,9 @@
 import type { FastifyPluginAsync } from "fastify";
+import authRoutes from "../modules/user/auth.routes.js";
+import adminRoutes from "../modules/user/admin.routes.js";
 
 const routes: FastifyPluginAsync = async fastify => {
-  // 健康检查 — 探测 PostgreSQL、RabbitMQ 连通性
+  // 健康检查 — 探测 PostgreSQL、Redis、RabbitMQ 连通性
   fastify.get("/health", async (_req, reply) => {
     const checks: Record<string, { ok: boolean; latency_ms?: number; error?: string }> = {};
 
@@ -66,6 +68,10 @@ const routes: FastifyPluginAsync = async fastify => {
   //   if (!user) return reply.sendNotFound("用户不存在");
   //   return reply.sendSuccess(user);
   // });
+
+  /// 统一配置 modules 路由
+  fastify.register(authRoutes, { prefix: "/auth" });
+  fastify.register(adminRoutes, { prefix: "/admin" });
 };
 
 export default routes;

@@ -1,0 +1,1607 @@
+# 用户登录注册模块需求分析与后端实现文档
+
+> **文档版本**: v2.0  
+> **更新时间**: 2026-06-06  
+> **适用项目**: Q问卷系统 (questionnaireSys)
+
+---
+
+## 目录
+
+1. [需求概述](#1-需求概述)
+2. [系统架构设计](#2-系统架构设计)
+3. [中间件资源整合](#3-中间件资源整合)
+4. [数据库设计](#4-数据库设计)
+5. [Redis 缓存设计](#5-redis-缓存设计)
+6. [API 接口设计](#6-api-接口设计)
+7. [业务逻辑实现](#7-业务逻辑实现)
+8. [安全性方案](#8-安全性方案)
+9. [错误处理](#9-错误处理)
+10. [部署配置](#10-部署配置)
+
+---
+
+## 1. 需求概述
+
+### 1.1 业务背景
+
+本系统为开源问卷系统，需要支持用户自助激活部署。核心需求包括：
+
+| 场景               | 描述                             |
+| ------------------ | -------------------------------- |
+| **系统初始化**     | 用户表为空时，系统处于初始化阶段 |
+| **首次注册**       | 第一个注册用户自动成为超级管理员 |
+| **邮件注册**       | 配置SMTP后，支持用户邮箱注册     |
+| **管理员创建用户** | 未配置邮件时，管理员手动创建用户 |
+
+### 1.2 核心业务流程
+
+```mermaid
+flowchart TD
+    A[用户访问注册页面] --> B{检查用户表}
+    B -->|用户表为空| C[初始化模式]
+    B -->|存在超级管理员| D{SMTP已配置?}
+    B -->|存在超级管理员| E{开放注册?}
+    D -->|是| F[开放邮箱注册]
+    D -->|否| G[仅管理员可创建用户]
+    E -->|否| G
+    C --> H[注册即成为超级管理员]
+    H --> I[自动登录]
+    F --> J[邮箱验证注册]
+    G --> K[管理员后台创建]
+```
+
+---
+
+## 2. 系统架构设计
+
+### 2.1 整体架构图
+
+```mermaid
+flowchart LR
+    subgraph Frontend["前端层 (q-editor)"]
+        A1[Vue 3 + Element Plus]
+    end
+
+    subgraph Gateway["网关层"]
+        B1[Fastify Server]
+    end
+
+    subgraph Middleware["中间件层"]
+        C1[Redis 缓存]
+        C2[RabbitMQ 队列]
+    end
+
+    subgraph DataLayer["数据层"]
+        D1[PostgreSQL]
+    end
+
+    subgraph External["外部服务"]
+        E1[SMTP 邮件服务]
+    end
+
+    A1 <--> B1
+    B1 <--> C1
+    B1 <--> C2
+    B1 <--> D1
+    B1 <--> E1
+```
+
+### 2.2 插件注册顺序
+
+```mermaid
+sequenceDiagram
+    participant App as Fastify App
+    participant Helmet as Helmet
+    participant CORS as CORS
+    participant Prisma as Prisma
+    participant Response as Response
+    participant Redis as Redis
+    participant RabbitMQ as RabbitMQ
+    participant Routes as Routes
+
+    App->>Helmet: 注册安全头
+    App->>CORS: 注册跨域
+    App->>Prisma: 注册数据库
+    App->>Response: 注册响应方法
+    App->>Redis: 注册缓存
+    App->>RabbitMQ: 注册消息队列
+    App->>Routes: 注册路由
+```
+
+### 2.3 技术栈
+
+| 层级     | 技术                   | 版本  | 用途            |
+| -------- | ---------------------- | ----- | --------------- |
+| 框架     | Fastify                | ^4.0  | Web 框架        |
+| ORM      | Prisma                 | ^6.0  | 数据库操作      |
+| 缓存     | Redis (@fastify/redis) | ^7.0  | 验证码/会话缓存 |
+| 消息队列 | RabbitMQ (amqplib)     | ^0.10 | 异步任务处理    |
+| 认证     | JWT (jsonwebtoken)     | ^9.0  | Token 认证      |
+| 密码哈希 | bcrypt                 | ^5.0  | 密码加密        |
+| 安全     | @fastify/helmet        | ^11.0 | 安全响应头      |
+| 跨域     | @fastify/cors          | ^9.0  | 跨域资源共享    |
+| 邮件     | nodemailer             | ^6.0  | 邮件发送        |
+
+---
+
+## 3. 中间件资源整合
+
+### 3.1 现有中间件分析
+
+#### 3.1.1 Prisma 插件 (`src/plugins/prisma.ts`)
+
+```typescript
+// 核心功能
+- 开发环境：显示所有 SQL 查询日志
+- 生产环境：只显示警告和错误
+- 自动连接和断开连接管理
+- 提供 fastify.prisma 访问点
+```
+
+#### 3.1.2 Redis 插件 (`src/plugins/redis.ts`)
+
+```typescript
+// 核心功能
+- 基于 @fastify/redis 实现
+- 支持密码认证
+- 提供 fastify.redis 访问点
+```
+
+#### 3.1.3 RabbitMQ 插件 (`src/plugins/rabbitmq.ts`)
+
+```typescript
+// 核心功能
+- 提供 connection 和 channel 访问
+- 用于异步任务队列处理
+- 提供 fastify.amqp 访问点
+```
+
+#### 3.1.4 Response 插件 (`src/plugins/response.ts`)
+
+```typescript
+// 核心功能
+reply.sendSuccess(data, msg?, code?)    // 成功响应
+reply.sendFail(code, msg, data?)        // 失败响应
+reply.sendBadRequest(msg?)               // 400 错误
+reply.sendUnauthorized(msg?)            // 401 错误
+reply.sendForbidden(msg?)               // 403 错误
+reply.sendNotFound(msg?)                 // 404 错误
+reply.sendServerError(msg?)              // 500 错误
+```
+
+### 3.2 优化方案
+
+| 优化项         | 现有方案     | 优化方案          | 优势               |
+| -------------- | ------------ | ----------------- | ------------------ |
+| **验证码存储** | 新建数据库表 | Redis 存储 + TTL  | 性能高、自动过期   |
+| **防暴力破解** | 无           | Redis 计数 + 限流 | 实时生效、易管理   |
+| **JWT 黑名单** | 无           | Redis Set 存储    | 高效查询、快速失效 |
+| **登录会话**   | 无           | Redis 存储        | 支持强制下线       |
+| **异步邮件**   | 同步发送     | RabbitMQ 队列     | 解耦、高可用       |
+
+### 3.3 Redis Key 设计
+
+```typescript
+// 验证码相关
+const VERIFY_CODE_PREFIX = "auth:verify:"; // 验证码
+const VERIFY_CODE_EXPIRE = 300; // 5分钟
+
+// 防暴力破解
+const LOGIN_FAIL_PREFIX = "auth:login_fail:"; // 登录失败次数
+const LOGIN_FAIL_EXPIRE = 900; // 15分钟
+const LOGIN_LOCK_PREFIX = "auth:login_lock:"; // 登录锁定
+const LOGIN_LOCK_EXPIRE = 1800; // 30分钟
+
+// JWT 黑名单
+const JWT_BLACKLIST_PREFIX = "auth:jwt:blacklist:"; // Token 黑名单
+
+// 发送频率限制
+const SEND_CODE_RATE_PREFIX = "auth:send_rate:"; // 发送频率
+const SEND_CODE_RATE_EXPIRE = 60; // 1分钟
+```
+
+---
+
+## 4. 数据库设计
+
+### 4.1 现有表结构
+
+#### 4.1.1 User 表
+
+| 字段          | 类型     | 说明               |
+| ------------- | -------- | ------------------ |
+| id            | BigInt   | 用户ID (自增)      |
+| email         | String   | 邮箱 (唯一)        |
+| password_hash | String   | 密码哈希           |
+| username      | String   | 用户名             |
+| role          | String   | 角色 (admin/user)  |
+| status        | Int      | 状态 (0禁用/1启用) |
+| created_at    | DateTime | 创建时间           |
+| updated_at    | DateTime | 更新时间           |
+| last_login_at | DateTime | 最后登录时间       |
+
+#### 4.1.2 UserRole 表
+
+| 字段      | 类型     | 说明     |
+| --------- | -------- | -------- |
+| user_id   | BigInt   | 用户ID   |
+| role_code | RoleCode | 角色编码 |
+
+```prisma
+enum RoleCode {
+  super_admin  // 超级管理员
+  user         // 普通用户
+}
+```
+
+#### 4.1.3 SystemConfig 表
+
+| 字段        | 类型    | 说明          |
+| ----------- | ------- | ------------- |
+| id          | BigInt  | 主键          |
+| key         | String  | 配置键 (唯一) |
+| value       | String? | 配置值        |
+| description | String? | 配置描述      |
+| category    | String  | 配置分类      |
+
+### 4.2 需要新增的配置项
+
+在 `system_configs` 表中添加以下配置：
+
+```sql
+-- SMTP 配置
+INSERT INTO system_configs (key, value, description, category) VALUES
+('smtp_enabled', 'false', '是否启用SMTP服务', 'smtp'),
+('smtp_host', '', 'SMTP服务器地址', 'smtp'),
+('smtp_port', '587', 'SMTP端口', 'smtp'),
+('smtp_username', '', 'SMTP用户名', 'smtp'),
+('smtp_password', '', 'SMTP密码(加密存储)', 'smtp'),
+('smtp_from_email', '', '发件人邮箱', 'smtp'),
+('registration_enabled', 'false', '是否开放用户注册', 'auth'),
+('registration_mode', 'admin_only', '注册模式: email_verify(邮箱验证)/admin_only(仅管理员)', 'auth'),
+('jwt_secret', '', 'JWT密钥(系统生成)', 'auth'),
+('jwt_access_expire', '3600', 'Access Token有效期(秒)', 'auth'),
+('jwt_refresh_expire', '604800', 'Refresh Token有效期(秒)', 'auth');
+```
+
+---
+
+## 5. Redis 缓存设计
+
+### 5.1 验证码存储
+
+```typescript
+// Key: auth:verify:{email}
+// Value: { code: string, createdAt: number }
+// TTL: 300秒 (5分钟)
+
+async function setVerificationCode(email: string, code: string): Promise<void> {
+  const key = `auth:verify:${email}`;
+  const value = JSON.stringify({ code, createdAt: Date.now() });
+  await fastify.redis.setEx(key, 300, value);
+}
+
+async function getVerificationCode(email: string): Promise<string | null> {
+  const key = `auth:verify:${email}`;
+  const value = await fastify.redis.get(key);
+  if (!value) return null;
+  const { code } = JSON.parse(value);
+  return code;
+}
+
+async function deleteVerificationCode(email: string): Promise<void> {
+  const key = `auth:verify:${email}`;
+  await fastify.redis.del(key);
+}
+```
+
+### 5.2 防暴力破解
+
+```typescript
+// Key: auth:login_fail:{email}
+// Value: 失败次数
+// TTL: 900秒 (15分钟)
+
+// Key: auth:login_lock:{email}
+// Value: 锁定截止时间
+// TTL: 1800秒 (30分钟)
+
+// 登录失败计数
+async function incrementLoginFail(email: string): Promise<number> {
+  const key = `auth:login_fail:${email}`;
+  const count = await fastify.redis.incr(key);
+  if (count === 1) {
+    await fastify.redis.expire(key, 900); // 15分钟过期
+  }
+  return count;
+}
+
+// 检查是否被锁定
+async function isLoginLocked(email: string): Promise<boolean> {
+  const key = `auth:login_lock:${email}`;
+  const locked = await fastify.redis.exists(key);
+  return locked === 1;
+}
+
+// 锁定账户
+async function lockAccount(email: string): Promise<void> {
+  const key = `auth:login_lock:${email}`;
+  await fastify.redis.setEx(key, 1800, Date.now().toString());
+}
+
+// 解锁账户并清除失败记录
+async function unlockAccount(email: string): Promise<void> {
+  await fastify.redis.del(`auth:login_fail:${email}`);
+  await fastify.redis.del(`auth:login_lock:${email}`);
+}
+```
+
+### 5.3 JWT 黑名单
+
+```typescript
+// Key: auth:jwt:blacklist:{token_jti}
+// Value: 1
+// TTL: Token 剩余有效期
+
+async function addTokenToBlacklist(jti: string, exp: number): Promise<void> {
+  const key = `auth:jwt:blacklist:${jti}`;
+  const ttl = exp - Math.floor(Date.now() / 1000);
+  if (ttl > 0) {
+    await fastify.redis.setEx(key, ttl, "1");
+  }
+}
+
+async function isTokenBlacklisted(jti: string): Promise<boolean> {
+  const key = `auth:jwt:blacklist:${jti}`;
+  const exists = await fastify.redis.exists(key);
+  return exists === 1;
+}
+```
+
+### 5.4 发送频率限制
+
+```typescript
+// Key: auth:send_rate:{email}
+// Value: 发送次数
+// TTL: 60秒 (1分钟)
+
+async function checkSendRate(email: string): Promise<boolean> {
+  const key = `auth:send_rate:${email}`;
+  const count = await fastify.redis.get(key);
+
+  if (!count) {
+    await fastify.redis.setEx(key, 60, "1");
+    return true;
+  }
+
+  if (parseInt(count) >= 3) {
+    return false; // 超过限制
+  }
+
+  await fastify.redis.incr(key);
+  return true;
+}
+```
+
+---
+
+## 6. API 接口设计
+
+### 6.1 认证接口 (`/api/auth`)
+
+#### 6.1.1 获取系统状态
+
+```
+GET /api/auth/status
+```
+
+**响应**:
+
+```json
+{
+  "data": {
+    "initialized": true,
+    "registrationEnabled": true,
+    "registrationMode": "email_verify",
+    "smtpConfigured": true
+  },
+  "code": 0,
+  "msg": "ok"
+}
+```
+
+#### 6.1.2 用户登录
+
+```
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+**响应**:
+
+```json
+{
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "tokenType": "Bearer",
+    "expiresIn": 3600,
+    "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
+    "refreshExpiresIn": 604800,
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "username": "管理员",
+      "role": "super_admin"
+    }
+  },
+  "code": 0,
+  "msg": "登录成功"
+}
+```
+
+**错误响应**:
+
+```json
+// 账户被锁定
+{
+  "data": null,
+  "code": 403,
+  "msg": "登录失败次数过多，请30分钟后再试"
+}
+
+// 密码错误
+{
+  "data": {
+    "remainAttempts": 4
+  },
+  "code": 401,
+  "msg": "邮箱或密码错误"
+}
+```
+
+#### 6.1.3 发送验证码
+
+```
+POST /api/auth/send-code
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "type": "register"  // register | reset_password
+}
+```
+
+**响应**:
+
+```json
+{
+  "data": {
+    "expireSeconds": 300
+  },
+  "code": 0,
+  "msg": "验证码已发送"
+}
+```
+
+#### 6.1.4 用户注册（初始化模式）
+
+```
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Admin123!",
+  "username": "系统管理员"
+}
+```
+
+**响应**:
+
+```json
+{
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "user": {
+      "id": 1,
+      "email": "admin@example.com",
+      "username": "系统管理员",
+      "role": "super_admin"
+    },
+    "isFirstUser": true
+  },
+  "code": 0,
+  "msg": "注册成功"
+}
+```
+
+#### 6.1.5 验证邮箱并完成注册
+
+```
+POST /api/auth/verify-register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "code": "123456",
+  "password": "User123!",
+  "username": "新用户"
+}
+```
+
+**响应**:
+
+```json
+{
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "user": {
+      "id": 2,
+      "email": "user@example.com",
+      "username": "新用户",
+      "role": "user"
+    }
+  },
+  "code": 0,
+  "msg": "注册成功"
+}
+```
+
+#### 6.1.6 刷新 Token
+
+```
+POST /api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+#### 6.1.7 登出
+
+```
+POST /api/auth/logout
+Authorization: Bearer {token}
+```
+
+### 6.2 管理员接口 (`/api/admin`)
+
+#### 6.2.1 创建用户
+
+```
+POST /api/admin/users
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "username": "新用户",
+  "role": "user",
+  "password": "User123!"
+}
+```
+
+#### 6.2.2 获取用户列表
+
+```
+GET /api/admin/users?page=1&limit=20&email=&status=
+Authorization: Bearer {token}
+```
+
+**响应**:
+
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "email": "admin@example.com",
+        "username": "管理员",
+        "role": "super_admin",
+        "status": 1,
+        "createdAt": "2026-06-06T10:00:00Z"
+      }
+    ],
+    "total": 100,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 5
+  },
+  "code": 0,
+  "msg": "ok"
+}
+```
+
+#### 6.2.3 更新用户
+
+```
+PUT /api/admin/users/:id
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "username": "新名称",
+  "role": "user",
+  "status": 1
+}
+```
+
+#### 6.2.4 删除用户
+
+```
+DELETE /api/admin/users/:id
+Authorization: Bearer {token}
+```
+
+#### 6.2.5 获取系统配置
+
+```
+GET /api/admin/config
+Authorization: Bearer {token}
+```
+
+#### 6.2.6 更新系统配置
+
+```
+PUT /api/admin/config/smtp
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "enabled": true,
+  "host": "smtp.example.com",
+  "port": 587,
+  "username": "noreply@example.com",
+  "password": "password",
+  "fromEmail": "noreply@example.com"
+}
+```
+
+---
+
+## 7. 业务逻辑实现
+
+### 7.1 系统状态检测
+
+```typescript
+// src/services/auth.service.ts
+
+export class AuthService {
+  constructor(private fastify: FastifyInstance) {}
+
+  /**
+   * 检查系统是否已初始化（存在超级管理员）
+   */
+  async isSystemInitialized(): Promise<boolean> {
+    const adminCount = await this.fastify.prisma.userRole.count({
+      where: { role_code: "super_admin" }
+    });
+    return adminCount > 0;
+  }
+
+  /**
+   * 检查注册是否开放
+   */
+  async isRegistrationEnabled(): Promise<boolean> {
+    const config = await this.fastify.prisma.systemConfig.findUnique({
+      where: { key: "registration_enabled" }
+    });
+    return config?.value === "true";
+  }
+
+  /**
+   * 检查 SMTP 是否配置
+   */
+  async isSmtpConfigured(): Promise<boolean> {
+    const config = await this.fastify.prisma.systemConfig.findUnique({
+      where: { key: "smtp_enabled" }
+    });
+    return config?.value === "true";
+  }
+
+  /**
+   * 获取系统状态
+   */
+  async getSystemStatus() {
+    const initialized = await this.isSystemInitialized();
+    const registrationEnabled = await this.isRegistrationEnabled();
+    const smtpConfigured = await this.isSmtpConfigured();
+
+    return {
+      initialized,
+      registrationEnabled,
+      registrationMode: smtpConfigured ? "email_verify" : "admin_only",
+      smtpConfigured
+    };
+  }
+}
+```
+
+### 7.2 登录逻辑
+
+```typescript
+// src/services/auth.service.ts
+
+export class AuthService {
+  /**
+   * 用户登录
+   */
+  async login(email: string, password: string) {
+    // 1. 检查是否被锁定
+    const isLocked = await this.isAccountLocked(email);
+    if (isLocked) {
+      throw new AuthError("登录失败次数过多，请30分钟后再试", 403);
+    }
+
+    // 2. 查询用户
+    const user = await this.fastify.prisma.user.findUnique({
+      where: { email, deleted_at: null }
+    });
+
+    if (!user) {
+      await this.recordLoginFail(email);
+      throw new AuthError("邮箱或密码错误", 401);
+    }
+
+    // 3. 验证密码
+    const isValid = await bcrypt.compare(password, user.password_hash);
+    if (!isValid) {
+      await this.recordLoginFail(email);
+      const remainAttempts = 5 - (await this.getLoginFailCount(email));
+      throw new AuthError("邮箱或密码错误", 401, { remainAttempts });
+    }
+
+    // 4. 检查账户状态
+    if (user.status === 0) {
+      throw new AuthError("账户已被禁用", 403);
+    }
+
+    // 5. 登录成功，清除失败记录
+    await this.clearLoginFail(email);
+
+    // 6. 更新最后登录时间
+    await this.fastify.prisma.user.update({
+      where: { id: user.id },
+      data: { last_login_at: new Date() }
+    });
+
+    // 7. 生成 Token
+    const tokens = await this.generateTokens(user);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role
+      }
+    };
+  }
+
+  /**
+   * 记录登录失败
+   */
+  private async recordLoginFail(email: string): Promise<void> {
+    const count = await this.fastify.redis.incr(`auth:login_fail:${email}`);
+
+    // 设置过期时间
+    if (count === 1) {
+      await this.fastify.redis.expire(`auth:login_fail:${email}`, 900);
+    }
+
+    // 失败5次后锁定账户
+    if (count >= 5) {
+      await this.fastify.redis.setEx(`auth:login_lock:${email}`, 1800, Date.now().toString());
+    }
+  }
+
+  /**
+   * 获取登录失败次数
+   */
+  private async getLoginFailCount(email: string): Promise<number> {
+    const count = await this.fastify.redis.get(`auth:login_fail:${email}`);
+    return parseInt(count || "0");
+  }
+
+  /**
+   * 检查账户是否被锁定
+   */
+  private async isAccountLocked(email: string): Promise<boolean> {
+    const locked = await this.fastify.redis.exists(`auth:login_lock:${email}`);
+    return locked === 1;
+  }
+
+  /**
+   * 清除登录失败记录
+   */
+  private async clearLoginFail(email: string): Promise<void> {
+    await this.fastify.redis.del(`auth:login_fail:${email}`);
+    await this.fastify.redis.del(`auth:login_lock:${email}`);
+  }
+}
+```
+
+### 7.3 初始化注册逻辑
+
+```typescript
+// src/services/auth.service.ts
+
+export class AuthService {
+  /**
+   * 初始化注册（第一个超级管理员）
+   */
+  async registerAsSuperAdmin(email: string, password: string, username?: string) {
+    // 1. 检查系统是否已初始化
+    const isInitialized = await this.isSystemInitialized();
+    if (isInitialized) {
+      throw new AuthError("系统已初始化，无法进行初始化注册", 403);
+    }
+
+    // 2. 检查邮箱是否已注册
+    const existing = await this.fastify.prisma.user.findUnique({
+      where: { email }
+    });
+    if (existing) {
+      throw new AuthError("该邮箱已被注册", 409);
+    }
+
+    // 3. 哈希密码
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // 4. 创建用户
+    const user = await this.fastify.prisma.user.create({
+      data: {
+        email,
+        password_hash: passwordHash,
+        username: username || email.split("@")[0],
+        role: "admin",
+        status: 1
+      }
+    });
+
+    // 5. 添加超级管理员角色
+    await this.fastify.prisma.userRole.create({
+      data: {
+        user_id: user.id,
+        role_code: "super_admin"
+      }
+    });
+
+    // 6. 生成 Token
+    const tokens = await this.generateTokens(user);
+
+    // 7. 记录审计日志
+    await this.createAuditLog(user.id, "register", "user", user.id, {
+      action: "initial_registration",
+      isFirstUser: true
+    });
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: "super_admin"
+      },
+      isFirstUser: true
+    };
+  }
+}
+```
+
+### 7.4 邮箱验证注册逻辑
+
+```typescript
+// src/services/auth.service.ts
+
+export class AuthService {
+  /**
+   * 发送注册验证码
+   */
+  async sendRegisterCode(email: string) {
+    // 1. 检查 SMTP 配置
+    if (!(await this.isSmtpConfigured())) {
+      throw new AuthError("邮件服务暂未配置，请联系管理员", 503);
+    }
+
+    // 2. 检查是否开放注册
+    if (!(await this.isRegistrationEnabled())) {
+      throw new AuthError("暂未开放注册，请联系管理员", 403);
+    }
+
+    // 3. 检查邮箱是否已注册
+    const existing = await this.fastify.prisma.user.findUnique({
+      where: { email }
+    });
+    if (existing) {
+      throw new AuthError("该邮箱已被注册", 409);
+    }
+
+    // 4. 检查发送频率
+    const canSend = await this.checkSendRate(email);
+    if (!canSend) {
+      throw new AuthError("发送过于频繁，请稍后再试", 429);
+    }
+
+    // 5. 生成验证码
+    const code = this.generateVerificationCode();
+
+    // 6. 存储到 Redis（5分钟过期）
+    await this.fastify.redis.setEx(`auth:verify:${email}`, 300, JSON.stringify({ code, type: "register" }));
+
+    // 7. 发送邮件（通过 RabbitMQ 异步发送）
+    await this.fastify.amqp.channel.sendToQueue(
+      "mail:send",
+      Buffer.from(
+        JSON.stringify({
+          to: email,
+          subject: "Q问卷 - 注册验证码",
+          template: "verification-code",
+          data: { code, expiresMinutes: 5 }
+        })
+      )
+    );
+
+    return { expireSeconds: 300 };
+  }
+
+  /**
+   * 验证邮箱并完成注册
+   */
+  async verifyAndRegister(email: string, code: string, password: string, username: string) {
+    // 1. 验证验证码
+    const stored = await this.fastify.redis.get(`auth:verify:${email}`);
+    if (!stored) {
+      throw new AuthError("验证码已过期", 400);
+    }
+
+    const { code: storedCode, type } = JSON.parse(stored);
+    if (storedCode !== code || type !== "register") {
+      throw new AuthError("验证码错误", 400);
+    }
+
+    // 2. 删除已使用的验证码
+    await this.fastify.redis.del(`auth:verify:${email}`);
+
+    // 3. 创建用户
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await this.fastify.prisma.user.create({
+      data: {
+        email,
+        password_hash: passwordHash,
+        username,
+        role: "user",
+        status: 1
+      }
+    });
+
+    // 4. 添加用户角色
+    await this.fastify.prisma.userRole.create({
+      data: {
+        user_id: user.id,
+        role_code: "user"
+      }
+    });
+
+    // 5. 生成 Token
+    const tokens = await this.generateTokens(user);
+
+    // 6. 记录审计日志
+    await this.createAuditLog(user.id, "register", "user", user.id, {
+      action: "email_verification_register"
+    });
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: "user"
+      }
+    };
+  }
+
+  /**
+   * 检查发送频率（同一邮箱1分钟最多3次）
+   */
+  private async checkSendRate(email: string): Promise<boolean> {
+    const key = `auth:send_rate:${email}`;
+    const count = await this.fastify.redis.get(key);
+
+    if (!count) {
+      await this.fastify.redis.setEx(key, 60, "1");
+      return true;
+    }
+
+    if (parseInt(count) >= 3) {
+      return false;
+    }
+
+    await this.fastify.redis.incr(key);
+    return true;
+  }
+
+  /**
+   * 生成6位数字验证码
+   */
+  private generateVerificationCode(): string {
+    return Math.random().toString().slice(2, 8).padStart(6, "0");
+  }
+}
+```
+
+### 7.5 Token 生成与验证
+
+```typescript
+// src/services/auth.service.ts
+
+export class AuthService {
+  /**
+   * 生成 Access Token 和 Refresh Token
+   */
+  async generateTokens(user: { id: bigint; email: string; role: string }) {
+    const now = Math.floor(Date.now() / 1000);
+
+    // Access Token (1小时)
+    const accessExpire = now + 3600;
+    const accessToken = jwt.sign(
+      {
+        sub: user.id.toString(),
+        email: user.email,
+        role: user.role,
+        type: "access",
+        jti: this.generateUUID()
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: "1h" }
+    );
+
+    // Refresh Token (7天)
+    const refreshExpire = now + 604800;
+    const refreshToken = jwt.sign(
+      {
+        sub: user.id.toString(),
+        type: "refresh",
+        jti: this.generateUUID()
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: "7d" }
+    );
+
+    return {
+      token: accessToken,
+      tokenType: "Bearer",
+      expiresIn: 3600,
+      refreshToken,
+      refreshExpiresIn: 604800
+    };
+  }
+
+  /**
+   * 验证 Token
+   */
+  async verifyToken(token: string) {
+    // 1. 解码 Token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
+    // 2. 检查 Token 类型
+    if (decoded.type !== "access") {
+      throw new AuthError("无效的 Token 类型", 401);
+    }
+
+    // 3. 检查是否在黑名单
+    const isBlacklisted = await this.fastify.redis.exists(`auth:jwt:blacklist:${decoded.jti}`);
+    if (isBlacklisted) {
+      throw new AuthError("Token 已失效", 401);
+    }
+
+    // 4. 查询用户
+    const user = await this.fastify.prisma.user.findUnique({
+      where: { id: decoded.sub }
+    });
+
+    if (!user || user.status === 0) {
+      throw new AuthError("用户不存在或已被禁用", 401);
+    }
+
+    return {
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    };
+  }
+
+  /**
+   * 将 Token 加入黑名单
+   */
+  async blacklistToken(token: string) {
+    try {
+      const decoded = jwt.decode(token) as any;
+      if (decoded && decoded.exp) {
+        const ttl = decoded.exp - Math.floor(Date.now() / 1000);
+        if (ttl > 0) {
+          await this.fastify.redis.setEx(`auth:jwt:blacklist:${decoded.jti}`, ttl, "1");
+        }
+      }
+    } catch (error) {
+      // 忽略错误
+    }
+  }
+}
+```
+
+### 7.6 管理员服务
+
+```typescript
+// src/services/admin.service.ts
+
+export class AdminService {
+  /**
+   * 创建用户
+   */
+  async createUser(adminId: bigint, data: CreateUserDto) {
+    // 1. 验证管理员权限
+    await this.verifySuperAdmin(adminId);
+
+    // 2. 检查邮箱唯一性
+    const existing = await this.fastify.prisma.user.findUnique({
+      where: { email: data.email }
+    });
+    if (existing) {
+      throw new AuthError("该邮箱已被注册", 409);
+    }
+
+    // 3. 生成或使用提供的密码
+    const password = data.password || this.generateRandomPassword(12);
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // 4. 创建用户
+    const user = await this.fastify.prisma.user.create({
+      data: {
+        email: data.email,
+        password_hash: passwordHash,
+        username: data.username,
+        role: data.role === "admin" ? "admin" : "user",
+        status: 1
+      }
+    });
+
+    // 5. 添加角色
+    const roleCode = data.role === "admin" ? "super_admin" : "user";
+    await this.fastify.prisma.userRole.create({
+      data: {
+        user_id: user.id,
+        role_code: roleCode
+      }
+    });
+
+    // 6. 如果未提供密码，发送邮件通知
+    if (!data.password) {
+      await this.sendPasswordNotification(user.email, password);
+    }
+
+    // 7. 记录审计日志
+    await this.createAuditLog(adminId, "create_user", "user", user.id, {
+      createdEmail: user.email,
+      createdRole: data.role
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: data.role,
+      status: user.status,
+      passwordProvided: !!data.password
+    };
+  }
+
+  /**
+   * 验证超级管理员权限
+   */
+  private async verifySuperAdmin(userId: bigint) {
+    const role = await this.fastify.prisma.userRole.findFirst({
+      where: {
+        user_id: userId,
+        role_code: "super_admin"
+      }
+    });
+
+    if (!role) {
+      throw new AuthError("权限不足，需要超级管理员权限", 403);
+    }
+  }
+}
+```
+
+### 7.7 路由定义
+
+```typescript
+// src/routes/auth.routes.ts
+
+import type { FastifyPluginAsync } from "fastify";
+import { AuthService } from "../services/auth.service.js";
+
+const authRoutes: FastifyPluginAsync = async fastify => {
+  const authService = new AuthService(fastify);
+
+  // 获取系统状态（公开）
+  fastify.get("/status", async (request, reply) => {
+    const status = await authService.getSystemStatus();
+    return reply.sendSuccess(status);
+  });
+
+  // 用户登录（公开）
+  fastify.post("/login", async (request, reply) => {
+    const { email, password } = request.body as any;
+    const result = await authService.login(email, password);
+    return reply.sendSuccess(result, "登录成功");
+  });
+
+  // 发送注册验证码（公开）
+  fastify.post("/send-code", async (request, reply) => {
+    const { email, type } = request.body as any;
+    const result = await authService.sendCode(email, type);
+    return reply.sendSuccess(result, "验证码已发送");
+  });
+
+  // 用户注册 - 初始化模式（公开）
+  fastify.post("/register", async (request, reply) => {
+    const { email, password, username } = request.body as any;
+    const result = await authService.registerAsSuperAdmin(email, password, username);
+    return reply.sendSuccess(result, "注册成功");
+  });
+
+  // 验证邮箱注册（公开）
+  fastify.post("/verify-register", async (request, reply) => {
+    const { email, code, password, username } = request.body as any;
+    const result = await authService.verifyAndRegister(email, code, password, username);
+    return reply.sendSuccess(result, "注册成功");
+  });
+
+  // 刷新 Token（公开）
+  fastify.post("/refresh", async (request, reply) => {
+    const { refreshToken } = request.body as any;
+    const result = await authService.refreshToken(refreshToken);
+    return reply.sendSuccess(result);
+  });
+
+  // 登出（需认证）
+  fastify.post(
+    "/logout",
+    {
+      preHandler: [authenticate]
+    },
+    async (request, reply) => {
+      const token = extractToken(request);
+      await authService.blacklistToken(token);
+      return reply.sendSuccess(null, "已退出登录");
+    }
+  );
+};
+
+export default authRoutes;
+```
+
+### 7.8 认证中间件
+
+```typescript
+// src/middleware/auth.middleware.ts
+
+export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const token = extractToken(request);
+    if (!token) {
+      return reply.sendUnauthorized("请先登录");
+    }
+
+    const authService = new AuthService(request.server);
+    const decoded = await authService.verifyToken(token);
+
+    // 将用户信息挂载到 request
+    (request as any).user = decoded;
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return reply.sendUnauthorized(error.message);
+    }
+    return reply.sendUnauthorized("Token 无效");
+  }
+}
+
+export async function requireSuperAdmin(request: FastifyRequest, reply: FastifyReply) {
+  const user = (request as any).user;
+  if (!user || user.role !== "super_admin") {
+    return reply.sendForbidden("需要超级管理员权限");
+  }
+}
+
+function extractToken(request: FastifyRequest): string | null {
+  const auth = request.headers.authorization;
+  if (!auth || !auth.startsWith("Bearer ")) {
+    return null;
+  }
+  return auth.slice(7);
+}
+```
+
+---
+
+## 8. 安全性方案
+
+### 8.1 密码安全
+
+| 措施           | 实现                           |
+| -------------- | ------------------------------ |
+| **哈希算法**   | bcrypt (cost factor: 10)       |
+| **最小长度**   | 8位                            |
+| **复杂度要求** | 包含大小写字母和数字           |
+| **盐值**       | bcrypt 自动生成 (128-bit salt) |
+| **历史记录**   | 可扩展存储最近 N 个密码哈希    |
+
+### 8.2 防暴力破解
+
+| 措施         | 实现                          |
+| ------------ | ----------------------------- |
+| **失败计数** | Redis 存储，15分钟过期        |
+| **账户锁定** | 连续失败5次锁定30分钟         |
+| **动态限流** | 登录接口根据失败次数动态调整  |
+| **IP 限流**  | 可扩展 Redis 记录 IP 失败次数 |
+
+### 8.3 验证码安全
+
+| 措施           | 实现                  |
+| -------------- | --------------------- |
+| **有效期**     | Redis TTL = 300秒     |
+| **一次性使用** | 验证后立即删除        |
+| **防刷限制**   | 同一邮箱1分钟最多3次  |
+| **发送频率**   | 前端倒计时 + 后端验证 |
+
+### 8.4 JWT 安全
+
+| 措施              | 实现                              |
+| ----------------- | --------------------------------- |
+| **算法**          | HS256                             |
+| **过期时间**      | Access Token: 1小时               |
+| **Refresh Token** | 7天有效期                         |
+| **Token ID**      | JWT ID (jti) 用于黑名单           |
+| **黑名单**        | Redis Set，TTL = Token 剩余有效期 |
+| **密钥管理**      | 环境变量存储，定期轮换            |
+
+### 8.5 HTTP 安全
+
+| 措施           | 实现                      |
+| -------------- | ------------------------- |
+| **安全响应头** | @fastify/helmet           |
+| **CORS**       | @fastify/cors，可配置来源 |
+| **HTTPS**      | 生产环境强制              |
+| **CSRF**       | 可扩展 SameSite Cookie    |
+
+---
+
+## 9. 错误处理
+
+### 9.1 错误类型定义
+
+```typescript
+// src/utils/errors.ts
+
+export class AppError extends Error {
+  constructor(
+    public message: string,
+    public statusCode: number,
+    public code: number = statusCode,
+    public details?: unknown
+  ) {
+    super(message);
+    this.name = "AppError";
+  }
+}
+
+export class AuthError extends AppError {
+  constructor(message: string, statusCode: number, details?: unknown) {
+    super(message, statusCode, statusCode, details);
+    this.name = "AuthError";
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(message: string, details?: unknown) {
+    super(message, 400, 400, details);
+    this.name = "ValidationError";
+  }
+}
+```
+
+### 9.2 错误码定义
+
+```typescript
+// src/utils/response.ts
+
+export enum StatusCode {
+  OK = 0,
+  BAD_REQUEST = 400,
+  UNAUTHORIZED = 401,
+  FORBIDDEN = 403,
+  NOT_FOUND = 404,
+  CONFLICT = 409,
+  RATE_LIMITED = 429,
+  INTERNAL_ERROR = 500
+}
+
+// 业务错误码
+export enum BizCode {
+  EMAIL_EXISTS = 1001,
+  EMAIL_NOT_EXISTS = 1002,
+  VERIFY_CODE_INVALID = 1003,
+  VERIFY_CODE_EXPIRED = 1004,
+  ACCOUNT_LOCKED = 1005,
+  ACCOUNT_DISABLED = 1006,
+  INVALID_PASSWORD = 1007,
+  SYSTEM_NOT_INITIALIZED = 1008,
+  REGISTRATION_CLOSED = 1009,
+  SMTP_NOT_CONFIGURED = 1010
+}
+```
+
+### 9.3 全局错误处理
+
+```typescript
+// src/plugins/error-handler.ts
+
+export const errorHandler: FastifyErrorHandler = (error, request, reply) => {
+  // 记录错误日志
+  request.log.error(error);
+
+  // AppError
+  if (error instanceof AppError) {
+    return reply.status(error.statusCode).send({
+      data: error.details || null,
+      code: error.code,
+      msg: error.message
+    });
+  }
+
+  // Fastify 验证错误
+  if (error.validation) {
+    return reply.status(400).send({
+      data: error.validation,
+      code: 400,
+      msg: "参数验证失败"
+    });
+  }
+
+  // 其他错误
+  return reply.status(500).send({
+    data: null,
+    code: 500,
+    msg: process.env.NODE_ENV === "production" ? "服务器内部错误" : error.message
+  });
+};
+```
+
+---
+
+## 10. 部署配置
+
+### 10.1 环境变量
+
+```bash
+# .env.example
+
+# 服务器配置
+NODE_ENV=development
+PORT=3000
+LOG_LEVEL=info
+
+# CORS
+CORS_ORIGIN=http://localhost:5173
+
+# 数据库 (PostgreSQL)
+DATABASE_URL=postgresql://questionnaire:questionnaire123@localhost:5433/questionnaire_db
+
+# Redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+# RabbitMQ
+RABBITMQ_URL=amqp://questionnaire:questionnaire123@localhost:5672
+
+# JWT
+JWT_SECRET=your-super-secret-key-change-in-production
+JWT_ACCESS_EXPIRE=3600
+JWT_REFRESH_EXPIRE=604800
+
+# SMTP (可选)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=noreply@example.com
+SMTP_PASSWORD=
+SMTP_FROM_EMAIL=noreply@example.com
+```
+
+### 10.2 健康检查端点
+
+```
+GET /api/health
+```
+
+**响应示例**:
+
+```json
+{
+  "data": {
+    "status": "ok",
+    "uptime": 12345.67,
+    "checks": {
+      "postgres": {
+        "ok": true,
+        "latency_ms": 5
+      },
+      "redis": {
+        "ok": true,
+        "latency_ms": 2
+      },
+      "rabbitmq": {
+        "ok": true,
+        "latency_ms": 8
+      }
+    }
+  },
+  "code": 0,
+  "msg": "ok"
+}
+```
+
+---
+
+## 附录
+
+### A.1 项目中间件文件结构
+
+```
+q-server/src/
+├── plugins/
+│   ├── prisma.ts        # 数据库 ORM
+│   ├── redis.ts         # 缓存层
+│   ├── rabbitmq.ts      # 消息队列
+│   └── response.ts      # 统一响应
+├── services/
+│   ├── auth.service.ts  # 认证服务
+│   └── admin.service.ts # 管理员服务
+├── middleware/
+│   └── auth.middleware.ts # 认证中间件
+├── routes/
+│   ├── auth.routes.ts   # 认证路由
+│   └── admin.routes.ts  # 管理路由
+└── utils/
+    ├── response.ts      # 响应工具
+    └── errors.ts        # 错误定义
+```
+
+### A.2 Redis 缓存键速查表
+
+| Key Pattern                | 用途         | TTL             |
+| -------------------------- | ------------ | --------------- |
+| `auth:verify:{email}`      | 注册验证码   | 300s            |
+| `auth:login_fail:{email}`  | 登录失败计数 | 900s            |
+| `auth:login_lock:{email}`  | 账户锁定标记 | 1800s           |
+| `auth:send_rate:{email}`   | 发送频率限制 | 60s             |
+| `auth:jwt:blacklist:{jti}` | Token 黑名单 | Token剩余有效期 |
+
+---
+
+**文档版本**: v2.0  
+**创建时间**: 2026-06-06  
+**适用项目**: Q问卷系统 (questionnaireSys)
