@@ -3,8 +3,8 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import prismaPlugin from "./plugins/prisma.js";
 import responsePlugin from "./plugins/response.js";
-// import redisPlugin from "./plugins/redis.js";
-// import rabbitmqPlugin from "./plugins/rabbitmq.js";
+import redisPlugin from "./plugins/redis.js";
+import rabbitmqPlugin from "./plugins/rabbitmq.js";
 import routes from "./routes/index.js";
 
 export const buildApp = () => {
@@ -19,8 +19,8 @@ export const buildApp = () => {
     .register(cors, { origin: process.env.CORS_ORIGIN ?? true })
     .register(prismaPlugin)
     .register(responsePlugin)
-    // .register(redisPlugin)
-    // .register(rabbitmqPlugin)
+    .register(redisPlugin)
+    .register(rabbitmqPlugin)
     .register(routes, { prefix: "/api" });
 
   return app;
