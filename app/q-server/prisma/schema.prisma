@@ -35,7 +35,7 @@ model User {
   surveys           Survey[]
   responses         Response[]
   tokens            ApiToken[]
-  audit_logs        AuditLog[]
+  audit_logs        AuditLog[]  @relation("AuditLogUser")
   permissions       SurveyPermission[]
   user_roles        UserRole[]
 
@@ -68,7 +68,6 @@ model Survey {
   user             User               @relation(fields: [user_id], references: [id])
   components       SurveyComponent[]
   responses        Response[]
-  audit_logs       AuditLog[]
   permissions      SurveyPermission[]
 
   @@index([user_id])
@@ -181,8 +180,8 @@ model AuditLog {
   user_agent    String?               // 浏览器信息
   created_at    DateTime  @default(now())
 
-  // 关联关系
-  user          User?     @relation(fields: [user_id], references: [id])
+  // 关联关系（单向，不强制反向关系）
+  user          User?     @relation(name: "AuditLogUser", fields: [user_id], references: [id])
 
   @@index([user_id])
   @@index([action])
