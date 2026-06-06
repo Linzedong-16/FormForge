@@ -19,5 +19,5 @@
     "skipLibCheck": true
   },
   "include": ["packages/**/*.ts", "packages/**/*.vue", "packages/**/*.tsx"],
-  "exclude": ["node_modules", "dist", "app"]
+  "exclude": ["node_modules", "dist", "app", "spec", "**/*.spec.ts", "**/*.spec.tsx", "**/*.test.ts", "**/*.test.tsx"]
 }

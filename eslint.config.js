@@ -11,7 +11,23 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const ignores = ["**/dist/**", "**/node_modules/**", ".*", "scripts/**", "**/*.d.ts", "docs/**/*.md"];
+const ignores = [
+  "**/dist/**",
+  "**/node_modules/**",
+  ".*",
+  "scripts/**",
+  "**/*.d.ts",
+  "docs/**/*.md",
+  "**/spec/**",
+  "**/*.spec.ts",
+  "**/*.spec.tsx",
+  "**/*.spec.js",
+  "**/*.spec.jsx",
+  "**/*.test.ts",
+  "**/*.test.tsx",
+  "**/*.test.js",
+  "**/*.test.jsx"
+];
 
 export default defineConfig(
   // 通用配置
