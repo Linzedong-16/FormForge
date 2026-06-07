@@ -6,6 +6,7 @@ import vueJsx from "@vitejs/plugin-vue-jsx";
 import vueDevTools from "vite-plugin-vue-devtools";
 import inspect from "vite-plugin-inspect";
 import viteCompression from "vite-plugin-compression";
+import { viteMockServe } from "vite-plugin-mock";
 
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
@@ -13,98 +14,114 @@ import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
 import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [
-    vue(),
-    vueJsx(),
-    vueDevTools(),
-    inspect(),
-    visualizer({
-      filename: "./dist/stats.html", // 生成可视化报告
-      open: true, // 自动打开浏览器
-      gzipSize: true, // 显示gzip后的体积
-      brotliSize: true, // 显示brotli压缩后的体积
-      template: "treemap", // 使用树图模板（更适合分析大文件）
-      projectRoot: process.cwd()
-    }),
-    // 自动导入Element Plus组件
-    Components({
-      resolvers: [ElementPlusResolver()]
-    }),
-    // 自动导入Element Plus API
-    AutoImport({
-      resolvers: [ElementPlusResolver()]
-    }),
-    // Vue I18n：保留运行时编译器，使 JS 对象 messages 可直接编译使用
-    VueI18nPlugin({
-      runtimeOnly: false
-    }),
-    // Gzip 压缩
-    // viteCompression({
-    //   algorithm: "gzip",
-    //   ext: ".gz",
-    //   threshold: 10240, // 10KB 以上才压缩
-    //   deleteOriginFile: false, // 保留原文件
-    //   verbose: true // 输出压缩日志
-    // }),
-    // Brotli 压缩（比 Gzip 压缩率更高）
-    viteCompression({
-      algorithm: "brotliCompress",
-      ext: ".br",
-      threshold: 10240,
-      deleteOriginFile: false,
-      verbose: true
-    })
-  ],
-  resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-      // 引用 monorepo 共享类型包
-      "@common": fileURLToPath(new URL("../../packages/common/src", import.meta.url))
-    }
-  },
-  server: {
-    proxy: {
-      "/api": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-        secure: false
-        // rewrite: path => path.replace(/^\/api/, "")
-      },
-      "/uploads": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-        secure: false
-      }
-    }
-  },
+export default defineConfig(({ command, mode }) => {
+  // Mock 开关：使用 --mode mock 时自动启用，无需依赖 .env 文件
+  const mockEnabled = mode === "mock";
 
-  build: {
-    cssCodeSplit: true, // CSS代码分割
-    cssMinify: true, // CSS压缩
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          // Vue核心
-          "vue-vendor": ["vue", "vue-router", "pinia"],
-          // Element Plus（最大贡献者）
-          "element-plus": ["element-plus"],
-          // 拖拽库
-          draggable: ["vuedraggable"],
-          // 图标库
-          icons: ["@element-plus/icons-vue", "@fortawesome/fontawesome-svg-core"]
+  return {
+    plugins: [
+      vue(),
+      vueJsx(),
+      vueDevTools(),
+      inspect(),
+      visualizer({
+        filename: "./dist/stats.html", // 生成可视化报告
+        open: true, // 自动打开浏览器
+        gzipSize: true, // 显示gzip后的体积
+        brotliSize: true, // 显示brotli压缩后的体积
+        template: "treemap", // 使用树图模板（更适合分析大文件）
+        projectRoot: process.cwd()
+      }),
+      // 自动导入Element Plus组件
+      Components({
+        resolvers: [ElementPlusResolver()]
+      }),
+      // 自动导入Element Plus API
+      AutoImport({
+        resolvers: [ElementPlusResolver()]
+      }),
+      // Vue I18n：保留运行时编译器，使 JS 对象 messages 可直接编译使用
+      VueI18nPlugin({
+        runtimeOnly: false
+      }),
+      // Gzip 压缩
+      // viteCompression({
+      //   algorithm: "gzip",
+      //   ext: ".gz",
+      //   threshold: 10240, // 10KB 以上才压缩
+      //   deleteOriginFile: false, // 保留原文件
+      //   verbose: true // 输出压缩日志
+      // }),
+      // Brotli 压缩（比 Gzip 压缩率更高）
+      viteCompression({
+        algorithm: "brotliCompress",
+        ext: ".br",
+        threshold: 10240,
+        deleteOriginFile: false,
+        verbose: true
+      }),
+
+      // Mock 插件 — 开发/构建时均可使用，由 VITE_MOCK 环境变量控制
+      viteMockServe({
+        mockPath: "./src/mock",
+        enable: command === "serve" && mockEnabled,
+        watchFiles: mockEnabled,
+        logger: true
+      })
+    ],
+    resolve: {
+      alias: {
+        "@": fileURLToPath(new URL("./src", import.meta.url)),
+        // 引用 monorepo 共享类型包
+        "@common": fileURLToPath(new URL("../../packages/common/src", import.meta.url))
+      }
+    },
+    server: {
+      proxy: {
+        "/api": {
+          target: "http://localhost:8080",
+          changeOrigin: true,
+          secure: false,
+          // Mock 模式 → 不转发到后端（由 vite-plugin-mock 拦截）
+          bypass(req) {
+            if (mockEnabled) return req.url;
+          }
+        },
+        "/uploads": {
+          target: "http://localhost:8080",
+          changeOrigin: true,
+          secure: false
         }
       }
     },
-    chunkSizeWarningLimit: 500, // 警告阈值
-    minify: "terser", // 使用 terser 来支持移除 console
-    sourcemap: false,
-    // 生产环境移除 console.log 和 debugger
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
+
+    build: {
+      cssCodeSplit: true, // CSS代码分割
+      cssMinify: true, // CSS压缩
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Vue核心
+            "vue-vendor": ["vue", "vue-router", "pinia"],
+            // Element Plus（最大贡献者）
+            "element-plus": ["element-plus"],
+            // 拖拽库
+            draggable: ["vuedraggable"],
+            // 图标库
+            icons: ["@element-plus/icons-vue", "@fortawesome/fontawesome-svg-core"]
+          }
+        }
+      },
+      chunkSizeWarningLimit: 500, // 警告阈值
+      minify: "terser", // 使用 terser 来支持移除 console
+      sourcemap: false,
+      // 生产环境移除 console.log 和 debugger
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true
+        }
       }
     }
-  }
+  };
 });

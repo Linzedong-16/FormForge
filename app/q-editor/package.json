@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:mock": "vite --mode mock",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
@@ -59,6 +60,7 @@
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-html": "^3.2.2",
     "vite-plugin-inspect": "^11.3.3",
+    "vite-plugin-mock": "^3.0.2",
     "vite-plugin-vue-devtools": "^8.0.5",
     "vue-tsc": "^3.1.5"
   }
