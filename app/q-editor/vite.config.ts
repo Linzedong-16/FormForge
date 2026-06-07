@@ -58,7 +58,9 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url))
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // 引用 monorepo 共享类型包
+      "@common": fileURLToPath(new URL("../../packages/common/src", import.meta.url))
     }
   },
   server: {

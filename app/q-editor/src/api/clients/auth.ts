@@ -1,18 +1,20 @@
+/**
+ * 认证 API 客户端（纯 axios 实例）
+ *
+ * 仅创建实例 + 配置拦截器，不包含任何业务接口函数。
+ * 业务接口函数统一收敛到 src/api/modules/auth/index.ts
+ */
 import axios from "axios";
 
 const authClient = axios.create({
   baseURL: "/api",
   timeout: 50000
 });
-/** 认证 API 响应拦截器 */
+
+/** 响应拦截器 — 只解包 data，不做 Token 处理 */
 authClient.interceptors.response.use(
-  res => {
-    return res.data;
-  },
-  err => {
-    return Promise.reject(err);
-  }
+  res => res.data,
+  err => Promise.reject(err)
 );
 
-/** 刷新token API */
-// export const refreshTokenApi () => {}
+export default authClient;

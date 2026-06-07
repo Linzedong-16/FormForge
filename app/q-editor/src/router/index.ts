@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { useUserStore } from "@/stores/useUser";
 import Layout from "@/views/Layout/index.vue";
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -254,6 +256,39 @@ const router = createRouter({
   ]
 });
 
-// router.beforeEach((to, from, next) => {});
+// ── 全局路由守卫：认证检查 + Token 自动恢复 ──────────────────
+
+router.beforeEach(async (to, _from, next) => {
+  const userStore = useUserStore();
+
+  // 页面首次加载时从 Storage 恢复 Token
+  if (!userStore.accessToken) {
+    userStore.restoreState();
+  }
+
+  // 登录页、首页 Landing → 无需认证，直接放行
+  const publicRoutes = ["login", "land", "preview", "survey"];
+  if (publicRoutes.includes(to.name as string)) {
+    return next();
+  }
+
+  // 需要认证的页面
+  if (!userStore.isLoggedIn) {
+    // 曾登录过 → 尝试用 Refresh Token 恢复
+    if (userStore.refreshTokenValue) {
+      const newToken = await userStore.refreshAccessToken();
+      if (newToken) return next();
+    }
+    // 无法恢复 → 踢回登录页
+    return next({ name: "login", query: { redirect: to.fullPath } });
+  }
+
+  // Token 即将过期 → 主动提前刷新
+  if (userStore.isTokenExpiring) {
+    await userStore.checkAndRefreshToken();
+  }
+
+  next();
+});
 
 export default router;
