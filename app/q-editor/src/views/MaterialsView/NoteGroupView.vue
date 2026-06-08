@@ -1,8 +1,10 @@
 <template>
   <Layout>
-    <Router-Link to="/text-note" class="link-item mb-15" exact-active-class="link-item-active">{{
-      t("materials.textNote")
-    }}</Router-Link>
+    <el-tooltip :content="t('materials.textNote')" placement="right">
+      <Router-Link to="/text-note" class="link-item mb-15" exact-active-class="link-item-active">{{
+        t("materials.textNote")
+      }}</Router-Link>
+    </el-tooltip>
   </Layout>
 </template>
 

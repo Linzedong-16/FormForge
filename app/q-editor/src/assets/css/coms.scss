@@ -1,6 +1,7 @@
 .link-item {
   display: block;
-  width: 80px;
+  min-width: 60px;
+  max-width: 120px;
   height: 30px;
   background-color: var(--background-color);
   border-radius: var(--border-radius-md);
@@ -9,6 +10,10 @@
   user-select: none;
   text-decoration: none;
   line-height: 30px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
 }
 .link-item:hover {
   background-color: var(--info-color);

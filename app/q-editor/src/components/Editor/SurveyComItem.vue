@@ -1,11 +1,13 @@
 <template>
   <div>
-    <div
-      class="survey-com-item-container pointer flex justify-content-center align-items-center self-center pl-10 pr-10 mb-10"
-      @click="addSurveyCom"
-    >
-      {{ item.comName }}
-    </div>
+    <el-tooltip :content="item.comName" placement="top">
+      <div
+        class="survey-com-item-container pointer flex justify-content-center align-items-center self-center pl-10 pr-10 mb-10"
+        @click="addSurveyCom"
+      >
+        {{ item.comName }}
+      </div>
+    </el-tooltip>
   </div>
 </template>
 
@@ -43,13 +45,17 @@ const addSurveyCom = () => {
 
 <style scoped lang="scss">
 .survey-com-item-container {
-  width: 60px;
+  min-width: 60px;
+  max-width: 140px;
   height: 30px;
   background-color: var(--background-color);
   border-radius: var(--border-radius-md);
   font-size: var(--font-size-base);
   color: var(--font-color-light);
   user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .survey-com-item-container:hover {
   background-color: var(--font-color-lightest);

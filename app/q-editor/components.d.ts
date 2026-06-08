@@ -52,6 +52,7 @@ declare module 'vue' {
     ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
     ElTag: typeof import('element-plus/es')['ElTag']
     ElText: typeof import('element-plus/es')['ElText']
+    ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElTransfer: typeof import('element-plus/es')['ElTransfer']
     ElUpload: typeof import('element-plus/es')['ElUpload']
     Header: typeof import('./src/components/Common/Header.vue')['default']
@@ -132,6 +133,7 @@ declare global {
   const ElTableColumn: (typeof import("element-plus/es"))["ElTableColumn"];
   const ElTag: (typeof import("element-plus/es"))["ElTag"];
   const ElText: (typeof import("element-plus/es"))["ElText"];
+  const ElTooltip: (typeof import("element-plus/es"))["ElTooltip"];
   const ElTransfer: (typeof import("element-plus/es"))["ElTransfer"];
   const ElUpload: (typeof import("element-plus/es"))["ElUpload"];
   const Header: (typeof import("./src/components/Common/Header.vue"))["default"];

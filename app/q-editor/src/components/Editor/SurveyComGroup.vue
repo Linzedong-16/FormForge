@@ -41,4 +41,7 @@ defineProps<{
   position: relative;
   bottom: 1px;
 }
+.space-between {
+  gap: 8px;
+}
 </style>

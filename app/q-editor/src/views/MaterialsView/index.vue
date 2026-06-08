@@ -5,42 +5,54 @@
     <div class="container mc flex">
       <!-- 导航 -->
       <nav class="category mc">
-        <Router-link class="category-item" to="/select-group">
-          <el-icon>
-            <CircleCheck />
-          </el-icon>
-          <div>{{ t("materials.categorySelect") }}</div>
-        </Router-link>
-        <Router-link class="category-item" to="/input-group">
-          <el-icon>
-            <EditPen />
-          </el-icon>
-          <div>{{ t("materials.categoryInput") }}</div>
-        </Router-link>
-        <Router-link class="category-item" to="/advanced-group">
-          <el-icon>
-            <Files />
-          </el-icon>
-          <div>{{ t("materials.categoryAdvanced") }}</div></Router-link
-        >
-        <Router-link class="category-item" to="/note-group">
-          <el-icon>
-            <ChatLineSquare />
-          </el-icon>
-          <div>{{ t("materials.categoryNote") }}</div></Router-link
-        >
-        <Router-link class="category-item" to="/personal-info-group">
-          <el-icon>
-            <User />
-          </el-icon>
-          <div>{{ t("materials.categoryPersonalInfo") }}</div></Router-link
-        >
-        <Router-link class="category-item" to="/contact-group">
-          <el-icon>
-            <Message />
-          </el-icon>
-          <div>{{ t("materials.categoryContact") }}</div></Router-link
-        >
+        <el-tooltip :content="t('materials.categorySelect')" placement="right">
+          <Router-link class="category-item" to="/select-group">
+            <el-icon>
+              <CircleCheck />
+            </el-icon>
+            <div class="category-text">{{ t("materials.categorySelect") }}</div>
+          </Router-link>
+        </el-tooltip>
+        <el-tooltip :content="t('materials.categoryInput')" placement="right">
+          <Router-link class="category-item" to="/input-group">
+            <el-icon>
+              <EditPen />
+            </el-icon>
+            <div class="category-text">{{ t("materials.categoryInput") }}</div>
+          </Router-link>
+        </el-tooltip>
+        <el-tooltip :content="t('materials.categoryAdvanced')" placement="right">
+          <Router-link class="category-item" to="/advanced-group">
+            <el-icon>
+              <Files />
+            </el-icon>
+            <div class="category-text">{{ t("materials.categoryAdvanced") }}</div>
+          </Router-link>
+        </el-tooltip>
+        <el-tooltip :content="t('materials.categoryNote')" placement="right">
+          <Router-link class="category-item" to="/note-group">
+            <el-icon>
+              <ChatLineSquare />
+            </el-icon>
+            <div class="category-text">{{ t("materials.categoryNote") }}</div>
+          </Router-link>
+        </el-tooltip>
+        <el-tooltip :content="t('materials.categoryPersonalInfo')" placement="right">
+          <Router-link class="category-item" to="/personal-info-group">
+            <el-icon>
+              <User />
+            </el-icon>
+            <div class="category-text">{{ t("materials.categoryPersonalInfo") }}</div>
+          </Router-link>
+        </el-tooltip>
+        <el-tooltip :content="t('materials.categoryContact')" placement="right">
+          <Router-link class="category-item" to="/contact-group">
+            <el-icon>
+              <Message />
+            </el-icon>
+            <div class="category-text">{{ t("materials.categoryContact") }}</div>
+          </Router-link>
+        </el-tooltip>
       </nav>
       <!-- 路由出口 -->
       <div class="coms">
@@ -99,6 +111,14 @@ h1 {
       }
     }
   }
+}
+.category-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 50px;
+  font-size: 12px;
+  margin-top: 4px;
 }
 .coms {
   width: calc(1180px - 60px);
