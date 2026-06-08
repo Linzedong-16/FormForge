@@ -25,7 +25,10 @@
             <el-icon><ChatDotRound /></el-icon>
             <span>{{ t("land.consult") }}</span>
           </div>
-          <div class="action-item">
+          <!-- 已登录显示用户头像组件 -->
+          <UserProfile v-if="isLoggedIn" />
+          <!-- 未登录显示登录按钮 -->
+          <div v-else class="action-item" @click="login">
             <el-icon><User /></el-icon>
             <span>{{ t("land.login") }}</span>
           </div>
@@ -94,9 +97,20 @@ import { ref, computed } from "vue";
 import { ArrowDown, ChatDotRound, User, Search } from "@element-plus/icons-vue";
 import { openNewTab } from "@/utils";
 import { useI18n } from "vue-i18n";
+import UserProfile from "@/components/Common/UserProfile.vue";
+import { useUserStore } from "@/stores/useUser";
 
 const { t } = useI18n();
 const searchText = ref("");
+
+// 登录状态判断
+const userStore = useUserStore();
+const isLoggedIn = computed(() => !!userStore.user);
+
+// 登录按钮点击事件
+const login = () => {
+  openNewTab("/login");
+};
 
 const navItems = computed(() => [
   { name: t("land.navProduct"), hasDropdown: true },
@@ -458,7 +472,9 @@ $land-accent-color: #18181b; // zinc-900
         border-color: $land-accent-color;
         padding: 0;
         border-radius: 0 12px 12px 0;
-        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       // —— el-button 覆盖：搜索按钮 ——
