@@ -1,66 +1,70 @@
 // 该文件是题型面板对应的配置文件，用于配置题型面板的题型信息
 import { CircleCheck, ChatLineSquare, User, EditPen, Files, Message } from "@element-plus/icons-vue";
 import type { MaterialGroup } from "@/types";
-export const SurveyComsList: MaterialGroup[] = [
-  {
-    title: "选择题",
-    icon: CircleCheck,
-    list: [
-      { materialName: "single-select", comName: "单选题" },
-      { materialName: "single-pic-select", comName: "图片单选" },
-      { materialName: "multi-select", comName: "多选题" },
-      { materialName: "multi-pic-select", comName: "图片多选" },
-      { materialName: "option-select", comName: "下拉选择" }
-    ]
-  },
-  {
-    title: "高级题型",
-    icon: Files,
-    list: [
-      { materialName: "date-time", comName: "日期时间" },
-      { materialName: "rate-score", comName: "评分" },
-      { materialName: "cascader", comName: "多级联动" },
-      { materialName: "matrix-single", comName: "矩阵单选" },
-      { materialName: "slider", comName: "滑块" },
-      { materialName: "transfer", comName: "排序题" }
-    ]
-  },
-  {
-    title: "输入框",
-    icon: EditPen,
-    list: [{ materialName: "text-input", comName: "输入框" }]
-  },
-  {
-    title: "备注说明",
-    icon: ChatLineSquare,
-    list: [{ materialName: "text-note", comName: "备注说明" }]
-  },
-  {
-    title: "个人信息",
-    icon: User,
-    list: [
-      { materialName: "personal-info-name", comName: "姓名" },
-      { materialName: "personal-info-gender", comName: "性别" },
-      { materialName: "personal-info-education", comName: "学历" },
-      { materialName: "personal-info-age", comName: "年龄" },
-      { materialName: "personal-info-career", comName: "职业" },
-      { materialName: "personal-info-collage", comName: "学校" },
-      { materialName: "personal-info-major", comName: "专业" },
-      { materialName: "personal-info-industry", comName: "行业" },
-      { materialName: "personal-info-company", comName: "公司" },
-      { materialName: "personal-info-position", comName: "岗位" },
-      { materialName: "personal-info-id", comName: "身份证号" }
-    ]
-  },
-  {
-    title: "联系信息",
-    icon: Message,
-    list: [
-      { materialName: "personal-info-address", comName: "地址" },
-      { materialName: "personal-info-tel", comName: "电话" },
-      { materialName: "personal-info-wechat", comName: "微信" },
-      { materialName: "personal-info-qq", comName: "QQ" },
-      { materialName: "personal-info-email", comName: "邮箱" }
-    ]
-  }
-];
+import { t } from "@/utils/i18n";
+
+export function getSurveyComsList(): MaterialGroup[] {
+  return [
+    {
+      title: t("components.surveyGroup.choiceQuestions"),
+      icon: CircleCheck,
+      list: [
+        { materialName: "single-select", comName: t("components.surveyGroup.singleSelect") },
+        { materialName: "single-pic-select", comName: t("components.surveyGroup.singlePicSelect") },
+        { materialName: "multi-select", comName: t("components.surveyGroup.multiSelect") },
+        { materialName: "multi-pic-select", comName: t("components.surveyGroup.multiPicSelect") },
+        { materialName: "option-select", comName: t("components.surveyGroup.optionSelect") }
+      ]
+    },
+    {
+      title: t("components.surveyGroup.advanced"),
+      icon: Files,
+      list: [
+        { materialName: "date-time", comName: t("components.surveyGroup.dateTime") },
+        { materialName: "rate-score", comName: t("components.surveyGroup.rateScore") },
+        { materialName: "cascader", comName: t("components.surveyGroup.cascader") },
+        { materialName: "matrix-single", comName: t("components.surveyGroup.matrixSingle") },
+        { materialName: "slider", comName: t("components.surveyGroup.slider") },
+        { materialName: "transfer", comName: t("components.surveyGroup.transfer") }
+      ]
+    },
+    {
+      title: t("components.surveyGroup.inputBox"),
+      icon: EditPen,
+      list: [{ materialName: "text-input", comName: t("components.surveyGroup.textInput") }]
+    },
+    {
+      title: t("components.surveyGroup.note"),
+      icon: ChatLineSquare,
+      list: [{ materialName: "text-note", comName: t("components.surveyGroup.textNote") }]
+    },
+    {
+      title: t("components.surveyGroup.personalInfo"),
+      icon: User,
+      list: [
+        { materialName: "personal-info-name", comName: t("components.surveyGroup.name") },
+        { materialName: "personal-info-gender", comName: t("components.surveyGroup.gender") },
+        { materialName: "personal-info-education", comName: t("components.surveyGroup.education") },
+        { materialName: "personal-info-age", comName: t("components.surveyGroup.age") },
+        { materialName: "personal-info-career", comName: t("components.surveyGroup.career") },
+        { materialName: "personal-info-collage", comName: t("components.surveyGroup.college") },
+        { materialName: "personal-info-major", comName: t("components.surveyGroup.major") },
+        { materialName: "personal-info-industry", comName: t("components.surveyGroup.industry") },
+        { materialName: "personal-info-company", comName: t("components.surveyGroup.company") },
+        { materialName: "personal-info-position", comName: t("components.surveyGroup.position") },
+        { materialName: "personal-info-id", comName: t("components.surveyGroup.idCard") }
+      ]
+    },
+    {
+      title: t("components.surveyGroup.contactInfo"),
+      icon: Message,
+      list: [
+        { materialName: "personal-info-address", comName: t("components.surveyGroup.address") },
+        { materialName: "personal-info-tel", comName: t("components.surveyGroup.tel") },
+        { materialName: "personal-info-wechat", comName: t("components.surveyGroup.wechat") },
+        { materialName: "personal-info-qq", comName: t("components.surveyGroup.qq") },
+        { materialName: "personal-info-email", comName: t("components.surveyGroup.email") }
+      ]
+    }
+  ];
+}

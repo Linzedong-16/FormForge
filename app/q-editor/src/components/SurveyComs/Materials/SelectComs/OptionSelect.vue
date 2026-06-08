@@ -19,7 +19,7 @@
     />
     <el-select
       v-model="optionValue"
-      placeholder="请选择"
+      :placeholder="t('components.optionSelect.placeholder')"
       size="large"
       style="width: 240px"
       @click.stop
@@ -32,10 +32,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { getTextStatus, getStringStatus, getStringStatusByCurrentStatus, getCurrentStatus } from "@/utils";
 import MaterialsHeader from "@/components/SurveyComs/Common/MaterialsHeader.vue";
 // 类型
 import type { OptionsStatus } from "@/types";
+
+const { t } = useI18n();
+
 const props = defineProps<{
   status: OptionsStatus;
   serialNum: number;

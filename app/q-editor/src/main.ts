@@ -26,10 +26,10 @@ library.add(fas);
 const app = createApp(App);
 
 app.component("FontAwesomeIcon", FontAwesomeIcon);
+// 先安装 i18n，确保在 Pinia store 初始化前可用
+setupI18n(app);
 app.use(createPinia());
 app.use(router);
-// 安装 i18n
-setupI18n(app);
 // Element Plus 语言由 App.vue 的 ElConfigProvider 跟随 i18n 动态切换
 app.use(ElementPlus);
 app.mount("#app");

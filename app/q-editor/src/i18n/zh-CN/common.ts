@@ -14,5 +14,6 @@ export default {
   submit: "提交",
   reset: "重置",
   return: "返回",
-  and: "和"
+  and: "和",
+  paragraph: "段落"
 };

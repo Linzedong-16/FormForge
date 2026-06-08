@@ -14,5 +14,6 @@ export default {
   submit: "Submit",
   reset: "Reset",
   return: "Back",
-  and: "and"
+  and: "and",
+  paragraph: "Paragraph"
 };

@@ -1,12 +1,15 @@
 <template>
   <div class="survey-type-container">
-    <SurveyComGroup v-for="(group, index) in SurveyComsList" :key="index" v-bind="group" />
+    <SurveyComGroup v-for="(group, index) in surveyComsList" :key="index" v-bind="group" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import SurveyComGroup from "@/components/Editor/SurveyComGroup.vue";
-import { SurveyComsList } from "@/configs/SurveyGroupConfig";
+import { getSurveyComsList } from "@/configs/SurveyGroupConfig";
+
+const surveyComsList = computed(() => getSurveyComsList());
 </script>
 
 <style scoped lang="scss">

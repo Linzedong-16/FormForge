@@ -13,7 +13,7 @@
           <img v-if="imageUrl" :src="imageUrl" class="avatar" />
           <div v-else>
             <el-icon><Upload /></el-icon>
-            添加图片
+            {{ t("components.picItem.addImage") }}
           </div>
         </el-upload>
       </div>
@@ -28,10 +28,14 @@
 
 <script setup lang="ts">
 import { ref, inject, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { Upload } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import type { UploadProps, UploadRequestOptions } from "element-plus";
 import { uploadImage } from "@/api/upload";
+
+const { t } = useI18n();
+
 const props = defineProps({
   picTitle: {
     type: String,
@@ -62,7 +66,7 @@ const customUpload = async (options: UploadRequestOptions) => {
     options.onSuccess?.(data);
     return data;
   } catch (error) {
-    ElMessage.error("图片上传失败");
+    ElMessage.error(t("components.picItem.uploadFailed"));
     options.onError?.(error as Parameters<NonNullable<typeof options.onError>>[0]);
     throw error;
   }
@@ -76,15 +80,15 @@ const handleAvatarSuccess: UploadProps["onSuccess"] = async response => {
       link: response.imageUrl
     });
     imageUrl.value = response.imageUrl;
-    ElMessage.success("图片上传成功");
+    ElMessage.success(t("components.picItem.uploadSuccess"));
   } else {
-    ElMessage.error("图片上传成功但无法保存，请先选中组件");
+    ElMessage.error(t("components.picItem.saveFailed"));
   }
 };
 // 上传之前的回调
 const beforeAvatarUpload: UploadProps["beforeUpload"] = rawFile => {
   if (rawFile.size / 1024 / 1024 > 2) {
-    ElMessage.error("图片大小不要超过2MB!");
+    ElMessage.error(t("components.picItem.sizeLimit"));
     return false;
   }
   return true;

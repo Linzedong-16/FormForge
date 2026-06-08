@@ -1,21 +1,28 @@
 <template>
   <Layout>
-    <Router-link class="link-item mb-15" exact-active-class="link-item-active" to="/single-select">单选题</Router-link>
-    <Router-link class="link-item mb-15" exact-active-class="link-item-active" to="/multi-select">多选题</Router-link>
-    <Router-link class="link-item mb-15" exact-active-class="link-item-active" to="/option-select"
-      >下拉选择</Router-link
-    >
-    <Router-link class="link-item mb-15" exact-active-class="link-item-active" to="/single-pic-select"
-      >图片单选题</Router-link
-    >
-    <Router-link class="link-item mb-15" exact-active-class="link-item-active" to="/multi-pic-select"
-      >图片多选题</Router-link
-    >
+    <Router-link class="link-item mb-15" exact-active-class="link-item-active" to="/single-select">{{
+      t("materials.singleSelect")
+    }}</Router-link>
+    <Router-link class="link-item mb-15" exact-active-class="link-item-active" to="/multi-select">{{
+      t("materials.multiSelect")
+    }}</Router-link>
+    <Router-link class="link-item mb-15" exact-active-class="link-item-active" to="/option-select">{{
+      t("materials.optionSelect")
+    }}</Router-link>
+    <Router-link class="link-item mb-15" exact-active-class="link-item-active" to="/single-pic-select">{{
+      t("materials.singlePicSelect")
+    }}</Router-link>
+    <Router-link class="link-item mb-15" exact-active-class="link-item-active" to="/multi-pic-select">{{
+      t("materials.multiPicSelect")
+    }}</Router-link>
   </Layout>
 </template>
 
 <script setup lang="ts">
 import Layout from "./Layout.vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 </script>
 
 <style scoped></style>

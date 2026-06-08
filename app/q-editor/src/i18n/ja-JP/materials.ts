@@ -33,23 +33,23 @@ export default {
 
   // Personal info components
   personalName: "名前",
+  personalId: "身分証明書",
   personalGender: "性別",
-  personalEducation: "学歴",
   personalAge: "年齢",
-  personalCareer: "職業",
-  personalSchool: "学校",
+  personalEducation: "学歴",
+  personalCollage: "大学",
   personalMajor: "専攻",
   personalIndustry: "業界",
+  personalCareer: "職業",
   personalCompany: "会社",
-  personalPosition: "役職",
-  personalId: "ID番号",
+  personalPosition: "職位",
 
   // Contact components
-  personalAddress: "住所",
-  personalTel: "電話",
-  personalWechat: "WeChat",
-  personalQQ: "QQ",
-  personalEmail: "メール",
+  contactTel: "携帯電話",
+  contactWechat: "WeChat",
+  contactQq: "QQ",
+  contactEmail: "メール",
+  contactAddress: "住所",
 
   // Component properties
   componentTitle: "コンポーネントタイトル",

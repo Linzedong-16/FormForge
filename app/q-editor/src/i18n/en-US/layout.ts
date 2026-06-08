@@ -1,0 +1,20 @@
+export default {
+  pageTitle: "Low-Code Questionnaire System",
+  createSurvey: "Create Survey",
+  componentMarket: "Component Market",
+  columnCreateDate: "Created Date",
+  columnTitle: "Survey Title",
+  columnQuestionCount: "Question Count",
+  columnUpdateDate: "Last Updated",
+  columnAction: "Action",
+  viewSurvey: "View Survey",
+  edit: "Edit",
+  delete: "Delete",
+  deleteConfirm: "Are you sure to delete this survey?",
+  deleteTitle: "Warning",
+  confirm: "Confirm",
+  cancel: "Cancel",
+  deleteSuccess: "Survey deleted successfully",
+  deleteFailed: "Failed to delete survey",
+  deleteCancelled: "Deletion cancelled"
+};

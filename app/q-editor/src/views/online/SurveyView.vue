@@ -1,7 +1,7 @@
 <template>
   <div v-if="surveyData">
     <div class="survey-container mc">
-      <div class="mt-30 mb-20">题目数量：{{ surveyData.surveyCount }}</div>
+      <div class="mt-30 mb-20">{{ t("survey.questionCount") }}：{{ surveyData.surveyCount }}</div>
       <div v-for="(com, index) in surveyData.coms" v-show="isInCurrentPage(index)" :key="index" class="content mb-10">
         <component
           :is="com.type"
@@ -19,7 +19,7 @@
         />
       </div>
       <div class="mt-20 mb-20 text-center">
-        <el-button type="primary" @click="submitAnswers">提交答案</el-button>
+        <el-button type="primary" @click="submitAnswers">{{ t("survey.submitAnswer") }}</el-button>
       </div>
     </div>
   </div>
@@ -31,6 +31,9 @@ import { onMounted, ref, computed } from "vue";
 import { ElMessage } from "element-plus";
 import { useRoute } from "vue-router";
 const route = useRoute();
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 import type { QuizData } from "@/types";
 
@@ -94,7 +97,7 @@ const submitAnswers = async () => {
     })
   });
 
-  ElMessage.success("提交成功！");
+  ElMessage.success(t("survey.submitSuccess"));
 };
 </script>
 

@@ -25,11 +25,17 @@ export const useEditorStore = defineStore("editor", {
     // 维护当前选中的组件，用于编辑页面、预览页面的渲染
     currentComponentIndex: -1, // 当前选中的组件索引，一开始都没有选中，所以是-1
     surveyCount: 0, // 问卷题目的数量
-    coms: initStore() as Status[], // 问卷题目组件数组
+    coms: [] as Status[], // 问卷题目组件数组（延迟初始化）
     pageSize: 10, // 分页配置：每页展示的组件数量（持久化）
     currentPage: 1 // 当前页码（仅运行时，不持久化）
   }),
   actions: {
+    // 初始化组件列表（在 i18n 就绪后调用）
+    initComs() {
+      if (this.coms.length === 0) {
+        this.coms = initStore();
+      }
+    },
     resetComs() {
       this.coms = initStore();
       this.currentComponentIndex = -1;

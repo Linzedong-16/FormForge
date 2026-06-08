@@ -11,6 +11,8 @@ export default {
   // Confirm dialogs
   confirmReset: "Are you sure you want to reset the survey?",
   confirmTitle: "Confirmation",
+  confirm: "Confirm",
+  cancel: "Cancel",
   confirmButton: "Confirm",
   cancelButton: "Cancel",
 
@@ -22,6 +24,8 @@ export default {
   updateSuccess: "Survey updated",
   updateFailed: "Survey update failed",
   saveCancelled: "Save cancelled",
+  deleteSuccess: "Delete successful",
+  deleteCancelled: "Delete cancelled",
 
   // Save dialog
   savePromptTitle: "Please enter survey title",
@@ -33,6 +37,9 @@ export default {
   // Left panel
   outlineTitle: "Outline",
   surveyTypeTitle: "Question Types",
+  outline: "Outline",
+  surveyType: "Question Types",
+  addQuestion: "Please add questions",
 
   // Question type groups
   selectGroup: "Selection",
@@ -85,6 +92,12 @@ export default {
 
   // Right edit panel
   editPanelTitle: "Property Editor",
+  clickToEdit: "Click question type to edit",
+  selectComponentFirst: "Please select the image question component before uploading",
+  deleteConfirm: "Are you sure you want to delete this component?",
+  deleteTitle: "Confirmation",
+  keepTwoOptions: "Keep at least two options",
+  keepTwoItems: "Keep at least two items",
   titleEdit: "Title",
   descEdit: "Description",
   optionsEdit: "Options",

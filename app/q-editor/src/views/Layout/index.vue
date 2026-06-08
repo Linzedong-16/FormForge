@@ -5,23 +5,39 @@
         <el-button :icon="ArrowLeft" circle size="small" @click="goLand" />
       </template>
     </headerNav>
-    <h1 class="font-weight-100 text-center">低代码问卷系统</h1>
+    <h1 class="font-weight-100 text-center">{{ t("layout.pageTitle") }}</h1>
     <!-- 按钮组 -->
     <div class="mb-15">
-      <el-button type="primary" :icon="Plus" @click="goToEditor">创建问卷</el-button>
-      <el-button type="success" :icon="Compass" @click="goToComMarket">组件市场</el-button>
+      <el-button type="primary" :icon="Plus" @click="goToEditor">{{ t("layout.createSurvey") }}</el-button>
+      <el-button type="success" :icon="Compass" @click="goToComMarket">{{ t("layout.componentMarket") }}</el-button>
     </div>
     <!-- 数据表格 -->
     <el-table :data="tableData" style="width: 100%" border>
-      <el-table-column fixed prop="createDate" label="创建日期" width="150" :formatter="formatDate" />
-      <el-table-column prop="title" label="问卷标题" />
-      <el-table-column prop="surveyCount" label="题目数" width="150" align="center" />
-      <el-table-column prop="updateDate" label="最近更新日期" width="150" align="center" :formatter="formatDate" />
-      <el-table-column fixed="right" label="操作" width="300" align="center">
+      <el-table-column
+        fixed
+        prop="createDate"
+        :label="t('layout.columnCreateDate')"
+        width="150"
+        :formatter="formatDate"
+      />
+      <el-table-column prop="title" :label="t('layout.columnTitle')" />
+      <el-table-column prop="surveyCount" :label="t('layout.columnQuestionCount')" width="150" align="center" />
+      <el-table-column
+        prop="updateDate"
+        :label="t('layout.columnUpdateDate')"
+        width="150"
+        align="center"
+        :formatter="formatDate"
+      />
+      <el-table-column fixed="right" :label="t('layout.columnAction')" width="300" align="center">
         <template #default="scope">
-          <el-button link type="primary" size="small" @click="viewSurvey(scope.row)">查看问卷</el-button>
-          <el-button link type="primary" size="small" @click="editSurvey(scope.row)">编辑</el-button>
-          <el-button link type="primary" size="small" @click="deleteSurvey(scope.row)">删除</el-button>
+          <el-button link type="primary" size="small" @click="viewSurvey(scope.row)">{{
+            t("layout.viewSurvey")
+          }}</el-button>
+          <el-button link type="primary" size="small" @click="editSurvey(scope.row)">{{ t("layout.edit") }}</el-button>
+          <el-button link type="primary" size="small" @click="deleteSurvey(scope.row)">{{
+            t("layout.delete")
+          }}</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -40,6 +56,10 @@ const router = useRouter();
 import type { SurveyDBData, SurveyDBReturnData } from "@/types";
 // 工具方法
 import { formatDate } from "@/utils";
+// i18n
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 import { deleteSurveyById, getAllSurvey } from "@/db/operation";
 import { useEditorStore } from "@/stores/useEditor";
@@ -75,9 +95,9 @@ const goToComMarket = () => {
 // 删除问卷
 const deleteSurvey = (surveyInfo: SurveyDBReturnData) => {
   // 确认删除
-  ElMessageBox.confirm("确定删除问卷吗？", "提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t("layout.deleteConfirm"), t("layout.deleteTitle"), {
+    confirmButtonText: t("layout.confirm"),
+    cancelButtonText: t("layout.cancel"),
     type: "warning"
   })
     .then(() => {
@@ -85,14 +105,14 @@ const deleteSurvey = (surveyInfo: SurveyDBReturnData) => {
       deleteSurveyById(surveyInfo.id)
         .then(() => {
           getData();
-          ElMessage.success("问卷删除成功");
+          ElMessage.success(t("layout.deleteSuccess"));
         })
         .catch(() => {
-          ElMessage.error("问卷删除失败");
+          ElMessage.error(t("layout.deleteFailed"));
         });
     })
     .catch(() => {
-      ElMessage.info("已取消删除");
+      ElMessage.info(t("layout.deleteCancelled"));
     });
 };
 // 预览问卷

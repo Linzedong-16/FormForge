@@ -14,5 +14,6 @@ export default {
   submit: "送信",
   reset: "リセット",
   return: "戻る",
-  and: "と"
+  and: "と",
+  paragraph: "段落"
 };

@@ -1,7 +1,7 @@
 <template>
   <div class="right-side-container">
     <div v-if="store.currentComponentIndex === -1" class="content flex justify-content-center align-items-center">
-      点击题型进行编辑
+      {{ t("editor.clickToEdit") }}
     </div>
     <div v-else>
       <EditPannel :com="currentCom!" />
@@ -21,6 +21,9 @@ import type { OptionsProps, OptionsStatus, PicLink, TextProps, TypeStatus } from
 import { isPicLink, IsTypeStatus, IsOptionsStatus } from "@/types";
 import type { CascaderEditPayload } from "@/stores/actions";
 import { changeEditorIsShowStatus } from "@/utils";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const currentCom = computed(() => store.coms[store.currentComponentIndex]);
 
@@ -50,8 +53,8 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | P
         if (typeof payload === "number") {
           // 说明是删除选项
           const result = store.removeOption(currentCom.value!.status[configKey] as OptionsProps, payload);
-          if (result) ElMessage.success("删除成功");
-          else ElMessage.error("至少保留两个选项");
+          if (result) ElMessage.success(t("editor.deleteSuccess"));
+          else ElMessage.error(t("editor.keepTwoOptions"));
         } else if (typeof payload === "object" && isPicLink(payload)) {
           // 说明是在设置图片的链接
           store.setPicLinkByIndex(currentCom.value!.status[configKey] as OptionsProps, payload);
@@ -76,8 +79,8 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | P
       // 矩阵行/列、排序题选项的增删（复用 addOption/removeOption），文本修改由编辑器直接同步
       if (typeof payload === "number") {
         const result = store.removeOption(currentCom.value!.status[configKey] as OptionsProps, payload);
-        if (result) ElMessage.success("删除成功");
-        else ElMessage.error("至少保留两项");
+        if (result) ElMessage.success(t("editor.deleteSuccess"));
+        else ElMessage.error(t("editor.keepTwoItems"));
       } else {
         store.addOption(currentCom.value!.status[configKey] as OptionsProps);
       }

@@ -1,5 +1,5 @@
 <template>
-  <ButtonGroup title="说明类型" :status="status[currentStatus]">
+  <ButtonGroup :title="t('components.textTypeEditor.descriptionType')" :status="status[currentStatus]">
     <el-button-group>
       <el-button
         :class="{
@@ -24,7 +24,11 @@
 <script setup lang="ts">
 import type { VueComType, UpdateStatus } from "@/types";
 import { inject } from "vue";
+import { useI18n } from "vue-i18n";
 import ButtonGroup from "./ButtonGroup.vue";
+
+const { t } = useI18n();
+
 const updateStatus = inject<UpdateStatus>("updateStatus");
 
 const props = defineProps<{

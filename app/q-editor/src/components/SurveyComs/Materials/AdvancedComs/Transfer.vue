@@ -22,7 +22,7 @@
       <el-transfer
         v-model="selected"
         :data="transferData"
-        :titles="['待排序', '已排序']"
+        :titles="[t('components.transfer.pending'), t('components.transfer.sorted')]"
         target-order="push"
         @change="emitAnswer"
       />
@@ -32,9 +32,12 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { getTextStatus, getStringStatus, getStringStatusByCurrentStatus, getCurrentStatus } from "@/utils";
 import MaterialsHeader from "@/components/SurveyComs/Common/MaterialsHeader.vue";
 import type { TransferStatus, StringStatusArr } from "@/types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   status: TransferStatus;

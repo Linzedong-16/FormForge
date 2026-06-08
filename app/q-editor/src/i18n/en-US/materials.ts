@@ -33,23 +33,23 @@ export default {
 
   // Personal info components
   personalName: "Name",
+  personalId: "ID Card",
   personalGender: "Gender",
-  personalEducation: "Education",
   personalAge: "Age",
-  personalCareer: "Career",
-  personalSchool: "School",
+  personalEducation: "Education",
+  personalCollage: "University",
   personalMajor: "Major",
   personalIndustry: "Industry",
+  personalCareer: "Career",
   personalCompany: "Company",
   personalPosition: "Position",
-  personalId: "ID Number",
 
   // Contact components
-  personalAddress: "Address",
-  personalTel: "Phone",
-  personalWechat: "WeChat",
-  personalQQ: "QQ",
-  personalEmail: "Email",
+  contactTel: "Mobile",
+  contactWechat: "WeChat",
+  contactQq: "QQ",
+  contactEmail: "Email",
+  contactAddress: "Address",
 
   // Component properties
   componentTitle: "Component Title",

@@ -1,5 +1,8 @@
 <template>
-  <ButtonGroup :title="`${configKey === 'titleSize' ? '标题' : '描述'}尺寸`" :status="`${status[currentStatus]}px`">
+  <ButtonGroup
+    :title="`${configKey === 'titleSize' ? t('components.sizeEditor.title') : t('components.sizeEditor.desc')}${t('components.sizeEditor.size')}`"
+    :status="`${status[currentStatus]}px`"
+  >
     <el-button-group>
       <el-button
         :class="{
@@ -31,8 +34,12 @@
 
 <script setup lang="ts">
 import { inject } from "vue";
+import { useI18n } from "vue-i18n";
 import type { VueComType } from "@/types";
 import ButtonGroup from "./ButtonGroup.vue";
+
+const { t } = useI18n();
+
 const props = defineProps<{
   currentStatus: number;
   status: string[];

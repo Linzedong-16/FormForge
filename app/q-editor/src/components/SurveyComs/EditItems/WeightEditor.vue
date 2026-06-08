@@ -1,5 +1,8 @@
 <template>
-  <ButtonGroup :title="`${configKey === 'titleWeight' ? '标题' : '描述'}加粗`" :status="status[currentStatus]">
+  <ButtonGroup
+    :title="`${configKey === 'titleWeight' ? t('components.weightEditor.title') : t('components.weightEditor.desc')}${t('components.weightEditor.bold')}`"
+    :status="status[currentStatus]"
+  >
     <el-button-group>
       <el-button
         :class="{
@@ -24,7 +27,11 @@
 <script setup lang="ts">
 import type { VueComType, UpdateStatus } from "@/types";
 import { inject } from "vue";
+import { useI18n } from "vue-i18n";
 import ButtonGroup from "./ButtonGroup.vue";
+
+const { t } = useI18n();
+
 const updateStatus = inject<UpdateStatus>("updateStatus");
 const props = defineProps<{
   currentStatus: number;

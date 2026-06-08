@@ -38,6 +38,9 @@ import { useSurveyNo } from "@/utils/hooks";
 import { Close } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { OptionsProps, PicLink } from "@/types";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 // 图片选择组件的图片上传回调
 // 业务组件（如 SinglePicSelect）内部的 PicItem 上传成功后会通过 inject 调用此函数，
@@ -46,7 +49,7 @@ import type { OptionsProps, PicLink } from "@/types";
 const getLink = (payload: PicLink) => {
   const index = store.currentComponentIndex;
   if (index === -1 || !store.coms[index]) {
-    ElMessage.warning("请先选中该图片题目组件后再上传图片");
+    ElMessage.warning(t("editor.selectComponentFirst"));
     return;
   }
   const optionsProps = store.coms[index]!.status.options as OptionsProps;
@@ -155,18 +158,18 @@ const isInCurrentPage = (index: number) => {
 
 // 删除选中的组件
 const removeCom = (index: number) => {
-  ElMessageBox.confirm("确定删除该组件吗？", "提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t("editor.deleteConfirm"), t("editor.deleteTitle"), {
+    confirmButtonText: t("editor.confirm"),
+    cancelButtonText: t("editor.cancel"),
     type: "warning"
   })
     .then(() => {
       store.removeCom(index);
       store.setCurrentComponentIndex(-1);
-      ElMessage.success("删除成功");
+      ElMessage.success(t("editor.deleteSuccess"));
     })
     .catch(() => {
-      ElMessage.info("已取消删除");
+      ElMessage.info(t("editor.deleteCancelled"));
     });
 };
 </script>

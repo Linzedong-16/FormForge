@@ -1,5 +1,5 @@
 <template>
-  <ButtonGroup title="居中设置" :status="status[currentStatus]">
+  <ButtonGroup :title="t('components.positionEditor.alignment')" :status="status[currentStatus]">
     <el-button-group>
       <el-button
         :class="{
@@ -23,8 +23,12 @@
 
 <script setup lang="ts">
 import { inject } from "vue";
+import { useI18n } from "vue-i18n";
 import type { VueComType } from "@/types";
 import ButtonGroup from "./ButtonGroup.vue";
+
+const { t } = useI18n();
+
 const props = defineProps<{
   currentStatus: number;
   status: string[];

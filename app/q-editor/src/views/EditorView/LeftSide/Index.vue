@@ -10,7 +10,7 @@
         @click="switchEditor"
       >
         <el-icon><Memo /></el-icon>
-        <span class="tab-item-title mt-5">题型</span>
+        <span class="tab-item-title mt-5">{{ t("editor.surveyType") }}</span>
       </div>
       <!-- 大纲 -->
       <div
@@ -21,7 +21,7 @@
         @click="switchOutline"
       >
         <el-icon><Document /></el-icon>
-        <span class="tab-item-title mt-5">大纲</span>
+        <span class="tab-item-title mt-5">{{ t("editor.outline") }}</span>
       </div>
     </div>
     <RouterView class="tab-pane" />
@@ -32,6 +32,10 @@
 import { computed } from "vue";
 import { Document, Memo } from "@element-plus/icons-vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
+
 const route = useRoute();
 const routeName = computed(() => route.name);
 const router = useRouter();

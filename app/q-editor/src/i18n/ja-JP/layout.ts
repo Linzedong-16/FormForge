@@ -1,0 +1,20 @@
+export default {
+  pageTitle: "ローコードアンケートシステム",
+  createSurvey: "アンケート作成",
+  componentMarket: "コンポーネントマーケット",
+  columnCreateDate: "作成日",
+  columnTitle: "アンケートタイトル",
+  columnQuestionCount: "質問数",
+  columnUpdateDate: "最終更新日",
+  columnAction: "操作",
+  viewSurvey: "アンケートを表示",
+  edit: "編集",
+  delete: "削除",
+  deleteConfirm: "このアンケートを削除してもよろしいですか？",
+  deleteTitle: "警告",
+  confirm: "確認",
+  cancel: "キャンセル",
+  deleteSuccess: "アンケート削除成功",
+  deleteFailed: "アンケート削除失敗",
+  deleteCancelled: "削除をキャンセルしました"
+};

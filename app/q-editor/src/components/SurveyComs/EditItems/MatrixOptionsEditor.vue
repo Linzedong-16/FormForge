@@ -2,14 +2,20 @@
   <div key="id">
     <div class="flex align-items-center mb-10">
       <!-- 根据 configKey 区分「行（评价维度）」与「列（评价等级）」 -->
-      <div class="mr-10">{{ isRow ? "评价维度（行）" : "评价等级（列）" }}</div>
+      <div class="mr-10">
+        {{ isRow ? t("components.matrixOptionsEditor.row") : t("components.matrixOptionsEditor.column") }}
+      </div>
       <el-button size="small" circle :icon="Plus" @click="addHandle" />
     </div>
     <div v-for="(item, index) in textArr" :key="index" class="flex align-items-center">
       <el-input
         v-model="textArr[index]"
         size="small"
-        :placeholder="isRow ? '维度名称' : '等级名称'"
+        :placeholder="
+          isRow
+            ? t('components.matrixOptionsEditor.rowPlaceholder')
+            : t('components.matrixOptionsEditor.columnPlaceholder')
+        "
         class="mt-5 mb-5"
       />
       <el-button type="danger" class="ml-10" size="small" :icon="Minus" circle @click="removeHandle(index)" />
@@ -19,8 +25,11 @@
 
 <script setup lang="ts">
 import { ref, computed, inject } from "vue";
+import { useI18n } from "vue-i18n";
 import { Plus, Minus } from "@element-plus/icons-vue";
 import type { VueComType, UpdateStatus } from "@/types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   status: string[];

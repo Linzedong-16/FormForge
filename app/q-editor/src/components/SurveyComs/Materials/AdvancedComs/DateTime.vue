@@ -20,7 +20,7 @@
     <el-date-picker
       v-model="datetimeValue"
       :type="computedState.type?.value"
-      placeholder="请选择日期"
+      :placeholder="t('components.dateTime.placeholder')"
       @click.stop
       @change="emitAnswer"
     />
@@ -29,6 +29,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   getTextStatus,
   getStringStatusByCurrentStatus,
@@ -38,6 +39,9 @@ import {
 import MaterialsHeader from "@/components/SurveyComs/Common/MaterialsHeader.vue";
 // 类型
 import type { TypeStatus } from "@/types";
+
+const { t } = useI18n();
+
 const props = defineProps<{
   status: TypeStatus;
   serialNum: number;

@@ -5,13 +5,13 @@
       <div class="button-group flex space-between align-items-center no-print">
         <!-- 左边按钮 -->
         <div class="flex space-between">
-          <el-button type="danger" @click="gobackHandle">返回</el-button>
-          <el-button type="success" @click="generateOnlineSurvey">生成在线问卷</el-button>
-          <el-button type="warning" @click="generatePDF">生成本地PDF</el-button>
+          <el-button type="danger" @click="gobackHandle">{{ t("preview.back") }}</el-button>
+          <el-button type="success" @click="generateOnlineSurvey">{{ t("preview.generateOnline") }}</el-button>
+          <el-button type="warning" @click="generatePDF">{{ t("preview.generatePDF") }}</el-button>
         </div>
         <!-- 题目数量 -->
         <div class="mr-15">
-          <el-text class="mx-1">题目数量：{{ store.surveyCount }}</el-text>
+          <el-text class="mx-1">{{ t("preview.questionCount") }}：{{ store.surveyCount }}</el-text>
         </div>
       </div>
       <!-- 对应的问卷 -->
@@ -28,11 +28,11 @@
           />
         </div>
       </div>
-      <el-dialog v-model="dialogVisible" title="在线问卷" width="500">
-        分享链接: <a :href="shareLink" target="_blank">{{ shareLink }}</a>
+      <el-dialog v-model="dialogVisible" :title="t('preview.onlineSurvey')" width="500">
+        {{ t("preview.shareLink") }}: <a :href="shareLink" target="_blank">{{ shareLink }}</a>
         <template #footer>
           <div class="dialog-footer">
-            <el-button type="primary" @click="copyLink">复制链接</el-button>
+            <el-button type="primary" @click="copyLink">{{ t("preview.copyLink") }}</el-button>
           </div>
         </template>
       </el-dialog>
@@ -56,6 +56,9 @@ import { canUsedForPDF } from "@/types";
 import { ElMessage } from "element-plus";
 import { v4 as uuidv4 } from "uuid";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const dialogVisible = ref(false);
 const shareLink = ref("");
@@ -70,7 +73,7 @@ const copyLink = () => {
   const link = shareLink.value;
   if (link) {
     navigator.clipboard.writeText(link);
-    ElMessage.success("链接复制成功");
+    ElMessage.success(t("preview.copySuccess"));
   }
 };
 
@@ -105,12 +108,12 @@ const gobackHandle = () => {
 const generatePDF = () => {
   // 检查是否有题目类型不能生成PDF的
   if (!store.coms.every(com => canUsedForPDF(com.type))) {
-    ElMessage.error("问卷中包含不能生成PDF的题目类型");
+    ElMessage.error(t("preview.pdfError"));
     return;
   }
   // 生成PDF
   window.print();
-  ElMessage.success("PDF生成成功");
+  ElMessage.success(t("preview.pdfSuccess"));
 };
 
 // 生成在线问卷
@@ -134,7 +137,7 @@ const generateOnlineSurvey = () => {
   // 生成成功之后，将分享链接设置为 surveyId，并通过 query 携带分页配置
   shareLink.value = `${window.location.origin}/survey/${surveyId}?pageSize=${store.pageSize}`;
   dialogVisible.value = true;
-  ElMessage.success("在线问卷生成成功");
+  ElMessage.success(t("preview.onlineSuccess"));
 };
 </script>
 

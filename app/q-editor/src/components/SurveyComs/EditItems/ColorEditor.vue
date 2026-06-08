@@ -1,5 +1,8 @@
 <template>
-  <ButtonGroup :title="`${configKey === 'titleColor' ? '标题' : '描述'}颜色`" :status="status">
+  <ButtonGroup
+    :title="`${configKey === 'titleColor' ? t('components.colorEditor.title') : t('components.colorEditor.desc')}${t('components.colorEditor.color')}`"
+    :status="status"
+  >
     <el-color-picker v-model="text" @update:model-value="inputHandle" />
   </ButtonGroup>
 </template>
@@ -7,7 +10,10 @@
 <script setup lang="ts">
 import type { VueComType } from "@/types";
 import { inject, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import ButtonGroup from "./ButtonGroup.vue";
+
+const { t } = useI18n();
 
 // 定义 props
 const props = defineProps<{

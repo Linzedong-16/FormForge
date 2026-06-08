@@ -1,0 +1,20 @@
+export default {
+  pageTitle: "低代码问卷系统",
+  createSurvey: "创建问卷",
+  componentMarket: "组件市场",
+  columnCreateDate: "创建日期",
+  columnTitle: "问卷标题",
+  columnQuestionCount: "题目数",
+  columnUpdateDate: "最近更新日期",
+  columnAction: "操作",
+  viewSurvey: "查看问卷",
+  edit: "编辑",
+  delete: "删除",
+  deleteConfirm: "确定删除问卷吗？",
+  deleteTitle: "提示",
+  confirm: "确定",
+  cancel: "取消",
+  deleteSuccess: "问卷删除成功",
+  deleteFailed: "问卷删除失败",
+  deleteCancelled: "已取消删除"
+};

@@ -22,7 +22,7 @@
       </template>
     </draggable>
   </div>
-  <div v-else class="tip flex align-items-center justify-content-center">请添加题目</div>
+  <div v-else class="tip flex align-items-center justify-content-center">{{ t("editor.addQuestion") }}</div>
 </template>
 
 <script setup lang="ts">
@@ -37,6 +37,10 @@ import { useEditorStore } from "@/stores/useEditor";
 const store = useEditorStore();
 // 组合式函数
 import { useSurveyNo } from "@/utils/hooks";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
+
 // 获取题目编号
 const serialNum = computed(() => useSurveyNo(store.coms).value);
 

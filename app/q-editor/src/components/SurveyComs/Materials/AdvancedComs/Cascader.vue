@@ -21,7 +21,7 @@
       v-model="cascaderValue"
       :options="cascaderOptions"
       :props="cascaderProps"
-      placeholder="请选择"
+      :placeholder="t('components.cascader.placeholder')"
       clearable
       @click.stop
       @change="emitAnswer"
@@ -31,11 +31,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { getTextStatus, getStringStatusByCurrentStatus, getCurrentStatus } from "@/utils";
 import MaterialsHeader from "@/components/SurveyComs/Common/MaterialsHeader.vue";
 import { regionData } from "@/configs/regionData";
 // 类型：多级联动题含通用样式 + cascaderOptions（模式开关 + 自定义级联树）
 import type { CascaderStatus, CascaderStatusArr } from "@/types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   status: CascaderStatus;

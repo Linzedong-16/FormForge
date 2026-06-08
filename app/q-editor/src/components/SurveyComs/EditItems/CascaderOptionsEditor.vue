@@ -2,12 +2,12 @@
   <div key="id">
     <!-- 模式开关：关闭为地址模式（省/市/区），开启为自定义级联模式 -->
     <div class="flex align-items-center mb-10">
-      <div class="mr-10">自定义级联</div>
+      <div class="mr-10">{{ t("components.cascaderOptionsEditor.customCascader") }}</div>
       <el-switch :model-value="isUse" @change="onToggle" />
     </div>
     <div v-if="isUse">
       <div class="flex align-items-center space-between mb-10">
-        <span class="tip">最多 4 级</span>
+        <span class="tip">{{ t("components.cascaderOptionsEditor.maxLevel") }}</span>
         <el-button size="small" :icon="Plus" circle @click="onAddTop" />
       </div>
       <!-- 顶层节点，递归渲染整棵级联树 -->
@@ -20,15 +20,18 @@
         :config-key="configKey"
       />
     </div>
-    <div v-else class="tip">当前为地址模式（省 / 市 / 区）</div>
+    <div v-else class="tip">{{ t("components.cascaderOptionsEditor.addressMode") }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, inject } from "vue";
+import { useI18n } from "vue-i18n";
 import { Plus } from "@element-plus/icons-vue";
 import CascaderOptionNode from "./CascaderOptionNode.vue";
 import type { VueComType, UpdateStatus, OptionsStatusArr, CascaderStatusArr } from "@/types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   id: string;

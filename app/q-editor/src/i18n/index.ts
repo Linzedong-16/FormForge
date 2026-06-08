@@ -5,21 +5,18 @@ import type { App } from "vue";
 export const SUPPORT_LOCALES = ["zh-CN", "en-US", "ja-JP"] as const;
 export type SupportLocale = (typeof SUPPORT_LOCALES)[number];
 
-// 翻译消息结构：locale -> namespace -> { key: 文案 }
-type LocaleMessages = Record<string, Record<string, Record<string, string>>>;
-
 // 动态聚合各语言、各命名空间的翻译文件（src/i18n/{locale}/{namespace}.ts）
-const loadLocaleMessages = (): LocaleMessages => {
+const loadLocaleMessages = () => {
   // 仅匹配二级路径（语言目录/命名空间文件），不含本入口 index.ts
   const modules = import.meta.glob("./*/*.ts", { eager: true });
-  const messages: LocaleMessages = {};
+  const messages: Record<string, Record<string, unknown>> = {};
 
   for (const path in modules) {
     const parts = path.split("/"); // ['.', 'zh-CN', 'common.ts']
     const locale = parts[1];
     if (!locale) continue;
     const namespace = parts[2]?.replace(/\.ts$/, "") ?? "common";
-    const mod = modules[path] as { default: Record<string, string> };
+    const mod = modules[path] as { default: Record<string, unknown> };
     (messages[locale] ??= {})[namespace] = mod.default;
   }
 
@@ -37,7 +34,7 @@ export const i18n = createI18n({
   legacy: false, // Composition API 模式
   locale: defaultLocale,
   fallbackLocale: "en-US",
-  messages: loadLocaleMessages()
+  messages: loadLocaleMessages() as any
 });
 
 // 安装到应用

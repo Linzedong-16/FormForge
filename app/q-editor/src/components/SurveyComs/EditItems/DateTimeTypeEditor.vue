@@ -1,6 +1,6 @@
 <template>
-  <ButtonGroup title="日期类型" :status="status[currentStatus]!.status">
-    <el-select placeholder="日期类型" style="width: 100px" @change="changeType">
+  <ButtonGroup :title="t('components.dateTimeTypeEditor.dateType')" :status="status[currentStatus]!.status">
+    <el-select :placeholder="t('components.dateTimeTypeEditor.dateType')" style="width: 100px" @change="changeType">
       <el-option v-for="item in status" :key="item.value" :label="item.status" :value="item.value" />
     </el-select>
   </ButtonGroup>
@@ -9,7 +9,11 @@
 <script setup lang="ts">
 import type { VueComType, UpdateStatus, ValueStatusArr } from "@/types";
 import { inject } from "vue";
+import { useI18n } from "vue-i18n";
 import ButtonGroup from "./ButtonGroup.vue";
+
+const { t } = useI18n();
+
 const updateStatus = inject<UpdateStatus>("updateStatus");
 const props = defineProps<{
   currentStatus: number;

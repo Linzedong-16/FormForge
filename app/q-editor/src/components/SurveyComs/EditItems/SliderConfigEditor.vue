@@ -1,9 +1,9 @@
 <template>
   <div key="id">
-    <div class="mb-10">滑块配置</div>
+    <div class="mb-10">{{ t("components.sliderConfigEditor.sliderConfig") }}</div>
     <!-- 最小值 / 最大值 / 步长，直接修改 store 中的引用，实时同步到 pinia -->
     <div class="flex align-items-center space-between mb-5">
-      <span class="label">最小值</span>
+      <span class="label">{{ t("components.sliderConfigEditor.min") }}</span>
       <el-input-number
         :model-value="num(0)"
         size="small"
@@ -12,7 +12,7 @@
       />
     </div>
     <div class="flex align-items-center space-between mb-5">
-      <span class="label">最大值</span>
+      <span class="label">{{ t("components.sliderConfigEditor.max") }}</span>
       <el-input-number
         :model-value="num(1)"
         size="small"
@@ -21,7 +21,7 @@
       />
     </div>
     <div class="flex align-items-center space-between mb-5">
-      <span class="label">步长</span>
+      <span class="label">{{ t("components.sliderConfigEditor.step") }}</span>
       <el-input-number
         :model-value="num(2)"
         :min="1"
@@ -35,7 +35,10 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import type { VueComType } from "@/types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   status: string[];

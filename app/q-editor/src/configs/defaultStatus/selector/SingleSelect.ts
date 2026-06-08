@@ -15,6 +15,7 @@ import ColorEditor from "@/components/SurveyComs/EditItems/ColorEditor.vue";
 import { markRaw } from "vue";
 import { v4 as uuidv4 } from "uuid";
 import type { Status } from "@/types";
+import { t } from "@/utils/i18n";
 
 export default function (): Status {
   return {
@@ -25,21 +26,21 @@ export default function (): Status {
     status: {
       title: {
         id: uuidv4(),
-        status: "单选题默认标题",
+        status: t("components.defaultStatus.singleSelectTitle"),
         isShow: true,
         name: "title-editor",
         editCom: markRaw(TitleEditor)
       },
       desc: {
         id: uuidv4(),
-        status: "单选题默认描述",
+        status: t("components.defaultStatus.singleSelectDesc"),
         isShow: true,
         name: "desc-editor",
         editCom: markRaw(DescEditor)
       },
       options: {
         id: uuidv4(),
-        status: ["默认选项1", "默认选项2"],
+        status: [t("components.defaultStatus.defaultOption1"), t("components.defaultStatus.defaultOption2")],
         currentStatus: 0,
         isShow: true,
         name: "options-editor",
@@ -48,7 +49,7 @@ export default function (): Status {
       position: {
         id: uuidv4(),
         currentStatus: 0,
-        status: ["左对齐", "居中对齐"],
+        status: [t("components.defaultStatus.leftAlign"), t("components.defaultStatus.centerAlign")],
         isShow: true,
         name: "position-editor",
         editCom: markRaw(PositionEditor)
@@ -72,7 +73,7 @@ export default function (): Status {
       titleWeight: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["加粗", "正常"],
+        status: [t("components.defaultStatus.bold"), t("components.defaultStatus.normal")],
         isShow: true,
         name: "weight-editor",
         editCom: markRaw(WeightEditor)
@@ -80,7 +81,7 @@ export default function (): Status {
       descWeight: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["加粗", "正常"],
+        status: [t("components.defaultStatus.bold"), t("components.defaultStatus.normal")],
         isShow: true,
         name: "weight-editor",
         editCom: markRaw(WeightEditor)
@@ -88,7 +89,7 @@ export default function (): Status {
       titleItalic: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["斜体", "正常"],
+        status: [t("components.defaultStatus.italic"), t("components.defaultStatus.normal")],
         isShow: true,
         name: "italic-editor",
         editCom: markRaw(ItalicEditor)
@@ -96,7 +97,7 @@ export default function (): Status {
       descItalic: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["斜体", "正常"],
+        status: [t("components.defaultStatus.italic"), t("components.defaultStatus.normal")],
         isShow: true,
         name: "italic-editor",
         editCom: markRaw(ItalicEditor)

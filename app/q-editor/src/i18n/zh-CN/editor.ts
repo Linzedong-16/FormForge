@@ -11,6 +11,8 @@ export default {
   // 确认对话框
   confirmReset: "确定要重置问卷吗？",
   confirmTitle: "提示",
+  confirm: "确定",
+  cancel: "取消",
   confirmButton: "确定",
   cancelButton: "取消",
 
@@ -22,6 +24,8 @@ export default {
   updateSuccess: "问卷已更新",
   updateFailed: "问卷更新失败",
   saveCancelled: "已取消保存",
+  deleteSuccess: "删除成功",
+  deleteCancelled: "已取消删除",
 
   // 保存对话框
   savePromptTitle: "请输入问卷的标题",
@@ -33,6 +37,9 @@ export default {
   // 左侧面板
   outlineTitle: "大纲",
   surveyTypeTitle: "题型",
+  outline: "大纲",
+  surveyType: "题型",
+  addQuestion: "请添加题目",
 
   // 题型分组
   selectGroup: "选择题",
@@ -85,6 +92,12 @@ export default {
 
   // 右侧编辑面板
   editPanelTitle: "属性编辑",
+  clickToEdit: "点击题型进行编辑",
+  selectComponentFirst: "请先选中该图片题目组件后再上传图片",
+  deleteConfirm: "确定删除该组件吗？",
+  deleteTitle: "提示",
+  keepTwoOptions: "至少保留两个选项",
+  keepTwoItems: "至少保留两项",
   titleEdit: "标题",
   descEdit: "描述",
   optionsEdit: "选项",

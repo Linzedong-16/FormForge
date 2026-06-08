@@ -11,6 +11,8 @@ export default {
   // Confirm dialogs
   confirmReset: "アンケートをリセットしますか？",
   confirmTitle: "確認",
+  confirm: "確定",
+  cancel: "キャンセル",
   confirmButton: "確定",
   cancelButton: "キャンセル",
 
@@ -22,6 +24,8 @@ export default {
   updateSuccess: "アンケート更新完了",
   updateFailed: "アンケート更新失敗",
   saveCancelled: "保存取消",
+  deleteSuccess: "削除成功",
+  deleteCancelled: "削除取消",
 
   // Save dialog
   savePromptTitle: "アンケートタイトルを入力してください",
@@ -33,6 +37,9 @@ export default {
   // Left panel
   outlineTitle: "概要",
   surveyTypeTitle: "問題タイプ",
+  outline: "概要",
+  surveyType: "問題タイプ",
+  addQuestion: "質問を追加してください",
 
   // Question type groups
   selectGroup: "選択",
@@ -85,6 +92,12 @@ export default {
 
   // Right edit panel
   editPanelTitle: "プロパティエディター",
+  clickToEdit: "問題タイプをクリックして編集",
+  selectComponentFirst: "画像をアップロードする前に画像質問コンポーネントを選択してください",
+  deleteConfirm: "このコンポーネントを削除しますか？",
+  deleteTitle: "確認",
+  keepTwoOptions: "少なくとも2つのオプションを保持",
+  keepTwoItems: "少なくとも2つの項目を保持",
   titleEdit: "タイトル",
   descEdit: "説明",
   optionsEdit: "オプション",

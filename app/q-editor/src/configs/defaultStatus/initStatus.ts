@@ -1,27 +1,44 @@
 import type { TypeStatus } from "@/types";
+import { t } from "@/utils/i18n";
 
-// 专门导出各种初始值
-export const genderStatus = () => ["男", "女", "保密"];
-
-export const educationStatus = () => ["初中及以下", "高中/中专/技校", "大学专科", "大学本科", "硕士及以上"];
-
-export const careerStatus = () => [
-  "在校学生",
-  "政府/机关干部/公务员",
-  "企业管理者（包括基层及中高层管理者）",
-  "专业人员（如医生/律师/文体/记者/老师等）",
-  "普通职员（办公室/写字楼工作人员）",
-  "普通工人（如工厂工人/体力劳动者等）",
-  "商业服务业职工（如销售人员/商店职员/服务员等）",
-  "个体经营者/承包商",
-  "自由职业者",
-  "农林牧渔劳动者",
-  "退休",
-  "暂无职业",
-  "其他"
+export const genderStatus = () => [
+  t("components.defaultStatus.male"),
+  t("components.defaultStatus.female"),
+  t("components.defaultStatus.secret")
 ];
 
-export const ageStatus = () => ["18岁以下", "25～30岁", "31～40岁", "41～50岁", "51～60岁", "61岁及以上"];
+export const educationStatus = () => [
+  t("components.defaultStatus.educationBelowJunior"),
+  t("components.defaultStatus.educationHighSchool"),
+  t("components.defaultStatus.educationCollege"),
+  t("components.defaultStatus.educationBachelor"),
+  t("components.defaultStatus.educationMasterPlus")
+];
+
+export const careerStatus = () => [
+  t("components.defaultStatus.careerStudent"),
+  t("components.defaultStatus.careerGovernment"),
+  t("components.defaultStatus.careerManager"),
+  t("components.defaultStatus.careerProfessional"),
+  t("components.defaultStatus.careerClerk"),
+  t("components.defaultStatus.careerWorker"),
+  t("components.defaultStatus.careerService"),
+  t("components.defaultStatus.careerSelfEmployed"),
+  t("components.defaultStatus.careerFreelancer"),
+  t("components.defaultStatus.careerAgriculture"),
+  t("components.defaultStatus.careerRetired"),
+  t("components.defaultStatus.careerUnemployed"),
+  t("components.defaultStatus.careerOther")
+];
+
+export const ageStatus = () => [
+  t("components.defaultStatus.ageBelow18"),
+  t("components.defaultStatus.age25to30"),
+  t("components.defaultStatus.age31to40"),
+  t("components.defaultStatus.age41to50"),
+  t("components.defaultStatus.age51to60"),
+  t("components.defaultStatus.age61Plus")
+];
 
 import { v4 as uuidv4 } from "uuid";
 import { markRaw } from "vue";
@@ -42,21 +59,21 @@ export const initStore = () => [
       type: {
         id: uuidv4(),
         currentStatus: 0,
-        status: ["标题", "段落"],
+        status: [t("components.textTypeEditor.descriptionType"), t("common.paragraph")],
         isShow: true,
         editCom: markRaw(TextTypeEditor),
         name: "text-type-editor"
       },
       title: {
         id: uuidv4(),
-        status: "问卷标题",
+        status: t("components.defaultStatus.questionnaireTitle"),
         isShow: true,
         editCom: markRaw(TitleEditor),
         name: "title-editor"
       },
       desc: {
         id: uuidv4(),
-        status: "默认描述内容",
+        status: t("components.defaultStatus.defaultDesc"),
         isShow: false,
         editCom: DescEditor,
         name: "desc-editor"
@@ -64,7 +81,7 @@ export const initStore = () => [
       position: {
         id: uuidv4(),
         currentStatus: 0,
-        status: ["左对齐", "居中对齐"],
+        status: [t("components.defaultStatus.leftAlign"), t("components.defaultStatus.centerAlign")],
         isShow: false,
         editCom: markRaw(PositionEditor),
         name: "position-editor"
@@ -88,7 +105,7 @@ export const initStore = () => [
       titleWeight: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["加粗", "正常"],
+        status: [t("components.defaultStatus.bold"), t("components.defaultStatus.normal")],
         isShow: true,
         editCom: markRaw(WeightEditor),
         name: "weight-editor"
@@ -96,7 +113,7 @@ export const initStore = () => [
       descWeight: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["加粗", "正常"],
+        status: [t("components.defaultStatus.bold"), t("components.defaultStatus.normal")],
         isShow: false,
         editCom: markRaw(WeightEditor),
         name: "weight-editor"
@@ -104,7 +121,7 @@ export const initStore = () => [
       titleItalic: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["斜体", "正常"],
+        status: [t("components.defaultStatus.italic"), t("components.defaultStatus.normal")],
         isShow: true,
         editCom: markRaw(ItalicEditor),
         name: "italic-editor"
@@ -112,7 +129,7 @@ export const initStore = () => [
       descItalic: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["斜体", "正常"],
+        status: [t("components.defaultStatus.italic"), t("components.defaultStatus.normal")],
         isShow: false,
         editCom: markRaw(ItalicEditor),
         name: "italic-editor"
@@ -138,22 +155,21 @@ export const initStore = () => [
       type: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["标题", "段落"],
+        status: [t("components.textTypeEditor.descriptionType"), t("common.paragraph")],
         isShow: true,
         editCom: markRaw(TextTypeEditor),
         name: "text-type-editor"
       },
       title: {
         id: uuidv4(),
-        status: "默认标题内容",
+        status: t("components.defaultStatus.defaultTitle"),
         isShow: false,
         editCom: markRaw(TitleEditor),
         name: "title-editor"
       },
       desc: {
         id: uuidv4(),
-        status:
-          "为了给您提供更好的服务，希望您能抽出几分钟时间，将您的感受和建议告诉我们，我们非常重视每位用户的宝贵意见，期待您的参与！现在我们就马上开始吧！",
+        status: t("components.defaultStatus.defaultWelcome"),
         isShow: true,
         editCom: markRaw(DescEditor),
         name: "desc-editor"
@@ -161,7 +177,7 @@ export const initStore = () => [
       position: {
         id: uuidv4(),
         currentStatus: 0,
-        status: ["左对齐", "居中对齐"],
+        status: [t("components.defaultStatus.leftAlign"), t("components.defaultStatus.centerAlign")],
         isShow: true,
         editCom: markRaw(PositionEditor),
         name: "position-editor"
@@ -185,7 +201,7 @@ export const initStore = () => [
       titleWeight: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["加粗", "正常"],
+        status: [t("components.defaultStatus.bold"), t("components.defaultStatus.normal")],
         isShow: false,
         editCom: markRaw(WeightEditor),
         name: "weight-editor"
@@ -193,7 +209,7 @@ export const initStore = () => [
       descWeight: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["加粗", "正常"],
+        status: [t("components.defaultStatus.bold"), t("components.defaultStatus.normal")],
         isShow: true,
         editCom: markRaw(WeightEditor),
         name: "weight-editor"
@@ -201,7 +217,7 @@ export const initStore = () => [
       titleItalic: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["斜体", "正常"],
+        status: [t("components.defaultStatus.italic"), t("components.defaultStatus.normal")],
         isShow: false,
         editCom: markRaw(ItalicEditor),
         name: "italic-editor"
@@ -209,7 +225,7 @@ export const initStore = () => [
       descItalic: {
         id: uuidv4(),
         currentStatus: 1,
-        status: ["斜体", "正常"],
+        status: [t("components.defaultStatus.italic"), t("components.defaultStatus.normal")],
         isShow: true,
         editCom: markRaw(ItalicEditor),
         name: "italic-editor"

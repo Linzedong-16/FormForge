@@ -1,5 +1,8 @@
 <template>
-  <ButtonGroup :title="`${configKey === 'titleItalic' ? '标题' : '描述'}倾斜`" :status="status[currentStatus]">
+  <ButtonGroup
+    :title="`${configKey === 'titleItalic' ? t('components.italicEditor.title') : t('components.italicEditor.desc')}${t('components.italicEditor.italic')}`"
+    :status="status[currentStatus]"
+  >
     <el-button-group>
       <el-button
         :class="{
@@ -24,7 +27,11 @@
 <script setup lang="ts">
 import type { VueComType, UpdateStatus } from "@/types";
 import { inject } from "vue";
+import { useI18n } from "vue-i18n";
 import ButtonGroup from "./ButtonGroup.vue";
+
+const { t } = useI18n();
+
 const updateStatus = inject<UpdateStatus>("updateStatus");
 const props = defineProps<{
   currentStatus: number;

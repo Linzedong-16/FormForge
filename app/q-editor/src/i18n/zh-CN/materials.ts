@@ -26,30 +26,30 @@ export default {
   transfer: "排序题",
 
   // 输入框组件
-  textInput: "输入框",
+  textInput: "文本输入",
 
   // 备注说明组件
   textNote: "备注说明",
 
   // 个人信息组件
   personalName: "姓名",
+  personalId: "身份证",
   personalGender: "性别",
-  personalEducation: "学历",
   personalAge: "年龄",
-  personalCareer: "职业",
-  personalSchool: "学校",
+  personalEducation: "学历",
+  personalCollage: "大学",
   personalMajor: "专业",
   personalIndustry: "行业",
+  personalCareer: "职业",
   personalCompany: "公司",
-  personalPosition: "岗位",
-  personalId: "身份证号",
+  personalPosition: "职位",
 
   // 联系方式组件
-  personalAddress: "地址",
-  personalTel: "电话",
-  personalWechat: "微信",
-  personalQQ: "QQ",
-  personalEmail: "邮箱",
+  contactTel: "手机",
+  contactWechat: "微信号",
+  contactQq: "QQ号",
+  contactEmail: "邮箱",
+  contactAddress: "地址",
 
   // 组件属性
   componentTitle: "组件标题",

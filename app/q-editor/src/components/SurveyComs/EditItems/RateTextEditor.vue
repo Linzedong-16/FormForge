@@ -1,7 +1,7 @@
 <template>
   <div key="id">
     <div class="flex align-items-center mb-10">
-      <div class="mr-10">辅助文字</div>
+      <div class="mr-10">{{ t("components.rateTextEditor.auxiliaryText") }}</div>
       <el-switch :model-value="isUse" @change="switchChangeHandle" />
     </div>
     <div v-if="isUse">
@@ -10,7 +10,7 @@
         :key="index"
         v-model="textArr[index]"
         class="mt-5 mb-5"
-        placeholder="辅助文字"
+        :placeholder="t('components.rateTextEditor.auxiliaryText')"
         @input="(val: string) => inputHandle(val, index)"
       />
     </div>
@@ -20,6 +20,10 @@
 <script setup lang="ts">
 import type { VueComType, StringStatusArr } from "@/types";
 import { inject, ref } from "vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
+
 const props = defineProps<{
   currentStatus: number;
   status: StringStatusArr;
