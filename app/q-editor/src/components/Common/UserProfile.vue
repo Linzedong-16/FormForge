@@ -118,6 +118,7 @@ const langs: { value: SupportLocale; short: string }[] = [
 ];
 const onChangeLang = (l: SupportLocale) => {
   setLocale(l);
+  window.location.reload();
 };
 
 // 色弱模式切换
