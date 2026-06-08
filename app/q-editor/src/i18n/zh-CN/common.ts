@@ -13,5 +13,6 @@ export default {
   search: "搜索",
   submit: "提交",
   reset: "重置",
-  return: "返回"
+  return: "返回",
+  and: "和"
 };

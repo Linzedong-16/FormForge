@@ -11,7 +11,7 @@
                 <path d="M16 12L8 17l8 5 8-5-8-5z" fill="currentColor" opacity="0.6" />
               </svg>
             </span>
-            <span class="logo-text">Q问卷</span>
+            <span class="logo-text">{{ t("land.logoName") }}</span>
           </div>
           <nav class="nav-menu">
             <div v-for="item in navItems" :key="item.name" class="nav-item">
@@ -23,13 +23,13 @@
         <div class="header-right">
           <div class="action-item">
             <el-icon><ChatDotRound /></el-icon>
-            <span>咨询</span>
+            <span>{{ t("land.consult") }}</span>
           </div>
           <div class="action-item">
             <el-icon><User /></el-icon>
-            <span>登录</span>
+            <span>{{ t("land.login") }}</span>
           </div>
-          <el-button type="primary" class="btn-free">免费使用</el-button>
+          <el-button type="primary" class="btn-free">{{ t("land.freeUse") }}</el-button>
         </div>
       </div>
     </header>
@@ -49,17 +49,19 @@
             </span>
             AI开启调研新时代
           </h1>
-          <p class="hero-subtitle">AI 覆盖调研工作全链路，丰富的模版库+7大应用场景</p>
+          <p class="hero-subtitle">{{ t("land.heroSubtitle") }}</p>
 
           <!-- 操作按钮 -->
           <div class="hero-actions">
-            <el-button size="large" class="btn-experience">立即体验AI</el-button>
-            <el-button size="large" class="btn-workspace" @click="openNewTab('/home')">进入工作台</el-button>
+            <el-button size="large" class="btn-experience">{{ t("land.experienceAI") }}</el-button>
+            <el-button size="large" class="btn-workspace" @click="openNewTab('/home')">{{
+              t("land.enterWorkspace")
+            }}</el-button>
           </div>
 
           <!-- 搜索框 -->
           <div class="search-box">
-            <el-input v-model="searchText" size="large" placeholder="员工培训满意度调研" class="search-input">
+            <el-input v-model="searchText" size="large" :placeholder="t('land.searchPlaceholder')" class="search-input">
               <template #append>
                 <el-button class="search-btn" :icon="Search" />
               </template>
@@ -68,7 +70,7 @@
 
           <!-- 热门搜索标签 -->
           <div class="hot-tags">
-            <span class="tag-label">大家都在搜</span>
+            <span class="tag-label">{{ t("land.hotSearchLabel") }}</span>
             <el-tag v-for="tag in hotTags" :key="tag" class="hot-tag" effect="plain" round>
               {{ tag }}
             </el-tag>
@@ -81,31 +83,45 @@
         <div class="consult-avatar">
           <img src="https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png" alt="咨询" />
         </div>
-        <span class="consult-text">咨询</span>
+        <span class="consult-text">{{ t("land.consult") }}</span>
       </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { ArrowDown, ChatDotRound, User, Search } from "@element-plus/icons-vue";
 import { openNewTab } from "@/utils";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const searchText = ref("");
 
-const navItems = [
-  { name: "产品", hasDropdown: true },
-  { name: "模板", hasDropdown: false },
-  { name: "样本", hasDropdown: true },
-  { name: "互填", hasDropdown: false },
-  { name: "定价", hasDropdown: false },
-  { name: "合作", hasDropdown: true },
-  { name: "案例", hasDropdown: false },
-  { name: "支持", hasDropdown: true }
-];
+const navItems = computed(() => [
+  { name: t("land.navProduct"), hasDropdown: true },
+  { name: t("land.navTemplate"), hasDropdown: false },
+  { name: t("land.navSample"), hasDropdown: true },
+  { name: t("land.navFill"), hasDropdown: false },
+  { name: t("land.navPricing"), hasDropdown: false },
+  { name: t("land.navCooperation"), hasDropdown: true },
+  { name: t("land.navCase"), hasDropdown: false },
+  { name: t("land.navSupport"), hasDropdown: true }
+]);
 
-const hotTags = ["满意度", "投票", "评选", "报名", "健康", "学生", "社区", "公司", "员工", "消费者", "市场调查"];
+const hotTags = computed(() => [
+  t("land.tagSatisfaction"),
+  t("land.tagVote"),
+  t("land.tagSelection"),
+  t("land.tagRegistration"),
+  t("land.tagHealth"),
+  t("land.tagStudent"),
+  t("land.tagCommunity"),
+  t("land.tagCompany"),
+  t("land.tagEmployee"),
+  t("land.tagConsumer"),
+  t("land.tagMarketSurvey")
+]);
 </script>
 
 <style scoped lang="scss">

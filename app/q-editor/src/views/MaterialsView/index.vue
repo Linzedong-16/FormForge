@@ -1,7 +1,7 @@
 <template>
   <Header :is-editor="false" />
   <div>
-    <h1 class="font-weight-100 text-center m0 p0">组件市场</h1>
+    <h1 class="font-weight-100 text-center m0 p0">{{ t("materials.pageTitle") }}</h1>
     <div class="container mc flex">
       <!-- 导航 -->
       <nav class="category mc">
@@ -9,37 +9,37 @@
           <el-icon>
             <CircleCheck />
           </el-icon>
-          <div>选择</div>
+          <div>{{ t("materials.categorySelect") }}</div>
         </Router-link>
         <Router-link class="category-item" to="/input-group">
           <el-icon>
             <EditPen />
           </el-icon>
-          <div>文本输入</div>
+          <div>{{ t("materials.categoryInput") }}</div>
         </Router-link>
         <Router-link class="category-item" to="/advanced-group">
           <el-icon>
             <Files />
           </el-icon>
-          <div>高级题型</div></Router-link
+          <div>{{ t("materials.categoryAdvanced") }}</div></Router-link
         >
         <Router-link class="category-item" to="/note-group">
           <el-icon>
             <ChatLineSquare />
           </el-icon>
-          <div>备注说明</div></Router-link
+          <div>{{ t("materials.categoryNote") }}</div></Router-link
         >
         <Router-link class="category-item" to="/personal-info-group">
           <el-icon>
             <User />
           </el-icon>
-          <div>个人信息</div></Router-link
+          <div>{{ t("materials.categoryPersonalInfo") }}</div></Router-link
         >
         <Router-link class="category-item" to="/contact-group">
           <el-icon>
             <Message />
           </el-icon>
-          <div>联系方式</div></Router-link
+          <div>{{ t("materials.categoryContact") }}</div></Router-link
         >
       </nav>
       <!-- 路由出口 -->
@@ -54,6 +54,9 @@
 import Header from "@/components/Common/Header.vue";
 // 引入对应图标
 import { CircleCheck, Files, EditPen, ChatLineSquare, User, Message } from "@element-plus/icons-vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 </script>
 
 <style scoped lang="scss">

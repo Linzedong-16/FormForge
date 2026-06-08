@@ -1,17 +1,17 @@
 <template>
   <div class="register-form">
     <h2 class="form-title" style="text-align: center">
-      {{ isInitMode ? "初始化系统" : "邮箱注册" }}
+      {{ isInitMode ? t("login.initTitle") : t("login.registerTitle") }}
     </h2>
 
     <!-- SMTP 未配置 + 已初始化 → 提示联系管理员 -->
     <template v-if="statusChecked && showContactAdmin">
       <div style="text-align: center; padding: 20px 0">
-        <p style="color: var(--login-text-muted); margin-bottom: 8px">暂未开放公开注册</p>
-        <p style="color: var(--login-text-muted); font-size: 13px">请联系系统管理员创建账户</p>
+        <p style="color: var(--login-text-muted); margin-bottom: 8px">{{ t("login.publicRegistrationClosed") }}</p>
+        <p style="color: var(--login-text-muted); font-size: 13px">{{ t("login.contactAdmin") }}</p>
       </div>
       <div class="form-footer">
-        <span class="switch-link" @click="$emit('switch-to-login')">返回登录</span>
+        <span class="switch-link" @click="$emit('switch-to-login')">{{ t("login.backToLogin") }}</span>
       </div>
     </template>
 
@@ -23,7 +23,7 @@
           <el-input
             v-model="registerForm.email"
             type="text"
-            placeholder="您的电子邮箱地址"
+            :placeholder="t('login.emailPlaceholder')"
             class="form-input"
             :prefix-icon="Message"
           />
@@ -34,7 +34,7 @@
           <el-input
             v-model="registerForm.username"
             type="text"
-            placeholder="用户名（选填，默认使用邮箱前缀）"
+            :placeholder="t('login.usernamePlaceholder')"
             class="form-input"
             :prefix-icon="User"
           />
@@ -45,7 +45,7 @@
           <el-input
             v-model="registerForm.password"
             type="password"
-            placeholder="设置密码（8-128位，大小写+数字）"
+            :placeholder="t('login.setPasswordPlaceholder')"
             class="form-input"
             :prefix-icon="Lock"
             show-password
@@ -57,7 +57,7 @@
           <el-input
             v-model="registerForm.confirmPassword"
             type="password"
-            placeholder="确认密码"
+            :placeholder="t('login.confirmPasswordPlaceholder')"
             class="form-input"
             :prefix-icon="Lock"
             show-password
@@ -71,7 +71,7 @@
               <el-input
                 v-model="registerForm.code"
                 type="text"
-                placeholder="验证码"
+                :placeholder="t('login.codePlaceholder')"
                 class="captcha-input"
                 :prefix-icon="EditPen"
                 maxlength="6"
@@ -82,7 +82,7 @@
                 :loading="sendingCode"
                 @click="handleSendCode"
               >
-                {{ countDown > 0 ? `${countDown}s` : "获取验证码" }}
+                {{ countDown > 0 ? `${countDown}s` : t("login.getCodeButton") }}
               </el-button>
             </div>
           </el-form-item>
@@ -91,10 +91,10 @@
         <!-- 协议勾选 -->
         <el-form-item class="agreement-item">
           <el-checkbox v-model="agreed">
-            我已阅读并同意
-            <a href="#" class="agreement-link">用户协议</a>
-            和
-            <a href="#" class="agreement-link">隐私政策</a>
+            {{ t("login.agreementText") }}
+            <a href="#" class="agreement-link">{{ t("login.userAgreement") }}</a>
+            {{ t("common.and") }}
+            <a href="#" class="agreement-link">{{ t("login.privacyPolicy") }}</a>
           </el-checkbox>
         </el-form-item>
 
@@ -108,14 +108,14 @@
               :disabled="!agreed"
               @click="handleRegister"
             >
-              {{ isInitMode ? "初始化系统" : "注册" }}
+              {{ isInitMode ? t("login.initButton") : t("login.registerButton") }}
             </el-button>
           </div>
         </el-form-item>
       </el-form>
 
       <div class="form-footer">
-        <span class="switch-link" @click="$emit('switch-to-login')">返回登录</span>
+        <span class="switch-link" @click="$emit('switch-to-login')">{{ t("login.backToLogin") }}</span>
       </div>
     </template>
 
@@ -137,7 +137,9 @@ import { useUserStore } from "@/stores/useUser";
 import { sendCode, verifyRegister, initRegister } from "@/api";
 import { BizCode } from "@common/user/user.interface";
 import type { SystemStatusResponse } from "@common/user/user.interface";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const router = useRouter();
 const userStore = useUserStore();
 
@@ -171,7 +173,7 @@ onMounted(async () => {
       systemStatus.value = res.data;
     }
   } catch {
-    ElMessage.error("获取系统状态失败");
+    ElMessage.error(t("login.statusFetchFailed"));
   } finally {
     statusChecked.value = true;
   }
@@ -197,22 +199,22 @@ const registerForm = reactive({
 
 const registerRules: FormRules = {
   email: [
-    { required: true, message: "请输入邮箱", trigger: "blur" },
-    { type: "email", message: "请输入正确的邮箱格式", trigger: "blur" }
+    { required: true, message: t("login.emailRequired"), trigger: "blur" },
+    { type: "email", message: t("login.emailInvalid"), trigger: "blur" }
   ],
   password: [
-    { required: true, message: "请输入密码", trigger: "blur" },
-    { min: 8, message: "密码至少8位", trigger: "blur" },
-    { pattern: /[A-Z]/, message: "密码需包含大写字母", trigger: "blur" },
-    { pattern: /[a-z]/, message: "密码需包含小写字母", trigger: "blur" },
-    { pattern: /\d/, message: "密码需包含数字", trigger: "blur" }
+    { required: true, message: t("login.passwordRequired"), trigger: "blur" },
+    { min: 8, message: t("login.passwordMinLength"), trigger: "blur" },
+    { pattern: /[A-Z]/, message: t("login.passwordUppercase"), trigger: "blur" },
+    { pattern: /[a-z]/, message: t("login.passwordLowercase"), trigger: "blur" },
+    { pattern: /\d/, message: t("login.passwordDigit"), trigger: "blur" }
   ],
   confirmPassword: [
-    { required: true, message: "请确认密码", trigger: "blur" },
+    { required: true, message: t("login.confirmPasswordRequired"), trigger: "blur" },
     {
       validator: (_rule: unknown, value: string, callback: (err?: Error) => void) => {
         if (value !== registerForm.password) {
-          callback(new Error("两次输入的密码不一致"));
+          callback(new Error(t("login.passwordMismatch")));
         } else {
           callback();
         }
@@ -221,8 +223,8 @@ const registerRules: FormRules = {
     }
   ],
   code: [
-    { required: true, message: "请输入验证码", trigger: "blur" },
-    { len: 6, message: "验证码为6位数字", trigger: "blur" }
+    { required: true, message: t("login.codeRequired"), trigger: "blur" },
+    { len: 6, message: t("login.codeLength"), trigger: "blur" }
   ]
 };
 
@@ -236,7 +238,7 @@ const canSendCaptcha = computed(() => {
 /** 发送验证码 → 后端 /api/auth/send-code */
 const handleSendCode = async () => {
   if (!canSendCaptcha.value) {
-    ElMessage.warning("请先输入正确的邮箱");
+    ElMessage.warning(t("login.emailInvalid"));
     return;
   }
 
@@ -244,7 +246,7 @@ const handleSendCode = async () => {
   try {
     const res = await sendCode({ email: registerForm.email, type: "register" });
     if (res.code === 0) {
-      ElMessage.success("验证码已发送至您的邮箱");
+      ElMessage.success(t("login.codeSent"));
       // 60 秒倒计时
       countDown.value = 60;
       const timer = setInterval(() => {
@@ -255,7 +257,7 @@ const handleSendCode = async () => {
       ElMessage.error(res.msg);
     }
   } catch {
-    ElMessage.error("发送失败，请检查网络");
+    ElMessage.error(t("login.sendFailed"));
   } finally {
     sendingCode.value = false;
   }
@@ -263,11 +265,11 @@ const handleSendCode = async () => {
 
 // ─── 注册提交 ────────────────────────────────────────────────
 
-const REGISTER_ERROR_MAP: Record<number, string> = {
-  [BizCode.EmailExists]: "该邮箱已被注册，请直接登录",
-  [BizCode.RegistrationClosed]: "暂未开放注册，请联系管理员",
-  [BizCode.SmtpNotConfigured]: "邮件服务未配置，请联系管理员创建账户"
-};
+const getRegisterErrorMap = (): Record<number, string> => ({
+  [BizCode.EmailExists]: t("login.emailExists"),
+  [BizCode.RegistrationClosed]: t("login.registrationClosed"),
+  [BizCode.SmtpNotConfigured]: t("login.smtpNotConfigured")
+});
 
 const handleRegister = async () => {
   if (!registerFormRef.value) return;
@@ -275,7 +277,7 @@ const handleRegister = async () => {
   if (!valid) return;
 
   if (!agreed.value) {
-    ElMessage.warning("请先同意用户协议和隐私政策");
+    ElMessage.warning(t("login.agreementRequired"));
     return;
   }
 
@@ -303,14 +305,14 @@ const handleRegister = async () => {
     if (res.code === 0 && res.data) {
       // 注册成功 → 存储 Token + 跳转
       userStore.setTokens(res.data);
-      ElMessage.success(isInitMode.value ? "系统初始化成功" : "注册成功");
+      ElMessage.success(isInitMode.value ? t("login.initSuccess") : t("login.registerSuccess"));
       router.push({ name: "home" });
     } else {
-      const mappedMsg = REGISTER_ERROR_MAP[res.code];
+      const mappedMsg = getRegisterErrorMap()[res.code];
       ElMessage.error(mappedMsg ?? res.msg);
     }
   } catch {
-    ElMessage.error("注册失败，请检查网络连接");
+    ElMessage.error(t("login.registerFailed"));
   } finally {
     isLoading.value = false;
   }

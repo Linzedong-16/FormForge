@@ -9,11 +9,11 @@
         <div v-if="isEditor" class="flex align-items-center">
           <!-- 说明是编辑器，需要显示额外的按钮 -->
           <div v-if="id">
-            <el-button type="warning" size="small" @click="updateSurvey">更新问卷</el-button>
+            <el-button type="warning" size="small" @click="updateSurvey">{{ t("editor.updateSurvey") }}</el-button>
           </div>
           <div v-else>
-            <el-button type="danger" size="small" @click="reset">重置问卷</el-button>
-            <el-button type="success" size="small" @click="saveSurvey">保存问卷</el-button>
+            <el-button type="danger" size="small" @click="reset">{{ t("editor.resetSurvey") }}</el-button>
+            <el-button type="success" size="small" @click="saveSurvey">{{ t("editor.saveSurvey") }}</el-button>
           </div>
           <!-- 分页器：紧邻保存/更新按钮右侧，绑定仓库的分页配置 -->
           <SurveyPagination
@@ -24,7 +24,7 @@
           />
         </div>
         <div v-if="id">
-          <el-button type="primary" size="small" @click="preview">预览</el-button>
+          <el-button type="primary" size="small" @click="preview">{{ t("editor.preview") }}</el-button>
         </div>
       </div>
       <div class="right flex justify-content-center align-items-center">
@@ -37,7 +37,9 @@
 <script setup lang="ts">
 import { ArrowLeft } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 const router = useRouter();
+const { t } = useI18n();
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useEditorStore } from "@/stores/useEditor";
 import type { SurveyDBData } from "@/types";
@@ -57,17 +59,17 @@ const store = useEditorStore();
 
 // 重置问卷
 const reset = () => {
-  ElMessageBox.confirm("确定要重置问卷吗？", "提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t("editor.confirmReset"), t("editor.confirmTitle"), {
+    confirmButtonText: t("editor.confirmButton"),
+    cancelButtonText: t("editor.cancelButton"),
     type: "warning"
   })
     .then(() => {
       store.resetComs();
-      ElMessage.success("重置成功");
+      ElMessage.success(t("editor.resetSuccess"));
     })
     .catch(() => {
-      ElMessage.info("已取消重置");
+      ElMessage.info(t("editor.resetCancelled"));
     });
 };
 
@@ -76,9 +78,9 @@ interface PromptItem {
 }
 // 保存问卷
 const saveSurvey = () => {
-  ElMessageBox.prompt("请输入问卷的标题", "提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
+  ElMessageBox.prompt(t("editor.savePromptTitle"), t("editor.confirmTitle"), {
+    confirmButtonText: t("editor.confirmButton"),
+    cancelButtonText: t("editor.cancelButton"),
     type: "info"
   })
     .then(item => {
@@ -95,14 +97,14 @@ const saveSurvey = () => {
         .saveComs(surveyToSave)
         .then(() => {
           console.log(store.coms);
-          ElMessage.success("问卷已保存");
+          ElMessage.success(t("editor.saveSuccess"));
         })
         .catch(() => {
-          ElMessage.error("问卷保存失败");
+          ElMessage.error(t("editor.saveFailed"));
         });
     })
     .catch(() => {
-      ElMessage.info("已取消保存");
+      ElMessage.info(t("editor.saveCancelled"));
     });
 };
 
@@ -116,18 +118,18 @@ const updateSurvey = () => {
       pageSize: store.pageSize
     } as SurveyDBData)
     .then(() => {
-      ElMessage.success("问卷已更新");
+      ElMessage.success(t("editor.updateSuccess"));
     })
     .catch(() => {
-      ElMessage.error("问卷更新失败");
+      ElMessage.error(t("editor.updateFailed"));
     });
 };
 
 // 预览问卷
 const preview = () => {
-  ElMessageBox.confirm("预览会自动保存问卷，是否跳转预览？", "提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t("editor.previewConfirm"), t("editor.confirmTitle"), {
+    confirmButtonText: t("editor.confirmButton"),
+    cancelButtonText: t("editor.cancelButton"),
     type: "info"
   })
     .then(() => {
@@ -138,7 +140,7 @@ const preview = () => {
       });
     })
     .catch(() => {
-      ElMessage.info("已取消跳转");
+      ElMessage.info(t("editor.previewCancelled"));
     });
 };
 

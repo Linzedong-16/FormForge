@@ -8,7 +8,7 @@
           <path d="M16 12L8 17l8 5 8-5-8-5z" fill="currentColor" opacity="0.6" />
         </svg>
       </span>
-      <span class="logo-text">Q问卷</span>
+      <span class="logo-text">{{ t("login.logoName") }}</span>
     </div>
 
     <div class="login-container">
@@ -42,50 +42,52 @@
 
     <!-- 底部版权信息 -->
     <div class="login-footer">
-      <span>Q问卷提供技术支持</span>
+      <span>{{ t("login.techSupport") }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import LoginForm from "./component/LoginForm.vue";
 import RegisterForm from "./component/RegisterForm.vue";
 
+const { t } = useI18n();
 const isRegister = ref(false);
 
 const itemImage = new URL("@/assets/imgs/item.png", import.meta.url).href;
 
-const carouselItems = [
+const carouselItems = computed(() => [
   {
     id: 1,
-    title: "更多应用场景",
-    desc: "满足您的各类调研需求",
+    title: t("login.carouselTitle1"),
+    desc: t("login.carouselDesc1"),
     color: "#18181b",
     image: itemImage
   },
   {
     id: 2,
-    title: "智能数据分析",
-    desc: "AI驱动的调研分析报告",
+    title: t("login.carouselTitle2"),
+    desc: t("login.carouselDesc2"),
     color: "#3f3f46",
     image: itemImage
   },
   {
     id: 3,
-    title: "多渠道发布",
-    desc: "一键分享至各大平台",
+    title: t("login.carouselTitle3"),
+    desc: t("login.carouselDesc3"),
     color: "#52525b",
     image: itemImage
   },
   {
     id: 4,
-    title: "实时数据同步",
-    desc: "随时随地查看调研结果",
+    title: t("login.carouselTitle4"),
+    desc: t("login.carouselDesc4"),
     color: "#71717a",
     image: itemImage
   }
-];
+]);
 </script>
 
 <style lang="scss">

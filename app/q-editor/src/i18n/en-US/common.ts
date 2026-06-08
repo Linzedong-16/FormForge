@@ -13,5 +13,6 @@ export default {
   search: "Search",
   submit: "Submit",
   reset: "Reset",
-  return: "Back"
+  return: "Back",
+  and: "and"
 };

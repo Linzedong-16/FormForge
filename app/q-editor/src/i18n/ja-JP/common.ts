@@ -13,5 +13,6 @@ export default {
   search: "検索",
   submit: "送信",
   reset: "リセット",
-  return: "戻る"
+  return: "戻る",
+  and: "と"
 };
