@@ -8,6 +8,9 @@ import router from "./router";
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 
+// pinia持久化插件
+import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
+
 // i18n 国际化
 import { setupI18n } from "@/i18n";
 
@@ -28,7 +31,7 @@ const app = createApp(App);
 app.component("FontAwesomeIcon", FontAwesomeIcon);
 // 先安装 i18n，确保在 Pinia store 初始化前可用
 setupI18n(app);
-app.use(createPinia());
+app.use(createPinia().use(piniaPluginPersistedstate));
 app.use(router);
 // Element Plus 语言由 App.vue 的 ElConfigProvider 跟随 i18n 动态切换
 app.use(ElementPlus);

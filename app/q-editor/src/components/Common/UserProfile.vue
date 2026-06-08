@@ -86,14 +86,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { Setting, SwitchButton, Sunny, Moon, View } from "@element-plus/icons-vue";
 import { useTheme } from "@/utils/useTheme";
 import { useColorBlind, type ColorBlindMode } from "@/utils/useColorBlind";
 import { setLocale, type SupportLocale } from "@/i18n";
+import { useUserStore } from "@/stores/useUser";
 
 const { t, locale } = useI18n();
+
+// 从 Pinia Store 获取用户信息
+const userStore = useUserStore();
+
+// 用户信息：从 Pinia 持久化状态读取
+const avatar = ref("http://47.94.168.252/upload/1759642363899.gif");
+const nickname = computed(() => userStore.user?.username ?? "User");
+const email = computed(() => userStore.user?.email ?? "");
 
 // 亮暗主题切换
 const { isDark, toggleTheme } = useTheme();
@@ -124,16 +133,15 @@ const onChangeColorBlind = (v: string | number | boolean | undefined) => {
   setColorBlindMode(v as ColorBlindMode);
 };
 
-// 用户信息（占位数据，待业务 API 对接）
-const avatar = ref("http://47.94.168.252/upload/1759642363899.gif");
-const nickname = ref("Linzex");
-const email = ref("example@email.com");
-
 // 打开个人设置（空实现，待对接业务）
 const onSettings = () => {};
 
-// 退出登录（空实现，待对接业务）
-const onLogout = () => {};
+// 退出登录
+const onLogout = async () => {
+  await userStore.handleLogout();
+  // 登出后跳转到登录页或首页
+  window.location.reload();
+};
 </script>
 
 <style scoped lang="scss">

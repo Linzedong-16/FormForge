@@ -30,6 +30,7 @@
     "mitt": "^3.0.1",
     "monorepo-code-common": "workspace:*",
     "pinia": "^3.0.4",
+    "pinia-plugin-persistedstate": "^4.7.1",
     "uuid": "^13.0.0",
     "vue": "^3.5.25",
     "vue-i18n": "^9.14.4",
