@@ -47,16 +47,16 @@ import { getSurveyById } from "@/db/operation";
 // 仓库
 import { useEditorStore } from "@/stores/useEditor";
 const store = useEditorStore();
-// 工具方法;
+// 工具方法
 import { restoreComponentStatus } from "@/utils";
 import { computed, ref } from "vue";
 import { useSurveyNo } from "@/utils/hooks";
 import router from "@/router";
 import { canUsedForPDF } from "@/types";
 import { ElMessage } from "element-plus";
-import { v4 as uuidv4 } from "uuid";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 import { useI18n } from "vue-i18n";
+import { createSurvey, serializeComponents, getSurveyMetadata } from "@/api/modules/survey";
 
 const { t } = useI18n();
 
@@ -81,63 +81,82 @@ const copyLink = () => {
 const serialNum = computed(() => useSurveyNo(store.coms).value);
 // 获取路由参数
 const id = Number(route.params.id);
-// 接下来应该根据拿到的 id 去获取存储的问卷题目
+// 根据 id 从本地数据库加载问卷
 if (id) {
   getSurveyById(id).then(res => {
     console.log(res, "res");
     if (res) {
-      // 组件部分需要重新还原
       restoreComponentStatus(res.coms);
-      // 还原完成之后，将还原的数据设置为仓库里面的 coms 即可
       store.setStore(res);
     }
   });
 }
 
-// 返回
+// 返回编辑器
 const gobackHandle = () => {
-  router.push({
-    name: "home",
-    state: {
-      from: "preview"
-    }
-  });
+  router.push({ name: "home", state: { from: "preview" } });
 };
 
-// 生成本地PDF
+// 生成本地 PDF
 const generatePDF = () => {
-  // 检查是否有题目类型不能生成PDF的
   if (!store.coms.every(com => canUsedForPDF(com.type))) {
     ElMessage.error(t("preview.pdfError"));
     return;
   }
-  // 生成PDF
   window.print();
   ElMessage.success(t("preview.pdfSuccess"));
 };
 
-// 生成在线问卷
-const generateOnlineSurvey = () => {
-  // TODO: 是否登录
+/**
+ * 生成在线问卷
+ *
+ * 流程：
+ *   1. 从 text-type 组件中提取问卷标题/描述（surveys.title / surveys.description）
+ *   2. 将 Status[] 序列化为 SurveyComponentPayload[]（name → snake_case type，status → config）
+ *   3. 调用 POST /api/surveys 创建问卷
+ *   4. 用后端返回的真实 survey_id 构建分享链接
+ */
+const generateOnlineSurvey = async () => {
+  try {
+    // store.coms 的结构与 serializeComponents/getSurveyMetadata 参数兼容
+    // （Status.name: Material extends string，Status.status: Record<string,TP|OP> extends Record<string,unknown>）
+    const storeComs = store.coms as Array<{ name: string; status: Record<string, unknown>; [key: string]: unknown }>;
 
-  // 发送数组组件到服务端
-  const surveyId = uuidv4();
-  // 发送数组组件到服务端
-  fetch(`/api/generateSurvey`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      surveyId,
-      coms: store.coms,
-      pageSize: store.pageSize
-    })
-  });
-  // 生成成功之后，将分享链接设置为 surveyId，并通过 query 携带分页配置
-  shareLink.value = `${window.location.origin}/survey/${surveyId}?pageSize=${store.pageSize}`;
-  dialogVisible.value = true;
-  ElMessage.success(t("preview.onlineSuccess"));
+    // 提取问卷级别标题与描述（surveys.title / surveys.description 必须正确传递）
+    const { title, description } = getSurveyMetadata({ coms: storeComs });
+
+    // 序列化组件：Material kebab-case → snake_case type，status 整体作为 config JSON
+    const components = serializeComponents(storeComs);
+
+    if (components.length === 0) {
+      ElMessage.warning("问卷中暂无组件，请先添加题目");
+      return;
+    }
+
+    // 调用创建问卷接口（POST /api/surveys）
+    const res = await createSurvey({
+      title: title || "未命名问卷",
+      description: description || undefined,
+      page_size: store.pageSize,
+      is_public: 1,
+      components
+    });
+
+    // 后端统一响应：code === 0 表示成功
+    if (res.code !== 0 || !res.data) {
+      ElMessage.error(res.msg || t("preview.onlineError"));
+      return;
+    }
+
+    // 用后端返回的真实 survey_id 构建填答分享链接
+    const surveyId = res.data.survey_id;
+    shareLink.value = `${window.location.origin}/survey/${surveyId}?pageSize=${store.pageSize}`;
+    dialogVisible.value = true;
+    ElMessage.success(t("preview.onlineSuccess"));
+  } catch (err) {
+    console.error("[generateOnlineSurvey]", err);
+    ElMessage.error(t("preview.onlineError"));
+  }
 };
 </script>
 

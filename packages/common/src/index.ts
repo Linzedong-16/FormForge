@@ -31,3 +31,6 @@ export type {
 
 /// 导出 用户模块前后端通用接口
 export * from "./user/user.interface.js";
+
+/// 导出 问卷模块前后端通用接口
+export * from "./survey/survey.interface.js";

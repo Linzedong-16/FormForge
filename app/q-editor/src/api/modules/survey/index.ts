@@ -1,0 +1,267 @@
+/**
+ * 问卷模块 API
+ *
+ * 职责：
+ *   - 封装问卷相关的 HTTP 调用（serverClient.baseURL = "/api"，路径无需再加 /api 前缀）
+ *   - 提供前端 Status[] → 后端 SurveyComponentPayload[] 的序列化工具
+ *   - 提供从组件数组中提取问卷标题/描述的工具函数
+ *
+ * 所有 TS 类型均来自 @common/survey/survey.interface，本文件不重复定义类型。
+ */
+import type { ApiResponse } from "@common/user/user.interface";
+import type {
+  CreateSurveyRequest,
+  CreateSurveyResponse,
+  UpdateSurveyRequest,
+  SurveyListQuery,
+  SurveyListResponse,
+  SurveyDetail,
+  SurveyComponentPayload,
+  SubmitResponseRequest,
+  SubmitResponseResponse,
+  ResponseListQuery,
+  ResponseListResponse,
+  SurveyResponseDetail,
+  AnswerItem
+} from "@common/survey/survey.interface";
+import serverClient from "../../clients/server";
+
+// ============================================================
+// 问卷 CRUD
+// ============================================================
+
+/**
+ * POST /api/surveys — 创建问卷
+ *
+ * @param data 创建请求，title 与 components 必填
+ */
+export const createSurvey = (data: CreateSurveyRequest): Promise<ApiResponse<CreateSurveyResponse>> =>
+  serverClient.post("/surveys", data);
+
+/**
+ * GET /api/surveys — 获取问卷列表
+ */
+export const getSurveyList = (params?: SurveyListQuery): Promise<ApiResponse<SurveyListResponse>> =>
+  serverClient.get("/surveys", { params });
+
+/**
+ * GET /api/surveys/:id — 获取问卷详情（含组件列表）
+ */
+export const getSurveyById = (surveyId: string): Promise<ApiResponse<SurveyDetail>> =>
+  serverClient.get(`/surveys/${surveyId}`);
+
+/**
+ * PUT /api/surveys/:id — 更新问卷
+ */
+export const updateSurvey = (surveyId: string, data: UpdateSurveyRequest): Promise<ApiResponse<SurveyDetail>> =>
+  serverClient.put(`/surveys/${surveyId}`, data);
+
+/**
+ * DELETE /api/surveys/:id — 删除问卷
+ */
+export const deleteSurvey = (surveyId: string): Promise<ApiResponse<null>> =>
+  serverClient.delete(`/surveys/${surveyId}`);
+
+/**
+ * POST /api/surveys/:id/publish — 发布问卷
+ */
+export const publishSurvey = (surveyId: string): Promise<ApiResponse<SurveyDetail>> =>
+  serverClient.post(`/surveys/${surveyId}/publish`);
+
+/**
+ * POST /api/surveys/:id/close — 关闭问卷
+ */
+export const closeSurvey = (surveyId: string): Promise<ApiResponse<SurveyDetail>> =>
+  serverClient.post(`/surveys/${surveyId}/close`);
+
+// ============================================================
+// 答卷
+// ============================================================
+
+/**
+ * POST /api/surveys/:surveyId/responses — 提交答卷
+ */
+export const submitResponse = (
+  surveyId: string,
+  data: SubmitResponseRequest
+): Promise<ApiResponse<SubmitResponseResponse>> => serverClient.post(`/surveys/${surveyId}/responses`, data);
+
+/**
+ * GET /api/surveys/:surveyId/responses — 获取答卷列表
+ */
+export const getResponseList = (
+  surveyId: string,
+  params?: ResponseListQuery
+): Promise<ApiResponse<ResponseListResponse>> => serverClient.get(`/surveys/${surveyId}/responses`, { params });
+
+/**
+ * GET /api/responses/:id — 获取答卷详情（含答案列表）
+ */
+export const getResponseById = (responseId: string): Promise<ApiResponse<SurveyResponseDetail>> =>
+  serverClient.get(`/responses/${responseId}`);
+
+/**
+ * DELETE /api/responses/:id — 删除答卷
+ */
+export const deleteResponse = (responseId: string): Promise<ApiResponse<null>> =>
+  serverClient.delete(`/responses/${responseId}`);
+
+// ============================================================
+// 数据序列化工具
+// ============================================================
+
+/**
+ * 将编辑器 Status[] 序列化为后端 SurveyComponentPayload[]
+ *
+ * 映射规则（见 survey-data-mapping-analysis.md §5.3）：
+ *   com.name   → payload.type（kebab-case → snake_case：single-select → single_select）
+ *   com.status → payload.config（整体作为 survey_components.config JSON）
+ *   数组下标   → payload.order_index（0-based）
+ *   required   → 从 com.status.required 字段读取，支持布尔/数字/嵌套对象形式
+ *
+ * 参数使用结构化类型（不直接引用 Status 接口）以避免与编辑器类型系统循环依赖。
+ * Status[] 与此参数类型结构兼容，无需显式转型。
+ *
+ * @param coms 编辑器组件数组（Status[] 结构兼容）
+ */
+export const serializeComponents = (
+  coms: Array<{
+    /** Material 名称，如 "single-select"，将被转为 snake_case */
+    name: string;
+    /** 组件内部配置，整体作为 config JSON 发送给后端 */
+    status: Record<string, unknown>;
+    [key: string]: unknown;
+  }>
+): SurveyComponentPayload[] =>
+  coms.map((com, index) => {
+    // kebab-case → snake_case（single-select → single_select）
+    const type = com.name.replace(/-/g, "_");
+
+    // 从组件配置中读取 required 字段，兼容三种形式：
+    //   boolean: true/false
+    //   number:  1/0
+    //   对象:    { status: boolean }（部分组件使用嵌套结构）
+    const rawRequired = com.status.required;
+    let required: 0 | 1 = 0;
+    if (typeof rawRequired === "boolean") {
+      required = rawRequired ? 1 : 0;
+    } else if (typeof rawRequired === "number") {
+      required = rawRequired ? 1 : 0;
+    } else if (rawRequired !== null && typeof rawRequired === "object") {
+      required = (rawRequired as Record<string, unknown>).status ? 1 : 0;
+    }
+
+    return { type, config: com.status, order_index: index, required };
+  });
+
+/**
+ * 从编辑器组件数组中提取问卷级别的标题与描述
+ *
+ * 编辑器将问卷标题/描述存储在 text-type 组件的 status 中，而非 Store 顶层字段：
+ *   status.type.currentStatus === 0 → 标题组件，取 status.title.status
+ *   status.type.currentStatus === 1 → 段落描述组件，取 status.desc.status
+ *
+ * 背景：surveys 表有独立的 title / description 列，但编辑器 Store 未单独维护，
+ * 提交前须从组件中提取（见 survey-data-mapping-analysis.md §3.1）。
+ */
+export const extractSurveyMetadata = (
+  coms: Array<{
+    status: Record<string, unknown>;
+    [key: string]: unknown;
+  }>
+): { title: string; description: string } => {
+  let title = "";
+  let description = "";
+
+  for (const com of coms) {
+    // 将 status.type 作为未知对象处理，运行时读取 currentStatus 值
+    const typeConfig = com.status["type"] as { currentStatus?: number } | undefined;
+    const titleConfig = com.status["title"] as { isShow?: boolean; status?: unknown } | undefined;
+    const descConfig = com.status["desc"] as { isShow?: boolean; status?: unknown } | undefined;
+
+    // currentStatus === 0：标题类型组件
+    if (typeConfig?.currentStatus === 0 && titleConfig?.isShow !== false) {
+      title = String(titleConfig?.status ?? "");
+    }
+    // currentStatus === 1：段落描述类型组件
+    if (typeConfig?.currentStatus === 1 && descConfig?.isShow !== false) {
+      description = String(descConfig?.status ?? "");
+    }
+  }
+
+  return { title, description };
+};
+
+/**
+ * 获取问卷元数据：优先使用 Store 显式字段，回退到组件数组提取
+ *
+ * 混合方案：若 Store 将来扩展了 surveyTitle/surveyDescription 字段，则优先使用；
+ * 否则调用 extractSurveyMetadata 从 text-type 组件中提取。
+ */
+export const getSurveyMetadata = (store: {
+  surveyTitle?: string;
+  surveyDescription?: string;
+  coms: Array<{ status: Record<string, unknown>; [key: string]: unknown }>;
+}): { title: string; description: string } => {
+  if (store.surveyTitle || store.surveyDescription) {
+    return {
+      title: store.surveyTitle ?? "",
+      description: store.surveyDescription ?? ""
+    };
+  }
+  return extractSurveyMetadata(store.coms);
+};
+
+/**
+ * 将前端答案格式转换为后端提交格式
+ *
+ * @param answers    前端答案对象 { [serialNum]: value }（题目序号从 1 开始）
+ * @param components 来自后端响应的组件详情（须包含真实数据库 id）
+ */
+export const serializeAnswers = (
+  answers: Record<number, string | number | Date | string[]>,
+  components: Array<{ id: string; order_index: number }>
+): AnswerItem[] => {
+  const result: AnswerItem[] = [];
+
+  for (const [serialNum, value] of Object.entries(answers)) {
+    // 题目序号从 1 开始，对应 order_index = serialNum - 1
+    const orderIndex = parseInt(serialNum) - 1;
+    const component = components.find(c => c.order_index === orderIndex);
+    if (!component) continue;
+
+    const item: AnswerItem = { component_id: component.id };
+
+    if (Array.isArray(value)) {
+      item.values = value.map(v => String(v));
+    } else if (value instanceof Date) {
+      item.value = value.toISOString();
+    } else {
+      item.value = String(value);
+    }
+
+    result.push(item);
+  }
+
+  return result;
+};
+
+// ============================================================
+// 类型再导出（供外部模块按需直接引用）
+// ============================================================
+export type {
+  ApiResponse,
+  CreateSurveyRequest,
+  CreateSurveyResponse,
+  UpdateSurveyRequest,
+  SurveyListQuery,
+  SurveyListResponse,
+  SurveyDetail,
+  SurveyComponentPayload,
+  SubmitResponseRequest,
+  SubmitResponseResponse,
+  ResponseListQuery,
+  ResponseListResponse,
+  SurveyResponseDetail,
+  AnswerItem
+};
