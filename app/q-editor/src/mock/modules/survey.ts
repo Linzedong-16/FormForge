@@ -17,30 +17,59 @@
 import type { MockMethod } from "vite-plugin-mock";
 import { ok, fail, uid, log } from "../_utils";
 
-// ─── 安全解包工具（与 user.ts 保持一致） ─────────────────────
+// ─── 安全解包工具 ────────────────────────────────────────────
+
+type ReqObj = Record<string, unknown>;
 
 function getBody(req: unknown): Record<string, unknown> {
-  return (
-    (req && typeof req === "object" && "body" in (req as Record<string, unknown>)
-      ? ((req as Record<string, unknown>).body as Record<string, unknown>)
-      : {}) || {}
-  );
+  try {
+    const r = req as ReqObj | null | undefined;
+    return (r?.body as Record<string, unknown>) || {};
+  } catch {
+    return {};
+  }
 }
 
 function getQuery(req: unknown): Record<string, string | undefined> {
-  return (
-    (req && typeof req === "object" && "query" in (req as Record<string, unknown>)
-      ? ((req as Record<string, unknown>).query as Record<string, string | undefined>)
-      : {}) || {}
-  );
+  try {
+    const r = req as ReqObj | null | undefined;
+    return (r?.query as Record<string, string | undefined>) || {};
+  } catch {
+    return {};
+  }
 }
 
-function getParams(req: unknown): Record<string, string | undefined> {
-  return (
-    (req && typeof req === "object" && "params" in (req as Record<string, unknown>)
-      ? ((req as Record<string, unknown>).params as Record<string, string | undefined>)
-      : {}) || {}
-  );
+/** 获取路径参数 — 优先 vite-plugin-mock 的 params，回退到 URL 解析 */
+function getParams(req: unknown, pathSegments: string[]): Record<string, string> {
+  const r = req as ReqObj | null | undefined;
+  const result: Record<string, string> = {};
+
+  // 1) 尝试 vite-plugin-mock 的 params 字段
+  const direct = r?.params as Record<string, string> | undefined;
+  if (direct) {
+    for (const key of pathSegments) {
+      if (direct[key]) {
+        result[key] = direct[key];
+        return result;
+      }
+    }
+  }
+
+  // 2) 尝试从 URL 中提取（回退方案）
+  const url = (r?.url as string) || "";
+  // 匹配 /api/surveys/:id 或 /api/surveys/:id/responses 或 /api/responses/:id
+  const patterns = [/\/api\/surveys\/([^/?]+)/, /\/api\/responses\/([^/?]+)/];
+  const key = pathSegments[0];
+  if (!key) return result;
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) {
+      result[key] = m[1]!;
+      return result;
+    }
+  }
+
+  return result;
 }
 
 // ─── 内存 Mock 数据库 ──────────────────────────────────────────
@@ -89,12 +118,469 @@ interface MockResponse {
 const surveyStore: MockSurvey[] = [];
 const responseStore: MockResponse[] = [];
 
-/** 统计答题型组件数量（过滤展示型 text_type / text_note） */
+/** 统计答题型组件数量（过滤展示型 text_note 组件） */
 function countQuestions(components: MockComponent[]): number {
-  return components.filter(c => c.type !== "text_type" && c.type !== "text_note").length;
+  return components.filter(c => c.type !== "text_note").length;
 }
 
-log("survey 模块已加载", "(内存数据库初始化完成)");
+// ─── 预填充 Demo 问卷（开发阶段跨页面刷新免丢失） ──────────────
+
+const DEMO_SURVEY_ID = "demo_survey_01";
+const DEMO_NOW = new Date().toISOString();
+
+const demoComponents: MockComponent[] = [
+  // ── 标题组件 (text-note currentStatus=0) ──
+  {
+    id: "demo_comp_01",
+    survey_id: DEMO_SURVEY_ID,
+    type: "text_note",
+    config: {
+      type: { id: "t01", currentStatus: 0, status: [0, 1], isShow: false, name: "text-type-editor", editCom: null },
+      title: { id: "t01_t", status: "2026 年度员工满意度调查", isShow: true, name: "title-editor", editCom: null },
+      desc: { id: "t01_d", status: "", isShow: true, name: "desc-editor", editCom: null },
+      position: {
+        id: "t01_p",
+        currentStatus: 1,
+        status: ["左对齐", "居中"],
+        isShow: true,
+        name: "position-editor",
+        editCom: null
+      },
+      titleSize: {
+        id: "t01_ts",
+        currentStatus: 2,
+        status: ["22", "20", "18"],
+        isShow: true,
+        name: "size-editor",
+        editCom: null
+      },
+      descSize: {
+        id: "t01_ds",
+        currentStatus: 0,
+        status: ["16", "14", "12"],
+        isShow: true,
+        name: "size-editor",
+        editCom: null
+      },
+      titleWeight: {
+        id: "t01_tw",
+        currentStatus: 0,
+        status: ["粗体", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: null
+      },
+      descWeight: {
+        id: "t01_dw",
+        currentStatus: 1,
+        status: ["粗体", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: null
+      },
+      titleItalic: {
+        id: "t01_ti",
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: null
+      },
+      descItalic: {
+        id: "t01_di",
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: null
+      },
+      titleColor: { id: "t01_tc", status: "#18181b", isShow: true, name: "color-editor", editCom: null },
+      descColor: { id: "t01_dc", status: "#909399", isShow: true, name: "color-editor", editCom: null }
+    },
+    order_index: 0,
+    required: 0,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 描述段落 (text-note currentStatus=1) ──
+  {
+    id: "demo_comp_02",
+    survey_id: DEMO_SURVEY_ID,
+    type: "text_note",
+    config: {
+      type: { id: "t02", currentStatus: 1, status: [0, 1], isShow: false, name: "text-type-editor", editCom: null },
+      title: { id: "t02_t", status: "", isShow: true, name: "title-editor", editCom: null },
+      desc: {
+        id: "t02_d",
+        status: "感谢您抽出时间参与本次调查，您的反馈对我们至关重要！",
+        isShow: true,
+        name: "desc-editor",
+        editCom: null
+      },
+      position: {
+        id: "t02_p",
+        currentStatus: 1,
+        status: ["左对齐", "居中"],
+        isShow: true,
+        name: "position-editor",
+        editCom: null
+      },
+      titleSize: {
+        id: "t02_ts",
+        currentStatus: 0,
+        status: ["22", "20", "18"],
+        isShow: true,
+        name: "size-editor",
+        editCom: null
+      },
+      descSize: {
+        id: "t02_ds",
+        currentStatus: 0,
+        status: ["16", "14", "12"],
+        isShow: true,
+        name: "size-editor",
+        editCom: null
+      },
+      titleWeight: {
+        id: "t02_tw",
+        currentStatus: 1,
+        status: ["粗体", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: null
+      },
+      descWeight: {
+        id: "t02_dw",
+        currentStatus: 1,
+        status: ["粗体", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: null
+      },
+      titleItalic: {
+        id: "t02_ti",
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: null
+      },
+      descItalic: {
+        id: "t02_di",
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: null
+      },
+      titleColor: { id: "t02_tc", status: "#18181b", isShow: true, name: "color-editor", editCom: null },
+      descColor: { id: "t02_dc", status: "#71717a", isShow: true, name: "color-editor", editCom: null }
+    },
+    order_index: 1,
+    required: 0,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 单选题 ──
+  {
+    id: "demo_comp_03",
+    survey_id: DEMO_SURVEY_ID,
+    type: "single_select",
+    config: {
+      type: {
+        id: "s01",
+        currentStatus: 2,
+        status: [2, 3, 10, 4],
+        isShow: false,
+        name: "text-type-editor",
+        editCom: null
+      },
+      title: { id: "s01_t", status: "您对目前工作环境的满意程度？", isShow: true, name: "title-editor", editCom: null },
+      desc: { id: "s01_d", status: "", isShow: true, name: "desc-editor", editCom: null },
+      options: {
+        id: "s01_o",
+        status: ["非常满意", "比较满意", "一般", "不太满意"],
+        currentStatus: 0,
+        isShow: true,
+        name: "options-editor",
+        editCom: null
+      },
+      position: {
+        id: "s01_p",
+        currentStatus: 0,
+        status: ["左对齐", "居中"],
+        isShow: true,
+        name: "position-editor",
+        editCom: null
+      },
+      titleSize: {
+        id: "s01_ts",
+        currentStatus: 0,
+        status: ["22", "20", "18"],
+        isShow: true,
+        name: "size-editor",
+        editCom: null
+      },
+      descSize: {
+        id: "s01_ds",
+        currentStatus: 0,
+        status: ["16", "14", "12"],
+        isShow: true,
+        name: "size-editor",
+        editCom: null
+      },
+      titleWeight: {
+        id: "s01_tw",
+        currentStatus: 0,
+        status: ["粗体", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: null
+      },
+      descWeight: {
+        id: "s01_dw",
+        currentStatus: 1,
+        status: ["粗体", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: null
+      },
+      titleItalic: {
+        id: "s01_ti",
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: null
+      },
+      descItalic: {
+        id: "s01_di",
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: null
+      },
+      titleColor: { id: "s01_tc", status: "#18181b", isShow: true, name: "color-editor", editCom: null },
+      descColor: { id: "s01_dc", status: "#909399", isShow: true, name: "color-editor", editCom: null }
+    },
+    order_index: 2,
+    required: 1,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 多选题 ──
+  {
+    id: "demo_comp_04",
+    survey_id: DEMO_SURVEY_ID,
+    type: "multi_select",
+    config: {
+      type: {
+        id: "ms01",
+        currentStatus: 3,
+        status: [2, 3, 10, 4],
+        isShow: false,
+        name: "text-type-editor",
+        editCom: null
+      },
+      title: {
+        id: "ms01_t",
+        status: "您希望公司在哪些方面做出改善？（可多选）",
+        isShow: true,
+        name: "title-editor",
+        editCom: null
+      },
+      desc: { id: "ms01_d", status: "", isShow: true, name: "desc-editor", editCom: null },
+      options: {
+        id: "ms01_o",
+        status: ["薪资福利", "晋升机制", "工作氛围", "培训学习", "弹性工作"],
+        currentStatus: 0,
+        isShow: true,
+        name: "options-editor",
+        editCom: null
+      },
+      position: {
+        id: "ms01_p",
+        currentStatus: 0,
+        status: ["左对齐", "居中"],
+        isShow: true,
+        name: "position-editor",
+        editCom: null
+      },
+      titleSize: {
+        id: "ms01_ts",
+        currentStatus: 0,
+        status: ["22", "20", "18"],
+        isShow: true,
+        name: "size-editor",
+        editCom: null
+      },
+      descSize: {
+        id: "ms01_ds",
+        currentStatus: 0,
+        status: ["16", "14", "12"],
+        isShow: true,
+        name: "size-editor",
+        editCom: null
+      },
+      titleWeight: {
+        id: "ms01_tw",
+        currentStatus: 0,
+        status: ["粗体", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: null
+      },
+      descWeight: {
+        id: "ms01_dw",
+        currentStatus: 1,
+        status: ["粗体", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: null
+      },
+      titleItalic: {
+        id: "ms01_ti",
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: null
+      },
+      descItalic: {
+        id: "ms01_di",
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: null
+      },
+      titleColor: { id: "ms01_tc", status: "#18181b", isShow: true, name: "color-editor", editCom: null },
+      descColor: { id: "ms01_dc", status: "#909399", isShow: true, name: "color-editor", editCom: null }
+    },
+    order_index: 3,
+    required: 1,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 文本输入 ──
+  {
+    id: "demo_comp_05",
+    survey_id: DEMO_SURVEY_ID,
+    type: "text_input",
+    config: {
+      type: { id: "ti01", currentStatus: 4, status: [4], isShow: false, name: "text-type-editor", editCom: null },
+      title: { id: "ti01_t", status: "请留下您的其他建议或意见", isShow: true, name: "title-editor", editCom: null },
+      desc: { id: "ti01_d", status: "", isShow: true, name: "desc-editor", editCom: null },
+      placeholder: {
+        id: "ti01_ph",
+        status: "请在此输入...",
+        isShow: true,
+        name: "text-input-type-editor",
+        editCom: null
+      },
+      position: {
+        id: "ti01_p",
+        currentStatus: 0,
+        status: ["左对齐", "居中"],
+        isShow: true,
+        name: "position-editor",
+        editCom: null
+      },
+      titleSize: {
+        id: "ti01_ts",
+        currentStatus: 0,
+        status: ["22", "20", "18"],
+        isShow: true,
+        name: "size-editor",
+        editCom: null
+      },
+      descSize: {
+        id: "ti01_ds",
+        currentStatus: 0,
+        status: ["16", "14", "12"],
+        isShow: true,
+        name: "size-editor",
+        editCom: null
+      },
+      titleWeight: {
+        id: "ti01_tw",
+        currentStatus: 0,
+        status: ["粗体", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: null
+      },
+      descWeight: {
+        id: "ti01_dw",
+        currentStatus: 1,
+        status: ["粗体", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: null
+      },
+      titleItalic: {
+        id: "ti01_ti",
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: null
+      },
+      descItalic: {
+        id: "ti01_di",
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: null
+      },
+      titleColor: { id: "ti01_tc", status: "#18181b", isShow: true, name: "color-editor", editCom: null },
+      descColor: { id: "ti01_dc", status: "#909399", isShow: true, name: "color-editor", editCom: null }
+    },
+    order_index: 4,
+    required: 0,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  }
+];
+
+surveyStore.push({
+  id: DEMO_SURVEY_ID,
+  user_id: "1",
+  title: "2026 年度员工满意度调查",
+  description: "感谢您抽出时间参与本次调查，您的反馈对我们至关重要",
+  status: 1, // 已发布，可直接填写
+  page_size: 10,
+  total_questions: countQuestions(demoComponents),
+  responses_count: 3,
+  is_public: 1,
+  access_code: null,
+  created_at: DEMO_NOW,
+  updated_at: DEMO_NOW,
+  published_at: DEMO_NOW,
+  closed_at: null,
+  components: demoComponents
+});
+
+// 预填充几条历史答卷
+responseStore.push({
+  id: "demo_resp_01",
+  survey_id: DEMO_SURVEY_ID,
+  user_id: null,
+  anonymous_id: "anon_01",
+  status: 1,
+  submitted_at: DEMO_NOW,
+  created_at: DEMO_NOW,
+  updated_at: DEMO_NOW,
+  answers: [
+    { component_id: "demo_comp_03", value: "非常满意" },
+    { component_id: "demo_comp_04", values: ["薪资福利", "弹性工作"] },
+    { component_id: "demo_comp_05", value: "希望增加团建活动" }
+  ]
+});
+
+log("survey 模块已加载", `(Demo 问卷: /survey/${DEMO_SURVEY_ID}, ${demoComponents.length} 组件, 1 份答卷)`);
 
 // ─── Mock 接口 ─────────────────────────────────────────────────
 
@@ -198,7 +684,7 @@ export const surveyMocks: MockMethod[] = [
     url: "/api/surveys/:id",
     method: "get",
     response: (req: unknown) => {
-      const { id } = getParams(req);
+      const id = getParams(req, ["id"]).id || "";
       log("GET /api/surveys/:id", { id });
 
       const survey = surveyStore.find(s => s.id === id);
@@ -215,7 +701,7 @@ export const surveyMocks: MockMethod[] = [
     url: "/api/surveys/:id",
     method: "put",
     response: (req: unknown) => {
-      const { id } = getParams(req);
+      const id = getParams(req, ["id"]).id || "";
       const idx = surveyStore.findIndex(s => s.id === id);
       if (idx === -1 || !id) return fail(404, "问卷不存在");
 
@@ -259,7 +745,7 @@ export const surveyMocks: MockMethod[] = [
     url: "/api/surveys/:id",
     method: "delete",
     response: (req: unknown) => {
-      const { id } = getParams(req);
+      const id = getParams(req, ["id"]).id || "";
       const idx = surveyStore.findIndex(s => s.id === id);
       if (idx === -1 || !id) return fail(404, "问卷不存在");
 
@@ -276,7 +762,7 @@ export const surveyMocks: MockMethod[] = [
     url: "/api/surveys/:id/publish",
     method: "post",
     response: (req: unknown) => {
-      const { id } = getParams(req);
+      const id = getParams(req, ["id"]).id || "";
       const survey = surveyStore.find(s => s.id === id);
       if (!survey) return fail(404, "问卷不存在");
       if (survey.status === 1) return fail(400, "问卷已处于发布状态");
@@ -298,7 +784,7 @@ export const surveyMocks: MockMethod[] = [
     url: "/api/surveys/:id/close",
     method: "post",
     response: (req: unknown) => {
-      const { id } = getParams(req);
+      const id = getParams(req, ["id"]).id || "";
       const survey = surveyStore.find(s => s.id === id);
       if (!survey) return fail(404, "问卷不存在");
       if (survey.status === 2) return fail(400, "问卷已处于关闭状态");
@@ -321,7 +807,7 @@ export const surveyMocks: MockMethod[] = [
     url: "/api/surveys/:id/responses",
     method: "post",
     response: (req: unknown) => {
-      const { id: surveyId } = getParams(req);
+      const surveyId = getParams(req, ["id"]).id || "";
       const survey = surveyStore.find(s => s.id === surveyId);
       if (!survey) return fail(404, "问卷不存在");
       if (survey.status !== 1) return fail(400, "问卷未发布，暂不接受答卷");
@@ -365,7 +851,7 @@ export const surveyMocks: MockMethod[] = [
     url: "/api/surveys/:id/responses",
     method: "get",
     response: (req: unknown) => {
-      const { id: surveyId } = getParams(req);
+      const surveyId = getParams(req, ["id"]).id || "";
       const survey = surveyStore.find(s => s.id === surveyId);
       if (!survey) return fail(404, "问卷不存在");
 
