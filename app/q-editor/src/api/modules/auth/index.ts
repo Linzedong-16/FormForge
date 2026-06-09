@@ -7,7 +7,9 @@
  * - 验证码发送
  * - 密码重置
  *
- * 使用 authClient（不携带 Token）
+ * 客户端选择策略：
+ * - authClient：公开接口（登录、注册、验证码、密码重置、状态查询、Token刷新）
+ * - serverClient：需要 access_token 的接口（登出）
  */
 import type {
   ApiResponse,
@@ -25,6 +27,7 @@ import type {
 } from "@common/user/user.interface";
 
 import authClient from "../../clients/auth";
+import serverClient from "../../clients/server";
 
 // ============================================================
 // 系统状态
@@ -86,9 +89,9 @@ export const refreshToken = (data: RefreshTokenRequest): Promise<ApiResponse<Log
 
 /**
  * POST /api/auth/logout — 登出
- * @description 需要携带有效 Token
+ * @description 需要携带有效 Token，使用 serverClient 自动附加 Authorization 头
  */
-export const logout = (): Promise<ApiResponse<null>> => authClient.post("/auth/logout");
+export const logout = (): Promise<ApiResponse<null>> => serverClient.post("/auth/logout");
 
 // ============================================================
 // 密码重置
