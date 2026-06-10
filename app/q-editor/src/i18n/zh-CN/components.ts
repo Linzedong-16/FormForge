@@ -139,6 +139,20 @@ export default {
     sorted: "已排序"
   },
 
+  // Signature 组件
+  signature: {
+    undo: "撤销",
+    clear: "清空",
+    signed: "已签名",
+    unsigned: "未签名"
+  },
+
+  // SignatureConfigEditor 组件
+  signatureConfigEditor: {
+    strokeWidth: "笔画粗细",
+    showToolbar: "工具栏"
+  },
+
   // 配置文件 - SurveyGroupConfig
   surveyGroup: {
     choiceQuestions: "选择题",
@@ -154,6 +168,7 @@ export default {
     matrixSingle: "矩阵单选",
     slider: "滑块",
     transfer: "排序题",
+    signature: "电子签名",
     inputBox: "输入框",
     textInput: "输入框",
     note: "备注说明",

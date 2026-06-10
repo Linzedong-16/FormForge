@@ -25,7 +25,8 @@ export function getSurveyComsList(): MaterialGroup[] {
         { materialName: "cascader", comName: t("components.surveyGroup.cascader") },
         { materialName: "matrix-single", comName: t("components.surveyGroup.matrixSingle") },
         { materialName: "slider", comName: t("components.surveyGroup.slider") },
-        { materialName: "transfer", comName: t("components.surveyGroup.transfer") }
+        { materialName: "transfer", comName: t("components.surveyGroup.transfer") },
+        { materialName: "signature", comName: t("components.surveyGroup.signature") }
       ]
     },
     {

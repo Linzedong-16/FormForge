@@ -139,6 +139,20 @@ export default {
     sorted: "Sorted"
   },
 
+  // Signature component
+  signature: {
+    undo: "Undo",
+    clear: "Clear",
+    signed: "Signed",
+    unsigned: "Unsigned"
+  },
+
+  // SignatureConfigEditor component
+  signatureConfigEditor: {
+    strokeWidth: "Stroke Width",
+    showToolbar: "Toolbar"
+  },
+
   // 配置文件 - SurveyGroupConfig
   surveyGroup: {
     choiceQuestions: "Choice Questions",
@@ -154,6 +168,7 @@ export default {
     matrixSingle: "Matrix Single Select",
     slider: "Slider",
     transfer: "Transfer",
+    signature: "Signature",
     inputBox: "Input Box",
     textInput: "Text Input",
     note: "Note",

@@ -139,6 +139,20 @@ export default {
     sorted: "ソート済み"
   },
 
+  // Signature コンポーネント
+  signature: {
+    undo: "元に戻す",
+    clear: "クリア",
+    signed: "署名済み",
+    unsigned: "未署名"
+  },
+
+  // SignatureConfigEditor コンポーネント
+  signatureConfigEditor: {
+    strokeWidth: "線の太さ",
+    showToolbar: "ツールバー"
+  },
+
   // 設定ファイル - SurveyGroupConfig
   surveyGroup: {
     choiceQuestions: "選択問題",
@@ -154,6 +168,7 @@ export default {
     matrixSingle: "マトリックス単一選択",
     slider: "スライダー",
     transfer: "並べ替え",
+    signature: "電子署名",
     inputBox: "入力ボックス",
     textInput: "テキスト入力",
     note: "備考",

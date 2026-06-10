@@ -72,6 +72,8 @@ declare module 'vue' {
     RateTextEditor: typeof import('./src/components/SurveyComs/EditItems/RateTextEditor.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Signature: typeof import('./src/components/SurveyComs/Materials/AdvancedComs/Signature.vue')['default']
+    SignatureConfigEditor: typeof import('./src/components/SurveyComs/EditItems/SignatureConfigEditor.vue')['default']
     SinglePicSelect: typeof import('./src/components/SurveyComs/Materials/SelectComs/SinglePicSelect.vue')['default']
     SingleSelect: typeof import('./src/components/SurveyComs/Materials/SelectComs/SingleSelect.vue')['default']
     SizeEditor: typeof import('./src/components/SurveyComs/EditItems/SizeEditor.vue')['default']
@@ -153,6 +155,8 @@ declare global {
   const RateTextEditor: (typeof import("./src/components/SurveyComs/EditItems/RateTextEditor.vue"))["default"];
   const RouterLink: (typeof import("vue-router"))["RouterLink"];
   const RouterView: (typeof import("vue-router"))["RouterView"];
+  const Signature: (typeof import("./src/components/SurveyComs/Materials/AdvancedComs/Signature.vue"))["default"];
+  const SignatureConfigEditor: (typeof import("./src/components/SurveyComs/EditItems/SignatureConfigEditor.vue"))["default"];
   const SinglePicSelect: (typeof import("./src/components/SurveyComs/Materials/SelectComs/SinglePicSelect.vue"))["default"];
   const SingleSelect: (typeof import("./src/components/SurveyComs/Materials/SelectComs/SingleSelect.vue"))["default"];
   const SizeEditor: (typeof import("./src/components/SurveyComs/EditItems/SizeEditor.vue"))["default"];

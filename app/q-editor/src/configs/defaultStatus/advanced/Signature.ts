@@ -1,0 +1,135 @@
+import Signature from "@/components/SurveyComs/Materials/AdvancedComs/Signature.vue";
+import SignatureConfigEditor from "@/components/SurveyComs/EditItems/SignatureConfigEditor.vue";
+import ColorEditor from "@/components/SurveyComs/EditItems/ColorEditor.vue";
+import TitleEditor from "@/components/SurveyComs/EditItems/TitleEditor.vue";
+import DescEditor from "@/components/SurveyComs/EditItems/DescEditor.vue";
+import PositionEditor from "@/components/SurveyComs/EditItems/PositionEditor.vue";
+import SizeEditor from "@/components/SurveyComs/EditItems/SizeEditor.vue";
+import WeightEditor from "@/components/SurveyComs/EditItems/WeightEditor.vue";
+import ItalicEditor from "@/components/SurveyComs/EditItems/ItalicEditor.vue";
+import type { Status } from "@/types";
+import { markRaw } from "vue";
+import { v4 as uuidv4 } from "uuid";
+
+// 签名题默认状态：11 项公共样式配置 + 3 项签名特化配置
+export default function (): Status {
+  return {
+    type: markRaw(Signature),
+    name: "signature",
+    id: uuidv4(),
+    status: {
+      // ── 公共样式配置（11 项）────────────────────────────────────
+      title: {
+        id: uuidv4(),
+        status: "请在此处签名",
+        isShow: true,
+        name: "title-editor",
+        editCom: markRaw(TitleEditor)
+      },
+      desc: {
+        id: uuidv4(),
+        status: "",
+        isShow: true,
+        name: "desc-editor",
+        editCom: markRaw(DescEditor)
+      },
+      position: {
+        id: uuidv4(),
+        currentStatus: 0,
+        status: ["左对齐", "居中对齐"],
+        isShow: true,
+        name: "position-editor",
+        editCom: markRaw(PositionEditor)
+      },
+      titleSize: {
+        id: uuidv4(),
+        currentStatus: 0,
+        status: ["22", "20", "18"],
+        isShow: true,
+        name: "size-editor",
+        editCom: markRaw(SizeEditor)
+      },
+      descSize: {
+        id: uuidv4(),
+        currentStatus: 0,
+        status: ["16", "14", "12"],
+        isShow: true,
+        name: "size-editor",
+        editCom: markRaw(SizeEditor)
+      },
+      titleWeight: {
+        id: uuidv4(),
+        currentStatus: 1,
+        status: ["加粗", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: markRaw(WeightEditor)
+      },
+      descWeight: {
+        id: uuidv4(),
+        currentStatus: 1,
+        status: ["加粗", "正常"],
+        isShow: true,
+        name: "weight-editor",
+        editCom: markRaw(WeightEditor)
+      },
+      titleItalic: {
+        id: uuidv4(),
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: markRaw(ItalicEditor)
+      },
+      descItalic: {
+        id: uuidv4(),
+        currentStatus: 1,
+        status: ["斜体", "正常"],
+        isShow: true,
+        name: "italic-editor",
+        editCom: markRaw(ItalicEditor)
+      },
+      titleColor: {
+        id: uuidv4(),
+        status: "#000",
+        isShow: true,
+        name: "color-editor",
+        editCom: markRaw(ColorEditor)
+      },
+      descColor: {
+        id: uuidv4(),
+        status: "#909399",
+        isShow: true,
+        name: "color-editor",
+        editCom: markRaw(ColorEditor)
+      },
+      // ── 签名特化配置 ────────────────────────────────────────────
+      // 笔画颜色：复用现有 ColorEditor
+      strokeColor: {
+        id: uuidv4(),
+        status: "#000000",
+        isShow: true,
+        name: "color-editor",
+        editCom: markRaw(ColorEditor)
+      },
+      // 笔画粗细：["1","2","3","4","5"] 可选，默认选中 "3"（currentStatus=2）
+      strokeWidth: {
+        id: uuidv4(),
+        currentStatus: 2,
+        status: ["1", "2", "3", "4", "5"],
+        isShow: true,
+        name: "signature-config-editor",
+        editCom: markRaw(SignatureConfigEditor)
+      },
+      // 工具栏显隐：默认"显示"（currentStatus=0）
+      showToolbar: {
+        id: uuidv4(),
+        currentStatus: 0,
+        status: ["显示", "隐藏"],
+        isShow: true,
+        name: "signature-config-editor",
+        editCom: markRaw(SignatureConfigEditor)
+      }
+    }
+  };
+}

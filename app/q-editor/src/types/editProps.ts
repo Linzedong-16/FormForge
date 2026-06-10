@@ -64,6 +64,13 @@ export interface SliderStatus extends BaseStatus {
   sliderConfig: OptionsProps;
 }
 
+// 签名题的设置项
+export interface SignatureStatus extends BaseStatus {
+  strokeColor: TextProps; // 笔画颜色（HEX），由 ColorEditor 编辑
+  strokeWidth: OptionsProps; // 笔画粗细选项 ["1","2","3","4","5"]
+  showToolbar: OptionsProps; // 工具栏显隐 ["显示","隐藏"]
+}
+
 // 排序题的设置项：transferItems.status 为待排序选项的字符串数组
 export interface TransferStatus extends BaseStatus {
   transferItems: OptionsProps;
