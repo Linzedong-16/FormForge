@@ -3,10 +3,9 @@ import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import vueJsx from "@vitejs/plugin-vue-jsx";
-import vueDevTools from "vite-plugin-vue-devtools";
-import inspect from "vite-plugin-inspect";
 import viteCompression from "vite-plugin-compression";
 import { viteMockServe } from "vite-plugin-mock";
+import qiankun from "vite-plugin-qiankun";
 
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
@@ -22,8 +21,11 @@ export default defineConfig(({ command, mode }) => {
     plugins: [
       vue(),
       vueJsx(),
-      vueDevTools(),
-      inspect(),
+      // qiankun 子应用适配插件：
+      //   - useDevMode: 开发模式下注入生命周期桥接脚本（IIFE），
+      //     解决 qiankun eval() 无法处理 Vite ES Module 的根本兼容问题
+      //   - 同时标记 @vite/client 等内部脚本为 ignore，避免 eval 报错
+      qiankun("q-editor", { useDevMode: command === "serve" }),
       visualizer({
         filename: "./dist/stats.html", // 生成可视化报告
         open: true, // 自动打开浏览器
@@ -77,6 +79,8 @@ export default defineConfig(({ command, mode }) => {
       }
     },
     server: {
+      port: 5173, // 固定端口，与主应用 entry: '//localhost:5173' 对应
+      cors: true, // 允许主应用（localhost:8000）跨域加载此子应用
       proxy: {
         "/api": {
           target: "http://localhost:8080",

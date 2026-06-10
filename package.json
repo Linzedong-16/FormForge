@@ -13,7 +13,12 @@
     "commit": "pnpm exec git-cz",
     "prepare": "husky",
     "precommit": "lint-staged",
-    "start": "concurrently \"pnpm --filter ./app/backend dev\" \"pnpm --filter ./app/frontend dev\""
+    "start": "concurrently \"pnpm --filter ./app/backend dev\" \"pnpm --filter ./app/frontend dev\"",
+    "dev:main": "pnpm --filter ./app/main-app dev",
+    "dev:editor": "pnpm --filter ./app/q-editor dev",
+    "dev:admin": "pnpm --filter ./app/frontend dev",
+    "dev:micro": "concurrently \"pnpm dev:main\" \"pnpm dev:editor\" \"pnpm dev:admin\"",
+    "dev:mock": "pnpm --filter ./app/q-editor dev --mode mock"
   },
   "config": {
     "commitizen": {
