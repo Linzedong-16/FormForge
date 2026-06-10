@@ -109,7 +109,7 @@ async function loadSurvey() {
     // 后端返回 components: SurveyComponentDetail[] → 反序列化为前端 Status[]
     // 反序列化：后端 SurveyComponentDetail[] → 前端 Status[]
     const coms = deserializeSurveyDetail(detail.components);
-     
+
     restoreComponentStatus(coms as any);
 
     // 保留组件 id → order_index 映射（提交答案时用）

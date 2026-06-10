@@ -2,6 +2,9 @@ import { createRouter, createWebHistory, type Router } from "vue-router";
 import LayoutPage from "@/views/layout/layout-page.vue";
 import { childrenRoutes } from "./routes";
 
+// 导出 AppRouter 类型供其他模块使用
+export type AppRouter = Router;
+
 /**
  * 路由工厂函数
  *

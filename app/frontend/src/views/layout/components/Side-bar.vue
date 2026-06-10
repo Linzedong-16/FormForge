@@ -34,19 +34,22 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import acroIcons from "@/components/acro-icons.vue";
 import { childrenRoutes } from "@/router/routes";
 import type { RouteRecordRaw } from "vue-router";
-import router from "@/router";
+import { getCurrentRouter } from "@/main";
 
 const routes = ref<Array<RouteRecordRaw>>(childrenRoutes);
-const currentRoute = useRoute();
+const route = useRoute();
+
+// 使用 getCurrentRouter 获取正确的 router 实例
+const router = computed(() => getCurrentRouter() || useRouter());
 
 // 根据当前路由路径计算高亮菜单项
 // 首页子路由 path 为 ""，但 vue-router 解析后为 "/"，需做映射
 const selectedKeys = computed(() => {
-  const path = currentRoute.path;
+  const path = route.path;
   return [path === "/" ? "" : path];
 });
 
@@ -67,7 +70,7 @@ watch(
 
 const handlePush = (path: string) => {
   // 空路径对应首页 "/"
-  router.push(path || "/");
+  router.value.push(path || "/");
 };
 
 // 监听顶部栏折叠事件（window 事件方式兼容）
