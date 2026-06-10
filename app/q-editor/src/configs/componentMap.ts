@@ -13,6 +13,7 @@ import Cascader from "@/components/SurveyComs/Materials/AdvancedComs/Cascader.vu
 import MatrixSingle from "@/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue";
 import Slider from "@/components/SurveyComs/Materials/AdvancedComs/Slider.vue";
 import Transfer from "@/components/SurveyComs/Materials/AdvancedComs/Transfer.vue";
+import Signature from "@/components/SurveyComs/Materials/AdvancedComs/Signature.vue";
 
 // 引入编辑组件
 import TitleEditor from "@/components/SurveyComs/EditItems/TitleEditor.vue";
@@ -29,6 +30,8 @@ import RateTextEditor from "@/components/SurveyComs/EditItems/RateTextEditor.vue
 import CascaderOptionsEditor from "@/components/SurveyComs/EditItems/CascaderOptionsEditor.vue";
 import MatrixOptionsEditor from "@/components/SurveyComs/EditItems/MatrixOptionsEditor.vue";
 import SliderConfigEditor from "@/components/SurveyComs/EditItems/SliderConfigEditor.vue";
+import ColorEditor from "@/components/SurveyComs/EditItems/ColorEditor.vue";
+import SignatureConfigEditor from "@/components/SurveyComs/EditItems/SignatureConfigEditor.vue";
 
 import { markRaw } from "vue";
 
@@ -64,6 +67,7 @@ export const componentMap = {
   "matrix-single": markRaw(MatrixSingle),
   slider: markRaw(Slider),
   transfer: markRaw(Transfer),
+  signature: markRaw(Signature),
   // 编辑组件
   "title-editor": markRaw(TitleEditor),
   "desc-editor": markRaw(DescEditor),
@@ -78,5 +82,7 @@ export const componentMap = {
   "rate-text-editor": markRaw(RateTextEditor),
   "cascader-options-editor": markRaw(CascaderOptionsEditor),
   "matrix-options-editor": markRaw(MatrixOptionsEditor),
-  "slider-config-editor": markRaw(SliderConfigEditor)
+  "slider-config-editor": markRaw(SliderConfigEditor),
+  "color-editor": markRaw(ColorEditor),
+  "signature-config-editor": markRaw(SignatureConfigEditor)
 };

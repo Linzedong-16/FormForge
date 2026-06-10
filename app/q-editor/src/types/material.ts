@@ -38,7 +38,8 @@ export type SurveyComName =
   | "personal-info-major"
   | "personal-info-industry"
   | "personal-info-company"
-  | "personal-info-position";
+  | "personal-info-position"
+  | "signature";
 
 // 业务组件类型(题目类型 + 非题目类型)
 export type Material = SurveyComName | "text-note";
@@ -59,7 +60,8 @@ export type EditComName =
   | "cascader-options-editor"
   | "matrix-options-editor"
   | "slider-config-editor"
-  | "options-editor";
+  | "options-editor"
+  | "signature-config-editor";
 
 export type componentName = Material | EditComName;
 
@@ -96,7 +98,8 @@ const SurveyComNameArr: SurveyComName[] = [
   "personal-info-major",
   "personal-info-industry",
   "personal-info-company",
-  "personal-info-position"
+  "personal-info-position",
+  "signature"
 ];
 
 export function isSurveyComName(value: string): value is SurveyComName {
