@@ -1,5 +1,5 @@
 import "./public-path";
-import { createApp } from "vue";
+import { createApp, type App } from "vue";
 import { createPinia } from "pinia";
 import { renderWithQiankun, qiankunWindow } from "vite-plugin-qiankun/es/helper";
 import "./style.css";
@@ -7,10 +7,13 @@ import "@arco-design/web-vue/dist/arco.css";
 import ArcoVue from "@arco-design/web-vue";
 import ArcoVueIcon from "@arco-design/web-vue/es/icon";
 import App from "./App.vue";
-import { createAppRouter } from "./router";
+import { createAppRouter, type AppRouter } from "./router";
 
 // qiankun 环境下的当前 Vue 应用实例（支持重复挂载/卸载）
-let instance: ReturnType<typeof createApp> | null = null;
+let instance: App<Element> | null = null;
+
+// 导出 router 实例，供组件使用（解决多实例问题）
+let appRouter: AppRouter | null = null;
 
 /**
  * 创建并挂载 frontend 子应用
@@ -19,7 +22,7 @@ let instance: ReturnType<typeof createApp> | null = null;
  * @param routerBase 路由基路径（qiankun 场景 '/admin'，独立运行 '/'）
  */
 function render(container?: Element | null, routerBase = "/") {
-  const router = createAppRouter(routerBase);
+  appRouter = createAppRouter(routerBase);
   // 每次挂载创建新的 Pinia 实例，确保 qiankun 沙箱内状态隔离
   const pinia = createPinia();
 
@@ -27,11 +30,16 @@ function render(container?: Element | null, routerBase = "/") {
   instance.use(ArcoVue, { componentPrefix: "arco" });
   instance.use(ArcoVueIcon);
   instance.use(pinia);
-  instance.use(router);
+  instance.use(appRouter);
 
   // qiankun 场景：挂载到子容器内的 #app；独立运行：直接挂载 '#app'
   const mountTarget = container ? container.querySelector("#app") : "#app";
   instance.mount(mountTarget as string | Element);
+}
+
+// 导出 getCurrentRouter 函数供组件使用
+export function getCurrentRouter(): AppRouter | null {
+  return appRouter;
 }
 
 // ── qiankun 生命周期注册 ──────────────────────────────────────

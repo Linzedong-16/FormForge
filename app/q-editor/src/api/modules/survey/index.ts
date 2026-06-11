@@ -224,9 +224,9 @@ export const serializeAnswers = (
 ): AnswerItem[] => {
   const result: AnswerItem[] = [];
 
-  for (const [serialNum, value] of Object.entries(answers)) {
-    // 题目序号从 1 开始，对应 order_index = serialNum - 1
-    const orderIndex = parseInt(serialNum) - 1;
+  for (const [indexStr, value] of Object.entries(answers)) {
+    // index 即组件在数组中的全局位置（= order_index，数组已排序）
+    const orderIndex = parseInt(indexStr);
     const component = components.find(c => c.order_index === orderIndex);
     if (!component) continue;
 
@@ -244,6 +244,52 @@ export const serializeAnswers = (
   }
 
   return result;
+};
+
+// ============================================================
+// 数据反序列化（后端响应 → 前端 Status[]）
+// ============================================================
+
+/**
+ * 将后端 SurveyComponentDetail[] 反序列化回前端 Status[]
+ *
+ * serializeComponents 的逆向操作：
+ *   type（snake_case 后端）   → Status.type（前端组件名）
+ *   config（完整 Status 对象）  → 解构为 Status 字段
+ *   order_index（排序）         → 按序排列
+ *   id / survey_id              → 保留用于答案提交
+ */
+export const deserializeSurveyDetail = (
+  components: Array<{
+    id: string;
+    survey_id: string;
+    type: string;
+    config: Record<string, unknown>;
+    order_index: number;
+    required: 0 | 1;
+    created_at: string;
+    updated_at: string;
+  }>
+): Array<Record<string, unknown> & { _componentId: string }> => {
+  return [...components]
+    .sort((a, b) => a.order_index - b.order_index)
+    .map(c => ({
+      // config 即是 upload 时的 com.status（内部配置），保持嵌套结构供组件读取
+      status: c.config,
+      // 关键还原：serializeComponents 把 com.name → type（snake_case），
+      // restoreComponentStatus 需要 com.name 查找 componentMap 中的 Vue 组件
+      name: (c.type || "").replace(/_/g, "-"),
+      _componentId: c.id
+    }));
+};
+
+/**
+ * 保留组件 id → order_index 映射，供 serializeAnswers 使用
+ */
+export const getComponentMap = (
+  components: Array<{ id: string; order_index: number }>
+): Array<{ id: string; order_index: number }> => {
+  return components.map(c => ({ id: c.id, order_index: c.order_index }));
 };
 
 // ============================================================
