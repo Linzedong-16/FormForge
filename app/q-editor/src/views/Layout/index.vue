@@ -59,7 +59,13 @@ import { formatDate } from "@/utils";
 // i18n
 import { useI18n } from "vue-i18n";
 
+import { qiankunWindow } from "vite-plugin-qiankun/es/helper";
+
 const { t } = useI18n();
+
+// 微前端环境下 base 已提供 /editor 前缀，无需重复添加
+const isQiankun = qiankunWindow.__POWERED_BY_QIANKUN__;
+const editorPrefix = isQiankun ? "" : "/editor";
 
 import { deleteSurveyById, getAllSurvey } from "@/db/operation";
 import { useEditorStore } from "@/stores/useEditor";
@@ -84,7 +90,7 @@ const goToEditor = () => {
   // 清空当前选中的组件
   store.resetComs();
   localStorage.setItem("activeView", "editor");
-  router.push("/editor/survey-type");
+  router.push(`${editorPrefix}/survey-type`);
 };
 
 const goToComMarket = () => {
@@ -128,6 +134,6 @@ const viewSurvey = (surveyInfo: SurveyDBReturnData) => {
 // 编辑问卷
 const editSurvey = (surveyInfo: SurveyDBReturnData) => {
   // 仅仅是做一个跳转，跳转到编辑器页面，但是需要将 id 带过去
-  router.push(`/editor/${surveyInfo.id}/survey-type`);
+  router.push(`${editorPrefix}/${surveyInfo.id}/survey-type`);
 };
 </script>

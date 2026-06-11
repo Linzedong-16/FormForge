@@ -149,11 +149,6 @@ export function createAppRouter(base = "/"): Router {
                 name: "personal-info-id",
                 component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
               },
-              // {
-              //   path: "/personal-info-birth",
-              //   name: "personal-info-birth",
-              //   component: () => import("@/components/SurveyComs/Materials/AdvancedComs/DateTime.vue")
-              // },
               {
                 path: "/personal-info-gender",
                 name: "personal-info-gender",
@@ -245,6 +240,12 @@ export function createAppRouter(base = "/"): Router {
         path: "/editor/:id(\\d+)?",
         name: "editor",
         component: () => import("@/views/EditorView/index.vue"),
+        // 无 id 时自动重定向到 survey-type 子路由
+        redirect: to => {
+          if (!to.params.id) {
+            return { name: "survey-type" };
+          }
+        },
         children: [
           {
             path: "survey-type",

@@ -57,7 +57,7 @@
           <!-- 操作按钮 -->
           <div class="hero-actions">
             <el-button size="large" class="btn-experience">{{ t("land.experienceAI") }}</el-button>
-            <el-button size="large" class="btn-workspace" @click="openNewTab('/home')">{{
+            <el-button size="large" class="btn-workspace" @click="openWorkspace">{{
               t("land.enterWorkspace")
             }}</el-button>
           </div>
@@ -94,22 +94,30 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
 import { ArrowDown, ChatDotRound, User, Search } from "@element-plus/icons-vue";
-import { openNewTab } from "@/utils";
 import { useI18n } from "vue-i18n";
 import UserProfile from "@/components/Common/UserProfile.vue";
 import { useUserStore } from "@/stores/useUser";
 
 const { t } = useI18n();
+const router = useRouter();
 const searchText = ref("");
 
 // 登录状态判断
 const userStore = useUserStore();
 const isLoggedIn = computed(() => !!userStore.user);
 
-// 登录按钮点击事件
+// 登录按钮点击事件 — 使用 router.resolve() 确保 qiankun 下自动添加 /editor 前缀
 const login = () => {
-  openNewTab("/login");
+  const url = router.resolve({ name: "login" }).href;
+  window.open(url, "_blank");
+};
+
+// 进入工作台 — 同样使用 router.resolve() 确保前缀正确
+const openWorkspace = () => {
+  const url = router.resolve({ name: "home" }).href;
+  window.open(url, "_blank");
 };
 
 const navItems = computed(() => [

@@ -41,8 +41,9 @@
 </template>
 
 <script setup lang="ts">
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 const route = useRoute();
+const router = useRouter();
 import { getSurveyById } from "@/db/operation";
 // 仓库
 import { useEditorStore } from "@/stores/useEditor";
@@ -51,7 +52,6 @@ const store = useEditorStore();
 import { restoreComponentStatus } from "@/utils";
 import { computed, ref } from "vue";
 import { useSurveyNo } from "@/utils/hooks";
-import router from "@/router";
 import { canUsedForPDF } from "@/types";
 import { ElMessage } from "element-plus";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";

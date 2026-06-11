@@ -34,14 +34,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import acroIcons from "@/components/acro-icons.vue";
 import { childrenRoutes } from "@/router/routes";
 import type { RouteRecordRaw } from "vue-router";
-import router from "@/router";
 
 const routes = ref<Array<RouteRecordRaw>>(childrenRoutes);
 const currentRoute = useRoute();
+const router = useRouter();
 
 // 根据当前路由路径计算高亮菜单项
 // 首页子路由 path 为 ""，但 vue-router 解析后为 "/"，需做映射

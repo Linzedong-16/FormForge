@@ -24,10 +24,10 @@ const router = createRouter({
       component: { template: "<div></div>" }
     },
     {
-      // 兜底 404
+      // 兜底 404 页面
       path: "/:pathMatch(.*)*",
       name: "not-found",
-      redirect: "/"
+      component: () => import("@/views/NotFound.vue")
     }
   ]
 });
