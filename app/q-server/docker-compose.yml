@@ -37,8 +37,8 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: questionnaire-rabbitmq
     ports:
-      - "5672:5672"    # AMQP
-      - "15672:15672"  # Management UI — http://localhost:15672
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: questionnaire
       RABBITMQ_DEFAULT_PASS: questionnaire123
@@ -55,8 +55,8 @@ services:
     image: minio/minio:latest
     container_name: questionnaire-minio
     ports:
-      - "9000:9000"   # S3 兼容 API
-      - "9001:9001"   # 管理控制台 — http://localhost:9001
+      - "9000:9000"
+      - "9001:9001"
     environment:
       MINIO_ROOT_USER: questionnaire
       MINIO_ROOT_PASSWORD: questionnaire123
@@ -70,6 +70,24 @@ services:
       timeout: 10s
       retries: 3
 
+  mongodb:
+    image: mongo:7.0
+    container_name: questionnaire-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: questionnaire_logs
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
 volumes:
   postgres-data:
     driver: local
@@ -78,4 +96,6 @@ volumes:
   rabbitmq-data:
     driver: local
   minio-data:
+    driver: local
+  mongo-data:
     driver: local

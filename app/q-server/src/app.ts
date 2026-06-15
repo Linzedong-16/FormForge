@@ -6,13 +6,35 @@ import prismaPlugin from "./plugins/prisma.js";
 import responsePlugin from "./plugins/response.js";
 import redisPlugin from "./plugins/redis.js";
 import rabbitmqPlugin from "./plugins/rabbitmq.js";
+import mongoPlugin from "./plugins/mongo.js";
+import logTransportPlugin from "./plugins/log-transport.js";
 import routes from "./routes/index.js";
+import { randomUUID } from "node:crypto";
 
 export const buildApp = () => {
   const app = Fastify({
     logger: {
-      level: process.env.LOG_LEVEL ?? "info"
-    }
+      level: process.env.LOG_LEVEL ?? "info",
+      // pino-pretty 开发环境彩色输出，生产环境 JSON
+      ...(process.env.LOG_ENV !== "production" && {
+        transport: {
+          target: "pino-pretty",
+          options: { colorize: true, translateTime: "HH:MM:ss", ignore: "pid,hostname" }
+        }
+      })
+    },
+    // 请求体大小限制（防止 OOM）
+    bodyLimit: 5 * 1024 * 1024 // 5MB
+  });
+
+  // ── 全局 requestId 钩子（全链路追踪） ──────────────────────
+  app.addHook("onRequest", async (request, reply) => {
+    // 优先使用请求头传入的 traceId（网关/上游传递），否则自动生成
+    const traceId =
+      (request.headers["x-trace-id"] as string) || (request.headers["x-request-id"] as string) || randomUUID();
+    request.id = traceId;
+    // 响应头回传 traceId，方便前端关联
+    reply.header("x-trace-id", traceId);
   });
 
   app
@@ -24,6 +46,10 @@ export const buildApp = () => {
     .register(responsePlugin)
     .register(redisPlugin)
     .register(rabbitmqPlugin)
+    // MongoDB（日志存储，非阻塞业务）
+    .register(mongoPlugin)
+    // 日志传输（依赖 rabbitmq 先注册，仅生产环境推 RabbitMQ）
+    .register(logTransportPlugin)
     .register(routes, { prefix: "/api" });
 
   return app;
