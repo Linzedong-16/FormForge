@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -15,6 +13,36 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U questionnaire -d questionnaire_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # PgBouncer 连接池 — 减少 PostgreSQL 连接数，复用连接
+  # 生产环境 Prisma 连接 PgBouncer 而非直连 PG
+  pgbouncer:
+    image: bitnami/pgbouncer:latest
+    container_name: questionnaire-pgbouncer
+    ports:
+      - "6432:6432"
+    environment:
+      PGBOUNCER_DATABASE: questionnaire_db
+      PGBOUNCER_PORT: 6432
+      PGBOUNCER_MAX_CLIENT_CONN: "500"
+      PGBOUNCER_DEFAULT_POOL_SIZE: "25"
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_AUTH_TYPE: plain
+      PGBOUNCER_AUTH_USER: questionnaire
+      PGBOUNCER_AUTH_PASSWORD: questionnaire123
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_USERNAME: questionnaire
+      POSTGRESQL_PASSWORD: questionnaire123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "localhost", "-p", "6432", "-U", "questionnaire", "-d", "questionnaire_db"]
       interval: 30s
       timeout: 10s
       retries: 5

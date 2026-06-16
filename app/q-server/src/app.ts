@@ -7,7 +7,9 @@ import responsePlugin from "./plugins/response.js";
 import redisPlugin from "./plugins/redis.js";
 import rabbitmqPlugin from "./plugins/rabbitmq.js";
 import mongoPlugin from "./plugins/mongo.js";
+import minioPlugin from "./plugins/minio.js";
 import logTransportPlugin from "./plugins/log-transport.js";
+import rateLimitPlugin from "./plugins/rate-limit.js";
 import routes from "./routes/index.js";
 import { randomUUID } from "node:crypto";
 
@@ -46,10 +48,13 @@ export const buildApp = () => {
     .register(responsePlugin)
     .register(redisPlugin)
     .register(rabbitmqPlugin)
+    .register(minioPlugin)
     // MongoDB（日志存储，非阻塞业务）
     .register(mongoPlugin)
     // 日志传输（依赖 rabbitmq 先注册，仅生产环境推 RabbitMQ）
     .register(logTransportPlugin)
+    // 接口限流（依赖 redis，生产环境共享计数，开发环境内存计数）
+    .register(rateLimitPlugin)
     .register(routes, { prefix: "/api" });
 
   return app;

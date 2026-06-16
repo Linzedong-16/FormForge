@@ -11,10 +11,17 @@ declare module "fastify" {
 const prismaPlugin: FastifyPluginAsync = async fastify => {
   const isDevelopment = process.env.NODE_ENV === "development";
 
+  // 连接池配置 — 生产环境调高并发连接数
+  const connectionLimit = Number(process.env.PRISMA_CONNECTION_LIMIT ?? 50);
+  const poolTimeout = Number(process.env.PRISMA_POOL_TIMEOUT ?? 10);
+
   const prisma = new PrismaClient({
-    log: isDevelopment
-      ? ["query", "info", "warn", "error"] // 开发环境：显示所有日志
-      : ["warn", "error"] // 生产环境：只显示警告和错误
+    log: isDevelopment ? ["query", "info", "warn", "error"] : ["warn", "error"],
+    datasources: {
+      db: {
+        url: `${process.env.DATABASE_URL}?connection_limit=${connectionLimit}&pool_timeout=${poolTimeout}`
+      }
+    }
   });
 
   // 开发环境显示查询日志
@@ -27,9 +34,9 @@ const prismaPlugin: FastifyPluginAsync = async fastify => {
 
   try {
     await prisma.$connect();
-    fastify.log.info("Prisma connected successfully");
+    fastify.log.info(`Prisma 已连接（连接池: ${connectionLimit}, 超时: ${poolTimeout}s）`);
   } catch (error: unknown) {
-    fastify.log.error("Prisma connection failed:");
+    fastify.log.error("Prisma 连接失败:");
     throw error;
   }
 
@@ -37,7 +44,7 @@ const prismaPlugin: FastifyPluginAsync = async fastify => {
 
   fastify.addHook("onClose", async () => {
     await prisma.$disconnect();
-    fastify.log.info("Prisma disconnected");
+    fastify.log.info("Prisma 已断开");
   });
 };
 
