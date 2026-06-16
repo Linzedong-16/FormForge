@@ -6,6 +6,9 @@ import { renderWithQiankun, qiankunWindow } from "vite-plugin-qiankun/es/helper"
 import App from "./App.vue";
 import { createAppRouter } from "./router";
 
+// 自定义指令
+import { registerDirectives } from "@/directives";
+
 // elementplus 组件库
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
@@ -47,6 +50,9 @@ function render(container?: Element | null, routerBase = "/") {
   instance.use(router);
   // Element Plus 语言由 App.vue 的 ElConfigProvider 跟随 i18n 动态切换
   instance.use(ElementPlus);
+
+  // 注册自定义指令（v-permiss 等）
+  registerDirectives(instance);
 
   // qiankun 场景：挂载到子容器内的 #app；独立运行：直接挂载 '#app'
   const mountTarget = container ? container.querySelector("#app") : "#app";
