@@ -7,3 +7,6 @@ docs/**/*.md
 spec
 **/*.spec.*
 **/*.test.*
+# 自动生成文件，不参与格式化
+auto-imports.d.ts
+components.d.ts
