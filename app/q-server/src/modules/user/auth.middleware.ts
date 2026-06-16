@@ -3,9 +3,12 @@
  *
  * authenticate      — 校验 Access Token，将用户信息挂载到 request.user
  * requireSuperAdmin — 校验当前用户是否为超级管理员
+ *
+ * 优化：使用 WeakMap 按 FastifyInstance 缓存 AuthService 实例，
+ *       避免每次请求重复 new AuthService()（构造函数内初始化缓存客户端）
  */
 
-import type { FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
 import { AuthService } from "./auth.service.js";
 import { AuthError } from "../../utils/errors.js";
 
@@ -19,6 +22,19 @@ declare module "fastify" {
       role: string;
     };
   }
+}
+
+// ─── AuthService 单例（按 FastifyInstance 复用） ─────────────
+
+const authServiceMap = new WeakMap<FastifyInstance, AuthService>();
+
+function getAuthService(server: FastifyInstance): AuthService {
+  let service = authServiceMap.get(server);
+  if (!service) {
+    service = new AuthService(server);
+    authServiceMap.set(server, service);
+  }
+  return service;
 }
 
 /** 从请求头提取 Bearer Token */
@@ -38,7 +54,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   }
 
   try {
-    const authService = new AuthService(request.server);
+    const authService = getAuthService(request.server);
     request.user = await authService.verifyToken(token);
   } catch (error) {
     if (error instanceof AuthError) {

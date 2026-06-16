@@ -6,9 +6,11 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
-// import type { User, UserRole } from "../../generated/prisma/client.js";
 import { AuthError } from "../../utils/errors.js";
 import { BizCode } from "../../utils/response.js";
+import { createCache, CacheKeys, CacheTTL } from "../../utils/cache.js";
+import type { CacheClient } from "../../utils/cache.js";
+import { createAuditLog } from "../../utils/audit-log.js";
 
 // ─── Redis Key 常量 ──────────────────────────────────────────
 
@@ -84,11 +86,13 @@ export class AuthService {
   private readonly jwtSecret: string;
   private readonly accessExpire: number;
   private readonly refreshExpire: number;
+  private readonly cache: CacheClient;
 
   constructor(private readonly fastify: FastifyInstance) {
     this.jwtSecret = process.env.JWT_SECRET ?? "dev-secret-change-in-production";
     this.accessExpire = Number(process.env.JWT_ACCESS_EXPIRE ?? 3600);
     this.refreshExpire = Number(process.env.JWT_REFRESH_EXPIRE ?? 604800);
+    this.cache = createCache(fastify);
   }
 
   // ============================================================
@@ -111,28 +115,46 @@ export class AuthService {
     };
   }
 
-  /** 系统是否已初始化（存在超级管理员） */
+  /** 系统是否已初始化（存在超级管理员）— Cache-Aside */
   private async isSystemInitialized(): Promise<boolean> {
-    const count = await this.fastify.prisma.userRole.count({
-      where: { role_code: "super_admin" }
-    });
-    return count > 0;
+    return this.cache.getOrSet(
+      CacheKeys.systemInitialized,
+      async () => {
+        const count = await this.fastify.prisma.userRole.count({
+          where: { role_code: "super_admin" }
+        });
+        return count > 0;
+      },
+      CacheTTL.SYSTEM_STATUS
+    );
   }
 
-  /** 注册功能是否开放 */
+  /** 注册功能是否开放 — Cache-Aside */
   private async isRegistrationEnabled(): Promise<boolean> {
-    const config = await this.fastify.prisma.systemConfig.findUnique({
-      where: { key: "registration_enabled" }
-    });
-    return config?.value === "true";
+    return this.cache.getOrSet(
+      CacheKeys.registrationEnabled,
+      async () => {
+        const config = await this.fastify.prisma.systemConfig.findUnique({
+          where: { key: "registration_enabled" }
+        });
+        return config?.value === "true";
+      },
+      CacheTTL.SYSTEM_STATUS
+    );
   }
 
-  /** SMTP 是否已配置 */
+  /** SMTP 是否已配置 — Cache-Aside */
   private async isSmtpConfigured(): Promise<boolean> {
-    const config = await this.fastify.prisma.systemConfig.findUnique({
-      where: { key: "smtp_enabled" }
-    });
-    return config?.value === "true";
+    return this.cache.getOrSet(
+      CacheKeys.smtpConfigured,
+      async () => {
+        const config = await this.fastify.prisma.systemConfig.findUnique({
+          where: { key: "smtp_enabled" }
+        });
+        return config?.value === "true";
+      },
+      CacheTTL.SYSTEM_STATUS
+    );
   }
 
   // ============================================================
@@ -186,9 +208,9 @@ export class AuthService {
     const tokens = await this.generateTokens({ id: user.id.toString(), email: user.email, role });
 
     // 8. 记录登录审计日志
-    await this.createAuditLog(user.id, "login", "user", user.id, {
+    createAuditLog(this.fastify, user.id, "login", "user", user.id, {
       loginTime: new Date().toISOString()
-    });
+    }).catch(() => {});
 
     return {
       ...tokens,
@@ -244,11 +266,14 @@ export class AuthService {
       role: "super_admin"
     });
 
-    // 6. 记录审计日志
-    await this.createAuditLog(user.id, "register", "user", user.id, {
-      action: "initial_registration",
-      isFirstUser: true
-    });
+    // 6. 记录审计日志 & 失效系统状态缓存
+    await Promise.all([
+      createAuditLog(this.fastify, user.id, "register", "user", user.id, {
+        action: "initial_registration",
+        isFirstUser: true
+      }),
+      this.cache.del(CacheKeys.systemInitialized)
+    ]);
 
     return {
       ...tokens,
@@ -355,11 +380,14 @@ export class AuthService {
       data: { password_hash: passwordHash }
     });
 
-    // 5. 使该用户所有旧 Token 失效
-    await this.fastify.redis.del(`${USER_ACCESS_PREFIX}${user.id}`);
+    // 5. 使该用户所有旧 Token 失效 & 清除认证缓存
+    await Promise.all([
+      this.fastify.redis.del(`${USER_ACCESS_PREFIX}${user.id}`),
+      this.cache.del(CacheKeys.userAuthProfile(user.id.toString()))
+    ]);
 
     // 6. 记录审计日志
-    await this.createAuditLog(user.id, "reset_password", "user", user.id);
+    createAuditLog(this.fastify, user.id, "reset_password", "user", user.id).catch(() => {});
   }
 
   /** 验证邮箱并完成注册 */
@@ -406,9 +434,9 @@ export class AuthService {
     });
 
     // 6. 记录审计日志
-    await this.createAuditLog(user.id, "register", "user", user.id, {
+    createAuditLog(this.fastify, user.id, "register", "user", user.id, {
       action: "email_verification_register"
-    });
+    }).catch(() => {});
 
     return {
       ...tokens,
@@ -471,7 +499,7 @@ export class AuthService {
     };
   }
 
-  /** 验证 Access Token，返回用户信息 */
+  /** 验证 Access Token，返回用户信息 — 用户档案查 Redis 缓存 */
   async verifyToken(token: string): Promise<{ userId: bigint; email: string; role: string }> {
     let decoded: JwtPayload;
     try {
@@ -489,18 +517,40 @@ export class AuthService {
       throw new AuthError("Token 已失效", 401);
     }
 
-    // 查询用户
-    const user = await this.fastify.prisma.user.findFirst({
-      where: { id: BigInt(decoded.sub), deleted_at: null }
-    });
-    if (!user || user.status === 0) {
-      throw new AuthError("用户不存在或已被禁用", 401);
+    // 查用户档案（Cache-Aside，5min TTL）
+    interface AuthProfile {
+      userId: string;
+      email: string;
+      role: string;
+      status: number;
+    }
+    const cached = await this.cache.get<AuthProfile>(CacheKeys.userAuthProfile(decoded.sub));
+
+    let profile: AuthProfile;
+    if (cached && cached.status === 1) {
+      profile = cached;
+    } else {
+      const user = await this.fastify.prisma.user.findFirst({
+        where: { id: BigInt(decoded.sub), deleted_at: null },
+        select: { id: true, email: true, status: true }
+      });
+      if (!user || user.status === 0) {
+        throw new AuthError("用户不存在或已被禁用", 401);
+      }
+      profile = {
+        userId: user.id.toString(),
+        email: user.email,
+        role: decoded.role ?? "user",
+        status: user.status
+      };
+      // 后台回填缓存
+      this.cache.set(CacheKeys.userAuthProfile(decoded.sub), profile, CacheTTL.USER_AUTH_PROFILE).catch(() => {});
     }
 
     return {
-      userId: user.id,
-      email: user.email,
-      role: decoded.role ?? "user"
+      userId: BigInt(profile.userId),
+      email: profile.email,
+      role: profile.role
     };
   }
 
@@ -650,42 +700,23 @@ export class AuthService {
   //  Private — 工具方法
   // ============================================================
 
-  /** 获取用户角色列表 */
+  /** 获取用户角色列表 — Cache-Aside（10min TTL，角色极少变更） */
   private async getUserRoles(userId: bigint): Promise<string[]> {
-    const roles = await this.fastify.prisma.userRole.findMany({
-      where: { user_id: userId },
-      select: { role_code: true }
-    });
-    return roles.map(r => r.role_code);
+    return this.cache.getOrSet(
+      CacheKeys.userRoles(userId.toString()),
+      async () => {
+        const roles = await this.fastify.prisma.userRole.findMany({
+          where: { user_id: userId },
+          select: { role_code: true }
+        });
+        return roles.map(r => r.role_code);
+      },
+      CacheTTL.USER_ROLES
+    );
   }
 
   /** 生成6位数字验证码 */
   private generateVerificationCode(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
-  }
-
-  /** 记录审计日志 */
-  async createAuditLog(
-    userId: bigint,
-    action: string,
-    resourceType: string,
-    resourceId: bigint | null,
-    details?: Record<string, unknown>
-  ) {
-    try {
-      await this.fastify.prisma.auditLog.create({
-        data: {
-          user_id: userId,
-          action,
-          resource_type: resourceType,
-          resource_id: resourceId,
-          // Prisma Json 字段的类型约束较严格，运行时实际传入均为合法 JSON 对象
-          details: (details ?? {}) as unknown as import("@prisma/client/runtime/library").InputJsonValue
-        }
-      });
-    } catch {
-      // 审计日志写入失败不影响主流程
-      this.fastify.log.warn("审计日志写入失败");
-    }
   }
 }

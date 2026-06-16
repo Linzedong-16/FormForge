@@ -12,6 +12,9 @@ import type {
 } from "./schemas/user.schemas.js";
 import { AuthError, ValidationError } from "../../utils/errors.js";
 import { BizCode } from "../../utils/response.js";
+import { createCache, CacheKeys } from "../../utils/cache.js";
+import type { CacheClient } from "../../utils/cache.js";
+import { createAuditLog } from "../../utils/audit-log.js";
 
 // ─── 类型重导出（保持向后兼容） ──────────────────────────────
 
@@ -21,7 +24,11 @@ export type UserListQuery = UserListQueryInput;
 // ─── 管理员服务类 ────────────────────────────────────────────
 
 export class AdminService {
-  constructor(private readonly fastify: FastifyInstance) {}
+  private readonly cache: CacheClient;
+
+  constructor(private readonly fastify: FastifyInstance) {
+    this.cache = createCache(fastify);
+  }
 
   // ============================================================
   //  权限校验
@@ -75,10 +82,10 @@ export class AdminService {
     });
 
     // 记录审计日志
-    await this.createAuditLog(adminId, "create_user", "user", user.id, {
+    createAuditLog(this.fastify, adminId, "create_user", "user", user.id, {
       createdEmail: user.email,
       createdRole: input.role
-    });
+    }).catch(() => {});
 
     return {
       id: user.id.toString(),
@@ -151,18 +158,25 @@ export class AdminService {
       data
     });
 
-    // 若角色变更，同步更新 user_roles
+    // 若角色变更，同步更新 user_roles 并失效相关缓存
     if (input.role !== undefined) {
       const newRoleCode = input.role === "admin" ? "super_admin" : "user";
-      // 删除旧角色并插入新角色
       await this.fastify.prisma.$transaction([
         this.fastify.prisma.userRole.deleteMany({ where: { user_id: targetId } }),
         this.fastify.prisma.userRole.create({ data: { user_id: targetId, role_code: newRoleCode } })
       ]);
     }
 
+    // 失效缓存：用户角色、认证档案、用户列表
+    const targetIdStr = targetId.toString();
+    await Promise.all([
+      this.cache.del(CacheKeys.userRoles(targetIdStr)),
+      this.cache.del(CacheKeys.userAuthProfile(targetIdStr)),
+      this.cache.delByPattern(`${CacheKeys.userListPrefix}*`)
+    ]);
+
     // 记录审计日志
-    await this.createAuditLog(adminId, "update_user", "user", targetId, { changes: input });
+    createAuditLog(this.fastify, adminId, "update_user", "user", targetId, { changes: input }).catch(() => {});
 
     return { id: user.id.toString(), email: user.email, username: user.username, role: user.role, status: user.status };
   }
@@ -183,16 +197,22 @@ export class AdminService {
       throw new AuthError("用户不存在", 404);
     }
 
-    // 软删除
-    await this.fastify.prisma.user.update({
-      where: { id: targetId },
-      data: { deleted_at: new Date() }
-    });
+    // 软删除 & 失效缓存
+    const targetIdStr = targetId.toString();
+    await Promise.all([
+      this.fastify.prisma.user.update({
+        where: { id: targetId },
+        data: { deleted_at: new Date() }
+      }),
+      this.cache.del(CacheKeys.userRoles(targetIdStr)),
+      this.cache.del(CacheKeys.userAuthProfile(targetIdStr)),
+      this.cache.delByPattern(`${CacheKeys.userListPrefix}*`)
+    ]);
 
     // 记录审计日志
-    await this.createAuditLog(adminId, "delete_user", "user", targetId, {
+    createAuditLog(this.fastify, adminId, "delete_user", "user", targetId, {
       deletedEmail: target.email
-    });
+    }).catch(() => {});
 
     return { id: targetId.toString(), deleted: true };
   }
@@ -241,11 +261,14 @@ export class AdminService {
       )
     );
 
+    // 失效配置缓存
+    await Promise.all([this.cache.del(CacheKeys.smtpConfigured), this.cache.del(CacheKeys.registrationEnabled)]);
+
     // 记录审计日志
-    await this.createAuditLog(adminId, "update_smtp_config", "system_config", null, {
+    createAuditLog(this.fastify, adminId, "update_smtp_config", "system_config", null, {
       enabled: smtpConfig.enabled,
       host: smtpConfig.host
-    });
+    }).catch(() => {});
 
     return { updated: true };
   }
@@ -262,29 +285,5 @@ export class AdminService {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
-  }
-
-  /** 记录审计日志 */
-  private async createAuditLog(
-    userId: bigint,
-    action: string,
-    resourceType: string,
-    resourceId: bigint | null,
-    details?: Record<string, unknown>
-  ) {
-    try {
-      await this.fastify.prisma.auditLog.create({
-        data: {
-          user_id: userId,
-          action,
-          resource_type: resourceType,
-          resource_id: resourceId,
-          // Prisma Json 字段的类型约束较严格，运行时实际传入均为合法 JSON 对象
-          details: details as unknown as import("@prisma/client/runtime/library").InputJsonValue
-        }
-      });
-    } catch {
-      this.fastify.log.warn("审计日志写入失败");
-    }
   }
 }

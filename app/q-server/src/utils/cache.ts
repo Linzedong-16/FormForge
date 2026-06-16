@@ -96,20 +96,45 @@ export function createCache(fastify: FastifyInstance): CacheClient {
   return { get, set, del, delByPattern, getOrSet };
 }
 
-// ─── 问卷缓存键规范 ────────────────────────────────────────
+// ─── 缓存键规范 — 集中管理所有缓存 Key ────────────────────────
 
-/** 问卷相关缓存 Key 命名 */
+/** 缓存 Key 命名常量（便于全局搜索 & 避免硬编码） */
 export const CacheKeys = {
+  // ─── 用户模块 ──────────────────────────────────────────────
+  /** 系统初始化状态（是否存在超级管理员） */
+  systemInitialized: "user:system:initialized",
+  /** 注册功能开关 */
+  registrationEnabled: "user:config:registration_enabled",
+  /** SMTP 配置状态 */
+  smtpConfigured: "user:config:smtp_enabled",
+  /** 用户角色列表（userId → role[]） */
+  userRoles: (userId: string) => `user:roles:${userId}`,
+  /** 用户认证档案（verifyToken 查询结果，含 status） */
+  userAuthProfile: (userId: string) => `user:auth:${userId}`,
+  /** 用户列表页缓存前缀（用于模糊匹配批量失效） */
+  userListPrefix: "user:list:",
+
+  // ─── 问卷模块 ──────────────────────────────────────────────
   /** 问卷详情 */
   surveyDetail: (id: string) => `survey:detail:${id}`,
   /** 问卷列表 */
   surveyList: (page: number, size: number) => `survey:list:${page}:${size}`,
   /** 问卷统计数据 */
   surveyStats: (surveyId: string) => `survey:stats:${surveyId}`,
-  /** 用户信息 */
-  userProfile: (userId: string) => `user:profile:${userId}`,
-  /** 系统配置 */
-  systemConfig: (key: string) => `config:${key}`,
-  /** 删除某问卷的所有缓存 */
+  /** 问卷模块全部缓存前缀（用于批量失效） */
   surveyAll: (id: string) => `survey:*:${id}*`
+} as const;
+
+/** 缓存 TTL（秒）常量 */
+export const CacheTTL = {
+  /** 系统状态 / 配置：60s（变更频率极低，但仍需感知配置更新） */
+  SYSTEM_STATUS: 60,
+  /** 用户角色：600s（10min，角色极少变更） */
+  USER_ROLES: 600,
+  /** 用户认证档案：300s（5min，用户状态变更后需感知） */
+  USER_AUTH_PROFILE: 300,
+  /** 问卷数据：300s（5min，编辑后可能变化） */
+  SURVEY: 300,
+  /** 默认：300s */
+  DEFAULT: 300
 } as const;

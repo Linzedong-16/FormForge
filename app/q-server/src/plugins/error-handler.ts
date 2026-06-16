@@ -25,12 +25,9 @@ const PRISMA_ERROR_MAP: Record<string, { code: number; status: number; msg: stri
  * 判断错误是否为 Prisma 已知错误（携带 code 字段）
  */
 function isPrismaError(err: unknown): err is Error & { code: string; meta?: Record<string, unknown> } {
-  return (
-    err instanceof Error &&
-    "code" in err &&
-    typeof (err as unknown).code === "string" &&
-    (err as unknown).code.startsWith("P")
-  );
+  if (!(err instanceof Error)) return false;
+  const maybePrisma = err as unknown as Record<string, unknown>;
+  return typeof maybePrisma.code === "string" && String(maybePrisma.code).startsWith("P");
 }
 
 // ─── 工具函数 ────────────────────────────────────────────────
