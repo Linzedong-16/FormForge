@@ -1,0 +1,1015 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "问卷系统 API 文档",
+    "description": "问卷系统后端接口文档 — 包含健康检查、认证、管理员等模块的全部 API",
+    "version": "1.0.0",
+    "contact": {
+      "name": "RPK_16"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "本地开发环境"
+    },
+    {
+      "url": "http://localhost:3000/api",
+      "description": "测试环境"
+    }
+  ],
+  "tags": [
+    {
+      "name": "健康检查",
+      "description": "系统健康状态探测接口"
+    },
+    {
+      "name": "认证",
+      "description": "用户认证相关接口 — 登录、注册、Token 管理、密码重置"
+    },
+    {
+      "name": "管理员",
+      "description": "管理员接口 — 用户管理、系统配置（需超级管理员权限）"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["健康检查"],
+        "summary": "系统健康检查",
+        "description": "探测 PostgreSQL、Redis、RabbitMQ 连通性，返回各服务状态及延迟",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "成功（全部服务正常或部分异常）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/status": {
+      "get": {
+        "tags": ["认证"],
+        "summary": "获取系统状态",
+        "description": "获取系统初始化状态、注册开关、SMTP 配置等信息",
+        "operationId": "getSystemStatus",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/SystemStatus" },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "ok" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "用户登录",
+        "description": "使用邮箱和密码登录，返回 Access Token 和 Refresh Token。登录失败5次后账户锁定30分钟。",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/LoginResult" },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "登录成功" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "邮箱或密码错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "remainAttempts": { "type": "integer", "description": "剩余尝试次数" }
+                      }
+                    },
+                    "code": { "type": "integer", "example": 401 },
+                    "msg": { "type": "string", "example": "邮箱或密码错误" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-biz-errors": {
+          "1005": "账户已锁定（登录失败次数过多，30分钟后重试）",
+          "1006": "账户已被禁用"
+        }
+      }
+    },
+    "/auth/send-code": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "发送验证码",
+        "description": "发送邮箱验证码（注册或重置密码）。同一邮箱1分钟内最多发送3次。验证码有效期5分钟。",
+        "operationId": "sendCode",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SendCodeRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "发送成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "expireSeconds": { "type": "integer", "example": 300, "description": "验证码有效期（秒）" }
+                      }
+                    },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "验证码已发送" }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "发送过于频繁"
+          }
+        },
+        "x-biz-errors": {
+          "1001": "邮箱已被注册（register 模式）",
+          "1009": "暂未开放注册",
+          "1010": "邮件服务暂未配置"
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "初始化注册（首个超级管理员）",
+        "description": "系统未初始化时，第一个注册者自动成为超级管理员。系统已初始化后此接口不可用。",
+        "operationId": "register",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "注册成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/RegisterResult" },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "注册成功" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "系统已初始化"
+          }
+        },
+        "x-biz-errors": {
+          "1001": "该邮箱已被注册"
+        }
+      }
+    },
+    "/auth/verify-register": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "邮箱验证注册",
+        "description": "使用邮箱验证码完成注册，注册后角色为普通用户（user）",
+        "operationId": "verifyRegister",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VerifyRegisterRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "注册成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/LoginResult" },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "注册成功" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-biz-errors": {
+          "1003": "验证码错误",
+          "1004": "验证码已过期"
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "刷新 Token",
+        "description": "使用 Refresh Token 获取新的 Access Token 和 Refresh Token。旧的 Token 会被加入黑名单。",
+        "operationId": "refreshToken",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RefreshTokenRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "刷新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/LoginResult" },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "Token 刷新成功" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refresh Token 无效或已过期"
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "重置密码",
+        "description": "通过邮箱验证码重置密码。重置后所有旧 Token 失效。",
+        "operationId": "resetPassword",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ResetPasswordRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "重置成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "null" },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "密码重置成功" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-biz-errors": {
+          "1002": "用户不存在",
+          "1003": "验证码错误",
+          "1004": "验证码已过期"
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "用户登出",
+        "description": "将当前 Access Token 加入黑名单，使其失效",
+        "operationId": "logout",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "登出成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "null" },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "已退出登录" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录或 Token 无效"
+          }
+        }
+      }
+    },
+    "/admin/users": {
+      "post": {
+        "tags": ["管理员"],
+        "summary": "创建用户",
+        "description": "管理员创建新用户。若不提供密码则自动生成12位随机密码并在响应中返回。",
+        "operationId": "createUser",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateUserRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/CreateUserResult" },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "用户创建成功" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足（非超级管理员）"
+          }
+        },
+        "x-biz-errors": {
+          "1001": "该邮箱已被注册"
+        }
+      },
+      "get": {
+        "tags": ["管理员"],
+        "summary": "用户列表",
+        "description": "获取用户列表，支持分页和按邮箱/状态筛选",
+        "operationId": "listUsers",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "页码（从1开始）",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "每页数量",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "description": "邮箱模糊搜索",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "用户状态：0-禁用，1-启用",
+            "schema": { "type": "integer", "enum": [0, 1] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/UserListResult" },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "ok" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足（非超级管理员）"
+          }
+        }
+      }
+    },
+    "/admin/users/{id}": {
+      "put": {
+        "tags": ["管理员"],
+        "summary": "更新用户",
+        "description": "更新用户的用户名、角色或状态。角色变更时会同步更新 user_roles 表。",
+        "operationId": "updateUser",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "用户 ID",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateUserRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/UserBrief" },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "用户更新成功" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足"
+          },
+          "404": {
+            "description": "用户不存在"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["管理员"],
+        "summary": "删除用户",
+        "description": "软删除用户（设置 deleted_at）。不能删除自己的账户。",
+        "operationId": "deleteUser",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "用户 ID",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "description": "被删除的用户 ID" },
+                        "deleted": { "type": "boolean", "example": true }
+                      }
+                    },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "用户已删除" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不能删除自己的账户"
+          },
+          "403": {
+            "description": "权限不足"
+          },
+          "404": {
+            "description": "用户不存在"
+          }
+        }
+      }
+    },
+    "/admin/config": {
+      "get": {
+        "tags": ["管理员"],
+        "summary": "获取系统配置",
+        "description": "获取所有系统配置，按分类（general、smtp 等）分组返回",
+        "operationId": "getConfig",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "description": "按分类分组的配置键值对",
+                      "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": { "type": "string" }
+                      },
+                      "example": {
+                        "general": {
+                          "registration_enabled": "true"
+                        },
+                        "smtp": {
+                          "smtp_enabled": "true",
+                          "smtp_host": "smtp.example.com",
+                          "smtp_port": "587",
+                          "smtp_username": "noreply@example.com",
+                          "smtp_from_email": "noreply@example.com"
+                        }
+                      }
+                    },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "ok" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足"
+          }
+        }
+      }
+    },
+    "/admin/config/smtp": {
+      "put": {
+        "tags": ["管理员"],
+        "summary": "更新 SMTP 配置",
+        "description": "更新 SMTP 邮件服务配置（upsert 批量操作）",
+        "operationId": "updateSmtpConfig",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateSmtpConfigRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "updated": { "type": "boolean", "example": true }
+                      }
+                    },
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "SMTP 配置已更新" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Access Token，登录/注册成功后获取。请求头：Authorization: Bearer <token>"
+      }
+    },
+    "schemas": {
+      "HealthCheckResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": ["ok", "degraded"],
+                "description": "ok — 全部正常；degraded — 部分服务异常"
+              },
+              "uptime": { "type": "number", "description": "进程运行时长（秒）" },
+              "checks": {
+                "type": "object",
+                "properties": {
+                  "postgres": { "$ref": "#/components/schemas/ServiceCheck" },
+                  "redis": { "$ref": "#/components/schemas/ServiceCheck" },
+                  "rabbitmq": { "$ref": "#/components/schemas/ServiceCheck" }
+                }
+              }
+            }
+          },
+          "code": { "type": "integer" },
+          "msg": { "type": "string" }
+        }
+      },
+      "ServiceCheck": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" },
+          "latency_ms": { "type": "integer", "description": "连接延迟（毫秒），仅 ok=true 时返回" },
+          "error": { "type": "string", "description": "错误信息，仅 ok=false 时返回" }
+        }
+      },
+      "SystemStatus": {
+        "type": "object",
+        "properties": {
+          "initialized": { "type": "boolean", "description": "系统是否已初始化（存在超级管理员）" },
+          "registrationEnabled": { "type": "boolean", "description": "注册功能是否开放" },
+          "registrationMode": {
+            "type": "string",
+            "enum": ["email_verify", "admin_only"],
+            "description": "注册模式：email_verify — 邮箱验证注册；admin_only — 仅管理员创建"
+          },
+          "smtpConfigured": { "type": "boolean", "description": "SMTP 是否已配置" }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "用户邮箱（RFC 5322 格式）"
+          },
+          "password": {
+            "type": "string",
+            "description": "用户密码",
+            "minLength": 1
+          }
+        }
+      },
+      "LoginResult": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string", "description": "JWT Access Token" },
+          "tokenType": { "type": "string", "example": "Bearer" },
+          "expiresIn": { "type": "integer", "example": 3600, "description": "Access Token 有效期（秒），默认 3600" },
+          "refreshToken": { "type": "string", "description": "JWT Refresh Token" },
+          "refreshExpiresIn": {
+            "type": "integer",
+            "example": 604800,
+            "description": "Refresh Token 有效期（秒），默认 604800（7天）"
+          },
+          "user": { "$ref": "#/components/schemas/UserBrief" }
+        }
+      },
+      "RegisterResult": {
+        "allOf": [
+          { "$ref": "#/components/schemas/LoginResult" },
+          {
+            "type": "object",
+            "properties": {
+              "isFirstUser": { "type": "boolean", "example": true, "description": "是否为首个注册用户" }
+            }
+          }
+        ]
+      },
+      "UserBrief": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "用户 ID" },
+          "email": { "type": "string", "format": "email", "description": "邮箱" },
+          "username": { "type": "string", "description": "用户名" },
+          "role": {
+            "type": "string",
+            "enum": ["super_admin", "admin", "user"],
+            "description": "角色：super_admin — 超级管理员；admin — 管理员；user — 普通用户"
+          }
+        }
+      },
+      "SendCodeRequest": {
+        "type": "object",
+        "required": ["email", "type"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "接收验证码的邮箱"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["register", "reset_password"],
+            "description": "验证码类型：register — 注册；reset_password — 重置密码"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "邮箱"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "密码（至少8位，需包含大写字母、小写字母、数字）",
+            "pattern": "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).{8,128}$"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "用户名（可选，1-50字符，支持中文/字母/数字/下划线/短横线）"
+          }
+        }
+      },
+      "VerifyRegisterRequest": {
+        "type": "object",
+        "required": ["email", "code", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "邮箱"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "description": "6位数字验证码"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "密码（至少8位，需包含大写字母、小写字母、数字）"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "用户名（可选，不提供则使用邮箱前缀）"
+          }
+        }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "required": ["refreshToken"],
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "有效的 Refresh Token",
+            "minLength": 1
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "required": ["email", "code", "newPassword"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "邮箱"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "description": "6位数字验证码"
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "新密码（至少8位，需包含大写字母、小写字母、数字）"
+          }
+        }
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "required": ["email", "username", "role"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "邮箱"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "用户名（1-50字符，支持中文/字母/数字/下划线/短横线）"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["user", "admin"],
+            "description": "角色：user — 普通用户；admin — 管理员（拥有超级管理员权限）"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "密码（可选，不提供则自动生成12位随机密码）"
+          }
+        }
+      },
+      "CreateUserResult": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "用户 ID" },
+          "email": { "type": "string", "format": "email" },
+          "username": { "type": "string" },
+          "role": { "type": "string", "enum": ["user", "admin"] },
+          "status": { "type": "integer", "example": 1, "description": "用户状态：1-启用" },
+          "passwordProvided": { "type": "boolean", "description": "是否已提供密码" },
+          "generatedPassword": {
+            "type": "string",
+            "description": "自动生成的密码（仅 passwordProvided=false 时返回）"
+          }
+        }
+      },
+      "UpdateUserRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "用户名（可选）"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["user", "admin"],
+            "description": "角色（可选）"
+          },
+          "status": {
+            "type": "integer",
+            "enum": [0, 1],
+            "description": "状态：0-禁用，1-启用（可选）"
+          }
+        }
+      },
+      "UserListItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "用户 ID" },
+          "email": { "type": "string", "format": "email" },
+          "username": { "type": "string" },
+          "role": { "type": "string", "enum": ["admin", "user"] },
+          "status": { "type": "integer", "description": "0-禁用，1-启用" },
+          "created_at": { "type": "string", "format": "date-time", "description": "创建时间" },
+          "last_login_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "最后登录时间"
+          }
+        }
+      },
+      "UserListResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/UserListItem" }
+          },
+          "total": { "type": "integer", "description": "总记录数" },
+          "page": { "type": "integer", "description": "当前页码" },
+          "limit": { "type": "integer", "description": "每页数量" },
+          "totalPages": { "type": "integer", "description": "总页数" }
+        }
+      },
+      "UpdateSmtpConfigRequest": {
+        "type": "object",
+        "required": ["enabled", "host", "port", "username", "fromEmail"],
+        "properties": {
+          "enabled": { "type": "boolean", "description": "是否启用 SMTP 服务" },
+          "host": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "SMTP 服务器地址"
+          },
+          "port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535,
+            "description": "SMTP 端口"
+          },
+          "username": {
+            "type": "string",
+            "description": "SMTP 用户名"
+          },
+          "password": {
+            "type": "string",
+            "description": "SMTP 密码（可选）"
+          },
+          "fromEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "发件人邮箱"
+          }
+        }
+      },
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": { "description": "响应数据，可为任意类型或 null" },
+          "code": {
+            "type": "integer",
+            "description": "业务状态码：0-成功；400-参数错误；401-未登录；403-无权限；404-不存在；409-冲突；429-限流；500-服务器错误"
+          },
+          "msg": { "type": "string", "description": "提示信息" }
+        }
+      },
+      "BizErrorCodes": {
+        "type": "object",
+        "description": "认证模块业务错误码",
+        "properties": {
+          "1001": { "type": "string", "description": "邮箱已被注册" },
+          "1002": { "type": "string", "description": "邮箱不存在" },
+          "1003": { "type": "string", "description": "验证码无效" },
+          "1004": { "type": "string", "description": "验证码已过期" },
+          "1005": { "type": "string", "description": "账户已锁定" },
+          "1006": { "type": "string", "description": "账户已禁用" },
+          "1007": { "type": "string", "description": "密码错误" },
+          "1008": { "type": "string", "description": "系统未初始化" },
+          "1009": { "type": "string", "description": "注册已关闭" },
+          "1010": { "type": "string", "description": "SMTP 未配置" }
+        }
+      }
+    }
+  }
+}
