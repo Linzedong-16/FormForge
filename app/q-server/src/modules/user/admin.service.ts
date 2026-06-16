@@ -15,6 +15,7 @@ import { BizCode } from "../../utils/response.js";
 import { createCache, CacheKeys } from "../../utils/cache.js";
 import type { CacheClient } from "../../utils/cache.js";
 import { createAuditLog } from "../../utils/audit-log.js";
+import { buildPagination, paginatedResult } from "../../utils/pagination.js";
 
 // ─── 类型重导出（保持向后兼容） ──────────────────────────────
 
@@ -108,6 +109,8 @@ export class AdminService {
       where.status = query.status;
     }
 
+    const { skip, take } = buildPagination({ page: query.page, pageSize: query.limit });
+
     const [items, total] = await Promise.all([
       this.fastify.prisma.user.findMany({
         where,
@@ -121,19 +124,17 @@ export class AdminService {
           last_login_at: true
         },
         orderBy: { created_at: "desc" },
-        skip: (query.page - 1) * query.limit,
-        take: query.limit
+        skip,
+        take
       }),
       this.fastify.prisma.user.count({ where })
     ]);
 
-    return {
-      items: items.map(u => ({ ...u, id: u.id.toString() })),
+    return paginatedResult(
+      items.map(u => ({ ...u, id: u.id.toString() })),
       total,
-      page: query.page,
-      limit: query.limit,
-      totalPages: Math.ceil(total / query.limit)
-    };
+      { page: query.page, pageSize: query.limit }
+    );
   }
 
   /** 更新用户信息 */

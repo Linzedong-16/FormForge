@@ -19,10 +19,10 @@ export type PaginationParams = z.infer<typeof paginationSchema>;
 // ─── 分页结果 ────────────────────────────────────────────────
 
 export interface PaginatedResult<T> {
-  list: T[];
+  items: T[];
   total: number;
   page: number;
-  pageSize: number;
+  limit: number;
   totalPages: number;
 }
 
@@ -41,12 +41,12 @@ export function buildPagination(params: PaginationParams) {
 /**
  * 包装分页结果
  */
-export function paginatedResult<T>(list: T[], total: number, params: PaginationParams): PaginatedResult<T> {
+export function paginatedResult<T>(items: T[], total: number, params: PaginationParams): PaginatedResult<T> {
   return {
-    list,
+    items,
     total,
     page: params.page,
-    pageSize: params.pageSize,
+    limit: params.pageSize,
     totalPages: Math.ceil(total / params.pageSize)
   };
 }

@@ -10,6 +10,7 @@ import mongoPlugin from "./plugins/mongo.js";
 import minioPlugin from "./plugins/minio.js";
 import logTransportPlugin from "./plugins/log-transport.js";
 import rateLimitPlugin from "./plugins/rate-limit.js";
+import loggerPlugin from "./utils/logger.js";
 import routes from "./routes/index.js";
 import { randomUUID } from "node:crypto";
 
@@ -53,6 +54,8 @@ export const buildApp = () => {
     .register(mongoPlugin)
     // 日志传输（依赖 rabbitmq 先注册，仅生产环境推 RabbitMQ）
     .register(logTransportPlugin)
+    // 结构化日志插件（自动为 request.log 添加脱敏能力）
+    .register(loggerPlugin)
     // 接口限流（依赖 redis，生产环境共享计数，开发环境内存计数）
     .register(rateLimitPlugin)
     .register(routes, { prefix: "/api" });

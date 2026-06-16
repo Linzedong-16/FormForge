@@ -1,12 +1,9 @@
 /**
  * 结构化日志工具
  *
- * 提供带自动脱敏、requestId 追踪的日志方法。
- * 底层依赖 Fastify 的 pino 实例，不创建新的 logger。
+ * 提供带自动脱敏的日志方法，通过 Fastify hook 自动注入到 request.log
  */
 import type { FastifyInstance } from "fastify";
-
-// ─── 脱敏规则 ────────────────────────────────────────────────
 
 const SENSITIVE_KEYS = [
   "password",
@@ -18,14 +15,13 @@ const SENSITIVE_KEYS = [
   "newPassword"
 ];
 
-/** 脱敏单字段值 */
 function maskValue(key: string, value: unknown): unknown {
   if (typeof value !== "string") return value;
   if (key === "password" || key === "password_hash" || key === "newPassword") return "***";
   if (key === "token" || key === "refreshToken") {
     return value.length > 16 ? `${value.slice(0, 8)}***${value.slice(-8)}` : "***";
   }
-  if (key === "email" || (key === "email" && value.includes("@"))) {
+  if (key === "email") {
     const [local, domain] = value.split("@");
     const masked = local.length <= 2 ? local + "***" : local.slice(0, 2) + "***";
     return `${masked}@${domain}`;
@@ -33,7 +29,6 @@ function maskValue(key: string, value: unknown): unknown {
   return value;
 }
 
-/** 递归脱敏对象 */
 function sanitize(obj: unknown, depth = 0): unknown {
   if (depth > 3 || obj === null || obj === undefined) return obj;
   if (typeof obj !== "object") return obj;
@@ -53,8 +48,6 @@ function sanitize(obj: unknown, depth = 0): unknown {
   return result;
 }
 
-// ─── Logger 封装 ─────────────────────────────────────────────
-
 export interface StructuredLogger {
   trace: (msg: string, ctx?: Record<string, unknown>) => void;
   debug: (msg: string, ctx?: Record<string, unknown>) => void;
@@ -64,13 +57,6 @@ export interface StructuredLogger {
   fatal: (msg: string, ctx?: Record<string, unknown>) => void;
 }
 
-/**
- * 基于 Fastify 实例创建结构化 logger
- *
- * @example
- *   const log = createLogger(fastify);
- *   log.info("用户登录", { email: "a@b.com", requestId: "xxx" });
- */
 export function createLogger(fastify: FastifyInstance): StructuredLogger {
   return {
     trace(msg, ctx) {
@@ -93,3 +79,44 @@ export function createLogger(fastify: FastifyInstance): StructuredLogger {
     }
   };
 }
+
+/**
+ * Fastify Plugin: 自动为 request.log 添加脱敏能力
+ *
+ * 使用方式：在 app.ts 中注册此插件后，request.log 自动脱敏
+ */
+import fp from "fastify-plugin";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
+
+declare module "fastify" {
+  interface FastifyRequest {
+    sanitizedLog: StructuredLogger;
+  }
+}
+
+const loggerPlugin: FastifyPluginAsync = async fastify => {
+  fastify.addHook("onRequest", (request: FastifyRequest) => {
+    request.sanitizedLog = {
+      trace(msg, ctx) {
+        request.log.trace(sanitize({ msg, ...ctx }), msg);
+      },
+      debug(msg, ctx) {
+        request.log.debug(sanitize({ msg, ...ctx }), msg);
+      },
+      info(msg, ctx) {
+        request.log.info(sanitize({ msg, ...ctx }), msg);
+      },
+      warn(msg, ctx) {
+        request.log.warn(sanitize({ msg, ...ctx }), msg);
+      },
+      error(msg, ctx) {
+        request.log.error(sanitize({ msg, ...ctx }), msg);
+      },
+      fatal(msg, ctx) {
+        request.log.fatal(sanitize({ msg, ...ctx }), msg);
+      }
+    };
+  });
+};
+
+export default fp(loggerPlugin, { name: "logger" });
