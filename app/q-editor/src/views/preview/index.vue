@@ -6,7 +6,9 @@
         <!-- 左边按钮 -->
         <div class="flex space-between">
           <el-button type="danger" @click="gobackHandle">{{ t("preview.back") }}</el-button>
-          <el-button type="success" @click="generateOnlineSurvey">{{ t("preview.generateOnline") }}</el-button>
+          <el-button v-permiss="'admin'" type="success" @click="generateOnlineSurvey">{{
+            t("preview.generateOnline")
+          }}</el-button>
           <el-button type="warning" @click="generatePDF">{{ t("preview.generatePDF") }}</el-button>
         </div>
         <!-- 题目数量 -->
