@@ -7,6 +7,8 @@ export default {
   resetSurvey: "アンケートリセット",
   saveSurvey: "アンケート保存",
   preview: "プレビュー",
+  undo: "元に戻す",
+  redo: "やり直す",
 
   // Confirm dialogs
   confirmReset: "アンケートをリセットしますか？",

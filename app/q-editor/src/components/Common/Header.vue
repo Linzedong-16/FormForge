@@ -4,6 +4,25 @@
       <!-- 分为三个部分 -->
       <div class="left flex justify-content-center align-items-center">
         <el-button :icon="ArrowLeft" circle size="small" @click="goHome" />
+        <!-- 撤销/重做按钮 —— 仅在编辑器页面生效 -->
+        <template v-if="isEditor">
+          <el-button
+            :icon="RefreshLeft"
+            circle
+            size="small"
+            :disabled="!store.canUndo"
+            :title="t('editor.undo')"
+            @click="store.undo()"
+          />
+          <el-button
+            :icon="RefreshRight"
+            circle
+            size="small"
+            :disabled="!store.canRedo"
+            :title="t('editor.redo')"
+            @click="store.redo()"
+          />
+        </template>
       </div>
       <div class="center flex align-items-center space-between pl-15 pr-15">
         <div v-if="isEditor" class="flex align-items-center">
@@ -62,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft } from "@element-plus/icons-vue";
+import { ArrowLeft, RefreshLeft, RefreshRight } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 const router = useRouter();
@@ -210,8 +229,9 @@ const onApplyShareTemplate = () => {
   height: 50px;
   border-bottom: 1px solid var(--border-color);
   .left {
-    width: 60px;
+    width: 140px;
     height: 100%;
+    gap: 4px;
   }
   .center {
     flex: 1;

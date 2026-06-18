@@ -4,7 +4,7 @@
       {{ t("editor.clickToEdit") }}
     </div>
     <div v-else>
-      <EditPannel :com="currentCom!" />
+      <EditPannel :key="store.editorVersion" :com="currentCom!" />
     </div>
   </div>
 </template>

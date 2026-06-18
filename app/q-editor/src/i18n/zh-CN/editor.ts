@@ -7,6 +7,8 @@ export default {
   resetSurvey: "重置问卷",
   saveSurvey: "保存问卷",
   preview: "预览",
+  undo: "撤销",
+  redo: "重做",
 
   // 确认对话框
   confirmReset: "确定要重置问卷吗？",

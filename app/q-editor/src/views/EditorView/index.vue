@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, onUnmounted } from "vue";
 import Header from "@/components/Common/Header.vue";
 import LeftSide from "@/views/EditorView/LeftSide/Index.vue";
 import Center from "@/views/EditorView/Center.vue";
@@ -31,6 +31,21 @@ const store = useEditorStore();
 
 const id = computed(() => (route.params.id ? String(route.params.id) : ""));
 
+// ─── 撤销/重做键盘快捷键 ──────────────────────────────────────────
+
+const handleKeydown = (e: KeyboardEvent) => {
+  const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+  if (!isCtrlOrCmd) return;
+
+  if (e.key === "z" && !e.shiftKey) {
+    e.preventDefault();
+    store.undo();
+  } else if (e.key === "y" || (e.key === "z" && e.shiftKey)) {
+    e.preventDefault();
+    store.redo();
+  }
+};
+
 onMounted(() => {
   if (id.value) {
     // 根据 id 获取存储的问卷题目
@@ -44,6 +59,12 @@ onMounted(() => {
     // 新建问卷，初始化组件列表
     store.initComs();
   }
+
+  document.addEventListener("keydown", handleKeydown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("keydown", handleKeydown);
 });
 </script>
 

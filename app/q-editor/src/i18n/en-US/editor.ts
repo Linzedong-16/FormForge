@@ -7,6 +7,8 @@ export default {
   resetSurvey: "Reset Survey",
   saveSurvey: "Save Survey",
   preview: "Preview",
+  undo: "Undo",
+  redo: "Redo",
 
   // Confirm dialogs
   confirmReset: "Are you sure you want to reset the survey?",

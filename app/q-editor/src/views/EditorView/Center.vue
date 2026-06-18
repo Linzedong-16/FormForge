@@ -2,8 +2,11 @@
   <div ref="centerContainer" class="center-container">
     <draggable
       :list="store.coms"
+      item-key="id"
       item-index="index"
       :options="{ animation: 150, ghostClass: 'ghost', chosenClass: 'chosen', dragClass: 'drag' }"
+      @start="onDragStart"
+      @change="onDragChange"
     >
       <template #item="{ element, index }">
         <div
@@ -29,8 +32,9 @@
 <script setup lang="ts">
 import draggable from "vuedraggable";
 
-import { computed, nextTick, ref, type ComponentPublicInstance, onMounted, onUnmounted, provide } from "vue";
+import { computed, nextTick, ref, type ComponentPublicInstance, onMounted, onUnmounted, provide, toRaw } from "vue";
 import { useEditorStore } from "@/stores/useEditor";
+import type { Snapshot } from "@/utils/undoManager";
 const store = useEditorStore();
 // 事件总监
 import EventBus from "@/utils/eventBus";
@@ -154,6 +158,28 @@ const serialNum = computed(() => useSurveyNo(store.coms).value);
 const isInCurrentPage = (index: number) => {
   const start = (store.currentPage - 1) * store.pageSize;
   return index >= start && index < start + store.pageSize;
+};
+
+// ─── 拖拽排序快照（vuedraggable 直接 mutate coms，需手动记录）────────────────
+
+let dragSnapshot: Snapshot | null = null;
+
+/** 拖拽开始：保存当前状态快照（JSON 序列化，Vue 组件引用由 restored 时重新挂载） */
+const onDragStart = () => {
+  dragSnapshot = {
+    coms: JSON.parse(JSON.stringify(toRaw(store.coms))),
+    surveyCount: store.surveyCount,
+    currentComponentIndex: store.currentComponentIndex
+  };
+};
+
+/** 拖拽结束（排序变更）：将开始前保存的快照压入撤销栈 */
+const onDragChange = () => {
+  if (dragSnapshot) {
+    // 将拖拽前的快照压入撤销栈（此时 coms 已被 vuedraggable 修改）
+    store._pushSnapshot(dragSnapshot);
+    dragSnapshot = null;
+  }
 };
 
 // 删除选中的组件
