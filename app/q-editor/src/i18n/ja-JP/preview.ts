@@ -3,6 +3,7 @@ export default {
   back: "戻る",
   generateOnline: "オンラインアンケート生成",
   generatePDF: "ローカルPDF生成",
+  submitReview: "レビュー依頼",
   questionCount: "質問数",
   onlineSurvey: "オンラインアンケート",
   shareLink: "共有リンク",

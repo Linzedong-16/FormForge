@@ -39,7 +39,18 @@ export default {
   surveyTypeTitle: "题型",
   outline: "大纲",
   surveyType: "题型",
+  templateMarket: "模板市场",
   addQuestion: "请添加题目",
+
+  // AI 功能
+  aiPolish: "AI润色",
+  aiGenerate: "AI一键生成",
+  aiInputPlaceholder: "请输入需求描述...",
+  aiSubmit: "提交",
+  aiClear: "清空",
+
+  // 模板市场
+  applyShareTemplate: "申请共享模板",
 
   // 题型分组
   selectGroup: "选择题",

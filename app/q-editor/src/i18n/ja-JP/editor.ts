@@ -39,7 +39,18 @@ export default {
   surveyTypeTitle: "問題タイプ",
   outline: "概要",
   surveyType: "問題タイプ",
+  templateMarket: "テンプレート市場",
   addQuestion: "質問を追加してください",
+
+  // AI 機能
+  aiPolish: "AIリライト",
+  aiGenerate: "AI生成",
+  aiInputPlaceholder: "要件を入力してください...",
+  aiSubmit: "送信",
+  aiClear: "クリア",
+
+  // テンプレート市場
+  applyShareTemplate: "共有テンプレート申請",
 
   // Question type groups
   selectGroup: "選択",

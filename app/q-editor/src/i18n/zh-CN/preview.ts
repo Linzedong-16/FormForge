@@ -3,6 +3,7 @@ export default {
   back: "返回",
   generateOnline: "生成在线问卷",
   generatePDF: "生成本地PDF",
+  submitReview: "提交审核",
   questionCount: "题目数量",
   onlineSurvey: "在线问卷",
   shareLink: "分享链接",

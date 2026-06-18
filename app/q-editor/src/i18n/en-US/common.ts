@@ -15,5 +15,15 @@ export default {
   reset: "Reset",
   return: "Back",
   and: "and",
-  paragraph: "Paragraph"
+  paragraph: "Paragraph",
+  // Review notice
+  reviewNotice: "Review Notices",
+  items: "items",
+  loading: "Loading...",
+  noReviewRecords: "No review records",
+  statusInProgress: "In Progress",
+  statusApproved: "Approved",
+  statusViolated: "Violated",
+  revoke: "Revoke",
+  viewDetail: "View Detail"
 };

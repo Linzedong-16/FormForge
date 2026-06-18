@@ -10,6 +10,7 @@
             t("preview.generateOnline")
           }}</el-button>
           <el-button type="warning" @click="generatePDF">{{ t("preview.generatePDF") }}</el-button>
+          <el-button type="primary" @click="handleSubmitReview">{{ t("preview.submitReview") }}</el-button>
         </div>
         <!-- 题目数量 -->
         <div class="mr-15">
@@ -107,6 +108,13 @@ const generatePDF = () => {
   }
   window.print();
   ElMessage.success(t("preview.pdfSuccess"));
+};
+
+/**
+ * 提交审核（预留，后续迭代开发）
+ */
+const handleSubmitReview = () => {
+  // TODO: 实现提交审核业务逻辑
 };
 
 /**

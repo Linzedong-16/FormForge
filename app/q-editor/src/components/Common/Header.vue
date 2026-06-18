@@ -22,6 +22,33 @@
             :total="store.coms.length"
             class="ml-15"
           />
+          <!-- AI 功能按钮组 -->
+          <div class="ai-btn-group ml-15 flex align-items-center">
+            <el-button size="small" plain disabled>{{ t("editor.aiPolish") }}</el-button>
+            <el-popover
+              placement="bottom"
+              trigger="click"
+              :width="320"
+              :show-arrow="false"
+              :offset="8"
+              popper-class="ai-generate-popover"
+            >
+              <template #reference>
+                <el-button size="small" type="primary" plain>{{ t("editor.aiGenerate") }}</el-button>
+              </template>
+              <div class="ai-generate-panel">
+                <el-input v-model="aiInput" type="textarea" :rows="3" :placeholder="t('editor.aiInputPlaceholder')" />
+                <div class="ai-actions">
+                  <el-button size="small" @click="onAiClear">{{ t("editor.aiClear") }}</el-button>
+                  <el-button size="small" type="primary" @click="onAiSubmit">{{ t("editor.aiSubmit") }}</el-button>
+                </div>
+              </div>
+            </el-popover>
+          </div>
+          <!-- 模板市场 -->
+          <el-button size="small" type="warning" plain class="ml-10" @click="onApplyShareTemplate">
+            {{ t("editor.applyShareTemplate") }}
+          </el-button>
         </div>
         <div v-if="id">
           <el-button type="primary" size="small" @click="preview">{{ t("editor.preview") }}</el-button>
@@ -40,6 +67,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 const router = useRouter();
 const { t } = useI18n();
+import { ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useEditorStore } from "@/stores/useEditor";
 import type { SurveyDBData } from "@/types";
@@ -147,6 +175,30 @@ const preview = () => {
 const goHome = () => {
   router.push({ name: "home" });
 };
+
+// ─── AI 功能 ─────────────────────────────────────────────────
+
+const aiInput = ref("");
+
+const onAiClear = () => {
+  aiInput.value = "";
+};
+
+const onAiSubmit = () => {
+  // TODO: 对接 AI 生成接口
+  const trimmed = aiInput.value.trim();
+  if (!trimmed) {
+    ElMessage.warning(t("editor.aiInputPlaceholder"));
+    return;
+  }
+  ElMessage.success(t("common.success"));
+};
+
+// ─── 模板市场 ────────────────────────────────────────────────
+
+const onApplyShareTemplate = () => {
+  // TODO: 实现模板上传/共享逻辑
+};
 </script>
 
 <style scoped lang="scss">
@@ -168,5 +220,30 @@ const goHome = () => {
     width: 80px;
     height: 100%;
   }
+}
+
+.ai-btn-group {
+  gap: 6px;
+}
+
+.ai-generate-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+</style>
+
+<!-- 非 scoped：覆盖 el-popover 弹层 -->
+<style lang="scss">
+.ai-generate-popover.el-popover.el-popper {
+  padding: 12px;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-color);
 }
 </style>

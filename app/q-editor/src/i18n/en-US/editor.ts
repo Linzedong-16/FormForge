@@ -39,7 +39,18 @@ export default {
   surveyTypeTitle: "Question Types",
   outline: "Outline",
   surveyType: "Question Types",
+  templateMarket: "Template Market",
   addQuestion: "Please add questions",
+
+  // AI Features
+  aiPolish: "AI Polish",
+  aiGenerate: "AI Generate",
+  aiInputPlaceholder: "Describe your needs...",
+  aiSubmit: "Submit",
+  aiClear: "Clear",
+
+  // Template Market
+  applyShareTemplate: "Request Share Template",
 
   // Question type groups
   selectGroup: "Selection",

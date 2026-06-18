@@ -15,5 +15,15 @@ export default {
   reset: "リセット",
   return: "戻る",
   and: "と",
-  paragraph: "段落"
+  paragraph: "段落",
+  // レビュー通知
+  reviewNotice: "レビュー通知",
+  items: "件",
+  loading: "読み込み中...",
+  noReviewRecords: "レビュー記録はありません",
+  statusInProgress: "進行中",
+  statusApproved: "承認済み",
+  statusViolated: "違反",
+  revoke: "取消",
+  viewDetail: "詳細を見る"
 };

@@ -3,6 +3,7 @@ export default {
   back: "Back",
   generateOnline: "Generate Online Survey",
   generatePDF: "Generate Local PDF",
+  submitReview: "Submit for Review",
   questionCount: "Question Count",
   onlineSurvey: "Online Survey",
   shareLink: "Share Link",

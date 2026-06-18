@@ -15,5 +15,15 @@ export default {
   reset: "重置",
   return: "返回",
   and: "和",
-  paragraph: "段落"
+  paragraph: "段落",
+  // 审核消息
+  reviewNotice: "审核消息",
+  items: "条",
+  loading: "加载中...",
+  noReviewRecords: "暂无审核记录",
+  statusInProgress: "流程中",
+  statusApproved: "已通过",
+  statusViolated: "已违规",
+  revoke: "撤销",
+  viewDetail: "查看详情"
 };

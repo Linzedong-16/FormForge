@@ -23,6 +23,11 @@
         <el-icon><Document /></el-icon>
         <span class="tab-item-title mt-5">{{ t("editor.outline") }}</span>
       </div>
+      <!-- 模板市场 -->
+      <div class="tab-item" @click="switchTemplateMarket">
+        <el-icon><Shop /></el-icon>
+        <span class="tab-item-title mt-5">{{ t("editor.templateMarket") }}</span>
+      </div>
     </div>
     <RouterView class="tab-pane" />
   </div>
@@ -30,7 +35,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { Document, Memo } from "@element-plus/icons-vue";
+import { Document, Memo, Shop } from "@element-plus/icons-vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -46,6 +51,10 @@ const switchEditor = () => {
 
 const switchOutline = () => {
   router.push({ name: "outline" });
+};
+
+const switchTemplateMarket = () => {
+  // TODO: 跳转模板市场路由
 };
 </script>
 
