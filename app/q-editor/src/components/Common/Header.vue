@@ -28,11 +28,11 @@
         <div v-if="isEditor" class="flex align-items-center">
           <!-- 说明是编辑器，需要显示额外的按钮 -->
           <div v-if="id">
-            <el-button type="warning" size="small" @click="updateSurvey">{{ t("editor.updateSurvey") }}</el-button>
+            <el-button type="warning" size="small" @click="editorDoSave">{{ t("editor.updateSurvey") }}</el-button>
           </div>
           <div v-else>
             <el-button type="danger" size="small" @click="reset">{{ t("editor.resetSurvey") }}</el-button>
-            <el-button type="success" size="small" @click="saveSurvey">{{ t("editor.saveSurvey") }}</el-button>
+            <el-button type="success" size="small" @click="editorDoSave">{{ t("editor.saveSurvey") }}</el-button>
           </div>
           <!-- 分页器：紧邻保存/更新按钮右侧，绑定仓库的分页配置 -->
           <SurveyPagination
@@ -86,10 +86,9 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 const router = useRouter();
 const { t } = useI18n();
-import { ref } from "vue";
+import { ref, inject } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useEditorStore } from "@/stores/useEditor";
-import type { SurveyDBData } from "@/types";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 import UserProfile from "@/components/Common/UserProfile.vue";
 const props = defineProps({
@@ -103,6 +102,9 @@ const props = defineProps({
   }
 });
 const store = useEditorStore();
+
+// 统一的保存/更新回调（由 EditorView 通过 provide 注入，确保 Ctrl+S 与按钮走同一逻辑）
+const editorDoSave = inject<() => Promise<void>>("editorDoSave", () => Promise.resolve());
 
 // 重置问卷
 const reset = () => {
@@ -120,61 +122,6 @@ const reset = () => {
     });
 };
 
-interface PromptItem {
-  value: string;
-}
-// 保存问卷
-const saveSurvey = () => {
-  ElMessageBox.prompt(t("editor.savePromptTitle"), t("editor.confirmTitle"), {
-    confirmButtonText: t("editor.confirmButton"),
-    cancelButtonText: t("editor.cancelButton"),
-    type: "info"
-  })
-    .then(item => {
-      const safeItem = item as unknown as PromptItem;
-      const surveyToSave = {
-        createDate: new Date().getTime(),
-        title: safeItem?.value as string,
-        updateDate: new Date().getTime(),
-        surveyCount: store.surveyCount,
-        coms: JSON.parse(JSON.stringify(store.coms)),
-        pageSize: store.pageSize
-      };
-      store
-        .saveComs(surveyToSave)
-        .then(() => {
-          console.log(store.coms);
-          ElMessage.success(t("editor.saveSuccess"));
-        })
-        .catch(() => {
-          ElMessage.error(t("editor.saveFailed"));
-        });
-    })
-    .catch(() => {
-      ElMessage.info(t("editor.saveCancelled"));
-    });
-};
-
-// 更新问卷
-const updateSurvey = () => {
-  store
-    .updateComs(Number(props.id), {
-      updateDate: new Date().getTime(),
-      surveyCount: store.surveyCount,
-      coms: JSON.parse(JSON.stringify(store.coms)),
-      pageSize: store.pageSize,
-      // 更新后重置同步状态为未同步，通知 Layout 页刷新
-      syncStatus: "unsynced"
-    } as SurveyDBData)
-    .then(() => {
-      store.lastUpdatedId = Number(props.id);
-      ElMessage.success(t("editor.updateSuccess"));
-    })
-    .catch(() => {
-      ElMessage.error(t("editor.updateFailed"));
-    });
-};
-
 // 预览问卷
 const preview = () => {
   ElMessageBox.confirm(t("editor.previewConfirm"), t("editor.confirmTitle"), {
@@ -182,8 +129,8 @@ const preview = () => {
     cancelButtonText: t("editor.cancelButton"),
     type: "info"
   })
-    .then(() => {
-      updateSurvey();
+    .then(async () => {
+      await editorDoSave();
       router.push({
         path: `/preview/${props.id}`,
         state: { from: "editor" }

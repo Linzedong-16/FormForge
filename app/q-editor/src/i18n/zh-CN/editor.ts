@@ -36,6 +36,12 @@ export default {
   previewConfirm: "预览会自动保存问卷，是否跳转预览？",
   previewCancelled: "已取消跳转",
 
+  // 未保存提示
+  unsavedTitle: "未保存的修改",
+  unsavedMessage: "当前问卷有未保存的修改，是否保存后再离开？",
+  saveAndLeave: "保存并离开",
+  leaveWithoutSave: "不保存",
+
   // 左侧面板
   outlineTitle: "大纲",
   surveyTypeTitle: "题型",

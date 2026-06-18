@@ -46,7 +46,11 @@ export const useEditorStore = defineStore("editor", {
     canUndo: false,
     canRedo: false,
     /** 编辑器版本号：undo/redo 时自增，供 RightSide 强制 EditPannel 重渲染 */
-    editorVersion: 0
+    editorVersion: 0,
+    /** 是否有未保存的修改 */
+    dirty: false,
+    /** 当前问卷在 IndexedDB 中的 id（新建问卷首次保存后设置） */
+    savedSurveyId: null as number | null
   }),
   actions: {
     // ─── 内部：快照记录与标志同步 ───────────────────────────────────────
@@ -63,6 +67,7 @@ export const useEditorStore = defineStore("editor", {
         surveyCount: this.surveyCount,
         currentComponentIndex: this.currentComponentIndex
       });
+      this.dirty = true;
       this._syncFlags();
     },
 
@@ -120,6 +125,8 @@ export const useEditorStore = defineStore("editor", {
     initComs() {
       if (this.coms.length === 0) {
         this.coms = initStore();
+        this.dirty = false;
+        this.savedSurveyId = null;
         undoManager.clear();
         this._syncFlags();
       }
@@ -135,17 +142,21 @@ export const useEditorStore = defineStore("editor", {
       this.surveyCount = 0;
       this.pageSize = 10;
       this.currentPage = 1;
+      this.dirty = false;
+      this.savedSurveyId = null;
       undoManager.clear();
       this._syncFlags();
     },
 
     /** 加载已有问卷数据，清空撤销历史 */
-    setStore(data: SurveyDBData) {
+    setStore(data: SurveyDBData, surveyId?: number) {
       this.surveyCount = data.surveyCount;
       this.currentComponentIndex = -1;
       this.coms = data.coms;
       this.pageSize = data.pageSize ?? 10;
       this.currentPage = 1;
+      this.dirty = false;
+      this.savedSurveyId = surveyId ?? null;
       undoManager.clear();
       this._syncFlags();
     },
@@ -250,14 +261,25 @@ export const useEditorStore = defineStore("editor", {
       _setCascaderOptions(optionProps, payload);
     },
 
-    // ─── 持久化（不记录快照）─────────────────────────────────────────────
-
-    saveComs(survey: SurveyDBData) {
-      return saveSurvey(survey);
+    /** 标记为已保存：清空 dirty + 清空撤销历史（避免把保存前的操作也撤销） */
+    markClean() {
+      this.dirty = false;
+      undoManager.clear();
+      this._syncFlags();
     },
 
-    updateComs(id: number, data: SurveyDBData) {
-      return updateSurveyById(id, data);
+    // ─── 持久化（不记录快照）─────────────────────────────────────────────
+
+    async saveComs(survey: SurveyDBData) {
+      const id = await saveSurvey(survey);
+      this.savedSurveyId = id;
+      this.markClean();
+      return id;
+    },
+
+    async updateComs(id: number, data: SurveyDBData) {
+      await updateSurveyById(id, data);
+      this.markClean();
     }
   }
 });

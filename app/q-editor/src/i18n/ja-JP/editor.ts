@@ -36,6 +36,12 @@ export default {
   previewConfirm: "プレビューは自動保存されます。プレビューに移動しますか？",
   previewCancelled: "プレビュー取消",
 
+  // 未保存の変更
+  unsavedTitle: "未保存の変更",
+  unsavedMessage: "未保存の変更があります。保存してから移動しますか？",
+  saveAndLeave: "保存して移動",
+  leaveWithoutSave: "破棄",
+
   // Left panel
   outlineTitle: "概要",
   surveyTypeTitle: "問題タイプ",

@@ -36,6 +36,12 @@ export default {
   previewConfirm: "Preview will auto-save the survey. Do you want to proceed?",
   previewCancelled: "Preview cancelled",
 
+  // Unsaved changes
+  unsavedTitle: "Unsaved Changes",
+  unsavedMessage: "You have unsaved changes. Save before leaving?",
+  saveAndLeave: "Save & Leave",
+  leaveWithoutSave: "Discard",
+
   // Left panel
   outlineTitle: "Outline",
   surveyTypeTitle: "Question Types",
