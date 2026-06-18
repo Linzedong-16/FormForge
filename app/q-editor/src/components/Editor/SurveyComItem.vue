@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div class="survey-com-item-cell">
     <el-tooltip :content="item.comName" placement="top">
       <div
-        class="survey-com-item-container pointer flex justify-content-center align-items-center self-center pl-10 pr-10 mb-10"
+        class="survey-com-item-container pointer flex justify-content-center align-items-center"
         @click="addSurveyCom"
       >
         {{ item.comName }}
@@ -44,10 +44,14 @@ const addSurveyCom = () => {
 </script>
 
 <style scoped lang="scss">
+.survey-com-item-cell {
+  // 网格单元格自动撑满，无需额外样式
+}
 .survey-com-item-container {
-  min-width: 60px;
-  max-width: 140px;
+  width: 100%;
   height: 30px;
+  padding: 0 8px;
+  box-sizing: border-box;
   background-color: var(--background-color);
   border-radius: var(--border-radius-md);
   font-size: var(--font-size-base);

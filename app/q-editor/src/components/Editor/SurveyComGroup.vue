@@ -8,8 +8,8 @@
         </el-icon>
         <div class="ml-5 title">{{ title }}</div>
       </div>
-      <!-- 该分组对应的业务组件 -->
-      <div class="flex wrap space-between">
+      <!-- 该分组对应的业务组件，两列网格布局 -->
+      <div class="survey-com-grid">
         <SurveyComItem v-for="(item, index) in list" :key="index" :item="item" />
       </div>
     </div>
@@ -41,7 +41,9 @@ defineProps<{
   position: relative;
   bottom: 1px;
 }
-.space-between {
+.survey-com-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
 }
 </style>
