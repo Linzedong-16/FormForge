@@ -16,5 +16,12 @@ export default {
   cancel: "Cancel",
   deleteSuccess: "Survey deleted successfully",
   deleteFailed: "Failed to delete survey",
-  deleteCancelled: "Deletion cancelled"
+  deleteCancelled: "Deletion cancelled",
+  // Sync
+  columnSyncStatus: "Sync Status",
+  statusSynced: "Synced",
+  statusUnsynced: "Unsynced",
+  syncSurvey: "Sync",
+  syncSuccess: "Sync successful",
+  syncFailed: "Sync failed"
 };

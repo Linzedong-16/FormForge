@@ -16,5 +16,12 @@ export default {
   cancel: "キャンセル",
   deleteSuccess: "アンケート削除成功",
   deleteFailed: "アンケート削除失敗",
-  deleteCancelled: "削除をキャンセルしました"
+  deleteCancelled: "削除をキャンセルしました",
+  // 同期
+  columnSyncStatus: "同期ステータス",
+  statusSynced: "同期済み",
+  statusUnsynced: "未同期",
+  syncSurvey: "同期",
+  syncSuccess: "同期成功",
+  syncFailed: "同期失敗"
 };

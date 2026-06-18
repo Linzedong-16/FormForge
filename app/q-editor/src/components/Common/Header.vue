@@ -143,9 +143,12 @@ const updateSurvey = () => {
       updateDate: new Date().getTime(),
       surveyCount: store.surveyCount,
       coms: JSON.parse(JSON.stringify(store.coms)),
-      pageSize: store.pageSize
+      pageSize: store.pageSize,
+      // 更新后重置同步状态为未同步，通知 Layout 页刷新
+      syncStatus: "unsynced"
     } as SurveyDBData)
     .then(() => {
+      store.lastUpdatedId = Number(props.id);
       ElMessage.success(t("editor.updateSuccess"));
     })
     .catch(() => {

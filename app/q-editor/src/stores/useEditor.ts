@@ -27,7 +27,9 @@ export const useEditorStore = defineStore("editor", {
     surveyCount: 0, // 问卷题目的数量
     coms: [] as Status[], // 问卷题目组件数组（延迟初始化）
     pageSize: 10, // 分页配置：每页展示的组件数量（持久化）
-    currentPage: 1 // 当前页码（仅运行时，不持久化）
+    currentPage: 1, // 当前页码（仅运行时，不持久化）
+    /** 最近一次更新的问卷 id（供 Layout 页 watch 触发同步状态刷新） */
+    lastUpdatedId: null as number | null
   }),
   actions: {
     // 初始化组件列表（在 i18n 就绪后调用）

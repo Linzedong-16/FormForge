@@ -16,5 +16,12 @@ export default {
   cancel: "取消",
   deleteSuccess: "问卷删除成功",
   deleteFailed: "问卷删除失败",
-  deleteCancelled: "已取消删除"
+  deleteCancelled: "已取消删除",
+  // 同步
+  columnSyncStatus: "同步状态",
+  statusSynced: "已同步",
+  statusUnsynced: "未同步",
+  syncSurvey: "同步",
+  syncSuccess: "同步成功",
+  syncFailed: "同步失败"
 };
