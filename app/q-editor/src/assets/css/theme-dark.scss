@@ -91,7 +91,8 @@ html.dark {
 }
 
 // 主色按钮在暗色下为近白底，文字需用深色（shadcn dark 的 primary-foreground）
-html.dark .el-button--primary {
+// 排除链接按钮（.is-link），因为链接按钮无背景，需用近白色文字才能看清
+html.dark .el-button--primary:not(.is-link) {
   --el-button-text-color: #18181b;
   --el-button-hover-text-color: #18181b;
   color: #18181b;

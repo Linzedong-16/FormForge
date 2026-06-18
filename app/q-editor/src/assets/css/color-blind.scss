@@ -57,9 +57,10 @@ html[data-color-blind="achromatopsia"] {
 }
 
 // 色弱模式下主色为彩色实底，主按钮文字统一为白色（覆盖暗色主题的深色文字）
-html[data-color-blind="protanopia"] .el-button--primary,
-html[data-color-blind="deuteranopia"] .el-button--primary,
-html[data-color-blind="tritanopia"] .el-button--primary {
+// 排除链接按钮（.is-link），因为链接按钮无背景，需用主色文字才能在亮暗背景下看清
+html[data-color-blind="protanopia"] .el-button--primary:not(.is-link),
+html[data-color-blind="deuteranopia"] .el-button--primary:not(.is-link),
+html[data-color-blind="tritanopia"] .el-button--primary:not(.is-link) {
   --el-button-text-color: #fff;
   --el-button-hover-text-color: #fff;
   color: #fff;
