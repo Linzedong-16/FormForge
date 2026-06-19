@@ -5,15 +5,16 @@
 //   surveys / survey_components / responses / answers
 //
 // 规范：
-//   - BigInt 字段在 JSON 序列化后以 string 返回（NestJS/Prisma 惯例）
+//   - BigInt 字段在 JSON 序列化后以 string 返回
 //   - 枚举值与 schema 字段注释保持一致
+//   - 请求/响应类型与后端 Zod Schema 一一对应
 //
-// 后端 schema：app/q-server/prisma/schema.prisma
-// API 规范：   app/q-editor/prompt/survey-api-spec.md
+// 后端实现：app/q-server/src/modules/survey/survey.schemas.ts
+// 后端服务：app/q-server/src/modules/survey/survey.service.ts
 // ──────────────────────────────────────────────────────────────────────────────
 
 // ============================================================
-//  1. 枚举
+//  1. 枚举与字面量类型
 // ============================================================
 
 /**
@@ -25,6 +26,24 @@ export enum SurveyStatus {
   Published = 1,
   Closed = 2
 }
+
+/**
+ * 问卷类型
+ * 对应 surveys.survey_type：personal 个人问卷 / template 公共模板
+ */
+export type SurveyType = "personal" | "template";
+
+/**
+ * 审核状态
+ * 对应 surveys.review_status：none 未审核 / pending 审核中 / approved 已通过 / rejected 已驳回
+ */
+export type ReviewStatus = "none" | "pending" | "approved" | "rejected";
+
+/**
+ * 模板分类
+ * 对应 surveys.category：education / market / hr / customer / event / other
+ */
+export type TemplateCategory = "education" | "market" | "hr" | "customer" | "event" | "other";
 
 /**
  * 答卷提交状态
@@ -48,8 +67,8 @@ export type SurveyComponentConfig = Record<string, unknown>;
 /**
  * 创建/更新问卷时携带的组件载荷（无 id，由后端自增生成）
  *
- * 字段映射（见 survey-data-mapping-analysis.md §5.3）：
- *   前端 com.name  → type（kebab-case → snake_case，如 single-select → single_select）
+ * 字段映射：
+ *   前端 com.name  → type（kebab-case → snake_case）
  *   前端 com.status → config（整体序列化为 JSON）
  *   数组下标       → order_index（0-based）
  *   com.status.required → required（0 | 1）
@@ -61,7 +80,7 @@ export interface SurveyComponentPayload {
   config: SurveyComponentConfig;
   /** 排序索引（0-based） */
   order_index: number;
-  /** 是否必填：0 非必填 / 1 必填（对应 survey_components.required） */
+  /** 是否必填：0 非必填 / 1 必填 */
   required: 0 | 1;
 }
 
@@ -103,10 +122,22 @@ export interface SurveyListItem {
   page_size: number;
   /** 题目总数，不含展示型组件（surveys.total_questions） */
   total_questions: number;
-  /** 已收到答卷数，缓存字段（surveys.responses_count） */
+  /** 已收到答卷数缓存（surveys.responses_count） */
   responses_count: number;
   /** 是否公开：0 私有 / 1 公开（surveys.is_public） */
   is_public: 0 | 1;
+  /** 问卷类型：personal 个人问卷 / template 公共模板（surveys.survey_type） */
+  survey_type: SurveyType;
+  /** 审核状态（surveys.review_status） */
+  review_status: ReviewStatus;
+  /** 模板分类（surveys.category，个人问卷为 null） */
+  category: TemplateCategory | null;
+  /** 模板封面图 URL（surveys.cover_url） */
+  cover_url: string | null;
+  /** 模板使用次数（surveys.download_count，用于热门排序） */
+  download_count: number;
+  /** 模板平均评分 0.0 ~ 5.0（surveys.rating，BigInt → string） */
+  rating: string | null;
   /** 创建时间 */
   created_at: string;
   /** 最后更新时间 */
@@ -137,17 +168,17 @@ export interface SurveyDetail extends SurveyListItem {
  * 对应 surveys 表 + survey_components 表批量写入
  */
 export interface CreateSurveyRequest {
-  /** 问卷标题（必填，surveys.title） */
+  /** 问卷标题（必填） */
   title: string;
-  /** 问卷描述（surveys.description） */
+  /** 问卷描述 */
   description?: string;
-  /** 每页显示题目数，默认 10（surveys.page_size） */
+  /** 每页显示题目数，默认 10 */
   page_size?: number;
-  /** 是否公开：0 私有 / 1 公开，默认 1（surveys.is_public） */
+  /** 是否公开：0 私有 / 1 公开，默认 1 */
   is_public?: 0 | 1;
-  /** 初始状态，默认 0 草稿（surveys.status） */
+  /** 初始状态，默认 0 草稿 */
   status?: SurveyStatus;
-  /** 访问密码（surveys.access_code） */
+  /** 访问密码 */
   access_code?: string;
   /** 组件列表，批量写入 survey_components 表 */
   components: SurveyComponentPayload[];
@@ -181,6 +212,30 @@ export interface SurveyListQuery {
   keyword?: string;
 }
 
+/**
+ * POST /api/surveys/:id/publish — 发布问卷
+ * 无需参数，空对象占位
+ */
+export type PublishSurveyRequest = Record<string, never>;
+
+/**
+ * POST /api/surveys/:id/close — 关闭问卷
+ * 无需参数，空对象占位
+ */
+export type CloseSurveyRequest = Record<string, never>;
+
+/**
+ * POST /api/surveys/:id/apply-template — 申请共享模板
+ */
+export interface ApplyTemplateRequest {
+  /** 组件列表（可选，若提供则全量替换） */
+  components?: SurveyComponentPayload[];
+  /** 提交说明，最多 500 字符 */
+  submit_message?: string;
+  /** 模板分类 */
+  category: TemplateCategory;
+}
+
 // ============================================================
 //  5. 问卷 API — 响应体
 // ============================================================
@@ -193,7 +248,7 @@ export interface CreateSurveyResponse {
   survey_id: string;
   /** 问卷标题 */
   title: string;
-  /** 初始状态（通常为 0 草稿） */
+  /** 初始状态 */
   status: SurveyStatus;
   /** 创建时间（ISO 8601） */
   created_at: string;
@@ -209,17 +264,22 @@ export interface SurveyListResponse {
   page_size: number;
 }
 
+/**
+ * POST /api/surveys/:id/apply-template — 申请模板响应
+ */
+export interface ApplyTemplateResponse {
+  /** 审核记录 ID（BigInt → string） */
+  review_id: string;
+  /** 审核状态（初始为 "pending"） */
+  status: string;
+}
+
 // ============================================================
 //  6. 答案类型 — 对应 answers 表
 // ============================================================
 
 /**
  * 单题答案（对应 answers 表一行）
- *
- * 字段映射：
- *   component_id → answers.component_id（survey_components.id，BigInt → string）
- *   value        → answers.value（String?，文本/单选/评分）
- *   values       → answers.values（Json?，多选数组）
  */
 export interface AnswerItem {
   /** 组件 ID（必须对应 SurveyComponentDetail.id） */
@@ -236,8 +296,6 @@ export interface AnswerItem {
 
 /**
  * POST /api/surveys/:surveyId/responses — 提交答卷请求体
- *
- * 对应 responses 表写入 + answers 批量写入
  */
 export interface SubmitResponseRequest {
   /** 答案列表（每题一条，批量写入 answers 表） */
@@ -262,7 +320,7 @@ export interface ResponseListQuery {
  * POST /api/surveys/:id/responses — 提交答卷响应
  */
 export interface SubmitResponseResponse {
-  /** 答卷 ID（responses.id，BigInt → string） */
+  /** 答卷 ID（BigInt → string） */
   response_id: string;
   /** 提交时间（ISO 8601） */
   submitted_at: string;
@@ -308,7 +366,7 @@ export interface ResponseListResponse {
 }
 
 // ============================================================
-//  9. API 端点类型映射（参考 AuthApi 模式）
+//  9. API 端点类型映射
 // ============================================================
 
 /**
@@ -326,8 +384,9 @@ export interface SurveyApi {
   getSurveyById: { request: void; response: SurveyDetail };
   updateSurvey: { request: UpdateSurveyRequest; response: SurveyDetail };
   deleteSurvey: { request: void; response: null };
-  publishSurvey: { request: void; response: SurveyDetail };
-  closeSurvey: { request: void; response: SurveyDetail };
+  publishSurvey: { request: PublishSurveyRequest; response: SurveyDetail };
+  closeSurvey: { request: CloseSurveyRequest; response: SurveyDetail };
+  applyTemplate: { request: ApplyTemplateRequest; response: ApplyTemplateResponse };
   submitResponse: { request: SubmitResponseRequest; response: SubmitResponseResponse };
   getResponseList: { request: ResponseListQuery; response: ResponseListResponse };
   getResponseById: { request: void; response: SurveyResponseDetail };

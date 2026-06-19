@@ -17,6 +17,8 @@ import type {
   SurveyListResponse,
   SurveyDetail,
   SurveyComponentPayload,
+  ApplyTemplateRequest,
+  ApplyTemplateResponse,
   SubmitResponseRequest,
   SubmitResponseResponse,
   ResponseListQuery,
@@ -79,9 +81,8 @@ export const closeSurvey = (surveyId: string): Promise<ApiResponse<SurveyDetail>
  */
 export const applyTemplate = (
   surveyId: string,
-  data: { components?: SurveyComponentPayload[]; submit_message?: string; category: string }
-): Promise<ApiResponse<{ review_id: string; status: string }>> =>
-  serverClient.post(`/surveys/${surveyId}/apply-template`, data);
+  data: ApplyTemplateRequest
+): Promise<ApiResponse<ApplyTemplateResponse>> => serverClient.post(`/surveys/${surveyId}/apply-template`, data);
 
 // ============================================================
 // 答卷
@@ -358,6 +359,8 @@ export type {
   SurveyListResponse,
   SurveyDetail,
   SurveyComponentPayload,
+  ApplyTemplateRequest,
+  ApplyTemplateResponse,
   SubmitResponseRequest,
   SubmitResponseResponse,
   ResponseListQuery,

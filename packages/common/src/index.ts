@@ -21,7 +21,7 @@ export type {
   GenerateSurveyResponse,
   GetSurveyOnlineResponse,
   GetSurveyDetailResponse,
-  SurveyListItem,
+  LegacySurveyListItem,
   GetSurveysResponse,
   SurveyAnswerValue,
   SurveyAnswers,

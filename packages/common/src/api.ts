@@ -55,8 +55,8 @@ export type GetSurveyDetailResponse = ApiResponse<{
 
 // ── GET /api/surveys ──────────────────────────────────────────────────────────
 
-/** 问卷列表条目 */
-export interface SurveyListItem {
+/** 问卷列表条目（旧版 API，camelCase 格式） */
+export interface LegacySurveyListItem {
   surveyId: string;
   title: string;
   description: string;
@@ -65,7 +65,7 @@ export interface SurveyListItem {
   updatedAt: string;
 }
 
-export type GetSurveysResponse = ApiResponse<SurveyListItem[]>;
+export type GetSurveysResponse = ApiResponse<LegacySurveyListItem[]>;
 
 // ── 答案相关类型 ──────────────────────────────────────────────────────────────
 

@@ -21,75 +21,19 @@ import type {
   SurveyListQueryInput,
   ApplyTemplateInput
 } from "./survey.schemas.js";
+import type {
+  SurveyListItem,
+  SurveyComponentDetail,
+  SurveyDetail,
+  CreateSurveyResponse,
+  SurveyListResponse,
+  ApplyTemplateResponse
+} from "@common/survey/survey.interface.js";
 
-// ─── 类型映射（BigInt → string） ───────────────────────────────
-
-/** 问卷列表条目（前端 SurveyListItem 对齐） */
-interface SurveyListItem {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string | null;
-  status: number;
-  page_size: number;
-  total_questions: number;
-  responses_count: number;
-  is_public: number;
-  survey_type: string;
-  review_status: string;
-  category: string | null;
-  cover_url: string | null;
-  download_count: number;
-  rating: string | null;
-  created_at: string;
-  updated_at: string;
-  published_at: string | null;
-  closed_at: string | null;
-}
-
-/** 组件详情（前端 SurveyComponentDetail 对齐） */
-interface ComponentDetail {
-  id: string;
-  survey_id: string;
-  type: string;
-  config: Record<string, unknown>;
-  order_index: number;
-  required: number;
-  created_at: string;
-  updated_at: string;
-}
-
-/** 问卷详情（前端 SurveyDetail 对齐） */
-interface SurveyDetail extends SurveyListItem {
-  access_code: string | null;
-  components: ComponentDetail[];
-}
-
-/** 创建问卷响应 */
-interface CreateSurveyResult {
-  survey_id: string;
-  title: string;
-  status: number;
-  created_at: string;
-}
-
-/** 问卷列表响应（前端 SurveyListResponse 对齐） */
-interface SurveyListResult {
-  surveys: SurveyListItem[];
-  total: number;
-  page: number;
-  page_size: number;
-}
-
-/** 申请模板响应 */
-interface ApplyTemplateResult {
-  review_id: string;
-  status: string;
-}
+// ─── 工具函数 ──────────────────────────────────────────────────
 
 const CACHE_TTL_SURVEY = CacheTTL.SURVEY;
 
-// ─── 工具函数 ──────────────────────────────────────────────────
 function bigIntToStr(value: bigint): string {
   return String(value);
 }
@@ -108,14 +52,14 @@ function toSurveyListItem(survey: Record<string, unknown>): SurveyListItem {
     user_id: bigIntToStr(survey.user_id as bigint),
     title: survey.title as string,
     description: (survey.description as string) ?? null,
-    status: survey.status as number,
+    status: survey.status as SurveyListItem["status"],
     page_size: survey.page_size as number,
     total_questions: survey.total_questions as number,
     responses_count: survey.responses_count as number,
-    is_public: survey.is_public as number,
-    survey_type: survey.survey_type as string,
-    review_status: survey.review_status as string,
-    category: (survey.category as string) ?? null,
+    is_public: survey.is_public as SurveyListItem["is_public"],
+    survey_type: survey.survey_type as SurveyListItem["survey_type"],
+    review_status: survey.review_status as SurveyListItem["review_status"],
+    category: (survey.category as SurveyListItem["category"]) ?? null,
     cover_url: (survey.cover_url as string) ?? null,
     download_count: survey.download_count as number,
     rating: survey.rating != null ? String(survey.rating) : null,
@@ -126,15 +70,15 @@ function toSurveyListItem(survey: Record<string, unknown>): SurveyListItem {
   };
 }
 
-/** 将 Prisma SurveyComponent 行转为 ComponentDetail */
-function toComponentDetail(comp: Record<string, unknown>): ComponentDetail {
+/** 将 Prisma SurveyComponent 行转为 SurveyComponentDetail */
+function toComponentDetail(comp: Record<string, unknown>): SurveyComponentDetail {
   return {
     id: bigIntToStr(comp.id as bigint),
     survey_id: bigIntToStr(comp.survey_id as bigint),
     type: comp.type as string,
     config: (comp.config as Record<string, unknown>) ?? {},
     order_index: comp.order_index as number,
-    required: comp.required as number,
+    required: comp.required as SurveyComponentDetail["required"],
     created_at: (comp.created_at as Date).toISOString(),
     updated_at: (comp.updated_at as Date).toISOString()
   };
@@ -181,7 +125,7 @@ export class SurveyService {
   // ============================================================
   //  创建问卷
   // ============================================================
-  async create(userId: bigint, input: CreateSurveyInput): Promise<CreateSurveyResult> {
+  async create(userId: bigint, input: CreateSurveyInput): Promise<CreateSurveyResponse> {
     const { components, ...surveyData } = input;
 
     const survey = await this.fastify.prisma.$transaction(async tx => {
@@ -236,7 +180,7 @@ export class SurveyService {
   // ============================================================
   //  问卷列表
   // ============================================================
-  async list(userId: bigint, query: SurveyListQueryInput): Promise<SurveyListResult> {
+  async list(userId: bigint, query: SurveyListQueryInput): Promise<SurveyListResponse> {
     const { page, page_size, status, keyword } = query;
 
     const where: Record<string, unknown> = {
@@ -473,7 +417,7 @@ export class SurveyService {
   // ============================================================
   //  申请共享模板
   // ============================================================
-  async applyTemplate(userId: bigint, surveyId: bigint, input: ApplyTemplateInput): Promise<ApplyTemplateResult> {
+  async applyTemplate(userId: bigint, surveyId: bigint, input: ApplyTemplateInput): Promise<ApplyTemplateResponse> {
     const existing = await this.fastify.prisma.survey.findFirst({
       where: { id: surveyId, user_id: userId, deleted_at: null }
     });
