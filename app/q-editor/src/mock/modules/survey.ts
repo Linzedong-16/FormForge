@@ -135,67 +135,53 @@ const demoComponents: MockComponent[] = [
     survey_id: DEMO_SURVEY_ID,
     type: "text_note",
     config: {
-      type: { id: "t01", currentStatus: 0, status: [0, 1], isShow: false, name: "text-type-editor", editCom: null },
-      title: { id: "t01_t", status: "2026 年度员工满意度调查", isShow: true, name: "title-editor", editCom: null },
-      desc: { id: "t01_d", status: "", isShow: true, name: "desc-editor", editCom: null },
+      type: { currentStatus: 0, status: [0, 1], isShow: false, name: "text-type-editor" },
+      title: { status: "2026 年度员工满意度调查", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
       position: {
-        id: "t01_p",
         currentStatus: 1,
         status: ["左对齐", "居中"],
         isShow: true,
-        name: "position-editor",
-        editCom: null
+        name: "position-editor"
       },
       titleSize: {
-        id: "t01_ts",
         currentStatus: 2,
         status: ["22", "20", "18"],
         isShow: true,
-        name: "size-editor",
-        editCom: null
+        name: "size-editor"
       },
       descSize: {
-        id: "t01_ds",
         currentStatus: 0,
         status: ["16", "14", "12"],
         isShow: true,
-        name: "size-editor",
-        editCom: null
+        name: "size-editor"
       },
       titleWeight: {
-        id: "t01_tw",
         currentStatus: 0,
         status: ["粗体", "正常"],
         isShow: true,
-        name: "weight-editor",
-        editCom: null
+        name: "weight-editor"
       },
       descWeight: {
-        id: "t01_dw",
         currentStatus: 1,
         status: ["粗体", "正常"],
         isShow: true,
-        name: "weight-editor",
-        editCom: null
+        name: "weight-editor"
       },
       titleItalic: {
-        id: "t01_ti",
         currentStatus: 1,
         status: ["斜体", "正常"],
         isShow: true,
-        name: "italic-editor",
-        editCom: null
+        name: "italic-editor"
       },
       descItalic: {
-        id: "t01_di",
         currentStatus: 1,
         status: ["斜体", "正常"],
         isShow: true,
-        name: "italic-editor",
-        editCom: null
+        name: "italic-editor"
       },
-      titleColor: { id: "t01_tc", status: "#18181b", isShow: true, name: "color-editor", editCom: null },
-      descColor: { id: "t01_dc", status: "#909399", isShow: true, name: "color-editor", editCom: null }
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
     },
     order_index: 0,
     required: 0,
@@ -208,73 +194,57 @@ const demoComponents: MockComponent[] = [
     survey_id: DEMO_SURVEY_ID,
     type: "text_note",
     config: {
-      type: { id: "t02", currentStatus: 1, status: [0, 1], isShow: false, name: "text-type-editor", editCom: null },
-      title: { id: "t02_t", status: "", isShow: true, name: "title-editor", editCom: null },
+      type: { currentStatus: 1, status: [0, 1], isShow: false, name: "text-type-editor" },
+      title: { status: "", isShow: true, name: "title-editor" },
       desc: {
-        id: "t02_d",
         status: "感谢您抽出时间参与本次调查，您的反馈对我们至关重要！",
         isShow: true,
-        name: "desc-editor",
-        editCom: null
+        name: "desc-editor"
       },
       position: {
-        id: "t02_p",
         currentStatus: 1,
         status: ["左对齐", "居中"],
         isShow: true,
-        name: "position-editor",
-        editCom: null
+        name: "position-editor"
       },
       titleSize: {
-        id: "t02_ts",
         currentStatus: 0,
         status: ["22", "20", "18"],
         isShow: true,
-        name: "size-editor",
-        editCom: null
+        name: "size-editor"
       },
       descSize: {
-        id: "t02_ds",
         currentStatus: 0,
         status: ["16", "14", "12"],
         isShow: true,
-        name: "size-editor",
-        editCom: null
+        name: "size-editor"
       },
       titleWeight: {
-        id: "t02_tw",
         currentStatus: 1,
         status: ["粗体", "正常"],
         isShow: true,
-        name: "weight-editor",
-        editCom: null
+        name: "weight-editor"
       },
       descWeight: {
-        id: "t02_dw",
         currentStatus: 1,
         status: ["粗体", "正常"],
         isShow: true,
-        name: "weight-editor",
-        editCom: null
+        name: "weight-editor"
       },
       titleItalic: {
-        id: "t02_ti",
         currentStatus: 1,
         status: ["斜体", "正常"],
         isShow: true,
-        name: "italic-editor",
-        editCom: null
+        name: "italic-editor"
       },
       descItalic: {
-        id: "t02_di",
         currentStatus: 1,
         status: ["斜体", "正常"],
         isShow: true,
-        name: "italic-editor",
-        editCom: null
+        name: "italic-editor"
       },
-      titleColor: { id: "t02_tc", status: "#18181b", isShow: true, name: "color-editor", editCom: null },
-      descColor: { id: "t02_dc", status: "#71717a", isShow: true, name: "color-editor", editCom: null }
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#71717a", isShow: true, name: "color-editor" }
     },
     order_index: 1,
     required: 0,
@@ -288,81 +258,63 @@ const demoComponents: MockComponent[] = [
     type: "single_select",
     config: {
       type: {
-        id: "s01",
         currentStatus: 2,
         status: [2, 3, 10, 4],
         isShow: false,
-        name: "text-type-editor",
-        editCom: null
+        name: "text-type-editor"
       },
-      title: { id: "s01_t", status: "您对目前工作环境的满意程度？", isShow: true, name: "title-editor", editCom: null },
-      desc: { id: "s01_d", status: "", isShow: true, name: "desc-editor", editCom: null },
+      title: { status: "您对目前工作环境的满意程度？", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
       options: {
-        id: "s01_o",
         status: ["非常满意", "比较满意", "一般", "不太满意"],
         currentStatus: 0,
         isShow: true,
-        name: "options-editor",
-        editCom: null
+        name: "options-editor"
       },
       position: {
-        id: "s01_p",
         currentStatus: 0,
         status: ["左对齐", "居中"],
         isShow: true,
-        name: "position-editor",
-        editCom: null
+        name: "position-editor"
       },
       titleSize: {
-        id: "s01_ts",
         currentStatus: 0,
         status: ["22", "20", "18"],
         isShow: true,
-        name: "size-editor",
-        editCom: null
+        name: "size-editor"
       },
       descSize: {
-        id: "s01_ds",
         currentStatus: 0,
         status: ["16", "14", "12"],
         isShow: true,
-        name: "size-editor",
-        editCom: null
+        name: "size-editor"
       },
       titleWeight: {
-        id: "s01_tw",
         currentStatus: 0,
         status: ["粗体", "正常"],
         isShow: true,
-        name: "weight-editor",
-        editCom: null
+        name: "weight-editor"
       },
       descWeight: {
-        id: "s01_dw",
         currentStatus: 1,
         status: ["粗体", "正常"],
         isShow: true,
-        name: "weight-editor",
-        editCom: null
+        name: "weight-editor"
       },
       titleItalic: {
-        id: "s01_ti",
         currentStatus: 1,
         status: ["斜体", "正常"],
         isShow: true,
-        name: "italic-editor",
-        editCom: null
+        name: "italic-editor"
       },
       descItalic: {
-        id: "s01_di",
         currentStatus: 1,
         status: ["斜体", "正常"],
         isShow: true,
-        name: "italic-editor",
-        editCom: null
+        name: "italic-editor"
       },
-      titleColor: { id: "s01_tc", status: "#18181b", isShow: true, name: "color-editor", editCom: null },
-      descColor: { id: "s01_dc", status: "#909399", isShow: true, name: "color-editor", editCom: null }
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
     },
     order_index: 2,
     required: 1,
@@ -376,87 +328,67 @@ const demoComponents: MockComponent[] = [
     type: "multi_select",
     config: {
       type: {
-        id: "ms01",
         currentStatus: 3,
         status: [2, 3, 10, 4],
         isShow: false,
-        name: "text-type-editor",
-        editCom: null
+        name: "text-type-editor"
       },
       title: {
-        id: "ms01_t",
         status: "您希望公司在哪些方面做出改善？（可多选）",
         isShow: true,
-        name: "title-editor",
-        editCom: null
+        name: "title-editor"
       },
-      desc: { id: "ms01_d", status: "", isShow: true, name: "desc-editor", editCom: null },
+      desc: { status: "", isShow: true, name: "desc-editor" },
       options: {
-        id: "ms01_o",
         status: ["薪资福利", "晋升机制", "工作氛围", "培训学习", "弹性工作"],
         currentStatus: 0,
         isShow: true,
-        name: "options-editor",
-        editCom: null
+        name: "options-editor"
       },
       position: {
-        id: "ms01_p",
         currentStatus: 0,
         status: ["左对齐", "居中"],
         isShow: true,
-        name: "position-editor",
-        editCom: null
+        name: "position-editor"
       },
       titleSize: {
-        id: "ms01_ts",
         currentStatus: 0,
         status: ["22", "20", "18"],
         isShow: true,
-        name: "size-editor",
-        editCom: null
+        name: "size-editor"
       },
       descSize: {
-        id: "ms01_ds",
         currentStatus: 0,
         status: ["16", "14", "12"],
         isShow: true,
-        name: "size-editor",
-        editCom: null
+        name: "size-editor"
       },
       titleWeight: {
-        id: "ms01_tw",
         currentStatus: 0,
         status: ["粗体", "正常"],
         isShow: true,
-        name: "weight-editor",
-        editCom: null
+        name: "weight-editor"
       },
       descWeight: {
-        id: "ms01_dw",
         currentStatus: 1,
         status: ["粗体", "正常"],
         isShow: true,
-        name: "weight-editor",
-        editCom: null
+        name: "weight-editor"
       },
       titleItalic: {
-        id: "ms01_ti",
         currentStatus: 1,
         status: ["斜体", "正常"],
         isShow: true,
-        name: "italic-editor",
-        editCom: null
+        name: "italic-editor"
       },
       descItalic: {
-        id: "ms01_di",
         currentStatus: 1,
         status: ["斜体", "正常"],
         isShow: true,
-        name: "italic-editor",
-        editCom: null
+        name: "italic-editor"
       },
-      titleColor: { id: "ms01_tc", status: "#18181b", isShow: true, name: "color-editor", editCom: null },
-      descColor: { id: "ms01_dc", status: "#909399", isShow: true, name: "color-editor", editCom: null }
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
     },
     order_index: 3,
     required: 1,
@@ -469,74 +401,58 @@ const demoComponents: MockComponent[] = [
     survey_id: DEMO_SURVEY_ID,
     type: "text_input",
     config: {
-      type: { id: "ti01", currentStatus: 4, status: [4], isShow: false, name: "text-type-editor", editCom: null },
-      title: { id: "ti01_t", status: "请留下您的其他建议或意见", isShow: true, name: "title-editor", editCom: null },
-      desc: { id: "ti01_d", status: "", isShow: true, name: "desc-editor", editCom: null },
+      type: { currentStatus: 4, status: [4], isShow: false, name: "text-type-editor" },
+      title: { status: "请留下您的其他建议或意见", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
       placeholder: {
-        id: "ti01_ph",
         status: "请在此输入...",
         isShow: true,
-        name: "text-input-type-editor",
-        editCom: null
+        name: "text-input-type-editor"
       },
       position: {
-        id: "ti01_p",
         currentStatus: 0,
         status: ["左对齐", "居中"],
         isShow: true,
-        name: "position-editor",
-        editCom: null
+        name: "position-editor"
       },
       titleSize: {
-        id: "ti01_ts",
         currentStatus: 0,
         status: ["22", "20", "18"],
         isShow: true,
-        name: "size-editor",
-        editCom: null
+        name: "size-editor"
       },
       descSize: {
-        id: "ti01_ds",
         currentStatus: 0,
         status: ["16", "14", "12"],
         isShow: true,
-        name: "size-editor",
-        editCom: null
+        name: "size-editor"
       },
       titleWeight: {
-        id: "ti01_tw",
         currentStatus: 0,
         status: ["粗体", "正常"],
         isShow: true,
-        name: "weight-editor",
-        editCom: null
+        name: "weight-editor"
       },
       descWeight: {
-        id: "ti01_dw",
         currentStatus: 1,
         status: ["粗体", "正常"],
         isShow: true,
-        name: "weight-editor",
-        editCom: null
+        name: "weight-editor"
       },
       titleItalic: {
-        id: "ti01_ti",
         currentStatus: 1,
         status: ["斜体", "正常"],
         isShow: true,
-        name: "italic-editor",
-        editCom: null
+        name: "italic-editor"
       },
       descItalic: {
-        id: "ti01_di",
         currentStatus: 1,
         status: ["斜体", "正常"],
         isShow: true,
-        name: "italic-editor",
-        editCom: null
+        name: "italic-editor"
       },
-      titleColor: { id: "ti01_tc", status: "#18181b", isShow: true, name: "color-editor", editCom: null },
-      descColor: { id: "ti01_dc", status: "#909399", isShow: true, name: "color-editor", editCom: null }
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
     },
     order_index: 4,
     required: 0,
@@ -574,9 +490,9 @@ responseStore.push({
   created_at: DEMO_NOW,
   updated_at: DEMO_NOW,
   answers: [
-    { component_id: "demo_comp_03", value: "非常满意" },
-    { component_id: "demo_comp_04", values: ["薪资福利", "弹性工作"] },
-    { component_id: "demo_comp_05", value: "希望增加团建活动" }
+    { component_value: "非常满意" },
+    { component_values: ["薪资福利", "弹性工作"] },
+    { component_value: "希望增加团建活动" }
   ]
 });
 

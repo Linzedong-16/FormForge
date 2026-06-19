@@ -319,16 +319,41 @@ export function formatDate(row: SurveyDBData, column: TableColumnCtx<SurveyDBDat
   return new Intl.DateTimeFormat("zh-CN", options).format(new Date(cellValue));
 }
 
-// 还原组件状态
+/**
+ * 还原组件状态（从持久化数据中恢复 Vue 组件引用）
+ *
+ * 数据流：JSON 序列化/IndexedDB 存储会丢失 Vue 组件引用（type/editCom），
+ * 本函数通过 componentMap 按 name 字段重新挂载组件引用。
+ *
+ * 兼容性说明：
+ *   - 不依赖 id 字段（UUID），仅依赖 name 字段
+ *   - 对于缺少 name 字段的 status 属性，跳过 editCom 恢复
+ *   - 后端返回的清洗后数据（无 editCom/id）可正常工作
+ *
+ * @param coms 组件状态数组（从 IndexedDB 或后端 API 反序列化后）
+ */
 export const restoreComponentStatus = (coms: Status[]) => {
   coms.forEach(com => {
     // 业务组件的还原
-    // console.log(com.name, 'com.name');
-    com.type = componentMap[com.name as keyof typeof componentMap]; // 这一步就做了组件的还原
-    // 接下来还原编辑组件
+    const component = componentMap[com.name as keyof typeof componentMap];
+    if (component) {
+      com.type = component;
+    }
+
+    // 还原编辑组件引用
+    if (!com.status || typeof com.status !== "object") return;
+
     for (const key in com.status) {
-      const name = com.status[key]?.name;
-      com.status[key]!.editCom = componentMap[name as keyof typeof componentMap];
+      const prop = com.status[key];
+      if (!prop || typeof prop !== "object") continue;
+
+      const name = (prop as unknown as Record<string, unknown>).name as string | undefined;
+      if (name) {
+        const editCom = componentMap[name as keyof typeof componentMap];
+        if (editCom) {
+          (prop as unknown as Record<string, unknown>).editCom = editCom;
+        }
+      }
     }
   });
 };

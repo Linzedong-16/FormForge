@@ -119,6 +119,9 @@ export const deleteResponse = (responseId: string): Promise<ApiResponse<null>> =
  *   数组下标   → payload.order_index（0-based）
  *   required   → 从 com.status.required 字段读取，支持布尔/数字/嵌套对象形式
  *
+ * 数据清洗：config 中的 editCom（Vue 组件引用，不可序列化）和 id（UUID，仅编辑器内部使用）
+ * 会被移除，以减小 JSON 体积。restoreComponentStatus 通过 name 字段即可恢复 editCom 引用。
+ *
  * 参数使用结构化类型（不直接引用 Status 接口）以避免与编辑器类型系统循环依赖。
  * Status[] 与此参数类型结构兼容，无需显式转型。
  *
@@ -151,8 +154,50 @@ export const serializeComponents = (
       required = (rawRequired as Record<string, unknown>).status ? 1 : 0;
     }
 
-    return { type, config: com.status, order_index: index, required };
+    return { type, config: cleanConfig(com.status), order_index: index, required };
   });
+
+/**
+ * 数据清洗：递归移除 config 中不可序列化或冗余的字段
+ *
+ * 移除字段：
+ *   - editCom：Vue 组件引用，JSON.stringify 会丢失或报错，通过 restoreComponentStatus 的 name 字段恢复
+ *   - id：UUID，仅编辑器内部使用，渲染和回显不需要
+ *
+ * 保留字段（渲染需要）：
+ *   - status / currentStatus / isShow / name / isUse / value / label / children 等业务数据
+ *
+ * @param status 组件配置对象
+ * @returns 清洗后的配置对象
+ */
+const cleanConfig = (status: Record<string, unknown>): Record<string, unknown> => {
+  const cleaned: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(status)) {
+    if (value === null || value === undefined) {
+      // 保留 null/undefined 值（如 placeholder 可能为空）
+      cleaned[key] = value;
+    } else if (Array.isArray(value)) {
+      // 递归清洗数组中的对象元素
+      cleaned[key] = value.map(item =>
+        item && typeof item === "object" ? cleanConfig(item as Record<string, unknown>) : item
+      );
+    } else if (typeof value === "object") {
+      // 移除编辑器和 ID 信息，保留业务数据
+      const rest = Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).filter(([k]) => k !== "editCom" && k !== "id")
+      );
+
+      // 递归处理嵌套对象
+      cleaned[key] = cleanConfig(rest);
+    } else {
+      // 原始值（string, number, boolean）直接保留
+      cleaned[key] = value;
+    }
+  }
+
+  return cleaned;
+};
 
 /**
  * 从编辑器组件数组中提取问卷级别的标题与描述
