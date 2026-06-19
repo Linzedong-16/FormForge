@@ -14,7 +14,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 // ============================================================
 // 1. 用户表 (users)
 // ============================================================
@@ -35,9 +34,12 @@ model User {
   surveys           Survey[]
   responses         Response[]
   tokens            ApiToken[]
-  audit_logs        AuditLog[]  @relation("AuditLogUser")
+  audit_logs        AuditLog[]         @relation("AuditLogUser")
   permissions       SurveyPermission[]
   user_roles        UserRole[]
+  submitted_reviews Review[]           @relation("ReviewSubmitter") // 自己提交的审核
+  reviewed_reviews  Review[]           @relation("ReviewReviewer") // 自己审核的记录
+  template_ratings  TemplateRating[] // 自己对模板的评分
 
   @@index([email])
   @@index([status])
@@ -58,22 +60,36 @@ model Survey {
   total_questions Int       @default(0)
   responses_count Int       @default(0) // 答卷数缓存
   is_public       Int       @default(0) // 0:私有 1:公开
-  access_code     String?               // 访问密码
+  access_code     String? // 访问密码
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
   published_at    DateTime?
   closed_at       DateTime?
+
+  // ─── 新增字段：模板市场相关 ───────────────────────────────────
+  survey_type    SurveyType   @default(personal) // 问卷类型：personal=个人问卷 / template=公共模板
+  category       String? // 模板分类：education / market / hr / customer / event / other
+  cover_url      String? // 模板封面图 URL（MinIO 对象存储）
+  download_count Int          @default(0) // 模板使用次数（用于热门排序）
+  rating         Decimal?     @default(0) @db.Decimal(2, 1) // 模板平均评分 0.0 ~ 5.0
+  review_status  ReviewStatus @default(none) // 审核状态：none / pending / approved / rejected
 
   // 关联关系
   user             User               @relation(fields: [user_id], references: [id])
   components       SurveyComponent[]
   responses        Response[]
   permissions      SurveyPermission[]
+  reviews          Review[] // 审核记录
+  template_ratings TemplateRating[] // 模板评分记录
 
   @@index([user_id])
   @@index([status])
   @@index([created_at])
   @@index([is_public])
+  @@index([survey_type, review_status]) // 模板市场查询：WHERE survey_type='template' AND review_status='approved'
+  @@index([survey_type, category]) // 按分类筛选模板
+  @@index([survey_type, download_count]) // 按热门排序模板
+  @@index([survey_type, rating]) // 按评分排序模板
   @@map("surveys")
 }
 
@@ -83,16 +99,16 @@ model Survey {
 model SurveyComponent {
   id          BigInt   @id @default(autoincrement())
   survey_id   BigInt
-  type        String                // 组件类型（如 single_choice, multi_choice, text_input 等）
-  config      Json                  // 组件配置 JSON
-  order_index Int      @default(0)  // 排序索引
-  required    Int      @default(0)  // 0:非必填 1:必填
+  type        String // 组件类型（如 single_choice, multi_choice, text_input 等）
+  config      Json // 组件配置 JSON
+  order_index Int      @default(0) // 排序索引
+  required    Int      @default(0) // 0:非必填 1:必填
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   // 关联关系
-  survey      Survey   @relation(fields: [survey_id], references: [id])
-  answers     Answer[]
+  survey  Survey   @relation(fields: [survey_id], references: [id])
+  answers Answer[]
 
   @@index([survey_id])
   @@index([survey_id, order_index])
@@ -105,17 +121,17 @@ model SurveyComponent {
 model Response {
   id           BigInt    @id @default(autoincrement())
   survey_id    BigInt
-  user_id      BigInt?               // 登录用户 ID
-  anonymous_id String?               // 匿名用户标识
+  user_id      BigInt? // 登录用户 ID
+  anonymous_id String? // 匿名用户标识
   status       Int       @default(0) // 0:未完成 1:已提交
   submitted_at DateTime?
   created_at   DateTime  @default(now())
   updated_at   DateTime  @updatedAt
 
   // 关联关系
-  survey       Survey    @relation(fields: [survey_id], references: [id])
-  user         User?     @relation(fields: [user_id], references: [id])
-  answers      Answer[]
+  survey  Survey   @relation(fields: [survey_id], references: [id])
+  user    User?    @relation(fields: [user_id], references: [id])
+  answers Answer[]
 
   @@index([survey_id])
   @@index([user_id])
@@ -127,16 +143,16 @@ model Response {
 // 5. 答案表 (answers)
 // ============================================================
 model Answer {
-  id           BigInt           @id @default(autoincrement())
+  id           BigInt   @id @default(autoincrement())
   response_id  BigInt
   component_id BigInt
-  value        String?          // 单值答案（文本/单选）
-  values       Json?            // 多选答案数组
-  created_at   DateTime         @default(now())
+  value        String? // 单值答案（文本/单选）
+  values       Json? // 多选答案数组
+  created_at   DateTime @default(now())
 
   // 关联关系
-  response     Response         @relation(fields: [response_id], references: [id])
-  component    SurveyComponent  @relation(fields: [component_id], references: [id])
+  response  Response        @relation(fields: [response_id], references: [id])
+  component SurveyComponent @relation(fields: [component_id], references: [id])
 
   @@index([response_id])
   @@index([component_id])
@@ -150,15 +166,15 @@ model ApiToken {
   id           BigInt    @id @default(autoincrement())
   user_id      BigInt
   token        String    @unique
-  name         String                // 令牌名称
-  scope        String?               // 权限范围 JSON
-  expires_at   DateTime?             // 过期时间
+  name         String // 令牌名称
+  scope        String? // 权限范围 JSON
+  expires_at   DateTime? // 过期时间
   status       Int       @default(1) // 0:禁用 1:启用
   created_at   DateTime  @default(now())
-  last_used_at DateTime?             // 最后使用时间
+  last_used_at DateTime? // 最后使用时间
 
   // 关联关系
-  user         User      @relation(fields: [user_id], references: [id])
+  user User @relation(fields: [user_id], references: [id])
 
   @@index([user_id])
   @@index([token])
@@ -170,18 +186,18 @@ model ApiToken {
 // 7. 审计日志表 (audit_logs)
 // ============================================================
 model AuditLog {
-  id            BigInt    @id @default(autoincrement())
+  id            BigInt   @id @default(autoincrement())
   user_id       BigInt?
-  action        String                // 操作类型
-  resource_type String                // 资源类型
-  resource_id   BigInt?               // 资源 ID
-  details       Json?                 // 操作详情 JSON
-  ip_address    String?               // 客户端 IP
-  user_agent    String?               // 浏览器信息
-  created_at    DateTime  @default(now())
+  action        String // 操作类型
+  resource_type String // 资源类型
+  resource_id   BigInt? // 资源 ID
+  details       Json? // 操作详情 JSON
+  ip_address    String? // 客户端 IP
+  user_agent    String? // 浏览器信息
+  created_at    DateTime @default(now())
 
   // 关联关系（单向，不强制反向关系）
-  user          User?     @relation(name: "AuditLogUser", fields: [user_id], references: [id])
+  user User? @relation(name: "AuditLogUser", fields: [user_id], references: [id])
 
   @@index([user_id])
   @@index([action])
@@ -194,13 +210,13 @@ model AuditLog {
 // 8. 系统配置表 (system_configs)
 // ============================================================
 model SystemConfig {
-  id          BigInt    @id @default(autoincrement())
-  key         String    @unique
+  id          BigInt   @id @default(autoincrement())
+  key         String   @unique
   value       String?
   description String?
-  category    String    @default("general") // 配置分类
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
+  category    String   @default("general") // 配置分类
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   @@index([key])
   @@index([category])
@@ -216,8 +232,8 @@ model SurveyPermission {
   permission String // view / edit / delete
 
   // 关联关系
-  survey     Survey  @relation(fields: [survey_id], references: [id], onDelete: Cascade)
-  user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  survey Survey @relation(fields: [survey_id], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@id([survey_id, user_id])
   @@index([survey_id])
@@ -233,7 +249,7 @@ model UserRole {
   role_code RoleCode
 
   // 关联关系
-  user      User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, role_code])
   @@index([user_id])
@@ -242,6 +258,75 @@ model UserRole {
 }
 
 enum RoleCode {
-  super_admin  // 超级管理员
-  user         // 普通用户
+  super_admin // 超级管理员
+  user // 普通用户
+}
+
+// ============================================================
+// 枚举：问卷类型
+// ============================================================
+enum SurveyType {
+  personal // 个人问卷（默认）
+  template // 公共模板
+}
+
+// ============================================================
+// 枚举：审核状态
+// ============================================================
+enum ReviewStatus {
+  none // 未申请审核（个人问卷默认状态）
+  pending // 审核中
+  approved // 已通过（模板市场上架）
+  rejected // 已驳回（违规/需修改）
+}
+
+// ============================================================
+// 11. 审核记录表 (reviews)
+// ============================================================
+model Review {
+  id             BigInt       @id @default(autoincrement())
+  survey_id      BigInt
+  submitter_id   BigInt // 提交者（问卷作者）
+  reviewer_id    BigInt? // 审核人（管理员），审核前为 null
+  status         ReviewStatus @default(pending) // pending / approved / rejected
+  submit_message String?      @db.Text // 提交时附加说明，最大 500 字符
+  review_comment String?      @db.Text // 审核意见（通过/驳回时填写）
+  submitted_at   DateTime     @default(now()) // 提交时间
+  reviewed_at    DateTime? // 审核完成时间
+  created_at     DateTime     @default(now())
+  updated_at     DateTime     @updatedAt
+
+  // 关联关系
+  survey    Survey @relation(fields: [survey_id], references: [id], onDelete: Cascade)
+  submitter User   @relation("ReviewSubmitter", fields: [submitter_id], references: [id])
+  reviewer  User?  @relation("ReviewReviewer", fields: [reviewer_id], references: [id])
+
+  @@index([survey_id])
+  @@index([submitter_id])
+  @@index([reviewer_id])
+  @@index([status])
+  @@index([submitted_at])
+  @@index([survey_id, status]) // 高频：检查同一问卷是否已有审核中记录
+  @@map("reviews")
+}
+
+// ============================================================
+// 12. 模板评分表 (template_ratings)
+// ============================================================
+model TemplateRating {
+  id          BigInt   @id @default(autoincrement())
+  template_id BigInt // 模板对应的 Survey ID
+  user_id     BigInt // 评分用户
+  score       Int // 评分 1-5
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // 关联关系
+  template Survey @relation(fields: [template_id], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([template_id, user_id]) // 同一用户对同一模板仅一条评分记录
+  @@index([template_id])
+  @@index([template_id, score])
+  @@map("template_ratings")
 }
