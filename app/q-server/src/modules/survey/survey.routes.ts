@@ -6,6 +6,7 @@
  */
 
 import type { FastifyPluginAsync } from "fastify";
+import type { FastifyReply } from "fastify";
 import { authenticate } from "../user/auth.middleware.js";
 import { SurveyService } from "./survey.service.js";
 import {
@@ -14,9 +15,20 @@ import {
   surveyListQuerySchema,
   publishSurveySchema,
   closeSurveySchema,
-  applyTemplateSchema
+  applyTemplateSchema,
+  surveyIdSchema
 } from "./survey.schemas.js";
 import { parseAndRespond, parseQueryAndRespond } from "../../utils/zod.js";
+
+/** 解析并校验问卷 ID，非法格式返回 400 */
+function parseSurveyId(id: string, reply: FastifyReply): bigint | null {
+  const result = surveyIdSchema.safeParse(id);
+  if (!result.success) {
+    reply.status(400).send({ data: null, code: 400, msg: "问卷 ID 格式错误" });
+    return null;
+  }
+  return result.data;
+}
 
 const surveyRoutes: FastifyPluginAsync = async fastify => {
   const surveyService = new SurveyService(fastify);
@@ -74,7 +86,8 @@ const surveyRoutes: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const surveyId = BigInt(id);
+      const surveyId = parseSurveyId(id, reply);
+      if (surveyId === null) return;
 
       const result = await surveyService.getById(request.user!.userId, surveyId);
       return reply.sendSuccess(result);
@@ -93,7 +106,8 @@ const surveyRoutes: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const surveyId = BigInt(id);
+      const surveyId = parseSurveyId(id, reply);
+      if (surveyId === null) return;
 
       const body = parseAndRespond(updateSurveySchema.safeParse(request.body), reply);
       if (!body) return;
@@ -115,7 +129,8 @@ const surveyRoutes: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const surveyId = BigInt(id);
+      const surveyId = parseSurveyId(id, reply);
+      if (surveyId === null) return;
 
       await surveyService.delete(request.user!.userId, surveyId);
       return reply.sendSuccess(null, "删除成功");
@@ -134,10 +149,12 @@ const surveyRoutes: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const surveyId = BigInt(id);
+      const surveyId = parseSurveyId(id, reply);
+      if (surveyId === null) return;
 
-      const body = parseAndRespond(publishSurveySchema.safeParse(request.body), reply);
-      if (!body) return;
+      if (!publishSurveySchema.safeParse(request.body).success) {
+        return reply.status(400).send({ data: null, code: 400, msg: "参数格式错误" });
+      }
 
       const result = await surveyService.publish(request.user!.userId, surveyId);
       return reply.sendSuccess(result, "发布成功");
@@ -156,10 +173,12 @@ const surveyRoutes: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const surveyId = BigInt(id);
+      const surveyId = parseSurveyId(id, reply);
+      if (surveyId === null) return;
 
-      const body = parseAndRespond(closeSurveySchema.safeParse(request.body), reply);
-      if (!body) return;
+      if (!closeSurveySchema.safeParse(request.body).success) {
+        return reply.status(400).send({ data: null, code: 400, msg: "参数格式错误" });
+      }
 
       const result = await surveyService.close(request.user!.userId, surveyId);
       return reply.sendSuccess(result, "关闭成功");
@@ -178,7 +197,8 @@ const surveyRoutes: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const surveyId = BigInt(id);
+      const surveyId = parseSurveyId(id, reply);
+      if (surveyId === null) return;
 
       const body = parseAndRespond(applyTemplateSchema.safeParse(request.body), reply);
       if (!body) return;

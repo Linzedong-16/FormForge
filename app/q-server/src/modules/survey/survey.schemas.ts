@@ -96,6 +96,12 @@ export const applyTemplateSchema = z.object({
   category: categorySchema
 });
 
+/** 问卷 ID 参数校验 — 仅允许纯数字字符串，直接转为 BigInt */
+export const surveyIdSchema = z
+  .string()
+  .regex(/^\d+$/, "问卷 ID 必须为数字")
+  .transform(val => BigInt(val));
+
 // ══════════════════════════════════════════════════════════════════
 //  导出类型（供 Service 层复用）
 // ══════════════════════════════════════════════════════════════════

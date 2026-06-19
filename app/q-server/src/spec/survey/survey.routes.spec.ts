@@ -404,33 +404,33 @@ describe("survey.routes", () => {
     // ── GET /api/surveys/:id — 详情 ───────────────────────────
 
     describe("GET /api/surveys/:id — 详情", () => {
-      it("id 非数字 → 500（BigInt 转换抛出 TypeError）", async () => {
+      it("id 非数字 → 500（Zod 校验，返回 400）", async () => {
         const res = await app.inject({
           method: "GET",
           url: "/api/surveys/not-a-number",
         });
-        expect(res.statusCode).toBe(500);
+        expect(res.statusCode).toBe(400);
       });
 
-      it("id 为小数 → 500（BigInt 转换抛出 TypeError）", async () => {
+      it("id 为小数 → 500（Zod 校验，返回 400）", async () => {
         const res = await app.inject({
           method: "GET",
           url: "/api/surveys/1.5",
         });
-        expect(res.statusCode).toBe(500);
+        expect(res.statusCode).toBe(400);
       });
     });
 
     // ── PUT /api/surveys/:id — 更新 ───────────────────────────
 
     describe("PUT /api/surveys/:id — 更新", () => {
-      it("id 非数字 → 500（BigInt 转换抛出 TypeError）", async () => {
+      it("id 非数字 → 500（Zod 校验，返回 400）", async () => {
         const res = await app.inject({
           method: "PUT",
           url: "/api/surveys/not-a-number",
           payload: { title: "test" },
         });
-        expect(res.statusCode).toBe(500);
+        expect(res.statusCode).toBe(400);
       });
 
       it("body 为空对象 → 校验通过", async () => {
@@ -496,25 +496,25 @@ describe("survey.routes", () => {
     // ── DELETE /api/surveys/:id — 删除 ────────────────────────
 
     describe("DELETE /api/surveys/:id — 删除", () => {
-      it("id 非数字 → 500（BigInt 转换抛出 TypeError）", async () => {
+      it("id 非数字 → 500（Zod 校验，返回 400）", async () => {
         const res = await app.inject({
           method: "DELETE",
           url: "/api/surveys/not-a-number",
         });
-        expect(res.statusCode).toBe(500);
+        expect(res.statusCode).toBe(400);
       });
     });
 
     // ── POST /api/surveys/:id/publish — 发布 ──────────────────
 
     describe("POST /api/surveys/:id/publish — 发布", () => {
-      it("id 非数字 → 500（BigInt 转换抛出 TypeError）", async () => {
+      it("id 非数字 → 500（Zod 校验，返回 400）", async () => {
         const res = await app.inject({
           method: "POST",
           url: "/api/surveys/not-a-number/publish",
           payload: {},
         });
-        expect(res.statusCode).toBe(500);
+        expect(res.statusCode).toBe(400);
       });
 
       it("空 body → 校验通过（publish 无需参数）", async () => {
@@ -540,13 +540,13 @@ describe("survey.routes", () => {
     // ── POST /api/surveys/:id/close — 关闭 ────────────────────
 
     describe("POST /api/surveys/:id/close — 关闭", () => {
-      it("id 非数字 → 500（BigInt 转换抛出 TypeError）", async () => {
+      it("id 非数字 → 500（Zod 校验，返回 400）", async () => {
         const res = await app.inject({
           method: "POST",
           url: "/api/surveys/not-a-number/close",
           payload: {},
         });
-        expect(res.statusCode).toBe(500);
+        expect(res.statusCode).toBe(400);
       });
 
       it("空 body → 校验通过（close 无需参数）", async () => {
@@ -572,13 +572,13 @@ describe("survey.routes", () => {
     // ── POST /api/surveys/:id/apply-template — 申请模板 ───────
 
     describe("POST /api/surveys/:id/apply-template — 申请模板", () => {
-      it("id 非数字 → 500（BigInt 转换抛出 TypeError）", async () => {
+      it("id 非数字 → 500（Zod 校验，返回 400）", async () => {
         const res = await app.inject({
           method: "POST",
           url: "/api/surveys/not-a-number/apply-template",
           payload: { category: "education" },
         });
-        expect(res.statusCode).toBe(500);
+        expect(res.statusCode).toBe(400);
       });
 
       it("缺少 category → 400", async () => {

@@ -175,7 +175,7 @@ export class SurveyService {
   /** 清除该问卷的全部缓存 */
   private async invalidateCache(surveyId: bigint, userId: bigint): Promise<void> {
     await this.cache.del(CacheKeys.surveyDetail(bigIntToStr(surveyId)));
-    await this.cache.delByPattern(`survey:list:${userId}:*`);
+    await this.cache.delByPattern(CacheKeys.surveyListPattern(bigIntToStr(userId)));
   }
 
   // ============================================================
@@ -223,7 +223,7 @@ export class SurveyService {
     });
 
     // 清除列表缓存
-    await this.cache.delByPattern(`survey:list:${userId}:*`);
+    await this.cache.delByPattern(CacheKeys.surveyListPattern(bigIntToStr(userId)));
 
     return {
       survey_id: bigIntToStr(survey.id),
@@ -246,7 +246,7 @@ export class SurveyService {
     if (status !== undefined) where.status = status;
     if (keyword) where.title = { contains: keyword };
 
-    const cacheKey = `survey:list:${userId}:${page}:${page_size}:${status ?? "all"}:${keyword ?? ""}`;
+    const cacheKey = CacheKeys.surveyList(bigIntToStr(userId), page, page_size, String(status ?? "all"), keyword ?? "");
 
     return this.cache.getOrSet(
       cacheKey,
@@ -346,7 +346,7 @@ export class SurveyService {
       }
 
       await tx.survey.update({
-        where: { id: surveyId },
+        where: { id: surveyId, user_id: userId },
         data: updateData
       });
 
@@ -373,7 +373,7 @@ export class SurveyService {
   // ============================================================
   async delete(userId: bigint, surveyId: bigint): Promise<void> {
     const existing = await this.fastify.prisma.survey.findFirst({
-      where: { id: surveyId, user_id: userId }
+      where: { id: surveyId, user_id: userId, deleted_at: null }
     });
     if (!existing) throw new AppError("问卷不存在", 404);
 
@@ -403,7 +403,7 @@ export class SurveyService {
       }
 
       await tx.survey.update({
-        where: { id: surveyId },
+        where: { id: surveyId, user_id: userId },
         data: {
           review_status: "none",
           deleted_at: new Date()
@@ -415,8 +415,7 @@ export class SurveyService {
       was_template: false
     });
 
-    await this.cache.del(CacheKeys.surveyDetail(bigIntToStr(surveyId)));
-    await this.cache.delByPattern(`survey:list:${userId}:*`);
+    await this.invalidateCache(surveyId, userId);
   }
 
   // ============================================================
@@ -431,7 +430,7 @@ export class SurveyService {
     if (existing.status === 2) throw new AppError("已关闭的问卷无法发布", 409);
 
     await this.fastify.prisma.survey.update({
-      where: { id: surveyId },
+      where: { id: surveyId, user_id: userId },
       data: {
         status: 1,
         published_at: new Date()
@@ -457,7 +456,7 @@ export class SurveyService {
     if (existing.status === 0) throw new AppError("草稿状态的问卷无需关闭", 409);
 
     await this.fastify.prisma.survey.update({
-      where: { id: surveyId },
+      where: { id: surveyId, user_id: userId },
       data: {
         status: 2,
         closed_at: new Date()
@@ -480,36 +479,34 @@ export class SurveyService {
     });
     if (!existing) throw new AppError("问卷不存在", 404);
 
-    // 检查是否已有审核中的记录
-    const pendingReview = await this.fastify.prisma.review.findFirst({
-      where: {
-        survey_id: surveyId,
-        status: "pending"
-      }
-    });
-    if (pendingReview) {
-      throw new AppError("该问卷已有审核中的申请", 409);
-    }
-
     const review = await this.fastify.prisma.$transaction(async tx => {
-      // 1. 更新问卷：标记为模板 + 审核中
+      // 事务内检查：防止并发创建多条审核记录
+      const pendingReview = await tx.review.findFirst({
+        where: { survey_id: surveyId, status: "pending" }
+      });
+      if (pendingReview) {
+        throw new AppError("该问卷已有审核中的申请", 409);
+      }
+
+      // 1. 更新问卷：标记为模板 + 审核中（含组件变更时同步更新题目数）
+      const updateData: Record<string, unknown> = {
+        survey_type: "template",
+        review_status: "pending",
+        is_public: 1,
+        category: input.category
+      };
+      if (input.components && input.components.length > 0) {
+        updateData.total_questions = countQuestions(input.components);
+      }
+
       await tx.survey.update({
-        where: { id: surveyId },
-        data: {
-          survey_type: "template",
-          review_status: "pending",
-          is_public: 1,
-          category: input.category
-        }
+        where: { id: surveyId, user_id: userId },
+        data: updateData
       });
 
       // 2. 若有组件更新，同步保存
       if (input.components && input.components.length > 0) {
         await this.replaceComponents(tx, surveyId, input.components);
-        await tx.survey.update({
-          where: { id: surveyId },
-          data: { total_questions: countQuestions(input.components) }
-        });
       }
 
       // 3. 创建审核记录

@@ -118,7 +118,10 @@ export const CacheKeys = {
   /** 问卷详情 */
   surveyDetail: (id: string) => `survey:detail:${id}`,
   /** 问卷列表 */
-  surveyList: (page: number, size: number) => `survey:list:${page}:${size}`,
+  surveyList: (userId: string, page: number, size: number, status: string, keyword: string) =>
+    `survey:list:${userId}:${page}:${size}:${status}:${keyword}`,
+  /** 问卷列表缓存前缀（用于批量失效） */
+  surveyListPattern: (userId: string) => `survey:list:${userId}:*`,
   /** 问卷统计数据 */
   surveyStats: (surveyId: string) => `survey:stats:${surveyId}`,
   /** 问卷模块全部缓存前缀（用于批量失效） */
