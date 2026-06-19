@@ -65,6 +65,7 @@ model Survey {
   updated_at      DateTime  @updatedAt
   published_at    DateTime?
   closed_at       DateTime?
+  deleted_at      DateTime? // 软删除标记
 
   // ─── 新增字段：模板市场相关 ───────────────────────────────────
   survey_type    SurveyType   @default(personal) // 问卷类型：personal=个人问卷 / template=公共模板
@@ -86,6 +87,8 @@ model Survey {
   @@index([status])
   @@index([created_at])
   @@index([is_public])
+  @@index([deleted_at])
+  @@index([user_id, deleted_at]) // 高频：列表查询 WHERE user_id=? AND deleted_at IS NULL
   @@index([survey_type, review_status]) // 模板市场查询：WHERE survey_type='template' AND review_status='approved'
   @@index([survey_type, category]) // 按分类筛选模板
   @@index([survey_type, download_count]) // 按热门排序模板

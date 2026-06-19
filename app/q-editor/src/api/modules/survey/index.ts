@@ -74,6 +74,15 @@ export const publishSurvey = (surveyId: string): Promise<ApiResponse<SurveyDetai
 export const closeSurvey = (surveyId: string): Promise<ApiResponse<SurveyDetail>> =>
   serverClient.post(`/surveys/${surveyId}/close`);
 
+/**
+ * POST /api/surveys/:id/apply-template — 申请共享模板
+ */
+export const applyTemplate = (
+  surveyId: string,
+  data: { components?: SurveyComponentPayload[]; submit_message?: string; category: string }
+): Promise<ApiResponse<{ review_id: string; status: string }>> =>
+  serverClient.post(`/surveys/${surveyId}/apply-template`, data);
+
 // ============================================================
 // 答卷
 // ============================================================

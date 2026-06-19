@@ -13,6 +13,8 @@ export interface SurveyDBData {
   pageSize: number;
   /** 同步状态：是否已同步到远程数据库 */
   syncStatus?: "synced" | "unsynced";
+  /** 远程问卷 ID（BigInt → string），首次同步后由后端返回 */
+  remote_survey_id?: string;
 }
 
 /**
