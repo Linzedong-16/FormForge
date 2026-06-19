@@ -20,8 +20,15 @@ const adminRoutes: FastifyPluginAsync = async fastify => {
   const adminService = new AdminService(fastify);
 
   // 所有管理接口均需认证 + 超级管理员权限
-  fastify.addHook("preHandler", authenticate);
-  fastify.addHook("preHandler", requireSuperAdmin);
+  // 合并为单一 hook：避免 authenticate 失败后 requireSuperAdmin 仍执行导致
+  // Fastify "Reply already sent" 错误
+  fastify.addHook("preHandler", async (request, reply) => {
+    await authenticate(request, reply);
+    // 仅当认证通过（request.user 已挂载）时才检查权限，避免二次 send
+    if (request.user) {
+      await requireSuperAdmin(request, reply);
+    }
+  });
 
   // ── POST /users — 创建用户 ──────────────────────────────────
   fastify.post("/users", async (request, reply) => {

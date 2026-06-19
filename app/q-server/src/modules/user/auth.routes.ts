@@ -27,23 +27,45 @@ const authRoutes: FastifyPluginAsync = async fastify => {
     return reply.sendSuccess(status);
   });
 
-  // ── POST /login — 登录（公开） ──────────────────────────────
-  fastify.post("/login", async (request, reply) => {
-    const body = parseAndRespond(loginSchema.safeParse(request.body), reply);
-    if (!body) return;
+  // ── POST /login — 登录（公开，20次/分钟防暴力破解） ────────
+  fastify.post(
+    "/login",
+    {
+      config: {
+        rateLimit: {
+          max: 20,
+          timeWindow: "1 minute"
+        }
+      }
+    },
+    async (request, reply) => {
+      const body = parseAndRespond(loginSchema.safeParse(request.body), reply);
+      if (!body) return;
 
-    const result = await authService.login(body.email, body.password);
-    return reply.sendSuccess(result, "登录成功");
-  });
+      const result = await authService.login(body.email, body.password);
+      return reply.sendSuccess(result, "登录成功");
+    }
+  );
 
-  // ── POST /send-code — 发送验证码（公开） ────────────────────
-  fastify.post("/send-code", async (request, reply) => {
-    const body = parseAndRespond(sendCodeSchema.safeParse(request.body), reply);
-    if (!body) return;
+  // ── POST /send-code — 发送验证码（公开，5次/分钟防滥用） ────
+  fastify.post(
+    "/send-code",
+    {
+      config: {
+        rateLimit: {
+          max: 5,
+          timeWindow: "1 minute"
+        }
+      }
+    },
+    async (request, reply) => {
+      const body = parseAndRespond(sendCodeSchema.safeParse(request.body), reply);
+      if (!body) return;
 
-    const result = await authService.sendCode(body.email, body.type);
-    return reply.sendSuccess(result, "验证码已发送");
-  });
+      const result = await authService.sendCode(body.email, body.type);
+      return reply.sendSuccess(result, "验证码已发送");
+    }
+  );
 
   // ── POST /register — 初始化注册（公开） ─────────────────────
   fastify.post("/register", async (request, reply) => {
