@@ -51,7 +51,9 @@ export async function uploadToMinio(
   const useSSL = process.env.MINIO_USE_SSL === "true";
   const protocol = useSSL ? "https" : "http";
 
-  return `${protocol}://${endpoint}:${port}/${BUCKET}/${key}`;
+  const baseUrl = `${protocol}://${endpoint}:${port}`;
+  const url = new URL(`/${BUCKET}/${key}`, baseUrl);
+  return url.href;
 }
 
 /**

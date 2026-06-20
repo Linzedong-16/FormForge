@@ -3,6 +3,7 @@
  */
 
 import bcrypt from "bcrypt";
+import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import type {
   CreateUserInput,
@@ -16,6 +17,7 @@ import { createCache, CacheKeys } from "../../utils/cache.js";
 import type { CacheClient } from "../../utils/cache.js";
 import { createAuditLog } from "../../utils/audit-log.js";
 import { buildPagination, paginatedResult } from "../../utils/pagination.js";
+import { encrypt, decrypt } from "../../utils/crypto.js";
 
 // ─── 类型重导出（保持向后兼容） ──────────────────────────────
 
@@ -222,17 +224,19 @@ export class AdminService {
   //  系统配置
   // ============================================================
 
-  /** 获取所有系统配置 */
+  /** 获取所有系统配置 — 敏感字段自动解密 */
   async getConfig() {
     const configs = await this.fastify.prisma.systemConfig.findMany({
       orderBy: { category: "asc" }
     });
 
-    // 按分类组织
+    // 按分类组织，SMTP 密码自动解密
     const grouped: Record<string, Record<string, string>> = {};
     for (const c of configs) {
       if (!grouped[c.category]) grouped[c.category] = {};
-      grouped[c.category][c.key] = c.value ?? "";
+      const value = c.value ?? "";
+      // 自动解密 SMTP 密码（加密后的密文长度 > 50，明文密码通常较短）
+      grouped[c.category][c.key] = c.key === "smtp_password" && value.length > 50 ? decrypt(value) : value;
     }
 
     return grouped;
@@ -247,7 +251,7 @@ export class AdminService {
       { key: "smtp_host", value: smtpConfig.host, description: "SMTP服务器地址" },
       { key: "smtp_port", value: String(smtpConfig.port), description: "SMTP端口" },
       { key: "smtp_username", value: smtpConfig.username, description: "SMTP用户名" },
-      { key: "smtp_password", value: smtpConfig.password ?? "", description: "SMTP密码" },
+      { key: "smtp_password", value: smtpConfig.password ? encrypt(smtpConfig.password) : "", description: "SMTP密码" },
       { key: "smtp_from_email", value: smtpConfig.fromEmail, description: "发件人邮箱" }
     ];
 
@@ -278,12 +282,13 @@ export class AdminService {
   //  Private — 工具
   // ============================================================
 
-  /** 生成随机密码 */
+  /** 生成安全随机密码 — 使用 crypto.randomBytes */
   private generateRandomPassword(length: number): string {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$";
+    const bytes = randomBytes(length);
     let result = "";
     for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+      result += chars.charAt(bytes[i]! % chars.length);
     }
     return result;
   }

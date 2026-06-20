@@ -21,31 +21,40 @@ const uploadRoutes: FastifyPluginAsync = async fastify => {
   fastify.addHook("preHandler", authenticate);
 
   // ── POST /q-editor/upload — 上传图片 ────────────────────────
-  fastify.post("/upload", async (request, reply) => {
-    const data = await request.file();
+  fastify.post(
+    "/upload",
+    {
+      config: {
+        // 请求体大小限制 10MB，在读取 buffer 之前就拒绝超大文件，防止内存耗尽
+        bodyLimit: MAX_FILE_SIZE
+      }
+    },
+    async (request, reply) => {
+      const data = await request.file();
 
-    if (!data) {
-      throw new AppError("请选择要上传的文件", 400);
+      if (!data) {
+        throw new AppError("请选择要上传的文件", 400);
+      }
+
+      // 校验文件类型
+      if (!ALLOWED_IMAGE_TYPES.includes(data.mimetype)) {
+        throw new AppError(`不支持的文件类型: ${data.mimetype}，仅支持 jpg/png/gif/webp/svg/bmp`, 400);
+      }
+
+      // 读取文件内容
+      const buffer = await data.toBuffer();
+
+      // 校验文件大小
+      if (buffer.length > MAX_FILE_SIZE) {
+        throw new AppError("文件大小不能超过 10MB", 400);
+      }
+
+      // 上传到 MinIO
+      const imageUrl = await uploadToMinio(fastify, buffer, "images", data.filename, data.mimetype);
+
+      return reply.sendSuccess({ imageUrl }, "上传成功");
     }
-
-    // 校验文件类型
-    if (!ALLOWED_IMAGE_TYPES.includes(data.mimetype)) {
-      throw new AppError(`不支持的文件类型: ${data.mimetype}，仅支持 jpg/png/gif/webp/svg/bmp`, 400);
-    }
-
-    // 读取文件内容
-    const buffer = await data.toBuffer();
-
-    // 校验文件大小
-    if (buffer.length > MAX_FILE_SIZE) {
-      throw new AppError("文件大小不能超过 10MB", 400);
-    }
-
-    // 上传到 MinIO
-    const imageUrl = await uploadToMinio(fastify, buffer, "images", data.filename, data.mimetype);
-
-    return reply.sendSuccess({ imageUrl }, "上传成功");
-  });
+  );
 };
 
 export default uploadRoutes;

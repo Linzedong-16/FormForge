@@ -185,6 +185,7 @@ async function fetchRemoteList() {
       status: number;
       survey_type: string;
     }> = [];
+    const downloadTasks: Array<() => Promise<void>> = [];
 
     while (hasMore) {
       const res = await getSurveyList({ page, page_size: pageSize });
@@ -194,27 +195,28 @@ async function fetchRemoteList() {
       hasMore = page * pageSize < res.data.total;
       page++;
 
-      // 仅同步个人问卷，跳过模板
+      // 仅同步个人问卷，跳过模板；收集需要下载的问卷
       for (const remote of res.data.surveys) {
         if (remote.survey_type !== "personal") continue;
 
         const localRecord = localMap.get(remote.id);
         const remoteUpdatedAt = new Date(remote.updated_at).getTime();
 
-        // 判断是否需要下载详情：
-        //   本地无记录 → 新设备，需下载
-        //   本地有记录但远程已更新 → 需下载
-        //   本地有记录且同步状态非 synced → 需下载
         const needsDownload =
           !localRecord || remoteUpdatedAt > localRecord.updateDate || localRecord.syncStatus !== "synced";
 
         if (needsDownload) {
-          await downloadAndPersistSurvey(remote.id, remoteUpdatedAt);
+          downloadTasks.push(() => downloadAndPersistSurvey(remote.id, remoteUpdatedAt));
         } else if (localRecord && localRecord.syncStatus !== "synced") {
-          // 本地有记录但未标记同步 → 修复状态
           await updateSurveyById(localRecord.id, { syncStatus: "synced" });
         }
       }
+    }
+
+    // 并行下载详情（限制并发数 3，避免压垮服务器）
+    const CONCURRENCY = 3;
+    for (let i = 0; i < downloadTasks.length; i += CONCURRENCY) {
+      await Promise.all(downloadTasks.slice(i, i + CONCURRENCY).map(fn => fn()));
     }
 
     // 3. 清理：本地已同步但远程已不存在的问卷（用户在另一设备删除了）

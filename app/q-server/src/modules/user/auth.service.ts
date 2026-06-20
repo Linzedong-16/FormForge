@@ -4,7 +4,7 @@
 
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { randomUUID } from "node:crypto";
+import { randomUUID, randomInt } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { AuthError } from "../../utils/errors.js";
 import { BizCode } from "../../utils/response.js";
@@ -326,10 +326,10 @@ export class AuthService {
       VERIFY_CODE_TTL
     );
 
-    // 5. 异步发送邮件（通过 RabbitMQ 队列）
+    // 5. 异步发送邮件（通过 RabbitMQ 队列，不阻塞响应）
     if (this.fastify.amqp) {
       try {
-        await this.fastify.amqp.channel.sendToQueue(
+        this.fastify.amqp.channel.sendToQueue(
           "mail:send",
           Buffer.from(
             JSON.stringify({
@@ -357,7 +357,15 @@ export class AuthService {
       throw new AuthError("验证码已过期，请重新获取", BizCode.VERIFY_CODE_EXPIRED);
     }
 
-    const { code: storedCode, type } = JSON.parse(stored);
+    let storedCode: string;
+    let type: string;
+    try {
+      const parsed = JSON.parse(stored);
+      storedCode = parsed.code;
+      type = parsed.type;
+    } catch {
+      throw new AuthError("验证码无效，请重新获取", BizCode.VERIFY_CODE_INVALID);
+    }
     if (type !== "reset_password" || storedCode !== code) {
       throw new AuthError("验证码错误", BizCode.VERIFY_CODE_INVALID);
     }
@@ -398,11 +406,19 @@ export class AuthService {
       throw new AuthError("验证码已过期，请重新获取", BizCode.VERIFY_CODE_EXPIRED);
     }
 
-    const { code: storedCode, type } = JSON.parse(stored);
-    if (type !== "register") {
+    let storedCode2: string;
+    let type2: string;
+    try {
+      const parsed = JSON.parse(stored);
+      storedCode2 = parsed.code;
+      type2 = parsed.type;
+    } catch {
+      throw new AuthError("验证码无效，请重新获取", BizCode.VERIFY_CODE_INVALID);
+    }
+    if (type2 !== "register") {
       throw new AuthError("验证码类型错误", BizCode.VERIFY_CODE_INVALID);
     }
-    if (storedCode !== code) {
+    if (storedCode2 !== code) {
       throw new AuthError("验证码错误", BizCode.VERIFY_CODE_INVALID);
     }
 
@@ -517,35 +533,32 @@ export class AuthService {
       throw new AuthError("Token 已失效", 401);
     }
 
-    // 查用户档案（Cache-Aside，5min TTL）
+    // 查用户档案（Cache-Aside getOrSet，避免并发重复查 DB）
     interface AuthProfile {
       userId: string;
       email: string;
       role: string;
       status: number;
     }
-    const cached = await this.cache.get<AuthProfile>(CacheKeys.userAuthProfile(decoded.sub));
-
-    let profile: AuthProfile;
-    if (cached && cached.status === 1) {
-      profile = cached;
-    } else {
-      const user = await this.fastify.prisma.user.findFirst({
-        where: { id: BigInt(decoded.sub), deleted_at: null },
-        select: { id: true, email: true, status: true }
-      });
-      if (!user || user.status === 0) {
-        throw new AuthError("用户不存在或已被禁用", 401);
-      }
-      profile = {
-        userId: user.id.toString(),
-        email: user.email,
-        role: decoded.role ?? "user",
-        status: user.status
-      };
-      // 后台回填缓存
-      this.cache.set(CacheKeys.userAuthProfile(decoded.sub), profile, CacheTTL.USER_AUTH_PROFILE).catch(() => {});
-    }
+    const profile = await this.cache.getOrSet<AuthProfile>(
+      CacheKeys.userAuthProfile(decoded.sub),
+      async () => {
+        const user = await this.fastify.prisma.user.findFirst({
+          where: { id: BigInt(decoded.sub), deleted_at: null },
+          select: { id: true, email: true, status: true }
+        });
+        if (!user || user.status === 0) {
+          throw new AuthError("用户不存在或已被禁用", 401);
+        }
+        return {
+          userId: user.id.toString(),
+          email: user.email,
+          role: decoded.role ?? "user",
+          status: user.status
+        };
+      },
+      CacheTTL.USER_AUTH_PROFILE
+    );
 
     return {
       userId: BigInt(profile.userId),
@@ -681,19 +694,24 @@ export class AuthService {
   //  Private — 发送频率
   // ============================================================
 
-  /** 检查发送频率（同一邮箱1分钟最多3次） */
+  /** 检查发送频率（同一邮箱1分钟最多3次）— 使用 Lua 脚本保证原子性 */
   private async checkSendRate(email: string): Promise<boolean> {
     const key = `${SEND_RATE_PREFIX}${email}`;
-    const count = await this.fastify.redis.get(key);
-    if (!count) {
-      await this.fastify.redis.set(key, "1", "EX", SEND_RATE_TTL);
-      return true;
-    }
-    if (parseInt(count, 10) >= SEND_RATE_MAX) {
-      return false;
-    }
-    await this.fastify.redis.incr(key);
-    return true;
+    // Lua 脚本：原子地检查并递增计数器
+    const script = `
+      local count = redis.call("GET", KEYS[1])
+      if not count then
+        redis.call("SET", KEYS[1], "1", "EX", ARGV[1])
+        return 1
+      end
+      if tonumber(count) >= tonumber(ARGV[2]) then
+        return 0
+      end
+      redis.call("INCR", KEYS[1])
+      return 1
+    `;
+    const result = await this.fastify.redis.eval(script, 1, key, SEND_RATE_TTL, SEND_RATE_MAX);
+    return result === 1;
   }
 
   // ============================================================
@@ -715,8 +733,8 @@ export class AuthService {
     );
   }
 
-  /** 生成6位数字验证码 */
+  /** 生成6位数字验证码 — 使用加密安全随机数 */
   private generateVerificationCode(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return randomInt(100000, 999999).toString();
   }
 }

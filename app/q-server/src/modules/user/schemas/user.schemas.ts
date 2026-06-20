@@ -5,6 +5,7 @@
  */
 
 import { z } from "zod";
+import { paginationSchema as basePaginationSchema } from "../../../utils/pagination.js";
 
 // ══════════════════════════════════════════════════════════════════
 //  基础校验规则（可跨接口复用）
@@ -35,11 +36,12 @@ export const verifyCodeSchema = z
   .length(6, "验证码为6位数字")
   .regex(/^\d{6}$/, "验证码必须为6位数字");
 
-/** 分页参数（coerce 将 query string 转为 number） */
-export const paginationSchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20)
-});
+/** 分页参数 — 复用 utils/pagination.ts，别名 pageSize → limit 保持向后兼容 */
+export const paginationSchema = basePaginationSchema
+  .extend({
+    limit: z.coerce.number().int().min(1).max(100).default(20)
+  })
+  .omit({ pageSize: true });
 
 // ══════════════════════════════════════════════════════════════════
 //  认证接口 Schema

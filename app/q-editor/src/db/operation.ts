@@ -3,27 +3,38 @@
 import { db } from "./db";
 import type { SurveyDBData } from "@/types";
 
+/** 统一错误日志前缀 */
+const LOG_PREFIX = "[IndexedDB]";
+
+/** 包装 Dexie 操作，添加统一的错误日志 */
+function wrap<T>(operation: string, fn: () => Promise<T>): Promise<T> {
+  return fn().catch(err => {
+    console.error(`${LOG_PREFIX} ${operation} 失败:`, err);
+    throw err;
+  });
+}
+
 // 保存数据
 export async function saveSurvey(data: SurveyDBData) {
-  return await db.surveys.add(data);
+  return wrap("saveSurvey", () => db.surveys.add(data));
 }
 
 // 查询所有数据
 export async function getAllSurvey() {
-  return await db.surveys.toArray();
+  return wrap("getAllSurvey", () => db.surveys.toArray());
 }
 
 // 根据 id 查询某一条数据
 export async function getSurveyById(id: number) {
-  return await db.surveys.get(id);
+  return wrap("getSurveyById", () => db.surveys.get(id));
 }
 
 // 根据 id 删除某一条数据
 export async function deleteSurveyById(id: number) {
-  return await db.surveys.delete(id);
+  return wrap("deleteSurveyById", () => db.surveys.delete(id));
 }
 
 // 根据 id 更新某一条数据
 export async function updateSurveyById(id: number, data: Partial<SurveyDBData>) {
-  return await db.surveys.update(id, data);
+  return wrap("updateSurveyById", () => db.surveys.update(id, data));
 }

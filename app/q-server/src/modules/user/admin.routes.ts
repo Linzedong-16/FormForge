@@ -15,20 +15,23 @@ import {
   updateSmtpConfigSchema
 } from "./schemas/user.schemas.js";
 import { parseAndRespond, parseQueryAndRespond } from "../../utils/zod.js";
+import { AppError } from "../../utils/errors.js";
+
+/** 校验并解析用户 ID 参数 */
+function parseUserIdParam(params: unknown): bigint {
+  const id = (params as { id?: string }).id;
+  if (!id || !/^[1-9]\d{0,18}$/.test(id)) {
+    throw new AppError("无效的用户 ID", 400);
+  }
+  return BigInt(id);
+}
 
 const adminRoutes: FastifyPluginAsync = async fastify => {
   const adminService = new AdminService(fastify);
 
   // 所有管理接口均需认证 + 超级管理员权限
-  // 合并为单一 hook：避免 authenticate 失败后 requireSuperAdmin 仍执行导致
-  // Fastify "Reply already sent" 错误
-  fastify.addHook("preHandler", async (request, reply) => {
-    await authenticate(request, reply);
-    // 仅当认证通过（request.user 已挂载）时才检查权限，避免二次 send
-    if (request.user) {
-      await requireSuperAdmin(request, reply);
-    }
-  });
+  fastify.addHook("preHandler", authenticate);
+  fastify.addHook("preHandler", requireSuperAdmin);
 
   // ── POST /users — 创建用户 ──────────────────────────────────
   fastify.post("/users", async (request, reply) => {
@@ -54,7 +57,7 @@ const adminRoutes: FastifyPluginAsync = async fastify => {
     const body = parseAndRespond(updateUserSchema.safeParse(request.body), reply);
     if (!body) return;
 
-    const targetId = BigInt((request.params as { id: string }).id);
+    const targetId = parseUserIdParam(request.params);
     const adminId = request.user!.userId;
     const result = await adminService.updateUser(adminId, targetId, body);
     return reply.sendSuccess(result, "用户更新成功");
@@ -62,7 +65,7 @@ const adminRoutes: FastifyPluginAsync = async fastify => {
 
   // ── DELETE /users/:id — 删除用户 ─────────────────────────────
   fastify.delete("/users/:id", async (request, reply) => {
-    const targetId = BigInt((request.params as { id: string }).id);
+    const targetId = parseUserIdParam(request.params);
     const adminId = request.user!.userId;
     const result = await adminService.deleteUser(adminId, targetId);
     return reply.sendSuccess(result, "用户已删除");

@@ -69,7 +69,8 @@ serverClient.interceptors.response.use(
           return serverClient(originalRequest);
         }
       } catch {
-        // 刷新失败 → 跳转登录
+        // 刷新失败 → 清理状态并跳转登录
+        userStore.handleLogout();
       }
 
       window.location.href = "/login";

@@ -134,7 +134,11 @@ export const CacheKeys = {
   /** 问卷统计数据 */
   surveyStats: (surveyId: string) => `survey:stats:${surveyId}`,
   /** 问卷模块全部缓存前缀（用于批量失效） */
-  surveyAll: (id: string) => `survey:*:${id}*`
+  surveyAll: (id: string) => `survey:*:${id}*`,
+  /** 答卷详情 */
+  responseDetail: (id: string) => `response:detail:${id}`,
+  /** 答卷缓存前缀（用于批量失效） */
+  responsePattern: (surveyId: string) => `response:survey:${surveyId}:*`
 } as const;
 
 /** 缓存 TTL（秒）常量 */
@@ -147,6 +151,8 @@ export const CacheTTL = {
   USER_AUTH_PROFILE: 300,
   /** 问卷数据：300s（5min，编辑后可能变化） */
   SURVEY: 300,
+  /** 答卷数据：600s（10min，只读不变） */
+  RESPONSE: 600,
   /** 默认：300s */
   DEFAULT: 300
 } as const;

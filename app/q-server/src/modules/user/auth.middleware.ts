@@ -47,7 +47,8 @@ function extractToken(request: FastifyRequest): string | null {
 }
 
 /** 认证中间件 — 校验 Access Token */
-export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function authenticate(request: FastifyRequest, _reply: FastifyReply) {
   // #region debug-point auth-middleware-entry
   const t0 = Date.now();
   // #endregion
@@ -56,7 +57,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     // #region debug-point auth-no-token
     request.log.info({ latency_ms: Date.now() - t0 }, "[debug] auth: no token, returning 401");
     // #endregion
-    return reply.sendUnauthorized("请先登录");
+    throw new AuthError("请先登录", 401);
   }
 
   try {
@@ -73,19 +74,16 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     request.log.warn({ latency_ms: Date.now() - t0, err: error }, "[debug] auth: token verification failed");
     // #endregion
     if (error instanceof AuthError) {
-      return reply.status(error.statusCode).send({
-        data: error.details ?? null,
-        code: error.code,
-        msg: error.message
-      });
+      throw error;
     }
-    return reply.sendUnauthorized("Token 无效");
+    throw new AuthError("Token 无效", 401);
   }
 }
 
 /** 超级管理员权限中间件 — 需在 authenticate 之后使用 */
-export async function requireSuperAdmin(request: FastifyRequest, reply: FastifyReply) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function requireSuperAdmin(request: FastifyRequest, _reply: FastifyReply) {
   if (!request.user || request.user.role !== "super_admin") {
-    return reply.sendForbidden("需要超级管理员权限");
+    throw new AuthError("需要超级管理员权限", 403);
   }
 }
