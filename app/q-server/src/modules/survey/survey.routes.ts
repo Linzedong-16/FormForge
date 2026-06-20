@@ -207,6 +207,46 @@ const surveyRoutes: FastifyPluginAsync = async fastify => {
       return reply.sendSuccess(result, "模板申请已提交，等待管理员审核");
     }
   );
+
+  // ════════════════════════════════════════════════════════════
+  // GET /api/responses/:id — 答卷详情
+  // ════════════════════════════════════════════════════════════
+  fastify.get(
+    "/responses/:id",
+    {
+      config: {
+        rateLimit: { max: 60, timeWindow: "1 minute" }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const responseId = parseSurveyId(id, reply);
+      if (responseId === null) return;
+
+      const result = await surveyService.getResponseById(request.user!.userId, responseId);
+      return reply.sendSuccess(result);
+    }
+  );
+
+  // ════════════════════════════════════════════════════════════
+  // DELETE /api/responses/:id — 删除答卷
+  // ════════════════════════════════════════════════════════════
+  fastify.delete(
+    "/responses/:id",
+    {
+      config: {
+        rateLimit: { max: 20, timeWindow: "1 minute" }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const responseId = parseSurveyId(id, reply);
+      if (responseId === null) return;
+
+      await surveyService.deleteResponse(request.user!.userId, responseId);
+      return reply.sendSuccess(null, "删除成功");
+    }
+  );
 };
 
 export default surveyRoutes;

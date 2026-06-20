@@ -95,7 +95,7 @@ declare module "fastify" {
 }
 
 const loggerPlugin: FastifyPluginAsync = async fastify => {
-  fastify.addHook("onRequest", (request: FastifyRequest) => {
+  fastify.addHook("onRequest", async (request: FastifyRequest) => {
     request.sanitizedLog = {
       trace(msg, ctx) {
         request.log.trace(sanitize({ msg, ...ctx }), msg);

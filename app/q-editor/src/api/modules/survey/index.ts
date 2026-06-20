@@ -234,14 +234,17 @@ export const extractSurveyMetadata = (
     const titleConfig = com.status["title"] as { isShow?: boolean; status?: unknown } | undefined;
     const descConfig = com.status["desc"] as { isShow?: boolean; status?: unknown } | undefined;
 
-    // currentStatus === 0：标题类型组件
-    if (typeConfig?.currentStatus === 0 && titleConfig?.isShow !== false) {
+    // currentStatus === 0：标题类型组件，仅取第一个匹配项（避免后续 text-note 组件覆盖）
+    if (!title && typeConfig?.currentStatus === 0 && titleConfig?.isShow !== false) {
       title = String(titleConfig?.status ?? "");
     }
-    // currentStatus === 1：段落描述类型组件
-    if (typeConfig?.currentStatus === 1 && descConfig?.isShow !== false) {
+    // currentStatus === 1：段落描述类型组件，仅取第一个匹配项
+    if (!description && typeConfig?.currentStatus === 1 && descConfig?.isShow !== false) {
       description = String(descConfig?.status ?? "");
     }
+
+    // 标题和描述都已找到，提前退出
+    if (title && description) break;
   }
 
   return { title, description };

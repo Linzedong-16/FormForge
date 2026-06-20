@@ -23,5 +23,8 @@ export default {
   statusUnsynced: "未同步",
   syncSurvey: "同步",
   syncSuccess: "同步成功",
-  syncFailed: "同步失败"
+  syncFailed: "同步失败",
+  // 远程同步
+  syncingRemote: "正在同步远程数据...",
+  syncFailedHint: "远程数据同步失败，仅展示本地数据"
 };

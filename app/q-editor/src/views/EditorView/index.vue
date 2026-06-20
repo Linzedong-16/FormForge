@@ -26,7 +26,7 @@ import { getSurveyById, updateSurveyById } from "@/db/operation";
 import { restoreComponentStatus } from "@/utils";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
-import type { SurveyDBData } from "@/types";
+import type { SurveyDBData, TextProps } from "@/types";
 // 远程 API
 import { createSurvey, updateSurvey, serializeComponents, extractSurveyMetadata } from "@/api/modules/survey";
 
@@ -71,6 +71,13 @@ async function syncToRemote(localId: number): Promise<ReturnType<typeof serializ
       });
       if (res.code === 0) {
         store.setRemoteSynced(store.remoteSurveyId);
+        // 同步成功后更新本地 IndexedDB 的标题和同步状态
+        if (store.savedSurveyId) {
+          await updateSurveyById(store.savedSurveyId, {
+            title: safeTitle,
+            syncStatus: "synced"
+          });
+        }
       } else {
         console.warn("[Editor] 远程同步失败:", res.msg);
       }
@@ -84,10 +91,11 @@ async function syncToRemote(localId: number): Promise<ReturnType<typeof serializ
       });
       if (res.code === 0 && res.data) {
         store.setRemoteSynced(res.data.survey_id);
-        // 将远程 questionnaire_id 写回本地 IndexedDB
+        // 将远程 questionnaire_id 写回本地 IndexedDB，同时确保标题与后端一致
         if (store.savedSurveyId) {
           await updateSurveyById(store.savedSurveyId, {
             remote_survey_id: res.data.survey_id,
+            title: safeTitle,
             syncStatus: "synced"
           });
         }
@@ -109,8 +117,11 @@ async function doSave(): Promise<ReturnType<typeof serializeComponents>> {
   const surveyId = store.savedSurveyId || (id.value ? Number(id.value) : null);
 
   if (surveyId) {
+    // 从组件中提取当前标题，确保 IndexedDB 中的标题与编辑器内容一致
+    const { title: currentTitle } = extractSurveyMetadata(store.coms as Parameters<typeof extractSurveyMetadata>[0]);
     // 已有问卷：直接更新本地 IndexedDB
     await store.updateComs(surveyId, {
+      title: currentTitle || undefined,
       updateDate: new Date().getTime(),
       surveyCount: store.surveyCount,
       coms: JSON.parse(JSON.stringify(store.coms)),
@@ -134,9 +145,17 @@ async function doSave(): Promise<ReturnType<typeof serializeComponents>> {
     if (!item) return [];
 
     const safeItem = item as unknown as PromptItem;
+    const userTitle = safeItem?.value as string;
+
+    // 将提示对话框输入的标题同步到 text-note 组件，确保 UI 与数据一致
+    const textNoteCom = store.coms[0];
+    if (textNoteCom?.status?.title) {
+      store.setTextStatus(textNoteCom.status.title as TextProps, userTitle);
+    }
+
     const newId = await store.saveComs({
       createDate: new Date().getTime(),
-      title: safeItem?.value as string,
+      title: userTitle,
       updateDate: new Date().getTime(),
       surveyCount: store.surveyCount,
       coms: JSON.parse(JSON.stringify(store.coms)),

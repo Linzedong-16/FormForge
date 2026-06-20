@@ -23,5 +23,8 @@ export default {
   statusUnsynced: "Unsynced",
   syncSurvey: "Sync",
   syncSuccess: "Sync successful",
-  syncFailed: "Sync failed"
+  syncFailed: "Sync failed",
+  // Remote sync
+  syncingRemote: "Syncing remote data...",
+  syncFailedHint: "Remote sync failed, showing local data only"
 };

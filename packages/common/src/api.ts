@@ -3,10 +3,13 @@ import type { SurveyComponentPayload } from "./component.js";
 // ── 通用响应包装 ──────────────────────────────────────────────────────────────
 
 /**
- * 后端统一响应结构
- * @template T data 字段的类型，无 data 时传 undefined
+ * 注意：此 ApiResponse 为旧版接口格式，现已废弃。
+ * 请使用 @common 中 user/survey 模块导出的 ApiResponse。
+ * 后端当前统一响应格式为 { data, code, msg }。
+ *
+ * @deprecated 请使用 survey.interface.ts 或 user.interface.ts 中的 ApiResponse
  */
-export interface ApiResponse<T = undefined> {
+export interface LegacyApiResponse<T = undefined> {
   success: boolean;
   message?: string;
   data?: T;
@@ -23,7 +26,7 @@ export interface GenerateSurveyRequest {
 }
 
 /** 生成在线问卷响应 */
-export type GenerateSurveyResponse = ApiResponse<{
+export type GenerateSurveyResponse = LegacyApiResponse<{
   surveyId: string;
   componentCount: number;
 }>;
@@ -46,7 +49,7 @@ export interface GetSurveyOnlineResponse {
 // ── GET /api/survey/:surveyId（问卷管理用）──────────────────────────────────
 
 /** 问卷详情（管理视图，coms 已反序列化为对象数组） */
-export type GetSurveyDetailResponse = ApiResponse<{
+export type GetSurveyDetailResponse = LegacyApiResponse<{
   surveyId: string;
   title: string;
   description: string;
@@ -65,7 +68,7 @@ export interface LegacySurveyListItem {
   updatedAt: string;
 }
 
-export type GetSurveysResponse = ApiResponse<LegacySurveyListItem[]>;
+export type GetSurveysResponse = LegacyApiResponse<LegacySurveyListItem[]>;
 
 // ── 答案相关类型 ──────────────────────────────────────────────────────────────
 
@@ -94,7 +97,7 @@ export interface SubmitAnswersRequest {
 }
 
 /** 提交问卷答案响应 */
-export type SubmitAnswersResponse = ApiResponse<{
+export type SubmitAnswersResponse = LegacyApiResponse<{
   surveyId: string;
   /** 实际收到的答题数量 */
   answerCount: number;

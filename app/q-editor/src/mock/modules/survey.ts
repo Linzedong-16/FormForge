@@ -490,9 +490,9 @@ responseStore.push({
   created_at: DEMO_NOW,
   updated_at: DEMO_NOW,
   answers: [
-    { component_value: "非常满意" },
-    { component_values: ["薪资福利", "弹性工作"] },
-    { component_value: "希望增加团建活动" }
+    { component_id: "def_comp_003", value: "非常满意" },
+    { component_id: "def_comp_004", values: ["薪资福利", "弹性工作"] },
+    { component_id: "def_comp_005", value: "希望增加团建活动" }
   ]
 });
 

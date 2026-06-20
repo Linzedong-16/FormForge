@@ -14,9 +14,8 @@ export type {
   SurveyComponentPayload
 } from "./component.js";
 
-// API 请求/响应类型
+// API 请求/响应类型（旧版接口，已废弃，仅保留兼容）
 export type {
-  ApiResponse,
   GenerateSurveyRequest,
   GenerateSurveyResponse,
   GetSurveyOnlineResponse,

@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
+import multipart from "@fastify/multipart";
 import errorHandlerPlugin from "./plugins/error-handler.js";
 import prismaPlugin from "./plugins/prisma.js";
 import responsePlugin from "./plugins/response.js";
@@ -27,11 +28,11 @@ export const buildApp = () => {
       })
     },
     // 请求体大小限制（防止 OOM）
-    bodyLimit: 5 * 1024 * 1024, // 5MB
+    bodyLimit: 10 * 1024 * 1024, // 10MB（与图片上传限制一致）
     // 请求超时 — 防止 Redis/DB 阻塞导致请求永久挂起
     requestTimeout: Number(process.env.REQUEST_TIMEOUT ?? 30000), // 30s
-    // 连接超时 — 防止恶意连接占用资源
-    connectionTimeout: Number(process.env.CONNECTION_TIMEOUT ?? 10000), // 10s
+    // 连接超时 — 防止恶意连接占用资源（0 表示禁用，减少与 requestTimeout 冲突）
+    connectionTimeout: 0,
     // Keep-Alive 超时 — 长连接空闲超时
     keepAliveTimeout: Number(process.env.KEEP_ALIVE_TIMEOUT ?? 72000) // 72s
   });
@@ -63,6 +64,7 @@ export const buildApp = () => {
     .register(errorHandlerPlugin)
     .register(helmet)
     .register(cors, { origin: process.env.CORS_ORIGIN ?? true })
+    .register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } }) // 10MB 文件上传限制
     .register(prismaPlugin)
     .register(responsePlugin)
     .register(redisPlugin)

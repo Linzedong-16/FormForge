@@ -476,4 +476,93 @@ export class SurveyService {
       status: review.status
     };
   }
+
+  // ============================================================
+  //  答卷详情
+  // ============================================================
+  async getResponseById(userId: bigint, responseId: bigint): Promise<Record<string, unknown>> {
+    const response = await this.fastify.prisma.response.findFirst({
+      where: { id: responseId },
+      include: {
+        survey: {
+          select: {
+            id: true,
+            user_id: true,
+            title: true
+          }
+        },
+        answers: true
+      }
+    });
+
+    if (!response) {
+      throw new AppError("答卷不存在", 404);
+    }
+
+    // 权限校验：只能查看自己问卷的答卷 或 自己提交的答卷
+    const raw = response as unknown as Record<string, unknown>;
+    const survey = (raw.survey as Record<string, unknown>) ?? {};
+    const isOwner = BigInt(survey.user_id as string | number) === userId;
+    const isSubmitter = response.user_id === userId;
+    if (!isOwner && !isSubmitter) {
+      throw new AppError("无权查看该答卷", 403);
+    }
+
+    const answers = (raw.answers as Array<Record<string, unknown>> | undefined) ?? [];
+
+    return {
+      id: bigIntToStr(response.id),
+      survey_id: bigIntToStr(response.survey_id),
+      user_id: response.user_id ? bigIntToStr(response.user_id) : null,
+      anonymous_id: (response.anonymous_id as string | null) ?? null,
+      status: response.status,
+      submitted_at: response.submitted_at?.toISOString() ?? null,
+      created_at: response.created_at.toISOString(),
+      updated_at: response.updated_at.toISOString(),
+      answers: answers.map(a => ({
+        id: bigIntToStr(a.id as bigint),
+        response_id: bigIntToStr(a.response_id as bigint),
+        component_id: bigIntToStr(a.component_id as bigint),
+        value: (a.value as string) ?? null,
+        values: (a.values as string[]) ?? []
+      }))
+    };
+  }
+
+  // ============================================================
+  //  删除答卷
+  // ============================================================
+  async deleteResponse(userId: bigint, responseId: bigint): Promise<void> {
+    const response = await this.fastify.prisma.response.findFirst({
+      where: { id: responseId },
+      include: {
+        survey: {
+          select: {
+            id: true,
+            user_id: true
+          }
+        }
+      }
+    });
+
+    if (!response) {
+      throw new AppError("答卷不存在", 404);
+    }
+
+    // 权限校验：只能删除自己问卷的答卷 或 自己提交的答卷
+    const survey = response.survey as Record<string, unknown>;
+    const isOwner = BigInt(survey.user_id as string | number) === userId;
+    const isSubmitter = response.user_id === userId;
+    if (!isOwner && !isSubmitter) {
+      throw new AppError("无权删除该答卷", 403);
+    }
+
+    // 事务内删除答卷及其关联的答案
+    await this.fastify.prisma.$transaction(async tx => {
+      await tx.answer.deleteMany({ where: { response_id: responseId } });
+      await tx.response.delete({ where: { id: responseId } });
+    });
+
+    await createAuditLog(this.fastify, userId, "delete_response", "response", responseId).catch(() => {});
+  }
 }

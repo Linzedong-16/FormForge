@@ -13,14 +13,19 @@ import type { FastifyPluginAsync } from "fastify";
 
 const rateLimitPlugin: FastifyPluginAsync = async fastify => {
   const isProduction = process.env.NODE_ENV === "production";
+  const useRedis = isProduction && fastify.redis;
+
+  if (isProduction && !fastify.redis) {
+    fastify.log.warn("Redis 不可用，限流降级为内存模式（多进程下计数不共享）");
+  }
 
   await fastify.register(rateLimit, {
     // 全局默认：100 次/分钟
     max: Number(process.env.RATE_LIMIT_MAX ?? 100),
     timeWindow: "1 minute",
 
-    // 生产环境用 Redis 共享计数（多进程一致），开发环境用内存
-    ...(isProduction && {
+    // 生产环境 Redis 可用时使用共享计数，否则降级为内存
+    ...(useRedis && {
       redis: fastify.redis,
       keyGenerator: req => {
         // 优先用真实 IP（反向代理后）

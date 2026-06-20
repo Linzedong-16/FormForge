@@ -23,5 +23,8 @@ export default {
   statusUnsynced: "未同期",
   syncSurvey: "同期",
   syncSuccess: "同期成功",
-  syncFailed: "同期失敗"
+  syncFailed: "同期失敗",
+  // リモート同期
+  syncingRemote: "リモートデータを同期中...",
+  syncFailedHint: "リモート同期に失敗しました。ローカルデータのみ表示します"
 };
