@@ -263,6 +263,11 @@ export function createAppRouter(base = "/"): Router {
         path: "/survey/:id",
         name: "survey",
         component: () => import("@/views/online/SurveyView.vue")
+      },
+      {
+        path: "/settings",
+        name: "settings",
+        component: () => import("@/views/settings/ProfileSettings.vue")
       }
     ]
   });

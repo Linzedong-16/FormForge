@@ -87,6 +87,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Setting, SwitchButton, Sunny, Moon, View } from "@element-plus/icons-vue";
 import { useTheme } from "@/utils/useTheme";
@@ -95,6 +96,7 @@ import { setLocale, type SupportLocale } from "@/i18n";
 import { useUserStore } from "@/stores/useUser";
 
 const { t, locale } = useI18n();
+const router = useRouter();
 
 // 从 Pinia Store 获取用户信息
 const userStore = useUserStore();
@@ -134,8 +136,10 @@ const onChangeColorBlind = (v: string | number | boolean | undefined) => {
   setColorBlindMode(v as ColorBlindMode);
 };
 
-// 打开个人设置（空实现，待对接业务）
-const onSettings = () => {};
+// 打开个人设置
+const onSettings = () => {
+  router.push({ name: "settings" });
+};
 
 // 退出登录
 const onLogout = async () => {
