@@ -12,6 +12,8 @@ export default {
   avatarTip: "点击头像更换，支持 JPG/PNG/GIF/WebP 格式",
   avatarFormat: "建议尺寸 200x200px，大小不超过 5MB",
   cropAvatar: "裁剪头像",
+  cropPreview: "预览",
+  cropPreviewTip: "裁剪后的圆形头像效果",
   avatarFormatError: "不支持的图片格式，仅支持 JPG/PNG/GIF/WebP",
   avatarSizeError: "图片大小不能超过 5MB",
   avatarUploadSuccess: "头像上传成功",

@@ -12,6 +12,8 @@ export default {
   avatarTip: "クリックして変更。JPG/PNG/GIF/WebP 対応",
   avatarFormat: "推奨サイズ：200x200px、最大 5MB",
   cropAvatar: "アバターを切り抜き",
+  cropPreview: "プレビュー",
+  cropPreviewTip: "切り抜き後の丸いアバター効果",
   avatarFormatError: "未対応の形式です。JPG/PNG/GIF/WebP のみ対応",
   avatarSizeError: "画像サイズは 5MB 以下にしてください",
   avatarUploadSuccess: "アバターをアップロードしました",

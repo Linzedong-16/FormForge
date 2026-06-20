@@ -12,6 +12,8 @@ export default {
   avatarTip: "Click to change avatar. Supports JPG/PNG/GIF/WebP",
   avatarFormat: "Recommended size: 200x200px, max 5MB",
   cropAvatar: "Crop Avatar",
+  cropPreview: "Preview",
+  cropPreviewTip: "Cropped circular avatar preview",
   avatarFormatError: "Unsupported format. Only JPG/PNG/GIF/WebP allowed",
   avatarSizeError: "Image size must not exceed 5MB",
   avatarUploadSuccess: "Avatar uploaded successfully",

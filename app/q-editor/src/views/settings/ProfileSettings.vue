@@ -1,5 +1,15 @@
 <template>
   <div class="settings-page">
+    <!-- 顶部导航栏 -->
+    <headerNav>
+      <template #left>
+        <el-button :icon="ArrowLeft" circle size="small" @click="goBack" />
+      </template>
+      <template #center>
+        <span class="header-title">{{ t("settings.settings") }}</span>
+      </template>
+    </headerNav>
+
     <div class="settings-container">
       <!-- 左侧导航 -->
       <aside class="settings-sidebar">
@@ -29,13 +39,21 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { User, Lock } from "@element-plus/icons-vue";
+import { useRouter } from "vue-router";
+import { User, Lock, ArrowLeft } from "@element-plus/icons-vue";
+import headerNav from "@/components/Common/header-nav.vue";
 import ProfileTab from "./components/ProfileTab.vue";
 import AccountTab from "./components/AccountTab.vue";
 
 const { t } = useI18n();
+const router = useRouter();
 
 const activeTab = ref<"profile" | "account">("profile");
+
+// 返回上一页
+function goBack() {
+  router.back();
+}
 
 const tabs = [
   { key: "profile" as const, label: t("settings.profile"), icon: User },
@@ -57,6 +75,19 @@ $clr-primary-bg: var(--el-color-primary-light-9, #f4f4f5); // 主色浅底（暗
 $clr-hover-bg: var(--el-fill-color-light, #f4f4f5); // 悬停背景（暗色下 #232326）
 $radius-lg: var(--border-radius-lg, 8px);
 $radius-md: var(--border-radius-md, 6px);
+
+// ── 顶部导航标题 ────────────────────────────────────
+.header-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: $clr-text;
+  margin-right: 24px;
+}
+
+// header-nav 间距微调：标题与右侧消息按钮拉开距离
+:deep(.center) {
+  gap: 12px;
+}
 
 .settings-page {
   min-height: 100vh;
@@ -81,7 +112,7 @@ $radius-md: var(--border-radius-md, 6px);
   border: 1px solid $clr-border;
   overflow: hidden;
   position: sticky;
-  top: 84px;
+  top: 50px;
 }
 
 .sidebar-nav {

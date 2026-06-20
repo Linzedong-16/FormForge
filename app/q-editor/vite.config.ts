@@ -81,6 +81,10 @@ export default defineConfig(({ command, mode }) => {
     server: {
       port: 5173, // 固定端口，与主应用 entry: '//localhost:5173' 对应
       cors: true, // 允许主应用（localhost:8000）跨域加载此子应用
+      fs: {
+        // 允许 Vite dev server 访问 monorepo 根目录下的共享包
+        allow: ["../..", "../../packages"]
+      },
       proxy: {
         "/api": {
           target: "http://localhost:8080",

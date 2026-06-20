@@ -22,16 +22,13 @@
       @change="handleFileChange"
     />
 
-    <!-- 裁剪弹窗（预留） -->
-    <el-dialog v-model="cropperVisible" :title="t('settings.cropAvatar')" width="520px" :close-on-click-modal="false">
-      <div class="cropper-container">
-        <img ref="cropperImgRef" :src="previewUrl" class="cropper-img" />
-      </div>
-      <template #footer>
-        <el-button @click="cropperVisible = false">{{ t("settings.cancel") }}</el-button>
-        <el-button type="primary" @click="handleCropConfirm">{{ t("settings.confirm") }}</el-button>
-      </template>
-    </el-dialog>
+    <!-- 裁剪弹窗 -->
+    <CropperModal
+      v-model="cropperVisible"
+      :image-url="previewUrl"
+      @confirm="handleCropConfirm"
+      @cancel="handleCropCancel"
+    />
   </div>
 </template>
 
@@ -40,6 +37,7 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 import { Camera } from "@element-plus/icons-vue";
+import CropperModal from "./CropperModal.vue";
 
 const { t } = useI18n();
 
@@ -58,7 +56,7 @@ const defaultAvatar = "http://47.94.168.252/upload/1759642363899.gif";
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const cropperVisible = ref(false);
 const previewUrl = ref("");
-const cropperImgRef = ref<HTMLImageElement | null>(null);
+const pendingFile = ref<File | null>(null); // 待裁剪的原始文件
 
 // ── 触发文件选择 ────────────────────────────────────
 function triggerUpload() {
@@ -84,35 +82,40 @@ function handleFileChange(event: Event) {
     return;
   }
 
-  // 生成预览 URL
+  // 生成预览 URL 并打开裁剪弹窗
   previewUrl.value = URL.createObjectURL(file);
-
-  // TODO: 接入裁剪组件后启用裁剪弹窗
-  // cropperVisible.value = true;
-
-  // 当前直接上传（后期接入裁剪后删除此行）
-  handleUpload(file);
+  pendingFile.value = file;
+  cropperVisible.value = true;
 
   // 重置 input 以允许重复选择同一文件
   input.value = "";
 }
 
-// ── 裁剪确认（预留） ────────────────────────────────
-function handleCropConfirm() {
-  // TODO: 获取裁剪后的 Blob 并上传
+// ── 裁剪确认 ────────────────────────────────────────
+// blob: 裁剪后的图片 Blob，dataUrl: 裁剪后的 base64 预览 URL
+function handleCropConfirm(_blob: Blob, dataUrl: string) {
   cropperVisible.value = false;
+  // 使用裁剪后的 dataUrl 更新头像预览
+  emit("update:modelValue", dataUrl);
+  // TODO: 后续对接 API 时，使用 blob 上传到服务器
+  // await uploadImage(blob);
+  ElMessage.success(t("settings.avatarUploadSuccess"));
+  // 清理临时数据
+  cleanupPreview();
 }
 
-// ── 上传图片（预留 API 调用位） ──────────────────────
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function handleUpload(file: File) {
-  // TODO: 调用上传 API
-  // const { imageUrl } = await uploadImage(file);
-  // emit("update:modelValue", imageUrl);
+// ── 裁剪取消 ────────────────────────────────────────
+function handleCropCancel() {
+  cleanupPreview();
+}
 
-  // 临时：使用本地预览 URL
-  emit("update:modelValue", previewUrl.value);
-  ElMessage.success(t("settings.avatarUploadSuccess"));
+// ── 清理预览资源 ────────────────────────────────────
+function cleanupPreview() {
+  if (previewUrl.value && previewUrl.value.startsWith("blob:")) {
+    URL.revokeObjectURL(previewUrl.value);
+  }
+  previewUrl.value = "";
+  pendingFile.value = null;
 }
 </script>
 
@@ -120,8 +123,6 @@ async function handleUpload(file: File) {
 // ── 本地 fallback：引用项目主题系统变量，确保亮/暗主题下均有可读的对比度 ──
 $clr-text-secondary: var(--font-color-lighter, #71717a);
 $clr-text-light: var(--font-color-light, #3f3f46);
-$clr-cropper-bg: var(--el-fill-color-light, #f4f4f5);
-$radius-md: var(--border-radius-md, 6px);
 
 .avatar-upload {
   display: flex;
@@ -182,20 +183,5 @@ $radius-md: var(--border-radius-md, 6px);
 
 .file-input-hidden {
   display: none;
-}
-
-// ── 裁剪弹窗 ────────────────────────────────────────
-.cropper-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 300px;
-  background: $clr-cropper-bg;
-  border-radius: $radius-md;
-
-  .cropper-img {
-    max-width: 100%;
-    max-height: 400px;
-  }
 }
 </style>

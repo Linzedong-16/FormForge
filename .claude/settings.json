@@ -3,7 +3,13 @@
     "allow": [
       "Bash(node -e ' *)",
       "Bash(node -e \"console.log\\(require.resolve\\('ioredis'\\)\\)\")",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(pnpm list *)",
+      "Bash(pnpm view *)",
+      "Bash(ls -la node_modules/vue-cropper/lib/)",
+      "Bash(ls -la node_modules/vue-cropper/src/)",
+      "Bash(pnpm remove *)",
+      "Bash(npx prisma *)"
     ]
   }
 }

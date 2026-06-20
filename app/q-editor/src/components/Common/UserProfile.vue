@@ -72,8 +72,8 @@
 
       <div class="panel-divider"></div>
 
-      <!-- 菜单项 -->
-      <div class="menu-item" @click="onSettings">
+      <!-- 菜单项：当前已在设置页时隐藏入口 -->
+      <div v-if="!isOnSettingsPage" class="menu-item" @click="onSettings">
         <el-icon class="menu-icon"><Setting /></el-icon>
         <span>{{ t("header.settings") }}</span>
       </div>
@@ -87,7 +87,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Setting, SwitchButton, Sunny, Moon, View } from "@element-plus/icons-vue";
 import { useTheme } from "@/utils/useTheme";
@@ -97,6 +97,10 @@ import { useUserStore } from "@/stores/useUser";
 
 const { t, locale } = useI18n();
 const router = useRouter();
+const route = useRoute();
+
+// 当前处于个人设置页面时，隐藏"个人设置"菜单入口
+const isOnSettingsPage = computed(() => route.name === "settings");
 
 // 从 Pinia Store 获取用户信息
 const userStore = useUserStore();

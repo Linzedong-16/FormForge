@@ -337,18 +337,25 @@ model TemplateRating {
 
 // ============================================================
 // 13. 用户资料表 (user_profiles) — 1:1 关联 User
+//
+// 设计说明：
+//   - User 表存放认证核心字段（email / password_hash / username）
+//   - UserProfile 存放可编辑的展示资料，与 User 一一对应
+//   - 头像字段优先使用本表 avatar_url；User.avatar_url 保留作为兜底/缓存
+//   - bound_email 与 User.email 解耦，支持换绑流程
 // ============================================================
 model UserProfile {
-  id          BigInt    @id @default(autoincrement())
-  user_id     BigInt    @unique // 与 User 一一对应
-  nickname    String?   @db.VarChar(50) // 用户昵称，最大 50 字符
-  avatar_url  String?   @db.VarChar(500) // 头像 URL（MinIO 对象存储）
-  occupation  String?   @db.VarChar(100) // 职业，最大 100 字符
-  bio         String?   @db.Text // 个人介绍，最大 500 字符
-  interests   Json?     @default("[]") // 兴趣标签 JSON 数组，如 ["前端","设计"]
-  bound_email String?   @db.VarChar(255) // 绑定邮箱（与 User.email 解耦，支持换绑）
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
+  id             BigInt    @id @default(autoincrement())
+  user_id        BigInt    @unique // 与 User 一一对应
+  nickname       String?   @db.VarChar(50) // 用户昵称，最大 50 字符
+  avatar_url     String?   @db.VarChar(500) // 头像 URL（MinIO / 裁剪后上传）
+  occupation     String?   @db.VarChar(100) // 职业，最大 100 字符
+  bio            String?   @db.VarChar(500) // 个人介绍，最大 500 字符（与前端 maxlength 一致）
+  interests      Json?     @default("[]") // 兴趣标签 JSON 数组，如 ["前端","设计"]
+  bound_email    String?   @db.VarChar(255) // 绑定邮箱（与 User.email 解耦，支持换绑）
+  email_verified Boolean   @default(false) // 绑定邮箱是否已验证
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
 
   // 关联关系
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)

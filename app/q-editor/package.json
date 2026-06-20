@@ -29,6 +29,7 @@
     "element-plus": "^2.13.2",
     "mitt": "^3.0.1",
     "monorepo-code-common": "workspace:*",
+    "monorepo-code-components": "workspace:*",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
     "uuid": "^13.0.0",
@@ -62,8 +63,8 @@
     "vite-plugin-html": "^3.2.2",
     "vite-plugin-inspect": "^11.3.3",
     "vite-plugin-mock": "^3.0.2",
-    "vite-plugin-vue-devtools": "^8.0.5",
     "vite-plugin-qiankun": "^1.0.14",
+    "vite-plugin-vue-devtools": "^8.0.5",
     "vue-tsc": "^3.1.5"
   }
 }
