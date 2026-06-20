@@ -59,6 +59,33 @@ export default {
 
   // Template Market
   applyShareTemplate: "Request Share Template",
+  templateDialogTitle: "Request Share Template",
+  templateCategory: "Category",
+  templateCategoryRequired: "Please select a category",
+  templateCategoryEducation: "Education",
+  templateCategoryMarket: "Market Research",
+  templateCategoryHr: "Human Resources",
+  templateCategoryCustomer: "Customer Satisfaction",
+  templateCategoryEvent: "Event Registration",
+  templateCategoryOther: "Other",
+  templateSubmitMessage: "Submission Notes",
+  templateSubmit: "Submit",
+  templateApplySuccess: "Template request submitted successfully",
+  templateApplyFailed: "Template request submission failed",
+  templateSyncFirst: "Please sync the survey to remote first",
+  templateNeedSync: "Template request requires remote sync. Please save the survey first",
+
+  // Generate Online Survey
+  generateOnlineSuccess: "Online survey generated successfully",
+  generateOnlineFailed: "Online survey generation failed",
+
+  // Review
+  noSurveyData: "No survey data available",
+  reviewNeedOnline: "Please generate online survey first",
+  reviewConfirm: "Are you sure you want to submit for review?",
+  reviewSuccess: "Review submitted successfully",
+  reviewFailed: "Review submission failed",
+  reviewCancelled: "Review cancelled",
 
   // Question type groups
   selectGroup: "Selection",

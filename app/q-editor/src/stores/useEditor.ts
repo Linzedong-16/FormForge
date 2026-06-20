@@ -50,7 +50,9 @@ export const useEditorStore = defineStore("editor", {
     /** 是否有未保存的修改 */
     dirty: false,
     /** 当前问卷在 IndexedDB 中的 id（新建问卷首次保存后设置） */
-    savedSurveyId: null as number | null
+    savedSurveyId: null as number | null,
+    /** 当前问卷的远程问卷 ID（BigInt → string），首次同步后由后端返回 */
+    remoteSurveyId: null as string | null
   }),
   actions: {
     // ─── 内部：快照记录与标志同步 ───────────────────────────────────────
@@ -157,6 +159,7 @@ export const useEditorStore = defineStore("editor", {
       this.currentPage = 1;
       this.dirty = false;
       this.savedSurveyId = surveyId ?? null;
+      this.remoteSurveyId = data.remote_survey_id ?? null;
       undoManager.clear();
       this._syncFlags();
     },
@@ -280,6 +283,18 @@ export const useEditorStore = defineStore("editor", {
     async updateComs(id: number, data: SurveyDBData) {
       await updateSurveyById(id, data);
       this.markClean();
+    },
+
+    // ─── 远程同步状态 ──────────────────────────────────────────────
+
+    /** 标记当前问卷已同步到远程 */
+    setRemoteSynced(remoteId: string) {
+      this.remoteSurveyId = remoteId;
+    },
+
+    /** 标记当前问卷未同步到远程 */
+    setRemoteUnsynced() {
+      this.remoteSurveyId = null;
     }
   }
 });

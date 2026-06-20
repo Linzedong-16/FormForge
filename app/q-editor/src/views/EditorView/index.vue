@@ -22,11 +22,13 @@ import Center from "@/views/EditorView/Center.vue";
 import RightSide from "@/views/EditorView/RightSide.vue";
 import { computed } from "vue";
 import { useRoute, onBeforeRouteLeave } from "vue-router";
-import { getSurveyById } from "@/db/operation";
+import { getSurveyById, updateSurveyById } from "@/db/operation";
 import { restoreComponentStatus } from "@/utils";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
 import type { SurveyDBData } from "@/types";
+// 远程 API
+import { createSurvey, updateSurvey, serializeComponents, extractSurveyMetadata } from "@/api/modules/survey";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -42,12 +44,72 @@ interface PromptItem {
   value: string;
 }
 
-/** 统一的保存/更新逻辑：已有 id 直接更新，新建则提示标题 */
-async function doSave() {
+/** 将本地问卷同步到远程数据库，返回序列化后的组件供后续复用 */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function syncToRemote(localId: number): Promise<ReturnType<typeof serializeComponents>> {
+  try {
+    const components = serializeComponents(store.coms as Parameters<typeof serializeComponents>[0]);
+    const { title, description } = extractSurveyMetadata(store.coms as Parameters<typeof extractSurveyMetadata>[0]);
+
+    // 确保标题非空：优先使用组件提取的标题，回退到本地存储的标题
+    let safeTitle = title;
+    if (!safeTitle && store.savedSurveyId) {
+      const local = await getSurveyById(store.savedSurveyId);
+      safeTitle = local?.title || "";
+    }
+    if (!safeTitle) {
+      safeTitle = "未命名问卷";
+    }
+
+    if (store.remoteSurveyId) {
+      // 更新已有远程记录
+      const res = await updateSurvey(store.remoteSurveyId, {
+        title: safeTitle,
+        description,
+        components,
+        page_size: store.pageSize
+      });
+      if (res.code === 0) {
+        store.setRemoteSynced(store.remoteSurveyId);
+      } else {
+        console.warn("[Editor] 远程同步失败:", res.msg);
+      }
+    } else {
+      // 首次创建远程记录
+      const res = await createSurvey({
+        title: safeTitle,
+        description,
+        components,
+        page_size: store.pageSize
+      });
+      if (res.code === 0 && res.data) {
+        store.setRemoteSynced(res.data.survey_id);
+        // 将远程 questionnaire_id 写回本地 IndexedDB
+        if (store.savedSurveyId) {
+          await updateSurveyById(store.savedSurveyId, {
+            remote_survey_id: res.data.survey_id,
+            syncStatus: "synced"
+          });
+        }
+      } else {
+        console.warn("[Editor] 远程同步失败:", res.msg);
+      }
+    }
+
+    return components;
+  } catch (err) {
+    // 远程同步失败不阻塞本地保存流程
+    console.warn("[Editor] 远程同步异常:", err);
+    return [];
+  }
+}
+
+/** 统一的保存/更新逻辑：已有 id 直接更新，新建则提示标题。保存后自动同步到远程，返回序列化组件 */
+async function doSave(): Promise<ReturnType<typeof serializeComponents>> {
   const surveyId = store.savedSurveyId || (id.value ? Number(id.value) : null);
 
   if (surveyId) {
-    // 已有问卷：直接更新，无需提示
+    // 已有问卷：直接更新本地 IndexedDB
     await store.updateComs(surveyId, {
       updateDate: new Date().getTime(),
       surveyCount: store.surveyCount,
@@ -56,34 +118,41 @@ async function doSave() {
       syncStatus: "unsynced"
     } as SurveyDBData);
     store.lastUpdatedId = surveyId;
+
+    // 同步到远程
+    const components = await syncToRemote(surveyId);
     ElMessage.success(t("editor.updateSuccess"));
+    return components;
   } else {
     // 新建问卷：第一次保存需输入标题
-    await ElMessageBox.prompt(t("editor.savePromptTitle"), t("editor.confirmTitle"), {
+    const item = await ElMessageBox.prompt(t("editor.savePromptTitle"), t("editor.confirmTitle"), {
       confirmButtonText: t("editor.confirmButton"),
       cancelButtonText: t("editor.cancelButton"),
       type: "info"
-    })
-      .then(async item => {
-        const safeItem = item as unknown as PromptItem;
-        await store.saveComs({
-          createDate: new Date().getTime(),
-          title: safeItem?.value as string,
-          updateDate: new Date().getTime(),
-          surveyCount: store.surveyCount,
-          coms: JSON.parse(JSON.stringify(store.coms)),
-          pageSize: store.pageSize
-        });
-        ElMessage.success(t("editor.saveSuccess"));
-      })
-      .catch(() => {
-        // 取消输入标题，不报错
-      });
+    }).catch(() => null);
+
+    if (!item) return [];
+
+    const safeItem = item as unknown as PromptItem;
+    const newId = await store.saveComs({
+      createDate: new Date().getTime(),
+      title: safeItem?.value as string,
+      updateDate: new Date().getTime(),
+      surveyCount: store.surveyCount,
+      coms: JSON.parse(JSON.stringify(store.coms)),
+      pageSize: store.pageSize,
+      syncStatus: "unsynced"
+    });
+    // 同步到远程
+    const components = await syncToRemote(newId);
+    ElMessage.success(t("editor.saveSuccess"));
+    return components;
   }
 }
 
 // 提供给 Header 使用，使头部的保存/更新按钮与 Ctrl+S 走同一逻辑
-provide("editorDoSave", doSave);
+// 返回值：序列化后的组件列表，供后续操作（如申请模板）复用
+provide<() => Promise<ReturnType<typeof serializeComponents>>>("editorDoSave", doSave);
 
 // ─── 键盘快捷键：Ctrl+Z/Y 撤销重做 + Ctrl+S 保存 ─────────────
 

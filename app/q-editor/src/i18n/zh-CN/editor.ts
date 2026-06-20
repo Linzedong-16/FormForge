@@ -59,6 +59,33 @@ export default {
 
   // 模板市场
   applyShareTemplate: "申请共享模板",
+  templateDialogTitle: "申请共享模板",
+  templateCategory: "模板分类",
+  templateCategoryRequired: "请选择模板分类",
+  templateCategoryEducation: "教育",
+  templateCategoryMarket: "市场调研",
+  templateCategoryHr: "人力资源",
+  templateCategoryCustomer: "客户满意度",
+  templateCategoryEvent: "活动报名",
+  templateCategoryOther: "其他",
+  templateSubmitMessage: "提交说明",
+  templateSubmit: "提交申请",
+  templateApplySuccess: "模板申请已提交成功",
+  templateApplyFailed: "模板申请提交失败",
+  templateSyncFirst: "请先同步问卷到远程",
+  templateNeedSync: "模板申请需要先同步到远程，请先保存问卷",
+
+  // 在线问卷生成
+  generateOnlineSuccess: "在线问卷生成成功",
+  generateOnlineFailed: "在线问卷生成失败",
+
+  // 审核
+  noSurveyData: "暂无问卷数据",
+  reviewNeedOnline: "请先生成在线问卷",
+  reviewConfirm: "确定要提交审核吗？",
+  reviewSuccess: "提交审核成功",
+  reviewFailed: "提交审核失败",
+  reviewCancelled: "已取消审核",
 
   // 题型分组
   selectGroup: "选择题",

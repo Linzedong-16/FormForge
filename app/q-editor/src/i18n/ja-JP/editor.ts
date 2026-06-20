@@ -59,6 +59,33 @@ export default {
 
   // テンプレート市場
   applyShareTemplate: "共有テンプレート申請",
+  templateDialogTitle: "共有テンプレート申請",
+  templateCategory: "カテゴリ",
+  templateCategoryRequired: "カテゴリを選択してください",
+  templateCategoryEducation: "教育",
+  templateCategoryMarket: "市場調査",
+  templateCategoryHr: "人事",
+  templateCategoryCustomer: "顧客満足度",
+  templateCategoryEvent: "イベント登録",
+  templateCategoryOther: "その他",
+  templateSubmitMessage: "申請説明",
+  templateSubmit: "申請送信",
+  templateApplySuccess: "テンプレート申請が送信されました",
+  templateApplyFailed: "テンプレート申請の送信に失敗しました",
+  templateSyncFirst: "先にアンケートをリモートに同期してください",
+  templateNeedSync: "テンプレート申請にはリモート同期が必要です。先に保存してください",
+
+  // オンラインアンケート生成
+  generateOnlineSuccess: "オンラインアンケートが生成されました",
+  generateOnlineFailed: "オンラインアンケートの生成に失敗しました",
+
+  // 審査
+  noSurveyData: "アンケートデータがありません",
+  reviewNeedOnline: "先にオンラインアンケートを生成してください",
+  reviewConfirm: "審査を送信しますか？",
+  reviewSuccess: "審査が送信されました",
+  reviewFailed: "審査の送信に失敗しました",
+  reviewCancelled: "審査をキャンセルしました",
 
   // Question type groups
   selectGroup: "選択",

@@ -51,7 +51,7 @@
             t("layout.viewSurvey")
           }}</el-button>
           <el-button link type="primary" size="small" @click="editSurvey(scope.row)">{{ t("layout.edit") }}</el-button>
-          <el-button link type="primary" size="small" @click="deleteSurvey(scope.row)">{{
+          <el-button link type="primary" size="small" @click="handleDeleteSurvey(scope.row)">{{
             t("layout.delete")
           }}</el-button>
         </template>
@@ -75,16 +75,31 @@
 import headerNav from "@/components/Common/header-nav.vue";
 
 import { Plus, Compass, ArrowLeft, Refresh } from "@element-plus/icons-vue";
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onMounted } from "vue";
 // 路由
 import { useRouter } from "vue-router";
 const router = useRouter();
 // 类型
-import type { SurveyDBData, SurveyDBReturnData } from "@/types";
+import type { SurveyDBReturnData } from "@/types";
 // 工具方法
 import { formatDate } from "@/utils";
 // i18n
 import { useI18n } from "vue-i18n";
+// 数据库操作
+import { deleteSurveyById, getAllSurvey, updateSurveyById } from "@/db/operation";
+// Store
+import { useEditorStore } from "@/stores/useEditor";
+// UI
+import { ElMessage, ElMessageBox } from "element-plus";
+// 远程 API
+import {
+  getSurveyList,
+  createSurvey,
+  updateSurvey,
+  deleteSurvey as deleteRemoteSurvey,
+  serializeComponents,
+  extractSurveyMetadata
+} from "@/api/modules/survey";
 
 import { qiankunWindow } from "vite-plugin-qiankun/es/helper";
 
@@ -94,13 +109,14 @@ const { t } = useI18n();
 const isQiankun = qiankunWindow.__POWERED_BY_QIANKUN__;
 const editorPrefix = isQiankun ? "" : "/editor";
 
-import { deleteSurveyById, getAllSurvey, updateSurveyById } from "@/db/operation";
-import { useEditorStore } from "@/stores/useEditor";
-import { ElMessage, ElMessageBox } from "element-plus";
-const tableData = ref<SurveyDBData[]>([]);
+const store = useEditorStore();
+
+const tableData = ref<SurveyDBReturnData[]>([]);
 
 /** 当前正在同步的问卷 id，用于按钮 loading 态 */
 const syncingId = ref<number | null>(null);
+/** 远程数据加载状态 */
+const remoteLoading = ref(false);
 
 // ─── 分页 ──────────────────────────────────────────────────────
 const currentPage = ref(1);
@@ -112,25 +128,74 @@ const pagedTableData = computed(() => {
   return tableData.value.slice(start, start + pageSize.value);
 });
 
-// 获取所有问卷
-function getData() {
-  getAllSurvey().then(res => {
-    tableData.value = res;
-  });
-}
-getData();
+// ─── 本地数据 ──────────────────────────────────────────────────
 
-const store = useEditorStore();
+/** 获取本地所有问卷 */
+async function getLocalData() {
+  const res = await getAllSurvey();
+  tableData.value = res as SurveyDBReturnData[];
+}
+
+// ─── 远程数据同步 ──────────────────────────────────────────────
+
+/** 从远程获取问卷列表，更新本地同步状态 */
+async function fetchRemoteList() {
+  remoteLoading.value = true;
+  try {
+    let page = 1;
+    const pageSize = 100;
+    let hasMore = true;
+
+    while (hasMore) {
+      const res = await getSurveyList({ page, page_size: pageSize });
+      if (res.code !== 0 || !res.data) break;
+
+      const { surveys: remoteSurveys, total } = res.data;
+
+      // 遍历远程问卷，更新本地同步状态
+      for (const remoteSurvey of remoteSurveys) {
+        const matched = tableData.value.find(l => l.remote_survey_id === remoteSurvey.id);
+
+        if (matched && matched.id !== undefined) {
+          // 本地已有该问卷且已关联远程 ID → 确保同步状态为 synced
+          if (matched.syncStatus !== "synced") {
+            await updateSurveyById(matched.id, { syncStatus: "synced" });
+          }
+        }
+      }
+
+      // 判断是否还有下一页
+      hasMore = page * pageSize < total;
+      page++;
+    }
+  } catch {
+    // 远程列表获取失败不阻塞本地数据展示
+    console.warn("[Layout] 远程问卷列表获取失败，仅展示本地数据");
+  } finally {
+    remoteLoading.value = false;
+    // 刷新本地数据以反映最新同步状态
+    await getLocalData();
+  }
+}
+
+// ─── 页面初始化 ────────────────────────────────────────────────
+
+onMounted(async () => {
+  await getLocalData();
+  fetchRemoteList();
+});
 
 /** 监听问卷更新：当编辑器中点击"更新问卷"后，自动刷新表格同步状态 */
 watch(
   () => store.lastUpdatedId,
   newId => {
     if (newId !== null) {
-      getData();
+      getLocalData();
     }
   }
 );
+
+// ─── 导航 ──────────────────────────────────────────────────────
 
 const goLand = () => {
   router.push({ name: "land" });
@@ -148,42 +213,50 @@ const goToComMarket = () => {
   router.push("/materials");
 };
 
-// 删除问卷
-const deleteSurvey = (surveyInfo: SurveyDBReturnData) => {
-  // 确认删除
+// ─── 问卷操作 ──────────────────────────────────────────────────
+
+/** 删除问卷（本地 + 远程） */
+const handleDeleteSurvey = (surveyInfo: SurveyDBReturnData) => {
   ElMessageBox.confirm(t("layout.deleteConfirm"), t("layout.deleteTitle"), {
     confirmButtonText: t("layout.confirm"),
     cancelButtonText: t("layout.cancel"),
     type: "warning"
   })
-    .then(() => {
-      // 确认删除，调用删除接口
-      deleteSurveyById(surveyInfo.id)
-        .then(() => {
-          getData();
-          ElMessage.success(t("layout.deleteSuccess"));
-        })
-        .catch(() => {
-          ElMessage.error(t("layout.deleteFailed"));
-        });
+    .then(async () => {
+      try {
+        // 1. 远程删除（如果已同步）
+        if (surveyInfo.remote_survey_id) {
+          try {
+            await deleteRemoteSurvey(surveyInfo.remote_survey_id);
+          } catch {
+            // 远程删除失败不阻塞本地删除
+            console.warn("[Layout] 远程删除失败，将继续删除本地数据");
+          }
+        }
+
+        // 2. 本地删除
+        await deleteSurveyById(surveyInfo.id);
+        await getLocalData();
+        ElMessage.success(t("layout.deleteSuccess"));
+      } catch {
+        ElMessage.error(t("layout.deleteFailed"));
+      }
     })
     .catch(() => {
       ElMessage.info(t("layout.deleteCancelled"));
     });
 };
-// 预览问卷
+
+/** 预览问卷 */
 const viewSurvey = (surveyInfo: SurveyDBReturnData) => {
-  console.log(surveyInfo.id);
   router.push({
     path: `/preview/${surveyInfo.id}`,
-    state: {
-      from: "home"
-    }
+    state: { from: "home" }
   });
 };
-// 编辑问卷
+
+/** 编辑问卷 */
 const editSurvey = (surveyInfo: SurveyDBReturnData) => {
-  // 仅仅是做一个跳转，跳转到编辑器页面，但是需要将 id 带过去
   router.push(`${editorPrefix}/${surveyInfo.id}/survey-type`);
 };
 
@@ -191,14 +264,50 @@ const editSurvey = (surveyInfo: SurveyDBReturnData) => {
 const syncSurvey = async (surveyInfo: SurveyDBReturnData) => {
   syncingId.value = surveyInfo.id;
   try {
-    // TODO: 对接实际的远程同步 API
-    // 模拟同步延迟
-    await new Promise(resolve => setTimeout(resolve, 800));
-    // 更新本地同步状态
-    await updateSurveyById(surveyInfo.id, { syncStatus: "synced" });
-    // 刷新本地表格数据
-    getData();
-    ElMessage.success(t("layout.syncSuccess"));
+    // 序列化组件数据为后端格式
+    const components = serializeComponents(surveyInfo.coms as unknown as Parameters<typeof serializeComponents>[0]);
+    const { title, description } = extractSurveyMetadata(
+      surveyInfo.coms as unknown as Parameters<typeof extractSurveyMetadata>[0]
+    );
+
+    // 确保标题非空
+    const safeTitle = title || surveyInfo.title || "未命名问卷";
+
+    if (surveyInfo.remote_survey_id) {
+      // 已存在远程记录 → 更新
+      const res = await updateSurvey(surveyInfo.remote_survey_id, {
+        title: safeTitle,
+        description,
+        components,
+        page_size: surveyInfo.pageSize
+      });
+      if (res.code === 0) {
+        await updateSurveyById(surveyInfo.id, { syncStatus: "synced" });
+        await getLocalData();
+        ElMessage.success(t("layout.syncSuccess"));
+      } else {
+        ElMessage.error(res.msg || t("layout.syncFailed"));
+      }
+    } else {
+      // 首次同步 → 创建远程记录
+      const res = await createSurvey({
+        title: safeTitle,
+        description,
+        components,
+        page_size: surveyInfo.pageSize
+      });
+      if (res.code === 0 && res.data) {
+        // 存储远程问卷 ID 并标记已同步
+        await updateSurveyById(surveyInfo.id, {
+          remote_survey_id: res.data.survey_id,
+          syncStatus: "synced"
+        });
+        await getLocalData();
+        ElMessage.success(t("layout.syncSuccess"));
+      } else {
+        ElMessage.error(res.msg || t("layout.syncFailed"));
+      }
+    }
   } catch {
     ElMessage.error(t("layout.syncFailed"));
   } finally {

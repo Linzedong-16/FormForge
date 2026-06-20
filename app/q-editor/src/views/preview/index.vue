@@ -59,7 +59,8 @@ import { canUsedForPDF } from "@/types";
 import { ElMessage } from "element-plus";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 import { useI18n } from "vue-i18n";
-import { createSurvey, serializeComponents, getSurveyMetadata } from "@/api/modules/survey";
+import { createSurvey, serializeComponents, getSurveyMetadata, publishSurvey } from "@/api/modules/survey";
+import { updateSurveyById } from "@/db/operation";
 
 const { t } = useI18n();
 
@@ -111,10 +112,28 @@ const generatePDF = () => {
 };
 
 /**
- * 提交审核（预留，后续迭代开发）
+ * 提交审核（发布问卷）
  */
-const handleSubmitReview = () => {
-  // TODO: 实现提交审核业务逻辑
+const handleSubmitReview = async () => {
+  if (!id) {
+    ElMessage.warning(t("editor.noSurveyData"));
+    return;
+  }
+  const local = await getSurveyById(id);
+  if (!local?.remote_survey_id) {
+    ElMessage.warning(t("editor.reviewNeedOnline"));
+    return;
+  }
+  try {
+    const res = await publishSurvey(local.remote_survey_id);
+    if (res.code === 0) {
+      ElMessage.success(t("editor.reviewSuccess"));
+    } else {
+      ElMessage.error(res.msg || t("editor.reviewFailed"));
+    }
+  } catch {
+    ElMessage.error(t("editor.reviewFailed"));
+  }
 };
 
 /**
@@ -162,6 +181,15 @@ const generateOnlineSurvey = async () => {
     const surveyId = res.data.survey_id;
     shareLink.value = `${window.location.origin}/survey/${surveyId}?pageSize=${store.pageSize}`;
     dialogVisible.value = true;
+
+    // 将远程问卷 ID 写回本地 IndexedDB，以便后续同步/删除
+    if (id) {
+      await updateSurveyById(id, {
+        remote_survey_id: surveyId,
+        syncStatus: "synced"
+      });
+    }
+
     ElMessage.success(t("preview.onlineSuccess"));
   } catch (err) {
     console.error("[generateOnlineSurvey]", err);

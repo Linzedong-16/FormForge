@@ -77,6 +77,42 @@
         <UserProfile />
       </div>
     </div>
+
+    <!-- 申请共享模板对话框 -->
+    <el-dialog v-model="templateDialogVisible" :title="t('editor.templateDialogTitle')" width="500px">
+      <el-form :model="templateForm" label-width="100px">
+        <el-form-item :label="t('editor.templateCategory')" required>
+          <el-select
+            v-model="templateForm.category"
+            :placeholder="t('editor.templateCategoryRequired')"
+            style="width: 100%"
+          >
+            <el-option :label="t('editor.templateCategoryEducation')" value="education" />
+            <el-option :label="t('editor.templateCategoryMarket')" value="market" />
+            <el-option :label="t('editor.templateCategoryHr')" value="hr" />
+            <el-option :label="t('editor.templateCategoryCustomer')" value="customer" />
+            <el-option :label="t('editor.templateCategoryEvent')" value="event" />
+            <el-option :label="t('editor.templateCategoryOther')" value="other" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="t('editor.templateSubmitMessage')">
+          <el-input
+            v-model="templateForm.submit_message"
+            type="textarea"
+            :rows="3"
+            maxlength="500"
+            show-word-limit
+            :placeholder="t('editor.templateSubmitMessage')"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="templateDialogVisible = false">{{ t("editor.cancelButton") }}</el-button>
+        <el-button type="primary" :loading="templateApplying" @click="submitApplyTemplate">
+          {{ t("editor.templateSubmit") }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -91,6 +127,9 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { useEditorStore } from "@/stores/useEditor";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 import UserProfile from "@/components/Common/UserProfile.vue";
+import { applyTemplate, serializeComponents } from "@/api/modules/survey";
+import type { TemplateCategory } from "@common/survey/survey.interface";
+
 const props = defineProps({
   isEditor: {
     type: Boolean,
@@ -104,7 +143,10 @@ const props = defineProps({
 const store = useEditorStore();
 
 // 统一的保存/更新回调（由 EditorView 通过 provide 注入，确保 Ctrl+S 与按钮走同一逻辑）
-const editorDoSave = inject<() => Promise<void>>("editorDoSave", () => Promise.resolve());
+// 返回序列化后的组件列表，供后续操作复用
+const editorDoSave = inject<() => Promise<ReturnType<typeof serializeComponents>>>("editorDoSave", () =>
+  Promise.resolve([])
+);
 
 // 重置问卷
 const reset = () => {
@@ -165,8 +207,62 @@ const onAiSubmit = () => {
 
 // ─── 模板市场 ────────────────────────────────────────────────
 
+const templateDialogVisible = ref(false);
+const templateApplying = ref(false);
+const templateForm = ref({
+  category: "" as string,
+  submit_message: ""
+});
+
+const resetTemplateForm = () => {
+  templateForm.value = { category: "", submit_message: "" };
+};
+
 const onApplyShareTemplate = () => {
-  // TODO: 实现模板上传/共享逻辑
+  resetTemplateForm();
+  templateDialogVisible.value = true;
+};
+
+/** 提交申请共享模板 */
+const submitApplyTemplate = async () => {
+  if (!templateForm.value.category) {
+    ElMessage.warning(t("editor.templateCategoryRequired"));
+    return;
+  }
+
+  if (!store.remoteSurveyId) {
+    ElMessage.warning(t("editor.templateSyncFirst"));
+    return;
+  }
+
+  templateApplying.value = true;
+  try {
+    // 先保存并同步到远程，复用同步返回的序列化组件
+    const components = await editorDoSave();
+
+    // 确保已有 remoteSurveyId（save 可能刚创建）
+    if (!store.remoteSurveyId) {
+      ElMessage.error(t("editor.templateNeedSync"));
+      return;
+    }
+
+    const res = await applyTemplate(store.remoteSurveyId, {
+      category: templateForm.value.category as TemplateCategory,
+      components,
+      submit_message: templateForm.value.submit_message || undefined
+    });
+
+    if (res.code === 0) {
+      templateDialogVisible.value = false;
+      ElMessage.success(t("editor.templateApplySuccess"));
+    } else {
+      ElMessage.error(res.msg || t("editor.templateApplyFailed"));
+    }
+  } catch {
+    ElMessage.error(t("editor.templateApplyFailed"));
+  } finally {
+    templateApplying.value = false;
+  }
 };
 </script>
 
