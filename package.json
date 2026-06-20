@@ -18,7 +18,9 @@
     "dev:editor": "pnpm --filter ./app/q-editor dev",
     "dev:admin": "pnpm --filter ./app/frontend dev",
     "dev:micro": "concurrently \"pnpm dev:main\" \"pnpm dev:editor\" \"pnpm dev:admin\"",
-    "dev:mock": "pnpm --filter ./app/q-editor dev --mode mock"
+    "dev:mock": "pnpm --filter ./app/q-editor dev --mode mock",
+    "dev:components": "pnpm --filter monorepo-code-components dev",
+    "typecheck:components": "pnpm --filter monorepo-code-components typecheck"
   },
   "config": {
     "commitizen": {

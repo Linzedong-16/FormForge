@@ -4,11 +4,27 @@
   "description": "Monorepo shared Vue components",
   "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite serve dev",
+    "build": "vite build",
+    "typecheck": "vue-tsc --noEmit"
   },
   "peerDependencies": {
+    "element-plus": "^2.0.0",
     "vue": "^3.3.0"
+  },
+  "devDependencies": {
+    "@element-plus/icons-vue": "^2.0.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "element-plus": "^2.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.0.0",
+    "vue": "^3.3.0",
+    "vue-tsc": "^2.0.0"
   },
   "keywords": [],
   "author": "",

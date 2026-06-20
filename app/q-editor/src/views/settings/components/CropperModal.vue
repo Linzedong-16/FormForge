@@ -34,7 +34,7 @@
                 <input
                   type="range"
                   class="zoom-slider"
-                  min="0.3"
+                  min="0.1"
                   max="4"
                   step="0.01"
                   :value="currentScale"

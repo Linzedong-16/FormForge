@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
+    "baseUrl": ".",
+    "lib": ["esnext", "dom"],
+    "types": ["vue/jsx"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.vue", "dev/**/*.ts", "dev/**/*.vue", "env.d.ts"],
+  "exclude": ["node_modules"]
+}

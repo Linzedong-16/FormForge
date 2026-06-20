@@ -235,7 +235,8 @@ function handleMouseUp() {
 function handleWheel(e: WheelEvent) {
   if (!loaded.value) return;
   const delta = e.deltaY > 0 ? -0.05 : 0.05;
-  const newScale = Math.max(0.3, Math.min(5, scale.value + delta));
+  // 最小缩放 0.1：保证高分辨率图片也能缩到裁剪框内，让用户框选更多画面内容
+  const newScale = Math.max(0.1, Math.min(5, scale.value + delta));
   scale.value = newScale;
   emitUpdate();
 }
@@ -249,9 +250,10 @@ function handleTouchStart(e: TouchEvent) {
     pinchStartScale.value = scale.value;
   } else if (e.touches.length === 1) {
     // 单指拖拽
+    const touch = e.touches[0]!;
     dragging.value = true;
-    dragStartX.value = e.touches[0].clientX;
-    dragStartY.value = e.touches[0].clientY;
+    dragStartX.value = touch.clientX;
+    dragStartY.value = touch.clientY;
     dragStartPosX.value = posX.value;
     dragStartPosY.value = posY.value;
   }
@@ -262,11 +264,13 @@ function handleTouchMove(e: TouchEvent) {
     // 双指缩放
     const dist = getTouchDistance(e);
     const newScale = pinchStartScale.value * (dist / pinchStartDist.value);
-    scale.value = Math.max(0.3, Math.min(5, newScale));
+    // 最小缩放 0.1：保证高分辨率图片也能缩到裁剪框内，让用户框选更多画面内容
+    scale.value = Math.max(0.1, Math.min(5, newScale));
     emitUpdate();
   } else if (e.touches.length === 1 && dragging.value) {
-    const dx = e.touches[0].clientX - dragStartX.value;
-    const dy = e.touches[0].clientY - dragStartY.value;
+    const touch = e.touches[0]!;
+    const dx = touch.clientX - dragStartX.value;
+    const dy = touch.clientY - dragStartY.value;
     posX.value = dragStartPosX.value + dx / scale.value;
     posY.value = dragStartPosY.value + dy / scale.value;
     emitUpdate();
@@ -279,8 +283,10 @@ function handleTouchEnd() {
 
 function getTouchDistance(e: TouchEvent): number {
   if (e.touches.length < 2) return 0;
-  const dx = e.touches[0].clientX - e.touches[1].clientX;
-  const dy = e.touches[0].clientY - e.touches[1].clientY;
+  const t0 = e.touches[0]!;
+  const t1 = e.touches[1]!;
+  const dx = t0.clientX - t1.clientX;
+  const dy = t0.clientY - t1.clientY;
   return Math.sqrt(dx * dx + dy * dy);
 }
 
@@ -369,7 +375,8 @@ function renderCropToCanvas(): HTMLCanvasElement | null {
 
 /** 设置缩放级别 */
 function setScale(s: number) {
-  scale.value = Math.max(0.3, Math.min(5, s));
+  // 最小缩放 0.1：保证高分辨率图片也能缩到裁剪框内，让用户框选更多画面内容
+  scale.value = Math.max(0.1, Math.min(5, s));
   emitUpdate();
 }
 
