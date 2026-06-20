@@ -40,7 +40,16 @@ export function createCache(fastify: FastifyInstance): CacheClient {
 
   async function get<T>(key: string): Promise<T | null> {
     try {
+      // #region debug-point cache-get-start
+      const t0 = Date.now();
+      // #endregion
       const raw = await redis.get(`${CACHE_PREFIX}${key}`);
+      // #region debug-point cache-get-end
+      const latency = Date.now() - t0;
+      if (latency > 100) {
+        fastify.log.warn({ latency_ms: latency, key }, "[debug] cache: Redis GET slow");
+      }
+      // #endregion
       if (raw === null) return null;
       return JSON.parse(raw) as T;
     } catch {

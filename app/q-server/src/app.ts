@@ -27,7 +27,13 @@ export const buildApp = () => {
       })
     },
     // 请求体大小限制（防止 OOM）
-    bodyLimit: 5 * 1024 * 1024 // 5MB
+    bodyLimit: 5 * 1024 * 1024, // 5MB
+    // 请求超时 — 防止 Redis/DB 阻塞导致请求永久挂起
+    requestTimeout: Number(process.env.REQUEST_TIMEOUT ?? 30000), // 30s
+    // 连接超时 — 防止恶意连接占用资源
+    connectionTimeout: Number(process.env.CONNECTION_TIMEOUT ?? 10000), // 10s
+    // Keep-Alive 超时 — 长连接空闲超时
+    keepAliveTimeout: Number(process.env.KEEP_ALIVE_TIMEOUT ?? 72000) // 72s
   });
 
   // ── 全局 requestId 钩子（全链路追踪） ──────────────────────
@@ -38,6 +44,18 @@ export const buildApp = () => {
     request.id = traceId;
     // 响应头回传 traceId，方便前端关联
     reply.header("x-trace-id", traceId);
+  });
+
+  // ── 请求超时处理钩子 ──────────────────────────────────────
+  app.addHook("onTimeout", async (request, reply) => {
+    request.log.warn({ url: request.url, method: request.method }, "请求超时");
+    if (!reply.sent) {
+      reply.status(408).send({
+        data: null,
+        code: 408,
+        msg: "请求处理超时，请稍后重试"
+      });
+    }
   });
 
   app

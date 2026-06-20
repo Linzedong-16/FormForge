@@ -86,6 +86,8 @@ export default defineConfig(({ command, mode }) => {
           target: "http://localhost:8080",
           changeOrigin: true,
           secure: false,
+          // 代理超时 — 防止后端无响应时 Vite proxy 永久挂起
+          timeout: 20000, // 20s
           // Mock 模式 → 不转发到后端（由 vite-plugin-mock 拦截）
           bypass(req) {
             if (mockEnabled) return req.url;

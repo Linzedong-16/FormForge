@@ -48,15 +48,30 @@ function extractToken(request: FastifyRequest): string | null {
 
 /** 认证中间件 — 校验 Access Token */
 export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
+  // #region debug-point auth-middleware-entry
+  const t0 = Date.now();
+  // #endregion
   const token = extractToken(request);
   if (!token) {
+    // #region debug-point auth-no-token
+    request.log.info({ latency_ms: Date.now() - t0 }, "[debug] auth: no token, returning 401");
+    // #endregion
     return reply.sendUnauthorized("请先登录");
   }
 
   try {
+    // #region debug-point auth-verify-token-start
+    request.log.info("[debug] auth: verifying token...");
+    // #endregion
     const authService = getAuthService(request.server);
     request.user = await authService.verifyToken(token);
+    // #region debug-point auth-verify-token-end
+    request.log.info({ latency_ms: Date.now() - t0 }, "[debug] auth: token verified");
+    // #endregion
   } catch (error) {
+    // #region debug-point auth-verify-token-error
+    request.log.warn({ latency_ms: Date.now() - t0, err: error }, "[debug] auth: token verification failed");
+    // #endregion
     if (error instanceof AuthError) {
       return reply.status(error.statusCode).send({
         data: error.details ?? null,
