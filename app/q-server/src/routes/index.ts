@@ -73,7 +73,8 @@ const routes: FastifyPluginAsync = async fastify => {
   /// 统一配置 modules 路由
   fastify.register(authRoutes, { prefix: "/auth" });
   fastify.register(adminRoutes, { prefix: "/admin" });
-  fastify.register(surveyRoutes, { prefix: "/api" });
+  // survey.routes.ts 内部路径已为 /surveys、/responses 等完整路径，无需额外前缀
+  fastify.register(surveyRoutes);
 };
 
 export default routes;

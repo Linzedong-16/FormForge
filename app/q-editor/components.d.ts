@@ -93,6 +93,9 @@ declare module 'vue' {
     UserProfile: typeof import('./src/components/Common/UserProfile.vue')['default']
     WeightEditor: typeof import('./src/components/SurveyComs/EditItems/WeightEditor.vue')['default']
   }
+  export interface GlobalDirectives {
+    vLoading: typeof import('element-plus/es')['ElLoadingDirective']
+  }
 }
 
 // For TSX support
