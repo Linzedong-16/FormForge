@@ -19,7 +19,12 @@
       </div>
       <!-- 对应的问卷 -->
       <div class="content-group no-border">
-        <div v-for="(com, index) in store.coms" v-show="isInCurrentPage(index)" :key="index" class="content mb-10">
+        <div
+          v-for="(com, index) in store.coms"
+          v-show="isInCurrentPage(index) || isPrinting"
+          :key="index"
+          class="content mb-10"
+        >
           <component :is="com.type" :status="com.status" :serial-num="serialNum[index]" />
         </div>
         <!-- 分页器 -->
@@ -53,7 +58,7 @@ import { useEditorStore } from "@/stores/useEditor";
 const store = useEditorStore();
 // 工具方法
 import { restoreComponentStatus } from "@/utils";
-import { computed, ref } from "vue";
+import { computed, ref, nextTick } from "vue";
 import { useSurveyNo } from "@/utils/hooks";
 import { canUsedForPDF } from "@/types";
 import { ElMessage } from "element-plus";
@@ -66,6 +71,8 @@ const { t } = useI18n();
 
 const dialogVisible = ref(false);
 const shareLink = ref("");
+/** 打印模式：为 true 时展示全部组件，绕过分页的 v-show 限制 */
+const isPrinting = ref(false);
 
 // 判断某个全局索引的组件是否属于当前分页
 const isInCurrentPage = (index: number) => {
@@ -107,8 +114,17 @@ const generatePDF = () => {
     ElMessage.error(t("preview.pdfError"));
     return;
   }
-  window.print();
-  ElMessage.success(t("preview.pdfSuccess"));
+
+  // 打印前展示全部组件，绕过分页的 v-show 限制
+  isPrinting.value = true;
+  nextTick(() => {
+    const cleanup = () => {
+      isPrinting.value = false;
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    window.print();
+  });
 };
 
 /**
