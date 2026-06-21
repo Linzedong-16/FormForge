@@ -363,6 +363,12 @@ export class AuthService {
       }
     }
 
+    // 7. 记录审计日志
+    createAuditLog(this.fastify, 0n, "send_code", "user", null, {
+      email: maskEmail(email),
+      type
+    }).catch(() => {});
+
     return { expireSeconds: VERIFY_CODE_TTL };
   }
 
@@ -521,6 +527,9 @@ export class AuthService {
     const role = roles.includes("super_admin") ? "super_admin" : "user";
     const tokens = await this.generateTokens({ id: user.id.toString(), email: user.email, role });
 
+    // 审计日志
+    createAuditLog(this.fastify, user.id, "refresh_token", "user", user.id).catch(() => {});
+
     return {
       ...tokens,
       user: {
@@ -587,6 +596,16 @@ export class AuthService {
   /** 登出 — 将 Access Token 加入黑名单 */
   async logout(token: string): Promise<void> {
     await this.blacklistToken(token);
+
+    // 审计日志：从 Token 中解码用户信息
+    try {
+      const payload = jwt.decode(token) as JwtPayload | null;
+      if (payload?.sub) {
+        createAuditLog(this.fastify, BigInt(payload.sub), "logout", "user", BigInt(payload.sub)).catch(() => {});
+      }
+    } catch {
+      // 解码失败忽略
+    }
   }
 
   // ============================================================

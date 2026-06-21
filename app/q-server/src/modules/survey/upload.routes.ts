@@ -8,6 +8,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { authenticate } from "../user/auth.middleware.js";
 import { uploadToMinio } from "../../utils/upload.js";
+import { createAuditLog } from "../../utils/audit-log.js";
 import { AppError } from "../../utils/errors.js";
 
 /** 允许的图片 MIME 类型 */
@@ -51,6 +52,14 @@ const uploadRoutes: FastifyPluginAsync = async fastify => {
 
       // 上传到 MinIO
       const imageUrl = await uploadToMinio(fastify, buffer, "images", data.filename, data.mimetype);
+
+      // 审计日志
+      createAuditLog(fastify, request.user!.userId, "upload_image", "minio", null, {
+        filename: data.filename,
+        mimetype: data.mimetype,
+        size: buffer.length,
+        url: imageUrl
+      }).catch(() => {});
 
       return reply.sendSuccess({ imageUrl }, "上传成功");
     }
