@@ -80,7 +80,9 @@ function buildUrl(key: string): string {
   const useSSL = process.env.MINIO_USE_SSL === "true";
   const protocol = useSSL ? "https" : "http";
 
-  const baseUrl = `${protocol}://${endpoint}:${port}`;
+  // 如果 endpoint 已包含端口号（如 "localhost:9000"），则不再拼接 MINIO_PORT
+  const host = endpoint.includes(":") ? endpoint : `${endpoint}:${port}`;
+  const baseUrl = `${protocol}://${host}`;
   const url = new URL(`/${BUCKET}/${key}`, baseUrl);
   return url.href;
 }

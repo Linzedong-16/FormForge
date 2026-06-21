@@ -37,6 +37,21 @@ export const useUserStore = defineStore(
     /** Token 过期时间戳（毫秒） */
     const tokenExpiresAt = ref<number | null>(null);
 
+    // ── 用户资料（头像、昵称等，持久化 + 跨组件共享） ──────
+    const profile = ref<{
+      avatarUrl: string | null;
+      nickname: string | null;
+      occupation: string | null;
+      bio: string | null;
+      interests: string[];
+    }>({
+      avatarUrl: null,
+      nickname: null,
+      occupation: null,
+      bio: null,
+      interests: []
+    });
+
     // 并发刷新控制
     const isRefreshing = ref(false);
     const refreshQueue = ref<Array<(token: string) => void>>([]);
@@ -128,6 +143,7 @@ export const useUserStore = defineStore(
         // 即便后端登出失败也清除本地状态
       }
       clearTokens();
+      clearProfile();
     }
 
     /** 获取系统状态 */
@@ -137,6 +153,53 @@ export const useUserStore = defineStore(
         systemStatus.value = res.data;
       }
       return res;
+    }
+
+    // ── 用户资料管理 ──────────────────────────────────────
+
+    /** 从后端加载用户资料并更新 store */
+    async function fetchProfile() {
+      try {
+        const { getProfile } = await import("@/api/modules/settings");
+        const res = await getProfile();
+        if (res.code === 0 && res.data) {
+          profile.value = {
+            avatarUrl: res.data.avatarUrl,
+            nickname: res.data.nickname,
+            occupation: res.data.occupation,
+            bio: res.data.bio,
+            interests: res.data.interests ?? []
+          };
+        }
+      } catch {
+        // 网络异常不影响正常使用，保留旧数据
+      }
+    }
+
+    /** 更新本地资料缓存（各组件修改后调用） */
+    function setProfile(partial: {
+      avatarUrl?: string | null;
+      nickname?: string | null;
+      occupation?: string | null;
+      bio?: string | null;
+      interests?: string[];
+    }) {
+      if (partial.avatarUrl !== undefined) profile.value.avatarUrl = partial.avatarUrl;
+      if (partial.nickname !== undefined) profile.value.nickname = partial.nickname;
+      if (partial.occupation !== undefined) profile.value.occupation = partial.occupation;
+      if (partial.bio !== undefined) profile.value.bio = partial.bio;
+      if (partial.interests !== undefined) profile.value.interests = partial.interests;
+    }
+
+    /** 清除资料缓存（登出时调用） */
+    function clearProfile() {
+      profile.value = {
+        avatarUrl: null,
+        nickname: null,
+        occupation: null,
+        bio: null,
+        interests: []
+      };
     }
 
     // ════════════════════════════════════════════════════════════
@@ -208,6 +271,7 @@ export const useUserStore = defineStore(
       refreshTokenValue,
       systemStatus,
       tokenExpiresAt,
+      profile,
       isRefreshing,
       // 计算属性
       isLoggedIn,
@@ -222,6 +286,10 @@ export const useUserStore = defineStore(
       handleInitRegister,
       handleLogout,
       fetchSystemStatus,
+      // 资料
+      fetchProfile,
+      setProfile,
+      clearProfile,
       // 刷新
       refreshAccessToken,
       checkAndRefreshToken
@@ -229,11 +297,11 @@ export const useUserStore = defineStore(
   },
   {
     // Pinia 持久化插件配置
-    // 只持久化用户信息（user），Token 相关字段使用原有手动存储逻辑
+    // 持久化 user（认证信息）和 profile（头像/昵称等），Token 使用原有手动存储
     persist: {
       key: "q-editor-user-info",
       storage: localStorage,
-      pick: ["user"]
+      pick: ["user", "profile"]
     }
   }
 );

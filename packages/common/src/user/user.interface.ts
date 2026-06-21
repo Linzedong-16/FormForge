@@ -5,11 +5,13 @@
 //   1. 通用响应结构
 //   2. 角色/状态枚举
 //   3. 认证接口请求/响应类型
-//   4. 管理员接口请求/响应类型
-//   5. 实体类型
+//   4. 用户资料接口请求/响应类型
+//   5. 管理员接口请求/响应类型
+//   6. 实体类型
+//   7. 聚合 API 类型映射
 //
 // 后端接口实现参考：app/q-server/src/modules/user/
-// 后端 API 文档参考：app/q-server/doc/auth-api.md
+// 后端 Schema 参考：  app/q-server/src/modules/user/schemas/user.schemas.ts
 // ──────────────────────────────────────────────────────────────────────────────
 
 // ============================================================
@@ -90,7 +92,27 @@ export enum BizCode {
   /** 用户注册已关闭 */
   RegistrationClosed = 1009,
   /** SMTP 邮件服务未配置 */
-  SmtpNotConfigured = 1010
+  SmtpNotConfigured = 1010,
+
+  // ── 用户资料模块 (2001~2009) ──────────────────────────────
+  /** 昵称包含非法字符 */
+  NicknameInvalid = 2001,
+  /** 图片格式不支持 */
+  AvatarFormatInvalid = 2002,
+  /** 图片文件过大 */
+  AvatarTooLarge = 2003,
+  /** 图片尺寸不符合要求 */
+  AvatarSizeInvalid = 2004,
+  /** 文件存储服务不可用 */
+  StorageUnavailable = 2005,
+  /** 邮箱已被其他用户绑定 */
+  EmailAlreadyBound = 2006,
+  /** 当前密码错误 */
+  CurrentPasswordIncorrect = 2007,
+  /** 新密码与当前密码相同 */
+  PasswordSameAsCurrent = 2008,
+  /** 账号已注销 */
+  AccountDeleted = 2009
 }
 
 // ============================================================
@@ -191,12 +213,15 @@ export interface InitRegisterRequest {
 
 /**
  * POST /api/auth/send-code — 发送验证码请求体
+ *
+ * type 字段对应后端 Zod enum：
+ *   register | reset_password | bind_email | change_password
  */
 export interface SendCodeRequest {
   /** 接收验证码的邮箱 */
   email: string;
   /** 验证码用途 */
-  type: "register" | "reset_password";
+  type: "register" | "reset_password" | "bind_email" | "change_password";
 }
 
 /**
@@ -285,7 +310,157 @@ export interface LoginFailExtra {
 }
 
 // ============================================================
-//  6. 管理员接口 — 请求体
+//  6. 用户资料接口 — 请求/响应体
+// ============================================================
+
+/**
+ * GET /api/user/profile — 用户完整资料响应
+ *
+ * 对应后端 `profile.service.ts` 中的 `UserProfileResponse`
+ * 首访用户（UserProfile 不存在）返回默认值，不报错
+ */
+export interface UserProfileResponse {
+  /** 用户 ID */
+  userId: string;
+  /** 邮箱 */
+  email: string;
+  /** 用户名 */
+  username: string;
+  /** 头像 URL */
+  avatarUrl: string | null;
+  /** 昵称 */
+  nickname: string | null;
+  /** 职业 */
+  occupation: string | null;
+  /** 个人介绍 */
+  bio: string | null;
+  /** 兴趣标签列表 */
+  interests: string[];
+  /** 已绑定邮箱 */
+  boundEmail: string | null;
+  /** 邮箱是否已验证 */
+  emailVerified: boolean;
+}
+
+/**
+ * PUT /api/user/profile — 更新用户资料请求体
+ *
+ * 所有字段均为可选，至少提供一个
+ *
+ * 对应后端 Zod Schema `updateProfileSchema`
+ */
+export interface UpdateProfileRequest {
+  /** 昵称（1~50字符） */
+  nickname?: string;
+  /** 职业（1~100字符） */
+  occupation?: string;
+  /** 个人介绍（1~500字符） */
+  bio?: string;
+  /** 兴趣标签列表（最多10个，单个1~20字符） */
+  interests?: string[];
+}
+
+/**
+ * PUT /api/user/profile — 更新资料成功响应
+ */
+export type UpdateProfileResponse = Pick<UserProfileResponse, "nickname" | "occupation" | "bio" | "interests">;
+
+/**
+ * POST /api/user/avatar — 头像上传成功响应
+ *
+ * 对应后端 `avatar.service.ts` 中的 `AvatarUploadResult`
+ */
+export interface AvatarUploadResult {
+  /** 原图 URL（800x800） */
+  avatarUrl: string;
+  /** 缩略图 URL（200x200） */
+  thumbnailUrl: string;
+}
+
+/**
+ * POST /api/user/bind-email — 绑定邮箱请求体
+ *
+ * 需要先调用 POST /api/auth/send-code（type = "bind_email"）获取验证码
+ *
+ * 对应后端 Zod Schema `bindEmailSchema`
+ */
+export interface BindEmailRequest {
+  /** 要绑定的邮箱 */
+  email: string;
+  /** 6 位数字验证码 */
+  code: string;
+}
+
+/**
+ * POST /api/user/bind-email — 绑定邮箱成功响应
+ */
+export interface BindEmailResponse {
+  /** 绑定的邮箱 */
+  email: string;
+  /** 邮箱是否已验证 */
+  verified: boolean;
+}
+
+/**
+ * PUT /api/user/change-password — 修改密码请求体
+ *
+ * 对应后端 Zod Schema `changePasswordSchema`
+ */
+export interface ChangePasswordRequest {
+  /** 当前密码 */
+  currentPassword: string;
+  /** 新密码（至少 8 位，含大小写和数字） */
+  newPassword: string;
+}
+
+/**
+ * DELETE /api/user/account — 注销账号成功响应
+ */
+export interface DeleteAccountResponse {
+  /** 注销时间（ISO 8601） */
+  deletedAt: string;
+}
+
+// ============================================================
+//  7. 当前用户接口 — 请求/响应体
+// ============================================================
+
+/**
+ * GET /api/user/me — 当前用户信息响应
+ *
+ * 对应后端 `user.service.ts` 中的 `UserProfile`
+ */
+export interface CurrentUserResponse {
+  /** 用户 ID */
+  id: string;
+  /** 邮箱 */
+  email: string;
+  /** 用户名 */
+  username: string;
+  /** 角色 */
+  role: string;
+  /** 状态：0 禁用 / 1 启用 */
+  status: number;
+  /** 创建时间（ISO 8601） */
+  created_at: string;
+  /** 最后登录时间（ISO 8601），可能为 null */
+  last_login_at: string | null;
+}
+
+/**
+ * PUT /api/user/update — 更新当前用户信息请求体
+ *
+ * username 与 password 至少提供一个
+ */
+export interface UpdateCurrentUserRequest {
+  /** 用户名（1~50字符，可选） */
+  username?: string;
+  /** 新密码（至少 8 位，可选） */
+  password?: string;
+}
+
+// ============================================================
+//  8. 管理员接口 — 请求体
 // ============================================================
 
 /**
@@ -335,7 +510,7 @@ export interface UpdateSmtpConfigRequest {
 }
 
 // ============================================================
-//  7. 管理员接口 — 响应体
+//  9. 管理员接口 — 响应体
 // ============================================================
 
 /**
@@ -430,7 +605,7 @@ export interface UpdateSmtpConfigResponse {
 }
 
 // ============================================================
-//  8. 聚合类型 — 按 API 端点分组
+//  10. 聚合类型 — 按 API 端点分组
 // ============================================================
 
 /**
@@ -440,7 +615,7 @@ export interface UpdateSmtpConfigResponse {
  *
  * @example
  * ```ts
- * import type { AuthApi } from "@/common/user/user.interface";
+ * import type { AuthApi } from "@common/user/user.interface";
  *
  * // 请求体类型
  * const body: AuthApi["login"]["request"] = { email: "a@b.com", password: "123" };
@@ -495,6 +670,66 @@ export interface AuthApi {
 }
 
 /**
+ * 用户资料模块 API 类型映射
+ *
+ * @example
+ * ```ts
+ * import type { ProfileApi } from "@common/user/user.interface";
+ * // 类型安全的资料更新
+ * const body: ProfileApi["updateProfile"]["request"] = { nickname: "新昵称" };
+ * ```
+ */
+export interface ProfileApi {
+  /** GET /api/user/profile — 获取用户资料 */
+  getProfile: {
+    request: void;
+    response: UserProfileResponse;
+  };
+  /** PUT /api/user/profile — 更新用户资料 */
+  updateProfile: {
+    request: UpdateProfileRequest;
+    response: UpdateProfileResponse;
+  };
+  /** POST /api/user/avatar — 上传头像 */
+  uploadAvatar: {
+    request: FormData;
+    response: AvatarUploadResult;
+  };
+  /** POST /api/user/bind-email — 绑定邮箱 */
+  bindEmail: {
+    request: BindEmailRequest;
+    response: BindEmailResponse;
+  };
+  /** PUT /api/user/change-password — 修改密码 */
+  changePassword: {
+    request: ChangePasswordRequest;
+    /** 无数据返回 */
+    response: null;
+  };
+  /** DELETE /api/user/account — 注销账号 */
+  deleteAccount: {
+    request: void;
+    response: DeleteAccountResponse;
+  };
+}
+
+/**
+ * 当前用户模块 API 类型映射
+ */
+export interface UserApi {
+  /** GET /api/user/me — 获取当前用户信息 */
+  getCurrentUser: {
+    request: void;
+    response: CurrentUserResponse;
+  };
+  /** PUT /api/user/update — 更新当前用户信息 */
+  updateCurrentUser: {
+    request: UpdateCurrentUserRequest;
+    response: CurrentUserResponse;
+  };
+}
+
+/**
  * 管理员模块 API 类型映射
  */
 export interface AdminApi {
@@ -531,7 +766,7 @@ export interface AdminApi {
 }
 
 // ============================================================
-//  9. 健康检查
+//  11. 健康检查
 // ============================================================
 
 /**

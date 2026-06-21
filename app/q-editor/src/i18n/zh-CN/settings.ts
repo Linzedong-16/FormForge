@@ -54,6 +54,7 @@ export default {
   passwordUpdateSuccess: "密码更新成功",
   passwordUpdateFailed: "密码更新失败，请稍后重试",
   passwordMismatch: "两次密码输入不一致",
+  passwordRequired: "请填写所有密码字段",
   forgotPassword: "忘记密码？",
   deleteAccount: "注销账号",
   deleteAccountDesc: "账号注销后，所有问卷数据将被永久删除且不可恢复。请谨慎操作。",

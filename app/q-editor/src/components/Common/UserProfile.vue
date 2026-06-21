@@ -9,16 +9,18 @@
     popper-class="user-profile-popover"
   >
     <template #reference>
-      <el-avatar :size="30" :src="avatar" class="user-profile-trigger" />
+      <el-avatar :size="36" :src="avatar" shape="circle" class="user-profile-trigger" />
     </template>
 
     <div class="user-profile-panel">
       <!-- 用户信息：头像居左，昵称 + 邮箱上下排布居右 -->
       <div class="user-info">
-        <el-avatar :size="48" :src="avatar" />
+        <el-avatar :size="56" :src="avatar" shape="circle" class="panel-avatar" />
         <div class="user-meta">
           <div class="user-name" :title="nickname">{{ nickname }}</div>
+          <div v-if="occupation" class="user-occupation" :title="occupation">{{ occupation }}</div>
           <div class="user-email" :title="email">{{ email }}</div>
+          <div v-if="bio" class="user-bio" :title="bio">{{ bio }}</div>
         </div>
       </div>
 
@@ -86,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Setting, SwitchButton, Sunny, Moon, View } from "@element-plus/icons-vue";
@@ -106,9 +108,16 @@ const isOnSettingsPage = computed(() => route.name === "settings");
 const userStore = useUserStore();
 
 // 用户信息：从 Pinia 持久化状态读取
-const avatar = ref("http://47.94.168.252/upload/1759642363899.gif");
-const nickname = computed(() => userStore.user?.username ?? "User");
+const avatar = computed(() => userStore.profile.avatarUrl ?? undefined);
+const nickname = computed(() => userStore.profile.nickname || userStore.user?.username || "User");
 const email = computed(() => userStore.user?.email ?? "");
+const occupation = computed(() => userStore.profile.occupation || "");
+const bio = computed(() => userStore.profile.bio || "");
+
+// 组件挂载时异步加载最新资料（不阻塞首屏渲染，静默刷新）
+onMounted(() => {
+  userStore.fetchProfile();
+});
 
 // 亮暗主题切换
 const { isDark, toggleTheme } = useTheme();
@@ -156,6 +165,25 @@ const onLogout = async () => {
 <style scoped lang="scss">
 .user-profile-trigger {
   cursor: pointer;
+  // 确保圆形不被全局样式覆盖
+  border-radius: 50% !important;
+  overflow: hidden;
+  // 圆形头像框：统一的环形边框
+  box-shadow: 0 0 0 2px var(--border-color);
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 0 0 2px var(--primary-color);
+  }
+}
+
+// 面板内头像框
+.panel-avatar {
+  flex-shrink: 0;
+  margin-top: 4px; // 与文字块顶部微调对齐
+  border-radius: 50% !important;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px var(--border-color);
 }
 
 .user-profile-panel {
@@ -164,10 +192,10 @@ const onLogout = async () => {
   border-radius: 10px;
 }
 
-// 用户信息区：头像左 + 昵称/邮箱右
+// 用户信息区：头像左 + 昵称/职业/邮箱/介绍右
 .user-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start; // 多行时头像顶部对齐
   gap: 12px;
   padding: 8px 10px 12px;
 }
@@ -175,7 +203,7 @@ const onLogout = async () => {
 .user-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0; // 配合子元素省略号
 }
 
@@ -186,6 +214,16 @@ const onLogout = async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.4;
+}
+
+.user-occupation {
+  font-size: 12px;
+  color: var(--font-color-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
 }
 
 .user-email {
@@ -194,6 +232,20 @@ const onLogout = async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.4;
+}
+
+// 个人介绍：多行省略（最多 2 行）
+.user-bio {
+  font-size: 12px;
+  color: var(--font-color-lighter);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.5;
 }
 
 .panel-divider {

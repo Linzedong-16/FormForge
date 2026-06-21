@@ -54,6 +54,7 @@ export default {
   passwordUpdateSuccess: "パスワードを更新しました",
   passwordUpdateFailed: "パスワードの更新に失敗しました。再試行してください",
   passwordMismatch: "パスワードが一致しません",
+  passwordRequired: "すべてのパスワード項目を入力してください",
   forgotPassword: "パスワードをお忘れですか？",
   deleteAccount: "アカウント削除",
   deleteAccountDesc: "アカウントを削除すると、すべてのアンケートデータが完全に削除され、復元できません。",

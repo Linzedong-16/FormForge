@@ -386,9 +386,11 @@
   --el-link-hover-text-color: var(--el-color-primary-light-3);
 }
 .el-avatar {
+  // 默认方形（轻微圆角），由 shape="square" 或默认态使用
   border-radius: var(--el-border-radius-base);
 
-  &.is-circle {
+  // 圆形头像：匹配 Element Plus 2.x BEM 类名 el-avatar--circle
+  &.el-avatar--circle {
     border-radius: 50%;
   }
 }

@@ -38,8 +38,12 @@ import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 import { Camera } from "@element-plus/icons-vue";
 import CropperModal from "./CropperModal.vue";
+import { uploadAvatar } from "@/api/modules/settings";
+import { useUserStore } from "@/stores/useUser";
 
 const { t } = useI18n();
+
+const userStore = useUserStore();
 
 // ── Props & Emits ────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -53,6 +57,7 @@ const emit = defineEmits<{
 
 // ── 状态 ────────────────────────────────────────────
 const defaultAvatar = "http://47.94.168.252/upload/1759642363899.gif";
+const uploading = ref(false);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const cropperVisible = ref(false);
 const previewUrl = ref("");
@@ -92,16 +97,31 @@ function handleFileChange(event: Event) {
 }
 
 // ── 裁剪确认 ────────────────────────────────────────
-// blob: 裁剪后的图片 Blob，dataUrl: 裁剪后的 base64 预览 URL
-function handleCropConfirm(_blob: Blob, dataUrl: string) {
+async function handleCropConfirm(blob: Blob, dataUrl: string) {
   cropperVisible.value = false;
-  // 使用裁剪后的 dataUrl 更新头像预览
+
+  // 先更新本地预览
   emit("update:modelValue", dataUrl);
-  // TODO: 后续对接 API 时，使用 blob 上传到服务器
-  // await uploadImage(blob);
-  ElMessage.success(t("settings.avatarUploadSuccess"));
-  // 清理临时数据
-  cleanupPreview();
+
+  // 上传到后端
+  uploading.value = true;
+  try {
+    const filename = pendingFile.value?.name ?? "avatar.png";
+    const res = await uploadAvatar(blob, filename);
+    if (res.code === 0 && res.data) {
+      // 使用后端返回的 CDN URL（高清原图）
+      emit("update:modelValue", res.data.avatarUrl);
+      // 同步到 Pinia store，所有依赖组件实时响应
+      userStore.setProfile({ avatarUrl: res.data.avatarUrl });
+      ElMessage.success(t("settings.avatarUploadSuccess"));
+    }
+  } catch {
+    // 上传失败不回退预览（用户可重试）
+    ElMessage.error(t("settings.saveFailed"));
+  } finally {
+    uploading.value = false;
+    cleanupPreview();
+  }
 }
 
 // ── 裁剪取消 ────────────────────────────────────────

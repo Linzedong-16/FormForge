@@ -95,6 +95,8 @@ import { reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useRouter } from "vue-router";
+import { sendCode } from "@/api/modules/auth";
+import { bindEmail, changePassword, deleteAccount } from "@/api/modules/settings";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -122,27 +124,40 @@ async function handleSendCode() {
     ElMessage.warning(t("settings.emailRequired"));
     return;
   }
-  // 倒计时
-  countdown.value = 60;
-  const timer = setInterval(() => {
-    countdown.value--;
-    if (countdown.value <= 0) clearInterval(timer);
-  }, 1000);
-
-  // TODO: 调用 API 发送验证码
-  // await authApi.sendCode(emailForm.email, "bind_email");
-  ElMessage.success(t("settings.codeSent"));
+  try {
+    const res = await sendCode({ email: emailForm.email, type: "bind_email" });
+    if (res.code === 0) {
+      ElMessage.success(t("settings.codeSent"));
+      // 倒计时
+      countdown.value = 60;
+      const timer = setInterval(() => {
+        countdown.value--;
+        if (countdown.value <= 0) clearInterval(timer);
+      }, 1000);
+    } else {
+      ElMessage.error(res.msg);
+    }
+  } catch {
+    ElMessage.error(t("settings.bindFailed"));
+  }
 }
 
 // ── 绑定邮箱 ────────────────────────────────────────
 async function handleBindEmail() {
+  if (!emailForm.email || !emailForm.code) {
+    ElMessage.warning(t("settings.emailRequired"));
+    return;
+  }
   binding.value = true;
   try {
-    // TODO: 调用 API 绑定邮箱
-    // await accountApi.bindEmail(emailForm.email, emailForm.code);
-    ElMessage.success(t("settings.bindSuccess"));
+    const res = await bindEmail({ email: emailForm.email, code: emailForm.code });
+    if (res.code === 0) {
+      ElMessage.success(t("settings.bindSuccess"));
+      emailForm.email = "";
+      emailForm.code = "";
+    }
   } catch {
-    ElMessage.error(t("settings.bindFailed"));
+    // serverClient 拦截器已展示错误消息
   } finally {
     binding.value = false;
   }
@@ -154,13 +169,24 @@ async function handleChangePassword() {
     ElMessage.warning(t("settings.passwordMismatch"));
     return;
   }
+  if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+    ElMessage.warning(t("settings.passwordRequired"));
+    return;
+  }
   changing.value = true;
   try {
-    // TODO: 调用 API 修改密码
-    // await accountApi.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
-    ElMessage.success(t("settings.passwordUpdateSuccess"));
+    const res = await changePassword({
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword
+    });
+    if (res.code === 0) {
+      ElMessage.success(t("settings.passwordUpdateSuccess"));
+      passwordForm.currentPassword = "";
+      passwordForm.newPassword = "";
+      passwordForm.confirmPassword = "";
+    }
   } catch {
-    ElMessage.error(t("settings.passwordUpdateFailed"));
+    // serverClient 拦截器已展示错误消息
   } finally {
     changing.value = false;
   }
@@ -168,7 +194,6 @@ async function handleChangePassword() {
 
 // ── 忘记密码 ────────────────────────────────────────
 function handleForgotPassword() {
-  // TODO: 跳转到密码找回页面
   router.push({ name: "login", query: { mode: "reset" } });
 }
 
@@ -181,11 +206,16 @@ async function handleDeleteAccount() {
       type: "warning",
       confirmButtonClass: "el-button--danger"
     });
-    // TODO: 调用 API 注销账号
-    // await accountApi.deleteAccount();
-    ElMessage.success(t("settings.deleteSuccess"));
+    const res = await deleteAccount();
+    if (res.code === 0) {
+      ElMessage.success(t("settings.deleteSuccess"));
+      // 注销后跳转到登录页
+      const userStore = (await import("@/stores/useUser")).useUserStore();
+      userStore.handleLogout();
+      router.push({ name: "login" });
+    }
   } catch {
-    // 用户取消
+    // 用户取消或 serverClient 拦截器已展示错误消息
   }
 }
 </script>

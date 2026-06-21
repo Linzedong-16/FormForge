@@ -16,7 +16,7 @@ declare module "fastify" {
   }
 }
 
-// ─── 工具：确保 Bucket 存在 ──────────────────────────────────
+// ─── 工具：确保 Bucket 存在并设置为公开读取 ──────────────────
 
 async function ensureBucket(client: MinioClient, bucket: string, region: string): Promise<void> {
   const exists = await client.bucketExists(bucket);
@@ -24,6 +24,23 @@ async function ensureBucket(client: MinioClient, bucket: string, region: string)
     await client.makeBucket(bucket, region);
     fastifyLog("info", `Bucket 已创建: ${bucket}`);
   }
+
+  // 设置公开读取策略（头像、问卷封面等需要直接 URL 访问）
+  await client.setBucketPolicy(
+    bucket,
+    JSON.stringify({
+      Version: "2012-10-17",
+      Statement: [
+        {
+          Effect: "Allow",
+          Principal: { AWS: ["*"] },
+          Action: ["s3:GetObject"],
+          Resource: [`arn:aws:s3:::${bucket}/*`]
+        }
+      ]
+    })
+  );
+  fastifyLog("info", `Bucket ${bucket} 已设为公开读取`);
 }
 
 // 临时引用，因 fp 包装后 this 指向 fastify

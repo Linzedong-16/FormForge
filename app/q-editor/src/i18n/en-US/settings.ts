@@ -54,6 +54,7 @@ export default {
   passwordUpdateSuccess: "Password updated successfully",
   passwordUpdateFailed: "Password update failed, please try again",
   passwordMismatch: "Passwords do not match",
+  passwordRequired: "Please fill in all password fields",
   forgotPassword: "Forgot password?",
   deleteAccount: "Delete Account",
   deleteAccountDesc: "All surveys and data will be permanently deleted. This action is irreversible.",

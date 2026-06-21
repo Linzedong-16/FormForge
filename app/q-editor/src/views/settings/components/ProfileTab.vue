@@ -62,16 +62,29 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 import AvatarUpload from "./AvatarUpload.vue";
 import InterestTags from "./InterestTags.vue";
+import { getProfile, updateProfile } from "@/api/modules/settings";
+import { useUserStore } from "@/stores/useUser";
 
 const { t } = useI18n();
 const saving = ref(false);
+const loading = ref(false);
+const userStore = useUserStore();
 
-// ── 表单数据（暂用本地状态，后续对接 API） ──────────────
+// ── 原始数据（用于重置） ──────────────────────────────
+const originalData = {
+  avatarUrl: "",
+  nickname: "",
+  occupation: "",
+  bio: "",
+  interests: [] as string[]
+};
+
+// ── 表单数据 ──────────────────────────────────────────
 const form = reactive({
   avatarUrl: "",
   nickname: "",
@@ -79,6 +92,14 @@ const form = reactive({
   bio: "",
   interests: [] as string[]
 });
+
+// ── 头像变更时自动上传（由 AvatarUpload emit dataUrl） ─
+watch(
+  () => form.avatarUrl,
+  val => {
+    originalData.avatarUrl = val;
+  }
+);
 
 // ── 职业自动补全建议 ──────────────────────────────────
 const OCCUPATION_SUGGESTIONS = [
@@ -103,13 +124,83 @@ function queryOccupation(queryString: string, cb: (results: { value: string }[])
   cb(results);
 }
 
-// ── 保存（预留 API 调用位） ───────────────────────────
+// ── 表单数据回填 ──────────────────────────────────────
+function fillForm(data: {
+  avatarUrl: string | null;
+  nickname: string | null;
+  occupation: string | null;
+  bio: string | null;
+  interests: string[];
+}) {
+  form.avatarUrl = data.avatarUrl ?? "";
+  form.nickname = data.nickname ?? "";
+  form.occupation = data.occupation ?? "";
+  form.bio = data.bio ?? "";
+  form.interests = data.interests ?? [];
+  // 记录原始值用于重置
+  Object.assign(originalData, {
+    avatarUrl: form.avatarUrl,
+    nickname: form.nickname,
+    occupation: form.occupation,
+    bio: form.bio,
+    interests: [...form.interests]
+  });
+}
+
+// ── 加载资料 ──────────────────────────────────────────
+async function loadProfile() {
+  loading.value = true;
+  try {
+    const res = await getProfile();
+    if (res.code === 0 && res.data) {
+      fillForm(res.data);
+      // 同步到 Pinia store，供其他组件使用
+      userStore.setProfile({
+        avatarUrl: res.data.avatarUrl,
+        nickname: res.data.nickname,
+        occupation: res.data.occupation,
+        bio: res.data.bio,
+        interests: res.data.interests
+      });
+    }
+  } catch {
+    // 加载失败不阻断页面渲染，保留空白表单
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => {
+  loadProfile();
+});
+
+// ── 保存 ──────────────────────────────────────────────
 async function handleSave() {
   saving.value = true;
   try {
-    // TODO: 调用 API 保存用户资料
-    // await profileApi.saveProfile(form);
-    ElMessage.success(t("settings.saveSuccess"));
+    const res = await updateProfile({
+      nickname: form.nickname || undefined,
+      occupation: form.occupation || undefined,
+      bio: form.bio || undefined,
+      interests: form.interests.length > 0 ? form.interests : undefined
+    });
+    if (res.code === 0) {
+      ElMessage.success(t("settings.saveSuccess"));
+      // 更新原始数据
+      Object.assign(originalData, {
+        nickname: form.nickname,
+        occupation: form.occupation,
+        bio: form.bio,
+        interests: [...form.interests]
+      });
+      // 同步到 Pinia store，所有依赖组件实时响应
+      userStore.setProfile({
+        nickname: form.nickname || null,
+        occupation: form.occupation || null,
+        bio: form.bio || null,
+        interests: form.interests.length > 0 ? [...form.interests] : []
+      });
+    }
   } catch {
     ElMessage.error(t("settings.saveFailed"));
   } finally {
@@ -117,14 +208,12 @@ async function handleSave() {
   }
 }
 
-// ── 重置（预留 API 调用位） ───────────────────────────
+// ── 重置 ──────────────────────────────────────────────
 function handleReset() {
-  // TODO: 调用 API 获取已保存的用户资料并回填
-  form.avatarUrl = "";
-  form.nickname = "";
-  form.occupation = "";
-  form.bio = "";
-  form.interests = [];
+  form.nickname = originalData.nickname;
+  form.occupation = originalData.occupation;
+  form.bio = originalData.bio;
+  form.interests = [...originalData.interests];
 }
 </script>
 
