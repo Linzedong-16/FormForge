@@ -18,7 +18,7 @@ import EditPannel from "@/components/SurveyComs/EditItems/EditPannel.vue";
 
 import { ElMessage } from "element-plus";
 import type { OptionsProps, OptionsStatus, PicLink, TextProps, TypeStatus } from "@/types";
-import { isPicLink, IsTypeStatus, IsOptionsStatus } from "@/types";
+import { isPicLink, isRateScoreDesc, IsTypeStatus, IsOptionsStatus } from "@/types";
 import type { CascaderEditPayload } from "@/stores/actions";
 import { changeEditorIsShowStatus } from "@/utils";
 import { useI18n } from "vue-i18n";
@@ -55,9 +55,15 @@ const updateStatus = (configKey: string, payload?: number | string | boolean | P
           const result = store.removeOption(currentCom.value!.status[configKey] as OptionsProps, payload);
           if (result) ElMessage.success(t("editor.deleteSuccess"));
           else ElMessage.error(t("editor.keepTwoOptions"));
-        } else if (typeof payload === "object" && isPicLink(payload)) {
+        } else if (typeof payload === "object" && payload !== null && isPicLink(payload)) {
           // 说明是在设置图片的链接
           store.setPicLinkByIndex(currentCom.value!.status[configKey] as OptionsProps, payload);
+        } else if (typeof payload === "boolean") {
+          // 切换开关状态（如评分题是否显示辅助文字）
+          store.setIsUse(currentCom.value!.status[configKey] as OptionsProps, payload);
+        } else if (typeof payload === "object" && payload !== null && isRateScoreDesc(payload)) {
+          // 处理辅助文字选项修改
+          store.setRateScoreDesc(currentCom.value!.status[configKey] as OptionsProps, payload);
         } else {
           // 说明是新增选项
           store.addOption(currentCom.value!.status[configKey] as OptionsProps);

@@ -144,7 +144,8 @@ export default {
     undo: "撤销",
     clear: "清空",
     signed: "已签名",
-    unsigned: "未签名"
+    unsigned: "未签名",
+    uploading: "上传中..."
   },
 
   // SignatureConfigEditor 组件

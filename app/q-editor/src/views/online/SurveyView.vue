@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import type { Ref } from "vue";
-import { onMounted, ref, computed } from "vue";
+import { onMounted, provide, ref, computed } from "vue";
 import { ElMessage } from "element-plus";
 import { Loading } from "@element-plus/icons-vue";
 import { useRoute } from "vue-router";
@@ -56,6 +56,9 @@ import {
 
 const { t } = useI18n();
 const route = useRoute();
+
+/** 提供函数式 surveyId 获取器，供签名组件上传时使用 */
+provide("getSurveyId", () => route.params.id as string | null);
 
 // ─── 状态 ────────────────────────────────────────────────────
 

@@ -13,15 +13,7 @@ import { AppError } from "../../utils/errors.js";
 import { BizCode } from "../../utils/response.js";
 import { SurveyFileService } from "./file.service.js";
 import { surveyIdSchema } from "./file.schemas.js";
-
-/** 允许的图片 MIME 类型 */
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml", "image/bmp"];
-
-/** 上传文件大小限制：10MB */
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-/** 签名上传文件大小限制：1MB */
-const MAX_SIGNATURE_SIZE = 1 * 1024 * 1024;
+import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE, MAX_SIGNATURE_SIZE } from "@common/survey/survey-file.interface.js";
 
 /** multipart 字段值：Fastify 将 form-data 字段包装为 { value: T } */
 interface MultipartFieldValue<T = string> {

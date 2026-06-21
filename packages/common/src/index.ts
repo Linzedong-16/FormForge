@@ -33,3 +33,6 @@ export * from "./user/user.interface.js";
 
 /// 导出 问卷模块前后端通用接口
 export * from "./survey/survey.interface.js";
+
+/// 导出 问卷文件模块前后端通用接口
+export * from "./survey/survey-file.interface.js";

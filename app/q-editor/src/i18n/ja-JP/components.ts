@@ -144,7 +144,8 @@ export default {
     undo: "元に戻す",
     clear: "クリア",
     signed: "署名済み",
-    unsigned: "未署名"
+    unsigned: "未署名",
+    uploading: "アップロード中..."
   },
 
   // SignatureConfigEditor コンポーネント

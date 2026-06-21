@@ -32,7 +32,7 @@ import { useI18n } from "vue-i18n";
 import { Upload } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import type { UploadProps, UploadRequestOptions } from "element-plus";
-import { uploadImage } from "@/api/upload";
+import { uploadSurveyFile, uploadImage } from "@/api/upload";
 
 const { t } = useI18n();
 
@@ -58,37 +58,56 @@ interface GetLinkFn {
   (data: { index: number; link: string }): void;
 }
 const getLink = inject<GetLinkFn | null>("getLink", null);
-// 自定义上传：使用 api 层提取出的 uploadImage 接口替代 el-upload 的默认上传逻辑
-// 上传成功后，通过 options.onSuccess 触发组件的 on-success 回调（handleAvatarSuccess），复用原有处理链路
+/** 函数式 surveyId 获取器，上传时实时获取最新 remoteSurveyId */
+const getSurveyId = inject<() => string | null>("getSurveyId", () => null);
+
+/**
+ * 自定义上传
+ *
+ * 优先使用新接口 uploadSurveyFile（需 surveyId，带文件追踪与级联清理），
+ * surveyId 为空时降级为旧接口 uploadImage（无追踪，兼容未同步场景）。
+ */
 const customUpload = async (options: UploadRequestOptions) => {
   try {
-    const data = await uploadImage(options.file);
-    options.onSuccess?.(data);
-    return data;
-  } catch (error) {
+    let result: { code: number; msg: string; data: { file_url?: string; imageUrl?: string } | null };
+
+    const sid = getSurveyId();
+    if (sid) {
+      result = await uploadSurveyFile(options.file, sid);
+    } else {
+      // 未同步到远程时降级使用旧接口
+      result = await uploadImage(options.file);
+    }
+
+    options.onSuccess?.(result);
+    return result;
+  } catch {
     ElMessage.error(t("components.picItem.uploadFailed"));
-    options.onError?.(error as Parameters<NonNullable<typeof options.onError>>[0]);
-    throw error;
+    throw new Error("Upload failed");
   }
 };
+
 // 上传成功的回调
-const handleAvatarSuccess: UploadProps["onSuccess"] = async response => {
-  console.log("图片上传响应:", response);
-  if (getLink && response.imageUrl) {
+const handleAvatarSuccess = (response: { code: number; msg: string; data: Record<string, unknown> }) => {
+  // 兼容新旧接口：新接口返回 data.file_url，旧接口返回 data.imageUrl
+  const url = (response.data?.file_url as string) || (response.data?.imageUrl as string);
+
+  if (getLink && url) {
     getLink({
       index: props.index,
-      link: response.imageUrl
+      link: url
     });
-    imageUrl.value = response.imageUrl;
+    imageUrl.value = url;
     ElMessage.success(t("components.picItem.uploadSuccess"));
   } else {
     ElMessage.error(t("components.picItem.saveFailed"));
   }
 };
+
 // 上传之前的回调
 const beforeAvatarUpload: UploadProps["beforeUpload"] = rawFile => {
-  if (rawFile.size / 1024 / 1024 > 2) {
-    ElMessage.error(t("components.picItem.sizeLimit"));
+  if (rawFile.size / 1024 / 1024 > 10) {
+    ElMessage.error("文件大小不能超过 10MB");
     return false;
   }
   return true;

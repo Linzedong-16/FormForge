@@ -144,7 +144,8 @@ export default {
     undo: "Undo",
     clear: "Clear",
     signed: "Signed",
-    unsigned: "Unsigned"
+    unsigned: "Unsigned",
+    uploading: "Uploading..."
   },
 
   // SignatureConfigEditor component

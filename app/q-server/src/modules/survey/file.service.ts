@@ -19,54 +19,18 @@ import { uploadToMinioWithKey, deleteFromMinio } from "../../utils/upload.js";
 import { createAuditLog } from "../../utils/audit-log.js";
 import { AppError } from "../../utils/errors.js";
 import { BizCode } from "../../utils/response.js";
+import type {
+  FileType,
+  SurveyFileUploadResponse,
+  SurveyFileListResponse
+} from "@common/survey/survey-file.interface.js";
+import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE, MAX_SIGNATURE_SIZE } from "@common/survey/survey-file.interface.js";
 
 // ─── 常量配置 ──────────────────────────────────────────────────
-
-/** 通用上传：允许的 MIME 类型 */
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml", "image/bmp"];
-
-/** 签名上传：仅允许 PNG */
-
-/** 通用上传文件大小限制：10MB */
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-/** 签名上传文件大小限制：1MB */
-const MAX_SIGNATURE_SIZE = 1 * 1024 * 1024;
 
 /** MinIO 存储路径前缀 */
 const IMAGE_PREFIX = "survey-images";
 const SIGNATURE_PREFIX = "survey-signatures";
-
-// ─── 类型定义 ──────────────────────────────────────────────────
-
-/** Prisma FileType 枚举字面量 */
-type FileTypeEnum = "survey_option_image" | "survey_signature" | "survey_cover";
-
-/** 文件上传结果 */
-export interface FileUploadResult {
-  file_id: string;
-  file_url: string;
-  file_name: string;
-  mime_type: string;
-  file_size: number;
-}
-
-/** 文件列表项 */
-export interface SurveyFileItem {
-  id: string;
-  file_url: string;
-  file_name: string;
-  mime_type: string;
-  file_size: number;
-  file_type: string;
-  created_at: string;
-}
-
-/** 文件列表响应 */
-export interface SurveyFileListResult {
-  files: SurveyFileItem[];
-  total: number;
-}
 
 // ─── 工具函数 ──────────────────────────────────────────────────
 
@@ -107,7 +71,7 @@ export class SurveyFileService {
     mimeType: string,
     fileName: string,
     fileType: string = "survey_option_image"
-  ): Promise<FileUploadResult> {
+  ): Promise<SurveyFileUploadResponse> {
     // 1. 空文件检查
     if (file.length === 0) {
       throw new AppError("请选择要上传的文件", 400);
@@ -155,7 +119,7 @@ export class SurveyFileService {
         file_name: fileName,
         mime_type: mimeType,
         file_size: file.length,
-        file_type: fileType as FileTypeEnum
+        file_type: fileType as FileType
       }
     });
 
@@ -187,7 +151,7 @@ export class SurveyFileService {
    * @param surveyId  问卷 ID
    * @param file      PNG blob Buffer
    */
-  async uploadSignature(userId: bigint, surveyId: bigint, file: Buffer): Promise<FileUploadResult> {
+  async uploadSignature(userId: bigint, surveyId: bigint, file: Buffer): Promise<SurveyFileUploadResponse> {
     // 1. 空文件检查
     if (file.length === 0) {
       throw new AppError("请选择要上传的签名图片", 400);
@@ -266,7 +230,7 @@ export class SurveyFileService {
    * @param surveyId 问卷 ID
    * @param fileType 可选：按文件类型筛选
    */
-  async list(userId: bigint, surveyId: bigint, fileType?: string): Promise<SurveyFileListResult> {
+  async list(userId: bigint, surveyId: bigint, fileType?: string): Promise<SurveyFileListResponse> {
     // 校验问卷存在且属于当前用户
     const survey = await this.fastify.prisma.survey.findFirst({
       where: { id: surveyId, user_id: userId, deleted_at: null },

@@ -9,21 +9,23 @@
       @change="onDragChange"
     >
       <template #item="{ element, index }">
-        <div
-          v-show="isInCurrentPage(index)"
-          :key="element.id"
-          :ref="el => (componentsRefs[index] = el)"
-          class="content mb-10 relative"
-          :class="{
-            active: store.currentComponentIndex === index
-          }"
-          @click="clickHandle(index)"
-        >
-          <component :is="element.type" :status="element.status" :serial-num="serialNum[index]" />
-          <div v-show="store.currentComponentIndex === index" class="absolute delete-btn">
-            <el-button type="danger" class="ml-10" size="small" :icon="Close" circle @click.stop="removeCom(index)" />
+        <ComItemProvider :com-index="index">
+          <div
+            v-show="isInCurrentPage(index)"
+            :key="element.id"
+            :ref="el => (componentsRefs[index] = el)"
+            class="content mb-10 relative"
+            :class="{
+              active: store.currentComponentIndex === index
+            }"
+            @click="clickHandle(index)"
+          >
+            <component :is="element.type" :status="element.status" :serial-num="serialNum[index]" />
+            <div v-show="store.currentComponentIndex === index" class="absolute delete-btn">
+              <el-button type="danger" class="ml-10" size="small" :icon="Close" circle @click.stop="removeCom(index)" />
+            </div>
           </div>
-        </div>
+        </ComItemProvider>
       </template>
     </draggable>
   </div>
@@ -36,6 +38,8 @@ import { computed, nextTick, ref, type ComponentPublicInstance, onMounted, onUnm
 import { useEditorStore } from "@/stores/useEditor";
 import type { Snapshot } from "@/utils/undoManager";
 const store = useEditorStore();
+/** 提供函数式 surveyId 获取器，确保上传时始终获取最新的 remoteSurveyId */
+provide("getSurveyId", () => store.remoteSurveyId);
 // 事件总监
 import EventBus from "@/utils/eventBus";
 import { useSurveyNo } from "@/utils/hooks";
@@ -43,14 +47,15 @@ import { Close } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { OptionsProps, PicLink } from "@/types";
 import { useI18n } from "vue-i18n";
+import ComItemProvider from "@/components/Editor/ComItemProvider.vue";
 
 const { t } = useI18n();
 
-// 图片选择组件的图片上传回调
-// 业务组件（如 SinglePicSelect）内部的 PicItem 上传成功后会通过 inject 调用此函数，
-// 这里将图片链接写入「当前选中组件」options 配置中，并经 pinia 持久化到编辑器状态。
-// 说明：编辑图片题目时该组件必然已被选中（右侧才会显示对应编辑面板），故以 currentComponentIndex 定位组件。
-const getLink = (payload: PicLink) => {
+// ─── 全局 getLink 兜底 ──────────────────────────────────────────
+// ComItemProvider 已为每个组件注入作用域化的 getLink（优先使用），
+// 此全局 getLink 作为兜底：当 inject 链未找到 ComItemProvider 时，
+// 回退到基于 currentComponentIndex 的旧逻辑并提供警告提示。
+const globalGetLink = (payload: PicLink) => {
   const index = store.currentComponentIndex;
   if (index === -1 || !store.coms[index]) {
     ElMessage.warning(t("editor.selectComponentFirst"));
@@ -58,13 +63,8 @@ const getLink = (payload: PicLink) => {
   }
   const optionsProps = store.coms[index]!.status.options as OptionsProps;
   store.setPicLinkByIndex(optionsProps, payload);
-
-  // 强制触发响应式更新，确保编辑面板和预览同步更新
-  nextTick(() => {
-    store.setCurrentComponentIndex(index);
-  });
 };
-provide("getLink", getLink);
+provide("getLink", globalGetLink);
 
 const centerContainer = ref<HTMLElement | null>(null);
 
