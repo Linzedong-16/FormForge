@@ -123,6 +123,10 @@ export const CacheKeys = {
   /** 用户列表页缓存前缀（用于模糊匹配批量失效） */
   userListPrefix: "user:list:",
 
+  // ─── 用户资料模块 ──────────────────────────────────────────
+  /** 用户资料（含 UserProfile 全部字段） */
+  userProfile: (userId: string) => `user:profile:${userId}`,
+
   // ─── 问卷模块 ──────────────────────────────────────────────
   /** 问卷详情 */
   surveyDetail: (id: string) => `survey:detail:${id}`,

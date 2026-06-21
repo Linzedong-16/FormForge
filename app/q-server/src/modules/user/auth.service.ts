@@ -291,8 +291,8 @@ export class AuthService {
   //  邮箱验证注册
   // ============================================================
 
-  /** 发送验证码（注册 / 重置密码） */
-  async sendCode(email: string, type: "register" | "reset_password") {
+  /** 发送验证码（注册 / 重置密码 / 绑定邮箱 / 修改密码） */
+  async sendCode(email: string, type: "register" | "reset_password" | "bind_email" | "change_password") {
     // 1. 检查 SMTP 是否配置
     if (!(await this.isSmtpConfigured())) {
       throw new AuthError("邮件服务暂未配置，请联系管理员", BizCode.SMTP_NOT_CONFIGURED);
@@ -311,6 +311,15 @@ export class AuthService {
       }
     }
 
+    if (type === "reset_password") {
+      const existing = await this.fastify.prisma.user.findFirst({
+        where: { email, deleted_at: null }
+      });
+      if (!existing) {
+        throw new AuthError("该邮箱未注册", BizCode.EMAIL_NOT_EXISTS);
+      }
+    }
+
     // 3. 检查发送频率
     if (!(await this.checkSendRate(email))) {
       throw new AuthError("发送过于频繁，请1分钟后再试", 429);
@@ -326,7 +335,15 @@ export class AuthService {
       VERIFY_CODE_TTL
     );
 
-    // 5. 异步发送邮件（通过 RabbitMQ 队列，不阻塞响应）
+    // 5. 根据类型生成邮件主题
+    const subjectMap: Record<string, string> = {
+      register: "Q问卷 - 注册验证码",
+      reset_password: "Q问卷 - 密码重置验证码",
+      bind_email: "Q问卷 - 邮箱绑定验证码",
+      change_password: "Q问卷 - 修改密码验证码"
+    };
+
+    // 6. 异步发送邮件（通过 RabbitMQ 队列，不阻塞响应）
     if (this.fastify.amqp) {
       try {
         this.fastify.amqp.channel.sendToQueue(
@@ -334,7 +351,7 @@ export class AuthService {
           Buffer.from(
             JSON.stringify({
               to: email,
-              subject: type === "register" ? "Q问卷 - 注册验证码" : "Q问卷 - 密码重置验证码",
+              subject: subjectMap[type] ?? "Q问卷 - 验证码",
               template: "verification-code",
               data: { code, expiresMinutes: 5 }
             })

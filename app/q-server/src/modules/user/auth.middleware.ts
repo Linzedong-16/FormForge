@@ -38,7 +38,7 @@ function getAuthService(server: FastifyInstance): AuthService {
 }
 
 /** 从请求头提取 Bearer Token */
-function extractToken(request: FastifyRequest): string | null {
+export function extractToken(request: FastifyRequest): string | null {
   const auth = request.headers.authorization;
   if (!auth || !auth.startsWith("Bearer ")) {
     return null;

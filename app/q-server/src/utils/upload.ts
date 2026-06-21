@@ -45,7 +45,36 @@ export async function uploadToMinio(
     "Content-Type": mimeType
   });
 
-  // 构造可访问 URL（MinIO 需配置 public read policy 或使用 presigned URL）
+  return buildUrl(key);
+}
+
+/**
+ * 上传文件到 MinIO（使用预计算的对象键）
+ *
+ * 与 uploadToMinio 的区别：不自动生成 UUID，而是使用调用方传入的完整 key。
+ * 适用于需要精确控制对象键的场景（如原图/缩略图配对命名）。
+ *
+ * @param fastify   Fastify 实例
+ * @param file      文件 buffer
+ * @param key       完整的 MinIO 对象键（如 "avatars/uuid_original.jpg"）
+ * @param mimeType  文件 MIME 类型
+ * @returns 可公开访问的文件 URL
+ */
+export async function uploadToMinioWithKey(
+  fastify: FastifyInstance,
+  file: Buffer,
+  key: string,
+  mimeType: string
+): Promise<string> {
+  await fastify.minio.putObject(BUCKET, key, file, file.length, {
+    "Content-Type": mimeType
+  });
+
+  return buildUrl(key);
+}
+
+/** 根据对象键构造 MinIO 访问 URL */
+function buildUrl(key: string): string {
   const endpoint = process.env.MINIO_ENDPOINT ?? "localhost";
   const port = process.env.MINIO_PORT ?? "9000";
   const useSSL = process.env.MINIO_USE_SSL === "true";

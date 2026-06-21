@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import authRoutes from "../modules/user/auth.routes.js";
 import adminRoutes from "../modules/user/admin.routes.js";
 import userRoutes from "../modules/user/user.routes.js";
+import profileRoutes from "../modules/user/profile.routes.js";
 import surveyRoutes from "../modules/survey/survey.routes.js";
 import uploadRoutes from "../modules/survey/upload.routes.js";
 
@@ -76,6 +77,7 @@ const routes: FastifyPluginAsync = async fastify => {
   fastify.register(authRoutes, { prefix: "/auth" });
   fastify.register(adminRoutes, { prefix: "/admin" });
   fastify.register(userRoutes, { prefix: "/user" });
+  fastify.register(profileRoutes, { prefix: "/user" });
   fastify.register(uploadRoutes, { prefix: "/q-editor" });
   // survey.routes.ts 内部路径已为 /surveys、/responses 等完整路径，无需额外前缀
   fastify.register(surveyRoutes);

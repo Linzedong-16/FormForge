@@ -60,7 +60,27 @@ export enum BizCode {
   /** 注册已关闭 */
   REGISTRATION_CLOSED = 1009,
   /** SMTP 未配置 */
-  SMTP_NOT_CONFIGURED = 1010
+  SMTP_NOT_CONFIGURED = 1010,
+
+  // ─── 用户资料模块 ────────────────────────────────────────
+  /** 昵称包含非法字符 */
+  NICKNAME_INVALID = 2001,
+  /** 图片格式不支持 */
+  AVATAR_FORMAT_INVALID = 2002,
+  /** 图片文件过大 */
+  AVATAR_TOO_LARGE = 2003,
+  /** 图片尺寸不符合要求 */
+  AVATAR_SIZE_INVALID = 2004,
+  /** 文件存储服务不可用 */
+  STORAGE_UNAVAILABLE = 2005,
+  /** 邮箱已被其他用户绑定 */
+  EMAIL_ALREADY_BOUND = 2006,
+  /** 当前密码错误 */
+  CURRENT_PASSWORD_INCORRECT = 2007,
+  /** 新密码与当前密码相同 */
+  PASSWORD_SAME_AS_CURRENT = 2008,
+  /** 账号已被注销 */
+  ACCOUNT_DELETED = 2009
 }
 
 // ─── 构建函数 ────────────────────────────────────────────────

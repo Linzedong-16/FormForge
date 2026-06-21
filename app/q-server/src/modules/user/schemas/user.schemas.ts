@@ -36,6 +36,25 @@ export const verifyCodeSchema = z
   .length(6, "验证码为6位数字")
   .regex(/^\d{6}$/, "验证码必须为6位数字");
 
+/** 昵称 — 1~50字符，允许中文/字母/数字/下划线/空格 */
+export const nicknameSchema = z
+  .string()
+  .min(1, "昵称不能为空")
+  .max(50, "昵称最多50个字符")
+  .regex(/^[\u4e00-\u9fa5a-zA-Z0-9_\s]+$/, "昵称包含非法字符");
+
+/** 职业 — 1~100字符 */
+export const occupationSchema = z.string().min(1, "职业不能为空").max(100, "职业最多100个字符");
+
+/** 个人介绍 — 1~500字符 */
+export const bioSchema = z.string().min(1, "个人介绍不能为空").max(500, "个人介绍最多500个字符");
+
+/** 兴趣标签数组 — 最多10个标签，单个标签1~20字符 */
+export const interestsSchema = z
+  .array(z.string().min(1, "标签不能为空").max(20, "单个标签最多20个字符"))
+  .max(10, "兴趣标签最多10个")
+  .default([]);
+
 /** 分页参数 — 复用 utils/pagination.ts，别名 pageSize → limit 保持向后兼容 */
 export const paginationSchema = basePaginationSchema
   .extend({
@@ -56,8 +75,8 @@ export const loginSchema = z.object({
 /** POST /api/auth/send-code */
 export const sendCodeSchema = z.object({
   email: emailSchema,
-  type: z.enum(["register", "reset_password"], {
-    message: "验证码类型必须为 register 或 reset_password"
+  type: z.enum(["register", "reset_password", "bind_email", "change_password"], {
+    message: "验证码类型必须为 register、reset_password、bind_email 或 change_password"
   })
 });
 
@@ -90,6 +109,34 @@ export const resetPasswordSchema = z.object({
 
 /** POST /api/auth/logout */
 export const logoutSchema = z.object({});
+
+// ══════════════════════════════════════════════════════════════════
+//  用户资料接口 Schema
+// ══════════════════════════════════════════════════════════════════
+
+/** PUT /api/user/profile */
+export const updateProfileSchema = z
+  .object({
+    nickname: nicknameSchema.optional(),
+    occupation: occupationSchema.optional(),
+    bio: bioSchema.optional(),
+    interests: interestsSchema.optional()
+  })
+  .refine(data => Object.keys(data).length > 0, {
+    message: "至少需要提供一个有效字段"
+  });
+
+/** POST /api/user/bind-email */
+export const bindEmailSchema = z.object({
+  email: emailSchema,
+  code: verifyCodeSchema
+});
+
+/** PUT /api/user/change-password */
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "当前密码不能为空"),
+  newPassword: passwordSchema
+});
 
 // ══════════════════════════════════════════════════════════════════
 //  管理员接口 Schema
@@ -142,3 +189,7 @@ export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type UserListQueryInput = z.infer<typeof userListQuerySchema>;
 export type UpdateSmtpConfigInput = z.infer<typeof updateSmtpConfigSchema>;
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type BindEmailInput = z.infer<typeof bindEmailSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
