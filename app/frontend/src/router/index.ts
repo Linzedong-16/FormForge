@@ -29,6 +29,12 @@ export function createAppRouter(base = "/"): Router {
         component: () => import("@/views/login/LoginView.vue")
       },
       {
+        // 问卷预览详情（独立路由，新标签页打开，无 Layout 包裹）
+        path: "/survey-preview/:id",
+        name: "surveyPreviewDetail",
+        component: () => import("@/views/survey-preview/detail/SurveyPreviewDetail.vue")
+      },
+      {
         path: "/:pathMatch(.*)*",
         component: () => import("@/views/NotFound/NotFoundView.vue")
       }

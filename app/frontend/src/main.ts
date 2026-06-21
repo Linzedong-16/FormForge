@@ -1,5 +1,6 @@
 import "./public-path";
-import { createApp, type App as VueApp } from "vue";
+import { createApp } from "vue";
+import type { App as VueApp } from "vue";
 import { createPinia } from "pinia";
 import { renderWithQiankun, qiankunWindow } from "vite-plugin-qiankun/es/helper";
 import "./style.css";
@@ -12,20 +13,20 @@ import ArcoVueIcon from "@arco-design/web-vue/es/icon";
 // vue-i18n — 问卷引擎组件（Cascader / DateTime / Transfer 等）内部使用 useI18n
 import { createI18n } from "vue-i18n";
 import App from "./App.vue";
-import { createAppRouter, type AppRouter } from "./router";
+import { createAppRouter } from "./router";
+import type { AppRouter } from "./router";
 import { initUserStore } from "./store";
 import { useUserStore } from "./store/modules/user";
 
-// 最小化 i18n 实例（问卷引擎仅需少量 UI 文案）
+// 导入问卷引擎的 i18n 消息，确保引擎组件渲染时 useI18n() 能获取到文案
+import { engineMessages } from "monorepo-survey-engine";
+
+// i18n 实例：合并引擎翻译消息，保证问卷组件渲染时 useI18n() 能获取到文案
 const i18n = createI18n({
   legacy: false,
   locale: "zh-CN",
   fallbackLocale: "zh-CN",
-  messages: {
-    "zh-CN": {},
-    "en-US": {},
-    "ja-JP": {}
-  }
+  messages: engineMessages as Parameters<typeof createI18n>[0]["messages"]
 });
 
 // qiankun 环境下的当前 Vue 应用实例（支持重复挂载/卸载）

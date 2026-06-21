@@ -110,6 +110,9 @@ export {
   canUsedForPDF
 } from "./types";
 
+// ═══ i18n 消息（供外部项目合并翻译，解决问卷组件 useI18n() 调用） ═══════════
+export { engineMessages } from "./i18n/messages";
+
 // ═══ 撤销/重做 ════════════════════════════════════════════════════════════════
 export { UndoManager } from "./utils/undoManager";
 export type { Snapshot } from "./utils/undoManager";

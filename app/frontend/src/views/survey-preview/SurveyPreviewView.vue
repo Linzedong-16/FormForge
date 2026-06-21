@@ -1,130 +1,189 @@
 <template>
-  <div class="survey-preview">
+  <div class="survey-preview-page">
     <!-- 页面标题 -->
     <div class="page-header">
       <h2 class="page-title">问卷预览</h2>
-      <p class="page-desc">{{ surveyTitle || "正在加载问卷..." }}</p>
+      <p class="page-desc">管理平台所有问卷，支持按审核状态筛选，点击行查看问卷渲染效果</p>
     </div>
 
-    <!-- 加载状态 -->
-    <a-spin v-if="loading" :loading="loading" tip="加载中..." class="loading-wrap">
-      <div style="min-height: 200px" />
-    </a-spin>
-
-    <!-- 空状态 -->
-    <a-result v-else-if="!coms.length && !loading" status="404" title="问卷为空" subtitle="该问卷暂未包含任何题目" />
-
-    <!-- 问卷渲染区 -->
-    <div v-else class="preview-body">
-      <div class="preview-content">
-        <component
-          :is="componentMap[com.name as keyof typeof componentMap]"
-          v-for="(com, index) in paginatedComs"
-          :key="com.id || index"
-          :status="com.status"
-        />
-      </div>
-
-      <!-- 分页器 -->
-      <div v-if="pageCount > 1" class="pagination-wrap">
-        <el-pagination
-          v-model:current-page="currentPage"
-          background
-          layout="prev, pager, next"
-          :total="coms.length"
-          :page-size="pageSize"
-          @current-change="handlePageChange"
-        />
-      </div>
-
-      <!-- 问卷统计信息 -->
-      <div class="preview-footer">
-        <a-space>
-          <a-tag color="arcoblue">共 {{ coms.length }} 题</a-tag>
-          <a-tag v-if="surveyCount" color="green">{{ surveyCount }} 道答题</a-tag>
-        </a-space>
-      </div>
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+      <a-space>
+        <span class="filter-label">审核状态：</span>
+        <a-select
+          v-model="filterStatus"
+          placeholder="全部状态"
+          allow-clear
+          style="width: 160px"
+          @change="handleFilterChange"
+        >
+          <a-option v-for="item in statusOptions" :key="item.value" :value="item.value" :label="item.label" />
+        </a-select>
+        <a-tag v-if="filterStatus" closable @close="clearFilter">
+          {{ REVIEW_STATUS_LABELS[filterStatus] }}
+        </a-tag>
+      </a-space>
+      <span class="result-count">共 {{ filteredList.length }} 条记录</span>
     </div>
+
+    <!-- 问卷列表表格 -->
+    <a-table
+      :data="filteredList"
+      :loading="loading"
+      :pagination="false"
+      :stripe="true"
+      :bordered="{ wrapper: true, cell: true }"
+      column-resizable
+      row-key="id"
+      @row-click="handleRowClick"
+    >
+      <template #columns>
+        <a-table-column title="问卷标题" data-index="title" :ellipsis="true" :width="280">
+          <template #cell="{ record }">
+            <span class="survey-title-link">{{ record.title }}</span>
+          </template>
+        </a-table-column>
+        <a-table-column title="审核状态" data-index="reviewStatus" :width="120" align="center">
+          <template #cell="{ record }">
+            <a-tag :color="REVIEW_STATUS_COLORS[record.reviewStatus as ReviewStatus]">
+              {{ REVIEW_STATUS_LABELS[record.reviewStatus as ReviewStatus] }}
+            </a-tag>
+          </template>
+        </a-table-column>
+        <a-table-column title="类型" data-index="surveyType" :width="100" align="center">
+          <template #cell="{ record }">
+            <a-tag :color="record.surveyType === 'template' ? 'arcoblue' : 'gray'">
+              {{ record.surveyType === "template" ? "模板" : "个人" }}
+            </a-tag>
+          </template>
+        </a-table-column>
+        <a-table-column
+          title="题目数"
+          data-index="questionCount"
+          :width="100"
+          align="center"
+          :sortable="{ sortDirections: ['ascend', 'descend'] }"
+        />
+        <a-table-column title="作者" data-index="author" :width="100" align="center" />
+        <a-table-column title="创建时间" data-index="createdAt" :width="180" align="center">
+          <template #cell="{ record }">
+            {{ formatDateTime(record.createdAt) }}
+          </template>
+        </a-table-column>
+        <a-table-column title="更新时间" data-index="updatedAt" :width="180" align="center">
+          <template #cell="{ record }">
+            {{ formatDateTime(record.updatedAt) }}
+          </template>
+        </a-table-column>
+        <a-table-column title="操作" :width="120" align="center" fixed="right">
+          <template #cell="{ record }">
+            <a-button type="text" size="small" @click.stop="handleViewDetail(record)"> 查看详情 </a-button>
+          </template>
+        </a-table-column>
+      </template>
+    </a-table>
+
+    <!-- 空状态提示 -->
+    <a-result
+      v-if="!loading && filteredList.length === 0"
+      status="404"
+      title="暂无匹配的问卷记录"
+      subtitle="请尝试调整筛选条件"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
-import { componentMap, useEditorStore, restoreComponentStatus } from "monorepo-survey-engine";
-import type { Status } from "monorepo-survey-engine";
-import axios from "@/utils/axios";
+import { useRouter } from "vue-router";
+import type { ReviewStatus, MockSurveyItem } from "@/api/modules/survey-preview/mockData";
+import {
+  getMockSurveyList,
+  REVIEW_STATUS_LABELS,
+  REVIEW_STATUS_COLORS,
+  mockDelay
+} from "@/api/modules/survey-preview/mockData";
 
-const route = useRoute();
-const store = useEditorStore();
+const router = useRouter();
 
-// ── 状态 ────────────────────────────────────────────────────────────────────
+// ── 状态 ──────────────────────────────────────────────────────
 
 const loading = ref(false);
-const surveyTitle = ref("");
-const pageSize = ref(10);
-const currentPage = ref(1);
+const filterStatus = ref<ReviewStatus | null>(null);
+const surveyList = ref<MockSurveyItem[]>([]);
 
-// 直接使用本地 ref 管理组件数组（避免与 engine store 的内部逻辑耦合）
-const coms = ref<Status[]>([]);
-const surveyCount = computed(() => store.surveyCount);
+// ── 筛选选项 ──────────────────────────────────────────────────
 
-// ── 分页计算 ────────────────────────────────────────────────────────────────
+const statusOptions = computed(() =>
+  Object.entries(REVIEW_STATUS_LABELS).map(([value, label]) => ({
+    value: value as ReviewStatus,
+    label
+  }))
+);
 
-const pageCount = computed(() => Math.ceil(coms.value.length / pageSize.value));
+// ── 筛选后的列表 ──────────────────────────────────────────────
 
-const paginatedComs = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return coms.value.slice(start, start + pageSize.value);
+const filteredList = computed(() => {
+  if (!filterStatus.value) return surveyList.value;
+  return surveyList.value.filter(item => item.reviewStatus === filterStatus.value);
 });
 
-function handlePageChange(page: number) {
-  currentPage.value = page;
-  window.scrollTo({ top: 0, behavior: "smooth" });
+// ── 格式化日期 ────────────────────────────────────────────────
+
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// ── 加载问卷数据 ────────────────────────────────────────────────────────────
+// ── 加载列表 ──────────────────────────────────────────────────
 
-async function loadSurvey(surveyId: string) {
+async function loadList() {
   loading.value = true;
   try {
-    // 假设后端 API: GET /api/survey/:id 返回 { components: Status[], title: string }
-    const res: any = await axios.get(`/survey/${surveyId}`);
-    const components = res.components || res.coms || [];
-    surveyTitle.value = res.title || res.name || `问卷 #${surveyId}`;
-
-    // 处理组件数据并恢复组件引用
-    restoreComponentStatus(components as Status[]);
-    coms.value = components as Status[];
-
-    // 同步到 engine store
-    store.setStore({
-      coms: components as Status[],
-      surveyCount: components.filter((c: Status) => c.name !== "text-note").length
-    });
-  } catch (err) {
-    console.error("[SurveyPreview] 加载问卷失败:", err);
-    surveyTitle.value = "加载失败";
+    await mockDelay(400);
+    surveyList.value = getMockSurveyList();
   } finally {
     loading.value = false;
   }
 }
 
 onMounted(() => {
-  const surveyId = route.query.id || route.query.surveyId;
-  if (surveyId && typeof surveyId === "string") {
-    loadSurvey(surveyId);
-  }
+  loadList();
 });
+
+// ── 筛选处理 ──────────────────────────────────────────────────
+
+function handleFilterChange(value: ReviewStatus | undefined) {
+  filterStatus.value = value ?? null;
+}
+
+function clearFilter() {
+  filterStatus.value = null;
+}
+
+// ── 行点击 / 查看详情（在新标签页打开） ──────────────────────
+
+function handleRowClick(record: MockSurveyItem) {
+  handleViewDetail(record);
+}
+
+function handleViewDetail(record: MockSurveyItem) {
+  // 使用 router.resolve 生成完整 URL，在新标签页打开
+  const resolved = router.resolve({
+    name: "surveyPreviewDetail",
+    params: { id: record.id }
+  });
+  window.open(resolved.href, "_blank");
+}
 </script>
 
 <style scoped>
-.survey-preview {
+.survey-preview-page {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 900px;
-  margin: 0 auto;
+  padding: 8px 0;
 }
 
 .page-header {
@@ -140,38 +199,43 @@ onMounted(() => {
 
 .page-desc {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--color-text-3);
 }
 
-.loading-wrap {
+/* 筛选栏 */
+.filter-bar {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--color-fill-2);
+  border-radius: 6px;
 }
 
-.preview-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.filter-label {
+  font-size: 14px;
+  color: var(--color-text-2);
 }
 
-.preview-content {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.result-count {
+  font-size: 13px;
+  color: var(--color-text-3);
 }
 
-.pagination-wrap {
-  display: flex;
-  justify-content: center;
-  margin-top: 16px;
+/* 表格 */
+.survey-title-link {
+  color: rgb(var(--primary-6));
+  cursor: pointer;
+  font-weight: 500;
 }
 
-.preview-footer {
-  display: flex;
-  justify-content: center;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-border-2);
+.survey-title-link:hover {
+  text-decoration: underline;
+}
+
+/* 表格行 hover 指针 */
+:deep(.arco-table-tr) {
+  cursor: pointer;
 }
 </style>
