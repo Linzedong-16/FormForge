@@ -731,6 +731,126 @@ async delByPattern(pattern: string): Promise<void> {
 
 ---
 
+### 2.15 GET/PUT /api/admin/config/ai — AI 配置管理
+
+**功能概述：** 查询/更新 DeepSeek API Key 及相关 AI 配置，Key 使用 AES-256-GCM 加密存储。
+
+**中间件链：** cors → helmet → rate-limit(100/min) → **authenticate → requireSuperAdmin** → handler
+
+**API 定义：**
+
+| 方法 | 路径               | 说明                         |
+| ---- | ------------------ | ---------------------------- |
+| GET  | `/admin/config/ai` | 查询 AI 配置（Key 脱敏）     |
+| PUT  | `/admin/config/ai` | 更新 AI 配置（Key 加密存储） |
+
+**请求体（PUT）：**
+
+```typescript
+interface UpdateAIConfigRequest {
+  apiKey: string; // DeepSeek API Key（以 sk- 开头）
+  model?: string; // 模型名称，默认 "deepseek-chat"
+  enabled: boolean; // 是否启用 AI 生成
+}
+```
+
+**响应体（GET/PUT）：**
+
+```typescript
+interface AIConfigResponse {
+  configured: boolean; // 是否已配置
+  apiKeyMasked: string; // 脱敏 Key（sk-****abcd）
+  model: string; // 模型名称
+  enabled: boolean; // 是否启用
+}
+```
+
+**优化策略：**
+
+| 策略             | 实现                                          | 效果                                   |
+| ---------------- | --------------------------------------------- | -------------------------------------- |
+| AES-256-GCM 加密 | `encrypt()` → `"ENC:<hex>"` 前缀标记          | 密文可辨识（替代长度启发式），向前兼容 |
+| 批量 upsert 事务 | `$transaction(entries.map(e => upsert(...)))` | 3 项配置原子化更新                     |
+| 模块缓存失效     | `invalidateAIConfigCache()`                   | 使 LangChain 模型实例失效，下次重建    |
+| 审计日志         | 记录 `{ model, enabled, key_updated: true }`  | 不记录 API Key 明文/密文               |
+| Key 脱敏返回     | `maskApiKey(plainKey)` → `"sk-****abcd"`      | 查询不泄露完整 Key                     |
+| 解密密文损坏处理 | try/catch → `"***解密失败***"`                | 不抛异常，返回友好提示                 |
+
+**AI 配置更新与密钥前缀：**
+
+```typescript
+// crypto.ts — encrypt() 输出格式
+// 优化前：纯 hex（依赖 length > 50 判断密文）
+encrypt("sk-my-key") → "a1b2c3d4e5f6..."  // 无法区分明文/密文
+
+// 优化后：ENC: 前缀标记
+encrypt("sk-my-key") → "ENC:a1b2c3d4e5f6..."  // isEncrypted() 准确判断
+
+// 解密向前兼容：不带前缀的旧密文自动按旧格式处理
+decrypt("a1b2c3...")  // 旧格式（无前缀）
+decrypt("ENC:a1b2c3...")  // 新格式（有前缀）
+```
+
+**缓存击穿防护（Cache Penetration Guard）：**
+
+```typescript
+// utils/cache.ts — getOrSet() 分布式锁优化
+async function getOrSet<T>(key, factory, ttl) {
+  const cached = await get<T>(key);
+  if (cached !== null) return cached;
+
+  // 尝试获取重建锁（SET NX），防止并发同时回源 DB
+  const lockKey = `${key}:lock`;
+  const locked = (await redis.set(lockKey, "1", "EX", 10, "NX")) === "OK";
+
+  if (locked) {
+    try {
+      const data = await factory();
+      await set(key, data, ttl); // 同步写回
+      return data;
+    } finally {
+      await redis.del(lockKey); // 释放锁
+    }
+  }
+
+  // 未获锁：等待 200ms 后重试读缓存，仍 miss 降级直接回源
+  await new Promise(r => setTimeout(r, 200));
+  const retry = await get<T>(key);
+  if (retry !== null) return retry;
+  return factory();
+}
+```
+
+**审计日志降级备份：**
+
+```typescript
+// utils/audit-log.ts — DB 写入失败时降级到文件
+try {
+  await prisma.auditLog.create({ data: { ... } });
+} catch {
+  // 降级写入本地文件（后续可通过 log-consumer 异步补录）
+  appendFile("logs/audit-fallback.log", JSON.stringify(entry) + "\n");
+}
+```
+
+**verifySuperAdmin 缓存优化：**
+
+```typescript
+// admin.service.ts — 复用用户角色缓存，避免每次管理操作查 DB
+async verifySuperAdmin(userId: bigint): Promise<void> {
+  const roles = await this.cache.getOrSet<string[]>(
+    CacheKeys.userRoles(userId.toString()),
+    () => prisma.userRole.findMany(...).then(r => r.map(r => r.role_code)),
+    CacheTTL.USER_ROLES  // 600s
+  );
+  if (!roles.includes("super_admin")) {
+    throw new AuthError("权限不足，需要超级管理员权限", 403);
+  }
+}
+```
+
+---
+
 ## 3. 性能优化策略
 
 ### 3.1 Cache-Aside 缓存体系
@@ -924,6 +1044,7 @@ msg: isProduction() ? "服务器内部错误" : error.message;
 | **响应延迟**   | /status 缓存命中  | 15ms (DB)                        | <1ms (Redis)                             |
 |                | /login 角色查询   | 每次 DB 查询                     | Cache-Aside 10min                        |
 |                | /admin/users 列表 | 顺序查列表+总数                  | Promise.all 并行                         |
+|                | verifySuperAdmin  | 每次 DB 查 userRole              | Cache-Aside 10min（复用 userRoles）      |
 | **并发安全**   | 登录失败计数      | INCR + EXPIRE 分离（竞态风险）   | Lua 原子操作                             |
 |                | Admin 路由认证    | 两次独立 hook（Reply sent 风险） | 合并为单一 hook                          |
 | **限流安全**   | /login            | 全局 100/min                     | 路由级 20/min                            |
@@ -933,6 +1054,8 @@ msg: isProduction() ? "服务器内部错误" : error.message;
 | **内存效率**   | AuthService       | 每次请求新建                     | WeakMap 按实例复用                       |
 |                | Token 黑名单      | 无 TTL                           | 按剩余有效期自动过期                     |
 | **可观测性**   | 审计日志          | 同步写入（阻塞）                 | 异步写入 + 失败降级                      |
+|                | 审计日志可靠性    | 写入失败即丢失                   | 降级写入本地文件 audit-fallback.log      |
+| **加密安全**   | 敏感数据判断      | 启发式长度判断（length > 50）    | ENC: 前缀标记（isEncrypted()）           |
 |                | 错误处理          | 未分类                           | 四级分类（AppError/Fastify/Prisma/未知） |
 
 ### 5.2 限流层级对比
@@ -995,8 +1118,10 @@ msg: isProduction() ? "服务器内部错误" : error.message;
 ### 6.5 审计日志
 
 - 审计日志写入失败仅 `warn`，不阻塞业务
-- 日志不记录密码明文，SMTP 密码不记录在 `details` 中
+- **DB 写入失败时降级到本地文件** `logs/audit-fallback.log`，确保审计记录不丢失
+- 日志不记录密码明文，SMTP/AI 密码不记录在 `details` 中
 - 邮箱脱敏：`maskEmail()` 保留前 2 字符 + `@domain`
+- 未登录用户审计 `userId` 为 `null`（非 `0n`，避免外键悬空引用）
 
 ### 6.6 后续优化建议
 
@@ -1004,8 +1129,9 @@ msg: isProduction() ? "服务器内部错误" : error.message;
 | ------------------------ | :----: | ---------------------------------------- |
 | 添加 `@fastify/compress` |   高   | gzip/brotli 响应压缩，减少 70%+ 传输体积 |
 | 用户列表加入缓存         |   中   | 配合 `delByPattern` 已预留失效逻辑       |
-| 敏感操作二次验证         |   中   | 删除用户、修改 SMTP 需二次确认           |
+| 敏感操作二次验证         |   中   | 删除用户、修改 SMTP/AI 配置需二次确认    |
 | 登录设备管理             |   低   | 记录登录设备，支持远程踢出               |
+| 审计日志异步补录         |   低   | log-consumer 消费 fallback 文件补录到 DB |
 
 ---
 
@@ -1043,10 +1169,11 @@ Tests      72 passed (72)
 
 ### C. 版本历史
 
-| 版本 | 日期       | 变更说明                                         |
-| ---- | ---------- | ------------------------------------------------ |
-| 1.0  | 2026-06-06 | 初始版本，架构设计与接口文档                     |
-| 2.0  | 2026-06-19 | 新增中间件优化详解、接口级优化策略、优化前后对比 |
+| 版本 | 日期       | 变更说明                                                                                                                                        |
+| ---- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1.0  | 2026-06-06 | 初始版本，架构设计与接口文档                                                                                                                    |
+| 2.0  | 2026-06-19 | 新增中间件优化详解、接口级优化策略、优化前后对比                                                                                                |
+| 3.0  | 2026-06-21 | 新增 AI 配置管理（2.15）、缓存击穿防护（分布式锁）、审计日志文件降级、ENC: 前缀加密标记、verifySuperAdmin 缓存复用、sendCode 审计 userId → null |
 
 ---
 

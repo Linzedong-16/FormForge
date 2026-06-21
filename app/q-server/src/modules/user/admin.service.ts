@@ -13,11 +13,11 @@ import type {
 } from "./schemas/user.schemas.js";
 import { AuthError, ValidationError } from "../../utils/errors.js";
 import { BizCode } from "../../utils/response.js";
-import { createCache, CacheKeys } from "../../utils/cache.js";
+import { createCache, CacheKeys, CacheTTL } from "../../utils/cache.js";
 import type { CacheClient } from "../../utils/cache.js";
 import { createAuditLog } from "../../utils/audit-log.js";
 import { buildPagination, paginatedResult } from "../../utils/pagination.js";
-import { encrypt, decrypt } from "../../utils/crypto.js";
+import { encrypt, decrypt, isEncrypted } from "../../utils/crypto.js";
 
 // ─── 类型重导出（保持向后兼容） ──────────────────────────────
 
@@ -37,12 +37,19 @@ export class AdminService {
   //  权限校验
   // ============================================================
 
-  /** 验证操作者是否为超级管理员 */
+  /** 验证操作者是否为超级管理员（Cache-Aside，复用用户角色缓存） */
   async verifySuperAdmin(userId: bigint): Promise<void> {
-    const role = await this.fastify.prisma.userRole.findFirst({
-      where: { user_id: userId, role_code: "super_admin" }
-    });
-    if (!role) {
+    const roles = await this.cache.getOrSet<string[]>(
+      CacheKeys.userRoles(userId.toString()),
+      async () => {
+        const userRoles = await this.fastify.prisma.userRole.findMany({
+          where: { user_id: userId }
+        });
+        return userRoles.map(r => r.role_code);
+      },
+      CacheTTL.USER_ROLES
+    );
+    if (!roles.includes("super_admin")) {
       throw new AuthError("权限不足，需要超级管理员权限", 403);
     }
   }
@@ -235,8 +242,8 @@ export class AdminService {
     for (const c of configs) {
       if (!grouped[c.category]) grouped[c.category] = {};
       const value = c.value ?? "";
-      // 自动解密 SMTP 密码（加密后的密文长度 > 50，明文密码通常较短）
-      grouped[c.category][c.key] = c.key === "smtp_password" && value.length > 50 ? decrypt(value) : value;
+      // 自动解密 SMTP 密码（通过 ENC: 前缀判断，替代长度启发式）
+      grouped[c.category][c.key] = c.key === "smtp_password" && isEncrypted(value) ? decrypt(value) : value;
     }
 
     return grouped;

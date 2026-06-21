@@ -5,6 +5,7 @@
  *   - 封装问卷相关的 HTTP 调用（serverClient.baseURL = "/api"，路径无需再加 /api 前缀）
  *   - 提供前端 Status[] → 后端 SurveyComponentPayload[] 的序列化工具
  *   - 提供从组件数组中提取问卷标题/描述的工具函数
+ *   - 提供 AI 一键生成问卷的 SSE 流式接口
  *
  * 所有 TS 类型均来自 @common/survey/survey.interface，本文件不重复定义类型。
  */
@@ -349,6 +350,31 @@ export const getComponentMap = (
 ): Array<{ id: string; order_index: number }> => {
   return components.map(c => ({ id: c.id, order_index: c.order_index }));
 };
+
+// ============================================================
+// AI 一键生成问卷（SSE 流式）
+// ============================================================
+
+/**
+ * 创建 AI 问卷生成 SSE 流
+ *
+ * 复用 monorepo-sse-client/ai 的 createAIGenerateStream，
+ * 自动注入 Bearer Token。本函数提供 q-editor 项目级别的便捷入口。
+ *
+ * @example
+ * ```typescript
+ * import { createAIGenerateStream } from "@/api/modules/survey";
+ *
+ * const stream = createAIGenerateStream({
+ *   prompt: "生成一份客户满意度调查",
+ *   onToken: (text) => appendToPreview(text),
+ *   onComponent: (comp) => addComponentToCanvas(comp),
+ *   onDone: (result) => finalize(result),
+ *   onError: (msg) => showError(msg),
+ * });
+ * ```
+ */
+export { createAIGenerateStream, type AIGenerateStreamOptions } from "monorepo-sse-client/ai";
 
 // ============================================================
 // 类型再导出（供外部模块按需直接引用）

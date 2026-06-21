@@ -1,19 +1,26 @@
 /**
  * 对称加密工具 — AES-256-GCM
  *
- * 用于保护敏感配置数据（如 SMTP 密码）的存储安全。
+ * 用于保护敏感配置数据（如 SMTP 密码、DeepSeek API Key）的存储安全。
  * 密钥由环境变量 CRYPTO_ENCRYPTION_KEY 注入，必须为 32 字节（256 位）的 hex 字符串。
  *
+ * 密文格式：ENC:<hex>
+ *   - ENC: 前缀用于标识加密数据，替代启发式长度判断
+ *   - 解密时自动去除前缀，向前兼容旧格式（无前缀密文）
+ *
  * 使用方式：
- *   import { encrypt, decrypt } from "../utils/crypto.js";
- *   const ciphertext = encrypt(plaintext);   // 返回 hex 编码的密文（含 IV + authTag）
+ *   import { encrypt, decrypt, isEncrypted } from "../utils/crypto.js";
+ *   const ciphertext = encrypt(plaintext);   // "ENC:a1b2c3..."
  *   const plaintext  = decrypt(ciphertext);  // 解密回明文
+ *   if (isEncrypted(value)) { ... }          // 安全判断是否为密文
  */
 
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
 // ─── 配置 ──────────────────────────────────────────────────
 
+/** 密文前缀标记（用于区分明文/密文，替代长度启发式） */
+const ENC_PREFIX = "ENC:";
 /** 加密算法 */
 const ALGORITHM = "aes-256-gcm";
 /** IV 长度（字节），GCM 推荐 12 */
@@ -39,7 +46,7 @@ function getKey(): Buffer {
 /**
  * 加密明文
  * @param plaintext 明文
- * @returns hex 编码的密文，格式：IV(12字节) + 密文 + AuthTag(16字节)
+ * @returns "ENC:<hex>" 格式的密文，含前缀标记 + IV(12字节) + 密文 + AuthTag(16字节)
  */
 export function encrypt(plaintext: string): string {
   const key = getKey();
@@ -49,18 +56,28 @@ export function encrypt(plaintext: string): string {
   const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
   const authTag = cipher.getAuthTag();
 
-  // IV + 密文 + AuthTag，全部 hex 编码
-  return Buffer.concat([iv, encrypted, authTag]).toString("hex");
+  // ENC:前缀 + IV + 密文 + AuthTag，全部 hex 编码
+  return ENC_PREFIX + Buffer.concat([iv, encrypted, authTag]).toString("hex");
+}
+
+/**
+ * 判断值是否为加密密文（不含解密验证，仅检测前缀）
+ * @param value 待检测的值
+ */
+export function isEncrypted(value: string): boolean {
+  return value.startsWith(ENC_PREFIX);
 }
 
 /**
  * 解密密文
- * @param ciphertext encrypt() 返回的 hex 密文
+ * @param ciphertext encrypt() 返回的密文（含 ENC: 前缀）；也兼容旧格式无前缀密文
  * @returns 明文
  */
 export function decrypt(ciphertext: string): string {
   const key = getKey();
-  const data = Buffer.from(ciphertext, "hex");
+  // 向前兼容：去除 ENC: 前缀（新格式），无前缀则按旧格式处理
+  const hex = ciphertext.startsWith(ENC_PREFIX) ? ciphertext.slice(ENC_PREFIX.length) : ciphertext;
+  const data = Buffer.from(hex, "hex");
 
   // 按顺序提取 IV、密文、AuthTag
   const iv = data.subarray(0, IV_LENGTH);

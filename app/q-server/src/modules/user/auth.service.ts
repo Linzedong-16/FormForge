@@ -363,8 +363,8 @@ export class AuthService {
       }
     }
 
-    // 7. 记录审计日志
-    createAuditLog(this.fastify, 0n, "send_code", "user", null, {
+    // 7. 记录审计日志（未登录操作，userId 为 null）
+    createAuditLog(this.fastify, null, "send_code", "user", null, {
       email: maskEmail(email),
       type
     }).catch(() => {});

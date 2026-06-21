@@ -285,7 +285,7 @@ export class SurveyService {
   async update(userId: bigint, surveyId: bigint, input: UpdateSurveyInput): Promise<SurveyDetail> {
     const { components, ...surveyData } = input;
 
-    await this.fastify.prisma.$transaction(async tx => {
+    const result = await this.fastify.prisma.$transaction(async tx => {
       // 事务内查询原始记录，避免 TOCTOU 竞态
       const existing = await tx.survey.findFirst({
         where: { id: surveyId, user_id: userId, deleted_at: null }
@@ -316,7 +316,7 @@ export class SurveyService {
         updateData.review_status = "none";
       }
 
-      await tx.survey.update({
+      const updated = await tx.survey.update({
         where: { id: surveyId, user_id: userId },
         data: updateData
       });
@@ -325,6 +325,19 @@ export class SurveyService {
       if (components) {
         await this.replaceComponents(tx, surveyId, components);
       }
+
+      // 3. 事务内加载组件（避免事务后额外查询）
+      const loadedComponents = await tx.surveyComponent.findMany({
+        where: { survey_id: surveyId },
+        orderBy: { order_index: "asc" }
+      });
+
+      const raw = updated as unknown as Record<string, unknown>;
+      return {
+        ...toSurveyListItem(raw),
+        access_code: (raw.access_code as string) ?? null,
+        components: (loadedComponents as Record<string, unknown>[]).map(toComponentDetail)
+      };
     });
 
     // 审计
@@ -336,7 +349,7 @@ export class SurveyService {
     // 清除缓存
     await this.invalidateCache(surveyId, userId);
 
-    return this.getById(userId, surveyId);
+    return result;
   }
 
   // ============================================================
@@ -403,8 +416,8 @@ export class SurveyService {
   //  发布问卷
   // ============================================================
   async publish(userId: bigint, surveyId: bigint): Promise<SurveyDetail> {
-    // 事务内校验 + 更新，避免 TOCTOU 竞态
-    await this.fastify.prisma.$transaction(async tx => {
+    // 事务内校验 + 更新 + 加载组件，避免事务后额外查询
+    const result = await this.fastify.prisma.$transaction(async tx => {
       const existing = await tx.survey.findFirst({
         where: { id: surveyId, user_id: userId, deleted_at: null }
       });
@@ -412,28 +425,40 @@ export class SurveyService {
       if (existing.status === 1) throw new AppError("问卷已发布，无需重复操作", 409);
       if (existing.status === 2) throw new AppError("已关闭的问卷无法发布", 409);
 
-      await tx.survey.update({
+      const updated = await tx.survey.update({
         where: { id: surveyId, user_id: userId },
         data: {
           status: 1,
           published_at: new Date()
         }
       });
+
+      const loadedComponents = await tx.surveyComponent.findMany({
+        where: { survey_id: surveyId },
+        orderBy: { order_index: "asc" }
+      });
+
+      const raw = updated as unknown as Record<string, unknown>;
+      return {
+        ...toSurveyListItem(raw),
+        access_code: (raw.access_code as string) ?? null,
+        components: (loadedComponents as Record<string, unknown>[]).map(toComponentDetail)
+      };
     });
 
     createAuditLog(this.fastify, userId, "publish_survey", "survey", surveyId).catch(() => {});
 
     await this.invalidateCache(surveyId, userId);
 
-    return this.getById(userId, surveyId);
+    return result;
   }
 
   // ============================================================
   //  关闭问卷
   // ============================================================
   async close(userId: bigint, surveyId: bigint): Promise<SurveyDetail> {
-    // 事务内校验 + 更新，避免 TOCTOU 竞态
-    await this.fastify.prisma.$transaction(async tx => {
+    // 事务内校验 + 更新 + 加载组件，避免事务后额外查询
+    const result = await this.fastify.prisma.$transaction(async tx => {
       const existing = await tx.survey.findFirst({
         where: { id: surveyId, user_id: userId, deleted_at: null }
       });
@@ -441,20 +466,32 @@ export class SurveyService {
       if (existing.status === 2) throw new AppError("问卷已关闭，无需重复操作", 409);
       if (existing.status === 0) throw new AppError("草稿状态的问卷无需关闭", 409);
 
-      await tx.survey.update({
+      const updated = await tx.survey.update({
         where: { id: surveyId, user_id: userId },
         data: {
           status: 2,
           closed_at: new Date()
         }
       });
+
+      const loadedComponents = await tx.surveyComponent.findMany({
+        where: { survey_id: surveyId },
+        orderBy: { order_index: "asc" }
+      });
+
+      const raw = updated as unknown as Record<string, unknown>;
+      return {
+        ...toSurveyListItem(raw),
+        access_code: (raw.access_code as string) ?? null,
+        components: (loadedComponents as Record<string, unknown>[]).map(toComponentDetail)
+      };
     });
 
     createAuditLog(this.fastify, userId, "close_survey", "survey", surveyId).catch(() => {});
 
     await this.invalidateCache(surveyId, userId);
 
-    return this.getById(userId, surveyId);
+    return result;
   }
 
   // ============================================================

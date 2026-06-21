@@ -152,9 +152,8 @@ const surveyRoutes: FastifyPluginAsync = async fastify => {
       const surveyId = parseSurveyId(id, reply);
       if (surveyId === null) return;
 
-      if (!publishSurveySchema.safeParse(request.body).success) {
-        return reply.status(400).send({ data: null, code: 400, msg: "参数格式错误" });
-      }
+      const body = parseAndRespond(publishSurveySchema.safeParse(request.body), reply);
+      if (!body) return;
 
       const result = await surveyService.publish(request.user!.userId, surveyId);
       return reply.sendSuccess(result, "发布成功");
@@ -176,9 +175,8 @@ const surveyRoutes: FastifyPluginAsync = async fastify => {
       const surveyId = parseSurveyId(id, reply);
       if (surveyId === null) return;
 
-      if (!closeSurveySchema.safeParse(request.body).success) {
-        return reply.status(400).send({ data: null, code: 400, msg: "参数格式错误" });
-      }
+      const body = parseAndRespond(closeSurveySchema.safeParse(request.body), reply);
+      if (!body) return;
 
       const result = await surveyService.close(request.user!.userId, surveyId);
       return reply.sendSuccess(result, "关闭成功");

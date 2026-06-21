@@ -1,0 +1,18 @@
+{
+  "name": "monorepo-sse-client",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SSE (Server-Sent Events) 客户端封装 — 基于 @microsoft/fetch-event-source，支持 POST + 流式消费",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ai": "./src/ai.ts"
+  },
+  "dependencies": {
+    "@microsoft/fetch-event-source": "^2.0.1"
+  },
+  "peerDependencies": {
+    "monorepo-code-common": "workspace:*"
+  }
+}

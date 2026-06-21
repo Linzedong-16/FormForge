@@ -15,6 +15,10 @@ import type { FastifyInstance } from "fastify";
 // ─── 默认配置 ──────────────────────────────────────────────
 
 const DEFAULT_TTL = 300; // 5 分钟
+/** 缓存重建锁 TTL（秒），确保锁持有者完成后其他请求可重试 */
+const LOCK_TTL = 10;
+/** 未获取锁时的重试等待（毫秒） */
+const LOCK_RETRY_DELAY_MS = 200;
 const CACHE_PREFIX = "cache:";
 
 // ─── 缓存客户端 ────────────────────────────────────────────
@@ -96,10 +100,42 @@ export function createCache(fastify: FastifyInstance): CacheClient {
       return cached;
     }
 
-    const data = await factory();
-    // 后台回填缓存，不阻塞响应
-    set(key, data, ttl).catch(() => {});
-    return data;
+    // 尝试获取重建锁（SET NX），防止缓存击穿
+    const lockKey = `${CACHE_PREFIX}${key}:lock`;
+    let locked = false;
+    try {
+      locked = (await redis.set(lockKey, "1", "EX", LOCK_TTL, "NX")) === "OK";
+    } catch {
+      // Redis 不可用时跳过锁，直接回源
+    }
+
+    if (locked) {
+      try {
+        const data = await factory();
+        // 同步写回，确保后续请求立即命中
+        try {
+          await redis.set(`${CACHE_PREFIX}${key}`, JSON.stringify(data), "EX", ttl);
+        } catch {
+          fastify.log.warn(`Redis 回填缓存失败: ${key}`);
+        }
+        return data;
+      } finally {
+        // 释放锁
+        try {
+          await redis.del(lockKey);
+        } catch {
+          // 锁 TTL 自动过期兜底
+        }
+      }
+    }
+
+    // 未获锁 → 等待后重试读缓存，仍 miss 则降级直接回源
+    await new Promise(resolve => setTimeout(resolve, LOCK_RETRY_DELAY_MS));
+    const retry = await get<T>(key);
+    if (retry !== null) return retry;
+
+    // 降级：直接回源（不写缓存，下次请求会重新竞争锁）
+    return factory();
   }
 
   return { get, set, del, delByPattern, getOrSet };
