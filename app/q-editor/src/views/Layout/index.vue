@@ -29,12 +29,13 @@
       </span>
     </div>
     <!-- 数据表格 -->
-    <el-table :data="pagedTableData" style="width: 100%" border height="500">
+    <el-table :data="pagedTableData" style="width: 100%" border height="500" @sort-change="handleSortChange">
       <el-table-column
         fixed
         prop="createDate"
         :label="t('layout.columnCreateDate')"
         width="150"
+        sortable="custom"
         :formatter="formatDate"
       />
       <el-table-column prop="syncStatus" :label="t('layout.columnSyncStatus')" width="100" align="center">
@@ -51,6 +52,7 @@
         :label="t('layout.columnUpdateDate')"
         width="150"
         align="center"
+        sortable="custom"
         :formatter="formatDate"
       />
       <el-table-column fixed="right" :label="t('layout.columnAction')" width="300" align="center">
@@ -144,11 +146,37 @@ const remoteSyncFailed = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-/** 前端分页：按当前页码与每页条数截取表格数据 */
+// ─── 排序 ──────────────────────────────────────────────────────
+/** 当前排序字段（null 表示无排序） */
+const sortProp = ref<string | null>(null);
+/** 当前排序方向 */
+const sortOrder = ref<"ascending" | "descending" | null>(null);
+
+/** 排序后的全量数据（不修改原始 tableData） */
+const sortedTableData = computed(() => {
+  const data = [...tableData.value];
+  if (!sortProp.value || !sortOrder.value) return data;
+
+  const dir = sortOrder.value === "ascending" ? 1 : -1;
+  return data.sort((a, b) => {
+    const valA = a[sortProp.value as keyof SurveyDBReturnData] as number;
+    const valB = b[sortProp.value as keyof SurveyDBReturnData] as number;
+    return (valA - valB) * dir;
+  });
+});
+
+/** 前端分页：按当前页码与每页条数截取（基于排序后的数据） */
 const pagedTableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
-  return tableData.value.slice(start, start + pageSize.value);
+  return sortedTableData.value.slice(start, start + pageSize.value);
 });
+
+/** 表格排序变化处理（Element Plus sort-change 事件） */
+const handleSortChange = ({ prop, order }: { prop: string; order: string | null }) => {
+  sortProp.value = prop || null;
+  sortOrder.value = order as "ascending" | "descending" | null;
+  currentPage.value = 1; // 排序后回到第一页
+};
 
 // ─── 本地数据 ──────────────────────────────────────────────────
 
