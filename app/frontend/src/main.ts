@@ -1,5 +1,5 @@
 import "./public-path";
-import { createApp, type App } from "vue";
+import { createApp, type App as VueApp } from "vue";
 import { createPinia } from "pinia";
 import { renderWithQiankun, qiankunWindow } from "vite-plugin-qiankun/es/helper";
 import "./style.css";
@@ -13,6 +13,8 @@ import ArcoVueIcon from "@arco-design/web-vue/es/icon";
 import { createI18n } from "vue-i18n";
 import App from "./App.vue";
 import { createAppRouter, type AppRouter } from "./router";
+import { initUserStore } from "./store";
+import { useUserStore } from "./store/modules/user";
 
 // 最小化 i18n 实例（问卷引擎仅需少量 UI 文案）
 const i18n = createI18n({
@@ -27,7 +29,7 @@ const i18n = createI18n({
 });
 
 // qiankun 环境下的当前 Vue 应用实例（支持重复挂载/卸载）
-let instance: App<Element> | null = null;
+let instance: VueApp<Element> | null = null;
 
 // 导出 router 实例，供组件使用（解决多实例问题）
 let appRouter: AppRouter | null = null;
@@ -50,6 +52,29 @@ function render(container?: Element | null, routerBase = "/") {
   instance.use(i18n);
   instance.use(pinia);
   instance.use(appRouter);
+
+  // ── 路由守卫：非登录页校验认证状态 ──────────────────────
+  appRouter.beforeEach(async (to, _from, next) => {
+    // 等待 user store 恢复 Token
+    await initUserStore();
+    const userStore = useUserStore();
+
+    // 登录页直接放行
+    if (to.path === "/login") {
+      // 已登录时重定向到首页
+      if (userStore.isLoggedIn) {
+        return next("/");
+      }
+      return next();
+    }
+
+    // 未登录 → 跳转登录页
+    if (!userStore.isLoggedIn) {
+      return next("/login");
+    }
+
+    next();
+  });
 
   // qiankun 场景：挂载到子容器内的 #app；独立运行：直接挂载 '#app'
   const mountTarget = container ? container.querySelector("#app") : "#app";

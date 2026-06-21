@@ -29,7 +29,7 @@ export default defineConfig(({ command }) => ({
     cors: true, // 允许主应用（localhost:8000）跨域加载此子应用
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: "http://localhost:8080",
         changeOrigin: true,
         rewrite: path => path
       }

@@ -9,9 +9,8 @@ const instance = axios.create({
 // 请求拦截器
 instance.interceptors.request.use(
   config => {
-    // 在发送请求之前做些什么
-    // 可以在这里添加token等认证信息
-    const token = localStorage.getItem("token");
+    // 自动附加 accessToken（从 localStorage 读取，与 userStore 保持一致）
+    const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

@@ -11,25 +11,64 @@
       </div>
     </div>
     <div class="header-right">
-      <a-button type="text" :icon="'fullscreen'" size="large" @click="toggleFullscreen">
+      <!-- 全屏切换 -->
+      <a-button type="text" size="large" @click="toggleFullscreen">
         <template #icon>
           <icon-fullscreen v-if="!isFullscreen" />
           <icon-fullscreen-exit v-else />
         </template>
       </a-button>
+
+      <!-- 主题切换 -->
       <a-button type="text" size="large" @click="toggleTheme">
         <template #icon>
           <icon-moon-fill v-if="!isDark" />
           <icon-sun-fill v-else />
         </template>
       </a-button>
-      <a-avatar :size="32"> Arco </a-avatar>
+
+      <!-- 用户下拉菜单 -->
+      <a-dropdown v-if="userStore.isLoggedIn" trigger="hover">
+        <a-space class="user-info" :size="8">
+          <a-avatar v-if="userAvatar" :size="32" :image-url="userAvatar">
+            {{ userStore.user?.username?.charAt(0) || "U" }}
+          </a-avatar>
+          <a-avatar v-else :size="32">
+            {{ userStore.user?.username?.charAt(0)?.toUpperCase() || "U" }}
+          </a-avatar>
+          <span class="username">{{ userStore.user?.username || "用户" }}</span>
+          <icon-down :size="12" />
+        </a-space>
+        <template #content>
+          <a-doption>
+            <template #default>
+              <div class="dropdown-item" @click="handleLogout">
+                <icon-export />
+                <span>退出登录</span>
+              </div>
+            </template>
+          </a-doption>
+        </template>
+      </a-dropdown>
+
+      <!-- 未登录 → 显示登录按钮 -->
+      <a-button v-else type="primary" size="small" @click="showLoginModal">
+        <template #icon><icon-user /></template>
+        登录
+      </a-button>
+
+      <!-- 登录弹窗 -->
+      <LoginModal v-model:visible="loginModalVisible" @success="onLoginSuccess" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { useUserStore } from "@/store/modules/user";
+import LoginModal from "@/components/LoginModal.vue";
+
+const userStore = useUserStore();
 
 // 侧边栏折叠状态
 const isCollapsed = ref(false);
@@ -38,10 +77,16 @@ const isDark = ref(false);
 const emit = defineEmits<{
   (e: "sidebar-toggle", val: boolean): void;
 }>();
+
+// 登录弹窗
+const loginModalVisible = ref(false);
+
+// 用户头像 URL
+const userAvatar = computed(() => userStore.profile?.avatarUrl || null);
+
 // 切换侧边栏
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value;
-  // 触发自定义事件，通知父组件侧边栏状态变化
   emit("sidebar-toggle", isCollapsed.value);
 };
 
@@ -71,9 +116,24 @@ const toggleTheme = () => {
   }
 };
 
+// 登录弹窗
+function showLoginModal() {
+  loginModalVisible.value = true;
+}
+
+function onLoginSuccess() {
+  // 登录成功后刷新 store 资料
+  userStore.fetchProfile().catch(() => {});
+}
+
+// 退出登录
+async function handleLogout() {
+  await userStore.handleLogout();
+  window.location.reload();
+}
+
 // 监听全屏状态变化
 onMounted(() => {
-  // 检查初始主题
   const currentTheme = document.body.getAttribute("arco-theme");
   isDark.value = currentTheme === "dark";
 });
@@ -113,5 +173,36 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.user-info {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.user-info:hover {
+  background-color: var(--color-fill-2);
+}
+
+.username {
+  font-size: 14px;
+  color: var(--color-text-1);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text-1);
+  min-width: 120px;
+}
+
+.dropdown-item:hover {
+  background-color: var(--color-fill-2);
 }
 </style>
