@@ -60,5 +60,14 @@ export const childrenRoutes: RouteRecordRaw[] = [
       title: "API Token 管理",
       icon: "lock"
     }
+  },
+  {
+    path: "/survey-preview",
+    name: "surveyPreview",
+    component: () => import("../views/survey-preview/SurveyPreviewView.vue"),
+    meta: {
+      title: "问卷预览",
+      icon: "file"
+    }
   }
 ];

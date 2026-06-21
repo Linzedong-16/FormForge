@@ -4,10 +4,27 @@ import { createPinia } from "pinia";
 import { renderWithQiankun, qiankunWindow } from "vite-plugin-qiankun/es/helper";
 import "./style.css";
 import "@arco-design/web-vue/dist/arco.css";
+// Element Plus 全局导入 — 供问卷渲染引擎使用（引擎内 el-* 组件依赖此全局注册）
+import ElementPlus from "element-plus";
+import "element-plus/dist/index.css";
 import ArcoVue from "@arco-design/web-vue";
 import ArcoVueIcon from "@arco-design/web-vue/es/icon";
+// vue-i18n — 问卷引擎组件（Cascader / DateTime / Transfer 等）内部使用 useI18n
+import { createI18n } from "vue-i18n";
 import App from "./App.vue";
 import { createAppRouter, type AppRouter } from "./router";
+
+// 最小化 i18n 实例（问卷引擎仅需少量 UI 文案）
+const i18n = createI18n({
+  legacy: false,
+  locale: "zh-CN",
+  fallbackLocale: "zh-CN",
+  messages: {
+    "zh-CN": {},
+    "en-US": {},
+    "ja-JP": {}
+  }
+});
 
 // qiankun 环境下的当前 Vue 应用实例（支持重复挂载/卸载）
 let instance: App<Element> | null = null;
@@ -29,6 +46,8 @@ function render(container?: Element | null, routerBase = "/") {
   instance = createApp(App);
   instance.use(ArcoVue, { componentPrefix: "arco" });
   instance.use(ArcoVueIcon);
+  instance.use(ElementPlus);
+  instance.use(i18n);
   instance.use(pinia);
   instance.use(appRouter);
 

@@ -1,0 +1,37 @@
+{
+  "name": "monorepo-survey-engine",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "问卷低代码渲染引擎 — 跨项目共享的问卷组件库",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0",
+    "element-plus": "^2.13.0",
+    "vue-i18n": "^9.14.0",
+    "pinia": "^3.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "uuid": "^13.0.0",
+    "dexie": "^4.4.0",
+    "mitt": "^3.0.0",
+    "axios": "^1.7.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "vitest": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.8",
+    "pinia": "^3.0.0",
+    "jsdom": "^25.0.0"
+  }
+}

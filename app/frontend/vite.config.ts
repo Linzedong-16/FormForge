@@ -3,7 +3,7 @@ import vue from "@vitejs/plugin-vue";
 import { resolve } from "path";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
-import { ArcoResolver } from "unplugin-vue-components/resolvers";
+import { ArcoResolver, ElementPlusResolver } from "unplugin-vue-components/resolvers";
 import { vitePluginForArco } from "@arco-plugins/vite-vue";
 import qiankun from "vite-plugin-qiankun";
 
@@ -12,8 +12,10 @@ export default defineConfig(({ command }) => ({
   plugins: [
     vue(),
     vitePluginForArco({ style: "css" }),
-    AutoImport({ resolvers: [ArcoResolver()] }),
-    Components({ resolvers: [ArcoResolver({ sideEffect: true })] }),
+    // Arco Design + Element Plus 双 UI 库自动导入
+    // 两个库使用不同的 CSS 前缀（arco- / el-），可以安全共存
+    AutoImport({ resolvers: [ArcoResolver(), ElementPlusResolver()] }),
+    Components({ resolvers: [ArcoResolver({ sideEffect: true }), ElementPlusResolver()] }),
     // qiankun 子应用适配插件：注入生命周期桥接脚本，解决 Vite ES Module 与 qiankun eval() 的兼容问题
     qiankun("frontend", { useDevMode: command === "serve" })
   ],
