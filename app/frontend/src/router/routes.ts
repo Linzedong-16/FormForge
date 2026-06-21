@@ -69,5 +69,14 @@ export const childrenRoutes: RouteRecordRaw[] = [
       title: "问卷预览",
       icon: "file"
     }
+  },
+  {
+    path: "/system-settings",
+    name: "systemSettings",
+    component: () => import("../views/settings/SystemSettingsView.vue"),
+    meta: {
+      title: "系统设置",
+      icon: "settings"
+    }
   }
 ];
