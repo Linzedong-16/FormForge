@@ -80,7 +80,17 @@ export enum BizCode {
   /** 新密码与当前密码相同 */
   PASSWORD_SAME_AS_CURRENT = 2008,
   /** 账号已被注销 */
-  ACCOUNT_DELETED = 2009
+  ACCOUNT_DELETED = 2009,
+
+  // ─── 问卷文件模块 ──────────────────────────────────────────
+  /** 文件类型不支持 */
+  UNSUPPORTED_FILE_TYPE = 3001,
+  /** 文件大小超限 */
+  FILE_TOO_LARGE = 3002,
+  /** 文件不存在 */
+  FILE_NOT_FOUND = 3003,
+  /** 文件服务暂不可用 */
+  FILE_STORAGE_ERROR = 3004
 }
 
 // ─── 构建函数 ────────────────────────────────────────────────

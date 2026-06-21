@@ -142,7 +142,13 @@ export const CacheKeys = {
   /** 答卷详情 */
   responseDetail: (id: string) => `response:detail:${id}`,
   /** 答卷缓存前缀（用于批量失效） */
-  responsePattern: (surveyId: string) => `response:survey:${surveyId}:*`
+  responsePattern: (surveyId: string) => `response:survey:${surveyId}:*`,
+
+  // ─── 问卷文件模块 ──────────────────────────────────────────
+  /** 问卷文件列表 */
+  surveyFileList: (surveyId: string) => `survey:file:list:${surveyId}`,
+  /** 问卷文件列表缓存前缀（用于批量失效） */
+  surveyFileListPattern: (surveyId: string) => `survey:file:list:${surveyId}:*`
 } as const;
 
 /** 缓存 TTL（秒）常量 */

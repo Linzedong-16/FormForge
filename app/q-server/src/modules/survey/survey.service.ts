@@ -386,6 +386,16 @@ export class SurveyService {
       is_template_approved: isTemplateApproved
     }).catch(() => {});
 
+    // 文件级联清理：软删除问卷后清除 MinIO 文件 + survey_files 记录
+    // 公共模板不删除文件（isTemplateApproved 为 true 时跳过）
+    if (!isTemplateApproved) {
+      const { SurveyFileService } = await import("./file.service.js");
+      const fileService = new SurveyFileService(this.fastify);
+      fileService.cleanupBySurvey(surveyId).catch(err => {
+        this.fastify.log.warn({ err, surveyId: String(surveyId) }, "问卷删除后文件级联清理失败");
+      });
+    }
+
     await this.invalidateCache(surveyId, userId);
   }
 

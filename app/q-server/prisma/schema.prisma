@@ -41,6 +41,7 @@ model User {
   reviewed_reviews  Review[]           @relation("ReviewReviewer") // 自己审核的记录
   template_ratings  TemplateRating[] // 自己对模板的评分
   profile           UserProfile? // 用户资料（1:1）
+  survey_files      SurveyFile[] // 上传的问卷文件
 
   @@index([email])
   @@index([status])
@@ -83,6 +84,7 @@ model Survey {
   permissions      SurveyPermission[]
   reviews          Review[] // 审核记录
   template_ratings TemplateRating[] // 模板评分记录
+  files            SurveyFile[] // 关联的问卷文件
 
   @@index([user_id])
   @@index([status])
@@ -285,6 +287,15 @@ enum ReviewStatus {
 }
 
 // ============================================================
+// 枚举：问卷文件类型
+// ============================================================
+enum FileType {
+  survey_option_image // 图片选择组件封面图（PicItem 上传）
+  survey_signature // 签名图片（Signature canvas 转 blob 后上传）
+  survey_cover // 问卷封面图（survey.cover_url，预留）
+}
+
+// ============================================================
 // 11. 审核记录表 (reviews)
 // ============================================================
 model Review {
@@ -362,4 +373,37 @@ model UserProfile {
 
   @@index([user_id])
   @@map("user_profiles")
+}
+
+// ============================================================
+// 14. 问卷文件表 (survey_files)
+//
+// 设计目的：
+//   - 追踪问卷编辑器上传的所有文件（图片选择组件封面、签名图片）
+//   - 支撑问卷删除时级联清理 MinIO 文件
+//   - 提供文件溯源（上传者、上传时间、文件大小）
+//   - 识别孤儿文件（已从 survey_components.config 中移除但 MinIO 仍有残留）
+// ============================================================
+model SurveyFile {
+  id         BigInt   @id @default(autoincrement())
+  survey_id  BigInt?  // 所属问卷（可为 null，签名文件关联 response 而非 survey）
+  user_id    BigInt   // 上传者
+  file_url   String   @db.VarChar(1024) // MinIO 完整访问 URL
+  file_key   String   @db.VarChar(512)  // MinIO 对象 key（如 "survey-images/uuid.png"），删除时需要
+  file_name  String   @db.VarChar(255)  // 原始文件名
+  mime_type  String   @db.VarChar(127)  // MIME 类型（如 "image/png"）
+  file_size  BigInt   // 文件大小（字节）
+  file_type  FileType @default(survey_option_image) // 文件来源类型
+  created_at DateTime @default(now())
+
+  // 关联关系
+  survey Survey? @relation(fields: [survey_id], references: [id], onDelete: SetNull)
+  user   User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([survey_id])
+  @@index([user_id])
+  @@index([file_type])
+  @@index([created_at])
+  @@index([survey_id, file_type]) // 高频：按问卷查询特定类型文件
+  @@map("survey_files")
 }
