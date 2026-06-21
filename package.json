@@ -7,8 +7,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint:prettier": "prettier --write --end-of-line lf \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
-    "lint:eslint": "eslint",
-    "lint": "pnpm lint:prettier && pnpm lint:eslint --fix",
+    "lint:eslint": "eslint --cache",
+    "lint": "lint-staged --diff=HEAD",
+    "lint:all": "pnpm lint:prettier && pnpm lint:eslint --fix",
     "lint:spellcheck": "cspell lint \"(packages|app)/**/*.{js,ts,mjs,cjs,json,css,less,scss,vue,html,md}\"",
     "commit": "pnpm exec git-cz",
     "prepare": "husky",

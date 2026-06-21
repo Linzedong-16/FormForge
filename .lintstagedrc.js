@@ -6,7 +6,7 @@
 export default {
   "*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}": [
     "prettier --write",
-    "eslint --fix",
+    "eslint --fix --cache",
     "cspell lint --no-fail-on-unfound"
   ]
 };
