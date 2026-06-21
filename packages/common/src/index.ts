@@ -36,3 +36,6 @@ export * from "./survey/survey.interface.js";
 
 /// 导出 问卷文件模块前后端通用接口
 export * from "./survey/survey-file.interface.js";
+
+/// 导出 AI 生成模块前后端通用接口
+export * from "./ai/ai.interface.js";

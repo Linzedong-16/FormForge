@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 
 const ignores = [
   "**/dist/**",
+  "dist/*",
   "**/node_modules/**",
   ".*",
   "scripts/**",
@@ -30,9 +31,10 @@ const ignores = [
 ];
 
 export default defineConfig(
+  // ─── 全局忽略 ────────────────────────────────────────────
+  { ignores },
   // 通用配置
   {
-    ignores, // 忽略项
     extends: [eslint.configs.recommended, ...tseslint.configs.recommended, eslintConfigPrettier], // 继承规则
     plugins: {
       prettier: eslintPluginPrettier
@@ -49,7 +51,6 @@ export default defineConfig(
   },
   // q-editor 配置
   {
-    ignores,
     files: ["app/q-editor/**/*.{ts,js,tsx,jsx,vue}"],
     extends: [...eslintPluginVue.configs["flat/recommended"], eslintConfigPrettier],
     languageOptions: {
@@ -73,7 +74,6 @@ export default defineConfig(
   },
   // 前端配置 (frontend)
   {
-    ignores,
     files: ["app/frontend/**/*.{ts,js,tsx,jsx,vue}", "packages/components/**/*.{ts,js,tsx,jsx,vue}"],
     extends: [...eslintPluginVue.configs["flat/recommended"], eslintConfigPrettier],
     languageOptions: {
@@ -103,7 +103,6 @@ export default defineConfig(
   },
   // 后端配置
   {
-    ignores,
     files: ["app/backend/**/*.{ts,js}"],
     languageOptions: {
       globals: {

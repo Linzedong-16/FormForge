@@ -6,6 +6,8 @@ import profileRoutes from "../modules/user/profile.routes.js";
 import surveyRoutes from "../modules/survey/survey.routes.js";
 import fileRoutes from "../modules/survey/file.routes.js";
 import uploadRoutes from "../modules/survey/upload.routes.js";
+import aiGenerateRoutes from "../modules/ai/ai-generate.routes.js";
+import aiConfigRoutes from "../modules/ai/ai-config.routes.js";
 
 const routes: FastifyPluginAsync = async fastify => {
   // 健康检查 — 探测 PostgreSQL、Redis、RabbitMQ 连通性
@@ -84,6 +86,10 @@ const routes: FastifyPluginAsync = async fastify => {
   fastify.register(surveyRoutes);
   // file.routes.ts 内部路径为 /surveys/:id/files、/survey-files/:id
   fastify.register(fileRoutes);
+  // ai-generate.routes.ts 内部路径为 /surveys/generate（SSE 流式）
+  fastify.register(aiGenerateRoutes);
+  // ai-config.routes.ts 内部路径为 /config/ai（管理员 AI 配置管理）
+  fastify.register(aiConfigRoutes, { prefix: "/admin" });
 };
 
 export default routes;

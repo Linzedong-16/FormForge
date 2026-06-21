@@ -90,7 +90,17 @@ export enum BizCode {
   /** 文件不存在 */
   FILE_NOT_FOUND = 3003,
   /** 文件服务暂不可用 */
-  FILE_STORAGE_ERROR = 3004
+  FILE_STORAGE_ERROR = 3004,
+
+  // ─── AI 生成模块 ──────────────────────────────────────────
+  /** AI 服务未配置 */
+  AI_NOT_CONFIGURED = 4001,
+  /** AI 生成请求过于频繁 */
+  AI_RATE_LIMITED = 4002,
+  /** AI 生成超时 */
+  AI_TIMEOUT = 4003,
+  /** AI 返回内容无法解析 */
+  AI_PARSE_FAILED = 4004
 }
 
 // ─── 构建函数 ────────────────────────────────────────────────
