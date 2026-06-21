@@ -1,5 +1,5 @@
 export default {
-  title: "低代码问卷系统",
+  title: "Q问卷",
   create: "创建问卷",
   edit: "编辑",
   delete: "删除",

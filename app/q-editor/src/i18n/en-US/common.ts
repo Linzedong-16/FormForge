@@ -1,5 +1,5 @@
 export default {
-  title: "Low-Code Questionnaire System",
+  title: "Q Survey",
   create: "Create Survey",
   edit: "Edit",
   delete: "Delete",

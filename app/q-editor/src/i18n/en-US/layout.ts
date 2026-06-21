@@ -1,5 +1,5 @@
 export default {
-  pageTitle: "Low-Code Questionnaire System",
+  pageTitle: "Q Survey",
   createSurvey: "Create Survey",
   componentMarket: "Component Market",
   columnCreateDate: "Created Date",

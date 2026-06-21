@@ -217,11 +217,19 @@ $land-accent-color: #18181b; // zinc-900
       display: flex;
       align-items: center;
       justify-content: center;
+      color: $land-text-primary; // SVG currentColor 继承源
 
       svg {
         width: 100%;
         height: 100%;
-        color: $land-text-primary;
+      }
+
+      // 显式设置路径颜色，避免 currentColor 继承链失效
+      path:first-child {
+        stroke: $land-text-primary;
+      }
+      path:last-child {
+        fill: $land-text-primary;
       }
     }
 

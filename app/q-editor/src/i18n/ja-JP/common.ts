@@ -1,5 +1,5 @@
 export default {
-  title: "ローコードアンケートシステム",
+  title: "Qアンケート",
   create: "アンケート作成",
   edit: "編集",
   delete: "削除",

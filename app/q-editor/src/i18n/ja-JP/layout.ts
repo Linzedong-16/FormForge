@@ -1,5 +1,5 @@
 export default {
-  pageTitle: "ローコードアンケートシステム",
+  pageTitle: "Qアンケート",
   createSurvey: "アンケート作成",
   componentMarket: "コンポーネントマーケット",
   columnCreateDate: "作成日",

@@ -1,5 +1,5 @@
 export default {
-  pageTitle: "低代码问卷系统",
+  pageTitle: "Q问卷",
   createSurvey: "创建问卷",
   componentMarket: "组件市场",
   columnCreateDate: "创建日期",
