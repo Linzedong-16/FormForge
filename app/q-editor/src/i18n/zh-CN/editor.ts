@@ -190,5 +190,39 @@ export default {
   matrixRows: "行",
   matrixCols: "列",
   matrixRow: "行",
-  matrixCol: "列"
+  matrixCol: "列",
+
+  // ══════════════════════════════════════════════════════════
+  //  AI 一键生成
+  // ══════════════════════════════════════════════════════════
+  aiPanelTitle: "AI 一键生成问卷",
+  aiPanelDesc: "用自然语言描述你的需求，AI 将自动生成一份完整的问卷",
+  aiPromptLabel: "需求描述",
+  aiPromptPlaceholder: "例如：生成一份员工敬业度调查问卷，包含工作满意度、职业发展、团队协作、薪酬福利等方面的问题",
+  aiCountLabel: "题目数量",
+  aiLanguageLabel: "语言",
+  aiGenerateBtn: "开始生成",
+  aiCancelBtn: "取消生成",
+  aiGenerating: "AI 正在生成问卷...",
+  aiStreamPreview: "实时预览",
+  aiGeneratedComponents: "已生成组件",
+  aiPreviewBtn: "预览生成结果",
+  aiApplyBtn: "应用到编辑器",
+  aiRetryBtn: "重新生成",
+  aiCloseBtn: "关闭",
+  aiHistoryTitle: "生成历史",
+  aiNoHistory: "暂无生成历史",
+  aiApplySuccess: "问卷已应用到编辑器",
+  aiApplyConfirm: "当前编辑器有未保存的内容，应用 AI 生成结果将覆盖现有内容，是否继续？",
+  aiNetworkError: "网络连接异常，请检查网络后重试",
+  aiTimeoutError: "AI 生成超时，请稍后重试",
+  aiServiceError: "AI 服务暂时不可用，请稍后重试",
+  aiRateLimitError: "请求过于频繁，请稍后再试",
+  aiNotConfigured: "AI 服务未配置，请联系管理员",
+  aiEmptyPrompt: "请输入需求描述",
+  aiPromptTooShort: "需求描述至少需要 5 个字符",
+  aiPromptTooLong: "需求描述不能超过 2000 个字符",
+  aiNoComponents: "未生成任何有效组件，请尝试调整需求描述后重试",
+  aiWarningTitle: "生成提示",
+  aiWarningBadType: '组件类型 "{type}" 不支持，已跳过'
 };

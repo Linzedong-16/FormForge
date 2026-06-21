@@ -185,7 +185,7 @@ export class AIGenerateService {
     const validationResult = validateAIResponse(fullText);
     const generatedCount = validationResult.data.components.length;
 
-    // 6. 推送 done 事件
+    // 6. 推送 done 事件（含简化预览 + 完整组件数据）
     yield {
       event: "done",
       data: {
@@ -194,6 +194,8 @@ export class AIGenerateService {
           type: c.type,
           title: (c.config as Record<string, { status: string }>)?.title?.status ?? ""
         })),
+        // 完整组件数据（含 config），供前端 Status[] 转换
+        _rawComponents: validationResult.data.components,
         _warnings: validationResult.warnings,
         _rawCount: generatedCount
       }

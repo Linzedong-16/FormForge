@@ -44,25 +44,9 @@
           <!-- AI 功能按钮组 -->
           <div class="ai-btn-group ml-15 flex align-items-center">
             <el-button size="small" plain disabled>{{ t("editor.aiPolish") }}</el-button>
-            <el-popover
-              placement="bottom"
-              trigger="click"
-              :width="320"
-              :show-arrow="false"
-              :offset="8"
-              popper-class="ai-generate-popover"
-            >
-              <template #reference>
-                <el-button size="small" type="primary" plain>{{ t("editor.aiGenerate") }}</el-button>
-              </template>
-              <div class="ai-generate-panel">
-                <el-input v-model="aiInput" type="textarea" :rows="3" :placeholder="t('editor.aiInputPlaceholder')" />
-                <div class="ai-actions">
-                  <el-button size="small" @click="onAiClear">{{ t("editor.aiClear") }}</el-button>
-                  <el-button size="small" type="primary" @click="onAiSubmit">{{ t("editor.aiSubmit") }}</el-button>
-                </div>
-              </div>
-            </el-popover>
+            <el-button size="small" type="primary" plain @click="aiGenPanelRef?.open()">
+              {{ t("editor.aiGenerate") }}
+            </el-button>
           </div>
           <!-- 模板市场 -->
           <el-button size="small" type="warning" plain class="ml-10" @click="onApplyShareTemplate">
@@ -113,6 +97,9 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- AI 一键生成面板（Drawer，通过 ref 控制） -->
+    <AIGenPanel ref="aiGenPanelRef" />
   </div>
 </template>
 
@@ -127,6 +114,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { useEditorStore } from "@/stores/useEditor";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 import UserProfile from "@/components/Common/UserProfile.vue";
+import AIGenPanel from "@/extension/components/AI-GenPanel.vue";
 import { applyTemplate, serializeComponents } from "@/api/modules/survey";
 import type { TemplateCategory } from "@common/survey/survey.interface";
 
@@ -189,21 +177,7 @@ const goHome = () => {
 
 // ─── AI 功能 ─────────────────────────────────────────────────
 
-const aiInput = ref("");
-
-const onAiClear = () => {
-  aiInput.value = "";
-};
-
-const onAiSubmit = () => {
-  // TODO: 对接 AI 生成接口
-  const trimmed = aiInput.value.trim();
-  if (!trimmed) {
-    ElMessage.warning(t("editor.aiInputPlaceholder"));
-    return;
-  }
-  ElMessage.success(t("common.success"));
-};
+const aiGenPanelRef = ref<InstanceType<typeof AIGenPanel> | null>(null);
 
 // ─── 模板市场 ────────────────────────────────────────────────
 

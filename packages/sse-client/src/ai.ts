@@ -58,8 +58,10 @@ export interface AIGenerateResult {
   title: string;
   /** 问卷说明 */
   description: string;
-  /** 生成的组件列表 */
+  /** 生成的组件列表（简化预览：仅 type + title） */
   components: AIComponentPreview[];
+  /** 完整组件数据（含 config），供前端 Status[] 转换 */
+  _rawComponents?: Array<{ type: string; config: Record<string, unknown> }>;
   /** 校验过程中的警告信息 */
   warnings: string[];
 }
@@ -177,12 +179,14 @@ export function createAIGenerateStream(options: AIGenerateStreamOptions): SSECli
             title: string;
             description: string;
             components: AIComponentPreview[];
+            _rawComponents?: Array<{ type: string; config: Record<string, unknown> }>;
             _warnings: string[];
           };
           onDone?.({
             title: result?.title ?? "",
             description: result?.description ?? "",
             components: result?.components ?? [],
+            _rawComponents: result?._rawComponents,
             warnings: result?._warnings ?? []
           });
           break;
