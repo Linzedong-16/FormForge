@@ -12,7 +12,6 @@ import { authenticate, requireSuperAdmin } from "../user/auth.middleware.js";
 import { AIConfigService } from "./ai-config.service.js";
 import { updateAIConfigSchema } from "./ai-config.schemas.js";
 import { parseAndRespond } from "../../utils/zod.js";
-import { AppError } from "../../utils/errors.js";
 
 const aiConfigRoutes: FastifyPluginAsync = async fastify => {
   const aiConfigService = new AIConfigService(fastify);
@@ -42,9 +41,22 @@ const aiConfigRoutes: FastifyPluginAsync = async fastify => {
       const result = await aiConfigService.updateConfig(adminId, body);
       return reply.sendSuccess(result, "AI 配置已更新");
     } catch (err) {
-      // 加密/解密相关错误（如 CRYPTO_ENCRYPTION_KEY 未配置）
-      const msg = err instanceof AppError ? err.message : "AI 配置更新失败";
-      return reply.status(500).send({ data: null, code: 500, msg });
+      // 区分加密密钥未配置 与 其他异常
+      const rawMsg = err instanceof Error ? err.message : String(err);
+      fastify.log.error({ err }, "AI 配置更新失败");
+
+      if (rawMsg.includes("CRYPTO_ENCRYPTION_KEY")) {
+        return reply.status(500).send({
+          data: null,
+          code: 500,
+          msg: "服务端加密密钥未配置（CRYPTO_ENCRYPTION_KEY），请联系运维配置后重试"
+        });
+      }
+      return reply.status(500).send({
+        data: null,
+        code: 500,
+        msg: `AI 配置更新失败：${rawMsg}`
+      });
     }
   });
 };

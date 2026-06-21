@@ -34,6 +34,21 @@ export interface SmtpConfigInput {
   fromEmail: string;
 }
 
+/** AI 配置响应（对应 @common/ai/ai.interface.ts 的 AIConfigResponse） */
+export interface AIConfigResponse {
+  configured: boolean;
+  apiKeyMasked: string;
+  model: string;
+  enabled: boolean;
+}
+
+/** AI 配置更新请求（对应 @common/ai/ai.interface.ts 的 UpdateAIConfigRequest） */
+export interface AIConfigUpdateInput {
+  apiKey: string;
+  model?: string;
+  enabled: boolean;
+}
+
 /** 健康检查响应 */
 export interface HealthCheckResult {
   status: "ok" | "degraded";
@@ -57,6 +72,13 @@ export const getAdminConfig = (): Promise<ApiResponse<SystemConfig>> => serverCl
 /** PUT /api/admin/config/smtp — 更新 SMTP 配置 */
 export const updateSmtpConfig = (data: SmtpConfigInput): Promise<ApiResponse<{ updated: boolean }>> =>
   serverClient.put("/admin/config/smtp", data);
+
+/** GET /api/admin/config/ai — 获取 AI 配置（Key 脱敏） */
+export const getAIConfig = (): Promise<ApiResponse<AIConfigResponse>> => serverClient.get("/admin/config/ai");
+
+/** PUT /api/admin/config/ai — 更新 AI 配置（Key 加密存储） */
+export const updateAIConfig = (data: AIConfigUpdateInput): Promise<ApiResponse<AIConfigResponse>> =>
+  serverClient.put("/admin/config/ai", data);
 
 // ══════════════════════════════════════════════════════════════
 //  健康检查（公开接口，使用 authClient 避免 401 报错）
