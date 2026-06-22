@@ -1,26 +1,27 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { ChatAnthropic } from "@langchain/anthropic";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
 import type { FastifyInstance } from "fastify";
 import { decrypt } from "../utils/crypto.js";
 
 export interface ChatModelOptions {
   model?: string;
   temperature?: number;
+  /** 最大输出 Token 数（默认 4096） */
+  maxTokens?: number;
 }
 
 export const createOpenAIChat = (options?: ChatModelOptions) =>
   new ChatOpenAI({
     model: options?.model ?? "gpt-4o-mini",
     temperature: options?.temperature ?? 0.7,
+    maxTokens: options?.maxTokens ?? 4096,
     apiKey: process.env.OPENAI_API_KEY
   });
 
 export const createAnthropicChat = (options?: ChatModelOptions) =>
-  new ChatAnthropic({
+  new ChatOpenAI({
     model: options?.model ?? "claude-sonnet-4-6",
     temperature: options?.temperature ?? 0.7,
+    maxTokens: options?.maxTokens ?? 4096,
     apiKey: process.env.ANTHROPIC_API_KEY
   });
 
@@ -91,11 +92,10 @@ export const createDeepSeekChat = async (fastify: FastifyInstance, options?: Cha
   return new ChatOpenAI({
     model: options?.model ?? aiConfigCache.model,
     temperature: options?.temperature ?? 0.7,
+    maxTokens: options?.maxTokens ?? 4096,
     apiKey: aiConfigCache.apiKey,
     configuration: {
       baseURL: "https://api.deepseek.com/v1"
     }
   });
 };
-
-export { ChatPromptTemplate, StringOutputParser };

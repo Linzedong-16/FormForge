@@ -169,6 +169,44 @@ const POLISH_RULES: Record<AIPolishAspect, string> = {
 - 调整后确保问卷结构完整，不丢失关键信息`
 };
 
+// ─── 6. Few-shot 示例 ──────────────────────────────────────────
+
+const FEW_SHOT_EXAMPLE = `【参考示例】
+
+以下是一个润色前后的对比示例，展示如何优化问卷的措辞和选项：
+
+■ 润色前（输入）：
+{
+  "title": "调查",
+  "description": "",
+  "components": [
+    { "type": "single-select", "config": { "title": { "status": "性别", "isShow": true }, "desc": { "status": "", "isShow": false }, "options": { "status": ["男", "女"], "isShow": true } } },
+    { "type": "text-input", "config": { "title": { "status": "你觉得怎么样", "isShow": true }, "desc": { "status": "", "isShow": false } } },
+    { "type": "single-select", "config": { "title": { "status": "满意吗", "isShow": true }, "desc": { "status": "", "isShow": false }, "options": { "status": ["满意", "还行", "不满意"], "isShow": true } } }
+  ]
+}
+
+■ 润色后（输出）：
+{
+  "title": "用户满意度调查",
+  "description": "感谢您参与本次调查，您的反馈对我们非常重要。",
+  "components": [
+    { "type": "single-select", "config": { "title": { "status": "您的性别是？", "isShow": true }, "desc": { "status": "", "isShow": false }, "options": { "status": ["男", "女"], "isShow": true } } },
+    { "type": "rate-score", "config": { "title": { "status": "您对本次服务体验的满意程度如何？", "isShow": true }, "desc": { "status": "1分非常不满意，5分非常满意", "isShow": true }, "options": { "status": ["1分", "2分", "3分", "4分", "5分"], "isShow": true } } },
+    { "type": "text-input", "config": { "title": { "status": "您认为我们还有哪些可以改进的地方？", "isShow": true }, "desc": { "status": "请畅所欲言", "isShow": true } } }
+  ],
+  "changes": [
+    "优化问卷标题：'调查' → '用户满意度调查'",
+    "添加问卷描述，提升专业感",
+    "优化题目措辞：'你觉得怎么样' → '您认为我们还有哪些可以改进的地方？'",
+    "'满意吗' 改为评分题，提供更细粒度的量化选项",
+    "统一选项措辞风格，使用正式语气"
+  ]
+}
+
+注意：以上示例中，changes 数组记录了所有修改点，components 保持了与输入相同的题目数量，
+仅优化了措辞、选项和结构。`;
+
 // ─── 构建函数 ──────────────────────────────────────────────────
 
 /**
@@ -196,6 +234,7 @@ export function buildPolishSystemPrompt(options: PolishPromptOptions = {}): stri
     DESIGN_GUIDELINES,
     `【本次润色重点】${aspectLabels}${languageHint}`,
     rulesText,
+    FEW_SHOT_EXAMPLE,
     "\n现在请根据用户提供的问卷内容和润色指令，输出优化后的问卷 JSON。记住：只输出纯 JSON，不要包裹在代码块中，不要添加解释文字。"
   ].join("\n\n");
 }

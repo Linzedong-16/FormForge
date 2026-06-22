@@ -10,7 +10,7 @@
  */
 export { AIGenerateService } from "./ai-generate/ai-generate.service.js";
 export type { SSEEvent, GenerateOptions } from "./ai-generate/ai-generate.service.js";
-export { validateAIResponse } from "./schema-validator.js";
+export { validateAIResponse, parseJSONFromRawText, logAIRawResponse } from "./schema-validator.js";
 export type { ValidationResult } from "./schema-validator.js";
 export { buildSystemPrompt } from "./prompt-templates/system-prompt.js";
 export type { SystemPromptOptions } from "./prompt-templates/system-prompt.js";

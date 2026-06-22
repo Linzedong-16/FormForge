@@ -17,7 +17,9 @@ import type { FastifyInstance } from "fastify";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { createDeepSeekChat } from "../../../config/langchain.js";
 import { buildPolishSystemPrompt } from "./prompts/polish-prompt.js";
-import { validateAIResponse, logAIRawResponse } from "../schema-validator.js";
+import { validateAIResponse, parseJSONFromRawText, logAIRawResponse } from "../schema-validator.js";
+import { polishResponseSchema } from "./ai-polish.schemas.js";
+import { checkRateLimit } from "../../../utils/rate-limiter.js";
 import { createAuditLog } from "../../../utils/audit-log.js";
 import type { SSEEvent } from "@common/ai/ai.interface.js";
 import type { AIPolishRequest } from "@common/ai/ai.interface.js";
@@ -25,26 +27,15 @@ import type { AIPolishRequest } from "@common/ai/ai.interface.js";
 // ─── 常量 ──────────────────────────────────────────────────────
 
 const POLISH_TIMEOUT_MS = 60_000;
-const RATE_LIMIT_MAX = 3;
-const RATE_LIMIT_PREFIX = "rate:ai_polish:";
+const RATE_LIMIT_CONFIG = {
+  prefix: "rate:ai_polish:",
+  max: 3
+} as const;
 
 // ─── 润色服务类 ────────────────────────────────────────────────
 
 export class AIPolishService {
   constructor(private readonly fastify: FastifyInstance) {}
-
-  /** 原子化限流检查 */
-  private async checkRateLimit(userId: bigint): Promise<boolean> {
-    const key = `${RATE_LIMIT_PREFIX}${userId}`;
-    try {
-      await this.fastify.redis.set(key, "0", "EX", 60, "NX");
-      const current = await this.fastify.redis.incr(key);
-      return current <= RATE_LIMIT_MAX;
-    } catch {
-      this.fastify.log.warn("AI 润色限流 Redis 操作失败，降级放行");
-      return true;
-    }
-  }
 
   /** 构建润色的 User Prompt（问卷 JSON + 用户指令） */
   private buildUserPrompt(req: AIPolishRequest): string {
@@ -55,43 +46,16 @@ export class AIPolishService {
   /**
    * 从 AI 原始输出中提取 changes 数组
    *
-   * validateAIResponse 使用 aiResponseSchema 校验基础结构，
-   * changes 字段不在该 schema 中，因此需要独立解析。
-   * 此方法与 schema-validator 共享相同的 JSON 解析策略。
+   * 复用 parseJSONFromRawText 三级容错解析，避免 JSON 解析逻辑重复。
+   * 对 changes 字段使用 polishResponseSchema 进行 Zod 校验。
    */
   private extractChanges(rawText: string): string[] {
-    try {
-      const parsed = JSON.parse(rawText.trim());
-      if (parsed && Array.isArray(parsed.changes)) {
-        return parsed.changes.filter((c: unknown): c is string => typeof c === "string");
-      }
-    } catch {
-      // 尝试从 markdown 代码块中提取
-      const codeBlockMatch = rawText.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-      if (codeBlockMatch) {
-        try {
-          const parsed = JSON.parse(codeBlockMatch[1].trim());
-          if (parsed && Array.isArray(parsed.changes)) {
-            return parsed.changes.filter((c: unknown): c is string => typeof c === "string");
-          }
-        } catch {
-          // 继续尝试
-        }
-      }
+    const parsed = parseJSONFromRawText(rawText);
+    if (!parsed) return [];
 
-      // 尝试提取第一个 { 到最后一个 }
-      const firstBrace = rawText.indexOf("{");
-      const lastBrace = rawText.lastIndexOf("}");
-      if (firstBrace !== -1 && lastBrace > firstBrace) {
-        try {
-          const parsed = JSON.parse(rawText.slice(firstBrace, lastBrace + 1));
-          if (parsed && Array.isArray(parsed.changes)) {
-            return parsed.changes.filter((c: unknown): c is string => typeof c === "string");
-          }
-        } catch {
-          // 所有尝试都失败
-        }
-      }
+    const result = polishResponseSchema.safeParse(parsed);
+    if (result.success) {
+      return result.data.changes ?? [];
     }
     return [];
   }
@@ -108,11 +72,11 @@ export class AIPolishService {
     const startTime = Date.now();
 
     // 1. 限流
-    const allowed = await this.checkRateLimit(userId);
+    const allowed = await checkRateLimit(this.fastify, userId, RATE_LIMIT_CONFIG);
     if (!allowed) {
       yield {
         event: "error",
-        data: { message: `请求过于频繁，请稍后再试（每分钟最多 ${RATE_LIMIT_MAX} 次）` }
+        data: { message: `请求过于频繁，请稍后再试（每分钟最多 ${RATE_LIMIT_CONFIG.max} 次）` }
       };
       return;
     }
@@ -154,6 +118,7 @@ export class AIPolishService {
 
     let fullText = "";
     let tokenCount = 0;
+    let lastChunkMetadata: Record<string, unknown> | undefined;
 
     try {
       const stream = await chatModel.stream(messages, { signal: timeoutController.signal });
@@ -164,6 +129,11 @@ export class AIPolishService {
 
         fullText += text;
         tokenCount++;
+
+        if (chunk.response_metadata) {
+          lastChunkMetadata = chunk.response_metadata as Record<string, unknown>;
+        }
+
         yield { event: "token", data: { text } };
       }
     } catch (err: unknown) {
@@ -212,11 +182,13 @@ export class AIPolishService {
 
     // 7. 审计日志
     const elapsed = Date.now() - startTime;
+    const tokenUsage = lastChunkMetadata?.tokenUsage as { totalTokens?: number } | undefined;
+    const reportedTokens = tokenUsage?.totalTokens ?? tokenCount;
     createAuditLog(this.fastify, userId, "ai_polish_survey", "survey", null, {
       component_count: request.surveyContent.components.length,
       instructions_length: request.instructions.length,
       changes_count: changeCount,
-      token_count: tokenCount,
+      token_count: reportedTokens,
       elapsed_ms: elapsed,
       has_warnings: validationResult.warnings.length > 0
     }).catch(() => {});

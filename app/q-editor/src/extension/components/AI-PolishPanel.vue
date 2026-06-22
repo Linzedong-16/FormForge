@@ -56,25 +56,29 @@
           <span class="result-title">{{ t("editor.aiPolishDone") }}</span>
         </div>
 
-        <!-- 变更清单 -->
-        <div v-if="result.changes.length > 0" class="changes-section">
-          <p class="section-label">{{ t("editor.aiPolishChanges") }}（{{ result.changes.length }}）</p>
-          <ul class="changes-list">
-            <li v-for="(change, i) in result.changes" :key="i">{{ change }}</li>
-          </ul>
-        </div>
+        <!-- 可滚动内容区 -->
+        <div class="result-scroll">
+          <!-- 变更清单 -->
+          <div v-if="result.changes.length > 0" class="changes-section">
+            <p class="section-label">{{ t("editor.aiPolishChanges") }}（{{ result.changes.length }}）</p>
+            <ul class="changes-list">
+              <li v-for="(change, i) in result.changes" :key="i">{{ change }}</li>
+            </ul>
+          </div>
 
-        <!-- 警告 -->
-        <div v-if="result.warnings.length > 0" class="warnings-section">
-          <el-alert :title="result.warnings.join('；')" type="warning" :closable="false" show-icon />
+          <!-- 警告 -->
+          <div v-if="result.warnings.length > 0" class="warnings-section">
+            <el-alert :title="result.warnings.join('；')" type="warning" :closable="false" show-icon />
+          </div>
         </div>
+      </div>
 
-        <div class="polish-actions">
-          <el-button type="primary" @click="handleApply">
-            {{ t("editor.aiPolishApply") }}
-          </el-button>
-          <el-button @click="reset">{{ t("editor.aiRetryBtn") }}</el-button>
-        </div>
+      <!-- 操作按钮固定在底部 -->
+      <div class="polish-actions">
+        <el-button type="primary" @click="handleApply">
+          {{ t("editor.aiPolishApply") }}
+        </el-button>
+        <el-button @click="reset">{{ t("editor.aiRetryBtn") }}</el-button>
       </div>
     </template>
 
@@ -219,18 +223,32 @@ async function handleApply() {
   }
 }
 
-/* ── 结果展示 ────────────────────────── */
+/* ── 结果展示（固定高度 + 滚动） ──────── */
+.polish-result {
+  display: flex;
+  flex-direction: column;
+  max-height: 260px;
+}
+
 .result-header {
   display: flex;
   align-items: center;
   gap: 6px;
+  padding-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
   color: #67c23a;
+  flex-shrink: 0;
+}
+
+.result-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0; /* flex 子元素滚动的关键 */
 }
 
 .changes-section {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .section-label {

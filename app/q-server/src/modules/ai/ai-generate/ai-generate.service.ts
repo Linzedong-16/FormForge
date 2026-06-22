@@ -19,6 +19,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { createDeepSeekChat } from "../../../config/langchain.js";
 import { buildSystemPrompt, type SystemPromptOptions } from "../prompt-templates/system-prompt.js";
 import { validateAIResponse } from "../schema-validator.js";
+import { checkRateLimit } from "../../../utils/rate-limiter.js";
 import { createAuditLog } from "../../../utils/audit-log.js";
 
 // ─── 常量 ──────────────────────────────────────────────────────
@@ -26,11 +27,11 @@ import { createAuditLog } from "../../../utils/audit-log.js";
 /** SSE 超时（毫秒） */
 const GENERATE_TIMEOUT_MS = 60_000;
 
-/** 单用户每分钟最大请求数 */
-const RATE_LIMIT_MAX = 3;
-
-/** 单用户限流 Key 前缀 */
-const RATE_LIMIT_PREFIX = "rate:ai_generate:";
+/** 限流配置 */
+const RATE_LIMIT_CONFIG = {
+  prefix: "rate:ai_generate:",
+  max: 3
+} as const;
 
 /** 增量解析：每次最多解析的组件数限制（防止恶意超大 JSON 导致 ReDoS） */
 const MAX_PARSE_COMPONENTS = 50;
@@ -43,33 +44,6 @@ import type { SSEEvent, AIGenerateRequest } from "@common/ai/ai.interface.js";
 
 export class AIGenerateService {
   constructor(private readonly fastify: FastifyInstance) {}
-
-  // ============================================================
-  //  限流检查
-  // ============================================================
-
-  /**
-   * 原子化限流检查（SETNX + INCR + EXPIRE）
-   *
-   * 先用 SET NX EX 尝试初始化，再 INCR，消除竞态窗口。
-   *
-   * @returns true = 允许请求，false = 超限
-   */
-  private async checkRateLimit(userId: bigint): Promise<boolean> {
-    const key = `${RATE_LIMIT_PREFIX}${userId}`;
-    try {
-      // 原子初始化：不存在时才设置，同时设 TTL
-      await this.fastify.redis.set(key, "0", "EX", 60, "NX");
-
-      // 递增计数
-      const current = await this.fastify.redis.incr(key);
-      return current <= RATE_LIMIT_MAX;
-    } catch {
-      // Redis 不可用时降级放行（避免阻断核心业务）
-      this.fastify.log.warn("AI 生成限流 Redis 操作失败，降级放行");
-      return true;
-    }
-  }
 
   // ============================================================
   //  核心生成方法（AsyncGenerator SSE）
@@ -87,11 +61,11 @@ export class AIGenerateService {
     const startTime = Date.now();
 
     // 1. 限流检查
-    const allowed = await this.checkRateLimit(userId);
+    const allowed = await checkRateLimit(this.fastify, userId, RATE_LIMIT_CONFIG);
     if (!allowed) {
       yield {
         event: "error",
-        data: { message: `请求过于频繁，请稍后再试（每分钟最多 ${RATE_LIMIT_MAX} 次）` }
+        data: { message: `请求过于频繁，请稍后再试（每分钟最多 ${RATE_LIMIT_CONFIG.max} 次）` }
       };
       return;
     }
@@ -135,6 +109,7 @@ export class AIGenerateService {
     let fullText = "";
     let componentCount = 0;
     let tokenCount = 0;
+    let lastChunkMetadata: Record<string, unknown> | undefined;
 
     try {
       const stream = await chatModel.stream(messages, {
@@ -147,6 +122,11 @@ export class AIGenerateService {
 
         fullText += text;
         tokenCount++;
+
+        // 捕获最后一块的 response_metadata（含 tokenUsage）
+        if (chunk.response_metadata) {
+          lastChunkMetadata = chunk.response_metadata as Record<string, unknown>;
+        }
 
         // 推送原始 token
         yield { event: "token", data: { text } };
@@ -203,10 +183,13 @@ export class AIGenerateService {
 
     // 7. 审计日志（异步 fire-and-forget）
     const elapsed = Date.now() - startTime;
+    // 优先取 API 返回的精确 token 用量，降级为 chunk 计数
+    const tokenUsage = lastChunkMetadata?.tokenUsage as { totalTokens?: number } | undefined;
+    const reportedTokens = tokenUsage?.totalTokens ?? tokenCount;
     createAuditLog(this.fastify, userId, "ai_generate_survey", "survey", null, {
       prompt_length: options.prompt.length,
       generated_components: generatedCount,
-      token_count: tokenCount,
+      token_count: reportedTokens,
       elapsed_ms: elapsed,
       has_warnings: validationResult.warnings.length > 0
     }).catch(() => {});
