@@ -7,6 +7,7 @@ import surveyCrudRoutes from "../modules/survey/survey-crud/survey-crud.routes.j
 import fileRoutes from "../modules/survey/file/file.routes.js";
 import uploadRoutes from "../modules/survey/upload/upload.routes.js";
 import aiGenerateRoutes from "../modules/ai/ai-generate/ai-generate.routes.js";
+import aiPolishRoutes from "../modules/ai/ai-polish/ai-polish.routes.js";
 import aiConfigRoutes from "../modules/ai/ai-config/ai-config.routes.js";
 import logRoutes from "../modules/log/log.routes.js";
 
@@ -89,6 +90,8 @@ const routes: FastifyPluginAsync = async fastify => {
   fastify.register(fileRoutes);
   // ai-generate.routes.ts 内部路径为 /surveys/generate（SSE 流式）
   fastify.register(aiGenerateRoutes);
+  // ai-polish.routes.ts 内部路径为 /surveys/polish（SSE 流式）
+  fastify.register(aiPolishRoutes);
   // ai-config.routes.ts 内部路径为 /config/ai（管理员 AI 配置管理）
   fastify.register(aiConfigRoutes, { prefix: "/admin" });
   // log.routes.ts 内部路径为 /logs、/logs/stats（管理员日志查询）
