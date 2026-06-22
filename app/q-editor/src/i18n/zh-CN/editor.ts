@@ -230,5 +230,21 @@ export default {
   aiPromptTooLong: "需求描述不能超过 2000 个字符",
   aiNoComponents: "未生成任何有效组件，请尝试调整需求描述后重试",
   aiWarningTitle: "生成提示",
-  aiWarningBadType: '组件类型 "{type}" 不支持，已跳过'
+  aiWarningBadType: '组件类型 "{type}" 不支持，已跳过',
+
+  // ══════════════════════════════════════════════════════════
+  //  AI 润色问卷
+  // ══════════════════════════════════════════════════════════
+  aiPolishLabel: "润色指令",
+  aiPolishPlaceholder: "例如：优化题目逻辑顺序，让问题从易到难排列；改善第3题的措辞使其更中立",
+  aiPolishAspects: "润色维度（可多选，不选则全维度润色）",
+  aiPolishStart: "开始润色",
+  aiPolishing: "AI 正在润色问卷...",
+  aiPolishDone: "润色完成",
+  aiPolishChanges: "变更说明",
+  aiPolishApply: "应用润色结果",
+  aiPolishFailed: "AI 润色失败",
+  aiPolishApplyConfirm: "润色结果将完全替换当前问卷内容，是否继续？",
+  aiPolishApplyTitle: "确认应用润色",
+  aiPolishApplySuccess: "润色结果已应用"
 };

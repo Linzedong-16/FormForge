@@ -7,11 +7,44 @@
  *   3. 逐组件校验 type 有效性，过滤无效组件
  *   4. 返回 { valid components, warnings[] }
  */
+import type { FastifyInstance } from "fastify";
 import { aiResponseSchema, VALID_COMPONENT_TYPES, type AIComponent } from "./ai-generate/ai-generate.schemas.js";
 import type { ValidationResult } from "@common/ai/ai.interface.js";
 
 // Re-export 共用类型（向后兼容）
 export type { ValidationResult };
+
+// ─── AI 原始输出日志工具 ────────────────────────────────────────
+
+/** 日志截断长度（字符） */
+const LOG_MAX_LENGTH = 8000;
+
+/**
+ * 将 AI 流式输出的完整原始文本写入日志，用于排障
+ *
+ * 在 validateAIResponse 之前调用，确保即使校验失败也能在日志中看到 AI 的原始输出。
+ *
+ * @param fastify  Fastify 实例（用于 logger）
+ * @param userId  当前用户 ID
+ * @param action  操作类型（generate / polish）
+ * @param rawText  AI 返回的完整流式文本
+ */
+export function logAIRawResponse(fastify: FastifyInstance, userId: bigint, action: string, rawText: string): void {
+  const truncated =
+    rawText.length > LOG_MAX_LENGTH
+      ? rawText.slice(0, LOG_MAX_LENGTH) + `...（共 ${rawText.length} 字符，已截断）`
+      : rawText;
+
+  fastify.log.info(
+    {
+      userId: String(userId),
+      action,
+      textLength: rawText.length,
+      rawText: truncated
+    },
+    `AI ${action} 原始输出（共 ${rawText.length} 字符）`
+  );
+}
 
 // ─── 核心函数 ──────────────────────────────────────────────────
 
@@ -20,6 +53,7 @@ export type { ValidationResult };
  *
  * 容错策略：
  *   1. 直接 JSON.parse() 尝试解析
+ *   1.5 若解析结果是字符串且以 { 开头，再 parse 一次（DeepSeek 偶发将 JSON 输出为字符串值）
  *   2. 若失败，正则提取 markdown 代码块中的 JSON
  *   3. 若仍失败，尝试找到第一个 { 和最后一个 } 之间的内容
  *   4. Zod 校验整体结构 → 过滤无效组件 → 返回有效部分
@@ -34,6 +68,17 @@ export function validateAIResponse(rawText: string): ValidationResult {
   // 步骤 1：尝试直接解析
   try {
     parsed = JSON.parse(rawText.trim());
+    // 处理 DeepSeek 将 JSON 输出为字符串值的情况（双引号包裹 + 转义）
+    // 例：rawText = "\"{\\\"title\\\":...}\"" → JSON.parse 得到字符串 → 再 parse 一次
+    if (typeof parsed === "string" && parsed.trim().startsWith("{")) {
+      try {
+        parsed = JSON.parse(parsed);
+        warnings.push("AI 输出被包裹为 JSON 字符串，已自动展开");
+      } catch {
+        // 二次解析也失败 → 置空走后续容错流程（markdown 提取 / 花括号提取）
+        parsed = undefined;
+      }
+    }
   } catch {
     // 步骤 2：尝试从 markdown 代码块中提取
     const codeBlockMatch = rawText.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);

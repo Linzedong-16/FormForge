@@ -10,7 +10,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { authenticate } from "../../user/auth/auth.middleware.js";
 import { AIPolishService } from "./ai-polish.service.js";
-import { polishSurveySchema, AIPolishAspect } from "./ai-polish.schemas.js";
+import { polishSurveySchema } from "./ai-polish.schemas.js";
 import { parseAndRespond } from "../../../utils/zod.js";
 
 const aiPolishRoutes: FastifyPluginAsync = async fastify => {
@@ -49,7 +49,7 @@ const aiPolishRoutes: FastifyPluginAsync = async fastify => {
           {
             surveyContent: body.surveyContent,
             instructions: body.instructions,
-            aspects: body.aspects as AIPolishAspect[] | undefined,
+            aspects: body.aspects,
             language: body.language
           },
           clientController.signal

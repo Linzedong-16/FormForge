@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import Fastify from "fastify";
 import fp from "fastify-plugin";
-import { createPrismaMock, createRedisMock, MOCK_SURVEY } from "../utils/test-helpers.js";
+import { createPrismaMock, createRedisMock, MOCK_SURVEY } from "../../utils/test-helpers.js";
 
 // ─── Mock 认证中间件 ──────────────────────────────────────────
 
@@ -104,7 +104,7 @@ describe("survey.routes", () => {
     await app.register(rateLimitPluginMock);
 
     // 动态导入 surveyRoutes（在 vi.mock 之后）
-    const { default: surveyRoutes } = await import("../../modules/survey/survey.routes.js");
+    const { default: surveyRoutes } = await import("../../modules/survey/survey-crud/survey-crud.routes.js");
     await app.register(surveyRoutes, { prefix: "/api" });
     await app.ready();
   });

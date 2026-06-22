@@ -374,7 +374,8 @@ export const getComponentMap = (
  * });
  * ```
  */
-export { createAIGenerateStream, type AIGenerateStreamOptions } from "monorepo-sse-client/ai";
+export { createAIGenerateStream, createAIPolishStream } from "monorepo-sse-client/ai";
+export type { AIGenerateStreamOptions, AIPolishStreamOptions, AIPolishResult } from "monorepo-sse-client/ai";
 
 // ============================================================
 // 类型再导出（供外部模块按需直接引用）

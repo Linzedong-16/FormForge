@@ -231,5 +231,19 @@ export default {
   aiPromptTooLong: "要件説明は2000文字を超えることはできません",
   aiNoComponents: "有効なコンポーネントが生成されませんでした。要件説明を調整して再試行してください",
   aiWarningTitle: "生成警告",
-  aiWarningBadType: 'コンポーネントタイプ "{type}" はサポートされていないためスキップされました'
+  aiWarningBadType: 'コンポーネントタイプ "{type}" はサポートされていないためスキップされました',
+
+  // AI ブラッシュアップ
+  aiPolishLabel: "ブラッシュアップ指示",
+  aiPolishPlaceholder: "例：質問の順序を易しい順に並べ替える；質問3の表現をより中立的に改善する",
+  aiPolishAspects: "ブラッシュアップ次元（複数選択可、未選択時は全次元）",
+  aiPolishStart: "ブラッシュアップ開始",
+  aiPolishing: "AIがアンケートをブラッシュアップ中...",
+  aiPolishDone: "ブラッシュアップ完了",
+  aiPolishChanges: "変更点",
+  aiPolishApply: "結果を適用",
+  aiPolishFailed: "ブラッシュアップ失敗",
+  aiPolishApplyConfirm: "ブラッシュアップ結果は現在のアンケート内容を完全に置き換えます。続行しますか？",
+  aiPolishApplyTitle: "適用確認",
+  aiPolishApplySuccess: "ブラッシュアップ結果を適用しました"
 };

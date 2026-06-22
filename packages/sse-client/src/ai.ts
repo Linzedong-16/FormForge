@@ -212,3 +212,133 @@ export function createAIGenerateStream(options: AIGenerateStreamOptions): SSECli
 // ══════════════════════════════════════════════════════════════
 
 export type { AIResponse, AIGenerateRequest };
+
+// ══════════════════════════════════════════════════════════════
+//  AI 问卷润色（POST /api/surveys/polish）
+// ══════════════════════════════════════════════════════════════
+
+import type { SurveyContent } from "monorepo-code-common";
+
+/** 润色完成后的最终数据（与生成共用 AIResponse 结构 + changes） */
+export interface AIPolishResult {
+  title: string;
+  description: string;
+  /** 摘要列表（仅 type + title），用于展示 */
+  components: Array<{ type: string; title: string }>;
+  /** 完整组件数据（含 config），供前端 aiComponentsToStatus 转换 */
+  _rawComponents?: Array<{ type: string; config: Record<string, unknown> }>;
+  /** AI 给出的修改说明列表 */
+  changes: string[];
+  /** 校验警告 */
+  warnings: string[];
+}
+
+/** AI 润色 SSE 流配置选项 */
+export interface AIPolishStreamOptions {
+  /** 待润色的问卷内容 */
+  surveyContent: SurveyContent;
+  /** 用户润色指令 */
+  instructions: string;
+  /** 润色维度 */
+  aspects?: string[];
+  /** 问卷语言 */
+  language?: string;
+
+  /** Token 获取函数（必填） */
+  getToken: () => string | null;
+  /** Token 逐字回调 */
+  onToken?: (text: string) => void;
+  /** 完成回调 */
+  onDone?: (result: AIPolishResult) => void;
+  /** 错误回调 */
+  onError?: (message: string) => void;
+  /** 连接打开回调 */
+  onOpen?: (response: Response) => void;
+  /** 连接关闭回调 */
+  onClose?: () => void;
+  /** 外部 AbortSignal */
+  signal?: AbortSignal;
+  /** SSE 端点 URL */
+  url?: string;
+  /** 超时时间（毫秒） */
+  timeout?: number;
+}
+
+/**
+ * 创建 AI 问卷润色 SSE 流
+ *
+ * 底层使用 POST /api/surveys/polish 发起 SSE 连接。
+ * 润色不产生增量 component 事件，仅 token + done。
+ */
+export function createAIPolishStream(options: AIPolishStreamOptions): SSEClientController {
+  const {
+    surveyContent,
+    instructions,
+    aspects,
+    language,
+    getToken,
+    onToken,
+    onDone,
+    onError,
+    onOpen,
+    onClose,
+    signal,
+    url = "/api/surveys/polish",
+    timeout = 60_000
+  } = options;
+
+  return createSSEClient({
+    url,
+    method: "POST",
+    body: {
+      surveyContent,
+      instructions,
+      ...(aspects !== undefined ? { aspects } : {}),
+      ...(language !== undefined ? { language } : {})
+    },
+    getToken,
+    ...(signal !== undefined ? { signal } : {}),
+    ...(timeout !== undefined ? { timeout } : {}),
+    ...(onOpen ? { onOpen } : {}),
+    ...(onClose ? { onClose } : {}),
+    onEvent(event, data) {
+      switch (event) {
+        case "token": {
+          const text = (data as { text: string })?.text;
+          if (typeof text === "string") onToken?.(text);
+          break;
+        }
+        case "done": {
+          const result = data as {
+            title: string;
+            description: string;
+            components: Array<{ type: string; title?: string }>;
+            changes: string[];
+            _rawComponents?: Array<{ type: string; config: Record<string, unknown> }>;
+            _warnings: string[];
+          };
+          onDone?.({
+            title: result?.title ?? "",
+            description: result?.description ?? "",
+            components: result?.components ?? [],
+            changes: result?.changes ?? [],
+            // 透传完整组件数据，供前端 aiComponentsToStatus 转换
+            _rawComponents: result?._rawComponents,
+            warnings: result?._warnings ?? []
+          });
+          break;
+        }
+        case "error": {
+          const msg = (data as { message: string })?.message ?? "未知错误";
+          onError?.(msg);
+          break;
+        }
+        default:
+          break;
+      }
+    },
+    onError(err) {
+      onError?.(err.message || "SSE 连接错误");
+    }
+  });
+}

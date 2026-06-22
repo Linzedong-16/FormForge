@@ -43,7 +43,19 @@
           />
           <!-- AI 功能按钮组 -->
           <div class="ai-btn-group ml-15 flex align-items-center">
-            <el-button size="small" plain disabled>{{ t("editor.aiPolish") }}</el-button>
+            <el-popover
+              placement="bottom"
+              trigger="click"
+              :width="420"
+              :show-arrow="false"
+              :offset="8"
+              popper-class="ai-polish-popover"
+            >
+              <template #reference>
+                <el-button size="small" plain>{{ t("editor.aiPolish") }}</el-button>
+              </template>
+              <AI-PolishPanel />
+            </el-popover>
             <el-button size="small" type="primary" plain @click="aiGenPanelRef?.open()">
               {{ t("editor.aiGenerate") }}
             </el-button>
@@ -115,6 +127,7 @@ import { useEditorStore } from "@/stores/useEditor";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 import UserProfile from "@/components/Common/UserProfile.vue";
 import AIGenPanel from "@/extension/components/AI-GenPanel.vue";
+import AIPolishPanel from "@/extension/components/AI-PolishPanel.vue";
 import { applyTemplate, serializeComponents } from "@/api/modules/survey";
 import type { TemplateCategory } from "@common/survey/survey.interface";
 
@@ -281,7 +294,8 @@ const submitApplyTemplate = async () => {
 
 <!-- 非 scoped：覆盖 el-popover 弹层 -->
 <style lang="scss">
-.ai-generate-popover.el-popover.el-popper {
+.ai-generate-popover.el-popover.el-popper,
+.ai-polish-popover.el-popover.el-popper {
   padding: 12px;
   border-radius: var(--border-radius-lg);
   border: 1px solid var(--border-color);

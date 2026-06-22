@@ -16,7 +16,7 @@ import {
   MOCK_DELETED_SURVEY,
   MOCK_COMPONENT,
   MOCK_REVIEW,
-} from "../utils/test-helpers.js";
+} from "../../utils/test-helpers.js";
 
 // ─── Setup ────────────────────────────────────────────────────
 

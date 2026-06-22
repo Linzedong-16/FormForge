@@ -17,7 +17,7 @@ import type { FastifyInstance } from "fastify";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { createDeepSeekChat } from "../../../config/langchain.js";
 import { buildPolishSystemPrompt } from "./prompts/polish-prompt.js";
-import { validateAIResponse } from "../schema-validator.js";
+import { validateAIResponse, logAIRawResponse } from "../schema-validator.js";
 import { createAuditLog } from "../../../utils/audit-log.js";
 import type { SSEEvent } from "@common/ai/ai.interface.js";
 import type { AIPolishRequest } from "@common/ai/ai.interface.js";
@@ -50,6 +50,50 @@ export class AIPolishService {
   private buildUserPrompt(req: AIPolishRequest): string {
     const surveyJSON = JSON.stringify(req.surveyContent, null, 2);
     return ["【待润色的问卷】", surveyJSON, "", "【润色指令】", req.instructions].join("\n");
+  }
+
+  /**
+   * 从 AI 原始输出中提取 changes 数组
+   *
+   * validateAIResponse 使用 aiResponseSchema 校验基础结构，
+   * changes 字段不在该 schema 中，因此需要独立解析。
+   * 此方法与 schema-validator 共享相同的 JSON 解析策略。
+   */
+  private extractChanges(rawText: string): string[] {
+    try {
+      const parsed = JSON.parse(rawText.trim());
+      if (parsed && Array.isArray(parsed.changes)) {
+        return parsed.changes.filter((c: unknown): c is string => typeof c === "string");
+      }
+    } catch {
+      // 尝试从 markdown 代码块中提取
+      const codeBlockMatch = rawText.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+      if (codeBlockMatch) {
+        try {
+          const parsed = JSON.parse(codeBlockMatch[1].trim());
+          if (parsed && Array.isArray(parsed.changes)) {
+            return parsed.changes.filter((c: unknown): c is string => typeof c === "string");
+          }
+        } catch {
+          // 继续尝试
+        }
+      }
+
+      // 尝试提取第一个 { 到最后一个 }
+      const firstBrace = rawText.indexOf("{");
+      const lastBrace = rawText.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        try {
+          const parsed = JSON.parse(rawText.slice(firstBrace, lastBrace + 1));
+          if (parsed && Array.isArray(parsed.changes)) {
+            return parsed.changes.filter((c: unknown): c is string => typeof c === "string");
+          }
+        } catch {
+          // 所有尝试都失败
+        }
+      }
+    }
+    return [];
   }
 
   /**
@@ -141,16 +185,27 @@ export class AIPolishService {
       }
     }
 
-    // 5. 校验润色结果（复用 generate 的校验器）
+    // 5. 输出原始响应日志（排障用），再进行校验
+    logAIRawResponse(this.fastify, userId, "polish", fullText);
     const validationResult = validateAIResponse(fullText);
-    const polishData = validationResult.data as { changes?: string[] };
-    const changeCount = polishData.changes?.length ?? 0;
+    // changes 字段独立解析（aiResponseSchema 不包含 changes，需从原始 JSON 中提取）
+    const changes = this.extractChanges(fullText);
+    const changeCount = changes.length;
 
-    // 6. done 事件
+    // 6. done 事件（摘要 + 完整原始数据双通道，对齐 generate 格式）
     yield {
       event: "done",
       data: {
-        ...validationResult.data,
+        title: validationResult.data.title,
+        description: validationResult.data.description,
+        // 摘要：仅 type + title，SSE 帧轻量传输
+        components: validationResult.data.components.map(c => ({
+          type: c.type,
+          title: (c.config as Record<string, { status: string }>)?.title?.status ?? ""
+        })),
+        changes,
+        // 完整组件数据（含 config），供前端 aiComponentsToStatus 转换
+        _rawComponents: validationResult.data.components,
         _warnings: validationResult.warnings
       }
     };

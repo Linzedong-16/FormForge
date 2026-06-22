@@ -2,10 +2,13 @@
  * AI 问卷润色 — Zod 校验 Schema
  */
 import { z } from "zod";
-import { AI_POLISH_ASPECTS } from "@common/ai/ai.interface.js";
 
 // Re-export 共用类型
 export type { AIPolishRequest, SurveyContent, AIPolishAspect } from "@common/ai/ai.interface.js";
+
+// ─── 润色维度常量 ──────────────────────────────────────────────
+
+const POLISH_ASPECTS = ["order", "wording", "options", "structure", "length"] as const;
 
 // ─── 请求体 ────────────────────────────────────────────────────
 
@@ -27,7 +30,7 @@ export const polishSurveySchema = z.object({
   /** 用户润色指令 */
   instructions: z.string().min(1, "润色指令不能为空").max(2000, "润色指令最多2000个字符"),
   /** 润色维度 */
-  aspects: z.array(z.enum(AI_POLISH_ASPECTS as unknown as [string, ...string[]])).optional(),
+  aspects: z.array(z.enum(POLISH_ASPECTS)).optional(),
   /** 问卷语言 */
   language: z.enum(["zh-CN", "en-US", "ja-JP"]).optional()
 });

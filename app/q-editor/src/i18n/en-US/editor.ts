@@ -231,5 +231,20 @@ export default {
   aiPromptTooLong: "Requirements must not exceed 2000 characters",
   aiNoComponents: "No valid components generated. Please adjust your requirements and try again",
   aiWarningTitle: "Generation Warnings",
-  aiWarningBadType: 'Component type "{type}" is not supported and has been skipped'
+  aiWarningBadType: 'Component type "{type}" is not supported and has been skipped',
+
+  // AI Polish
+  aiPolishLabel: "Polish Instructions",
+  aiPolishPlaceholder:
+    "e.g., Reorder questions from easy to hard; Improve the wording of question 3 to be more neutral",
+  aiPolishAspects: "Polish Dimensions (multi-select, all if none selected)",
+  aiPolishStart: "Start Polish",
+  aiPolishing: "AI is polishing the survey...",
+  aiPolishDone: "Polish Complete",
+  aiPolishChanges: "Changes",
+  aiPolishApply: "Apply Polish Result",
+  aiPolishFailed: "AI Polish Failed",
+  aiPolishApplyConfirm: "Polish result will completely replace the current survey content. Continue?",
+  aiPolishApplyTitle: "Confirm Apply",
+  aiPolishApplySuccess: "Polish result applied"
 };
