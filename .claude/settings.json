@@ -9,7 +9,12 @@
       "Bash(ls -la node_modules/vue-cropper/lib/)",
       "Bash(ls -la node_modules/vue-cropper/src/)",
       "Bash(pnpm remove *)",
-      "Bash(npx prisma *)"
+      "Bash(npx prisma *)",
+      "Bash(conda --version)",
+      "Bash(where python *)",
+      "Bash(conda env *)",
+      "Bash(conda create *)",
+      "Bash(conda run *)"
     ]
   }
 }

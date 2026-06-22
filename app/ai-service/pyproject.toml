@@ -1,0 +1,72 @@
+[project]
+name = "q-survey-ai"
+version = "0.1.0"
+description = "问卷系统 AI Agent 微服务 — Agent 编排、答卷分析、RAG 知识库"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Q Survey Team" }]
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "httpx>=0.28.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "python-dotenv>=1.1.0",
+    "langchain>=0.3.0",
+    "langchain-openai>=0.3.0",
+    "langchain-community>=0.3.0",
+]
+
+[project.optional-dependencies]
+# Agent 编排（阶段 3）
+agent = [
+    "langgraph>=0.3.0",
+]
+# 答卷分析
+analysis = [
+    "pandas>=2.2.0",
+    "numpy>=2.1.0",
+    "jieba>=0.42.0",
+    "wordcloud>=1.9.0",
+]
+# RAG 知识库
+rag = [
+    "chromadb>=0.6.0",
+    "tiktoken>=0.9.0",
+]
+# PDF 报表导出
+report = [
+    "weasyprint>=64.0",
+    "matplotlib>=3.10.0",
+]
+# 全部可选依赖
+all = [
+    "langgraph>=0.3.0",
+    "pandas>=2.2.0",
+    "numpy>=2.1.0",
+    "jieba>=0.42.0",
+    "chromadb>=0.6.0",
+    "tiktoken>=0.9.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

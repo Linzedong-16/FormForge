@@ -1,0 +1,32 @@
+# Conda 环境配置
+# 创建：conda env create -f environment.yml
+# 更新：conda env update -f environment.yml
+# 激活：conda activate q-survey-ai
+# 删除：conda env remove -n q-survey-ai
+
+name: q-survey-ai
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.13
+  - pip
+  - pip:
+      - fastapi>=0.115.0
+      - "uvicorn[standard]>=0.34.0"
+      - httpx>=0.28.0
+      - pydantic>=2.10.0
+      - pydantic-settings>=2.7.0
+      - python-dotenv>=1.1.0
+      - langchain>=0.3.0
+      - langchain-openai>=0.3.0
+      - langchain-community>=0.3.0
+      # 可选：Agent 编排
+      # - langgraph>=0.3.0
+      # 可选：答卷分析
+      # - pandas>=2.2.0
+      # - numpy>=2.1.0
+      # - jieba>=0.42.0
+      # 可选：RAG
+      # - chromadb>=0.6.0
+      # - tiktoken>=0.9.0
