@@ -4,10 +4,10 @@
 
 import bcrypt from "bcrypt";
 import type { FastifyInstance } from "fastify";
-import { AuthError, ValidationError } from "../../utils/errors.js";
-import { createCache, CacheKeys } from "../../utils/cache.js";
-import type { CacheClient } from "../../utils/cache.js";
-import { createAuditLog } from "../../utils/audit-log.js";
+import { AuthError, ValidationError } from "../../../utils/errors.js";
+import { createCache, CacheKeys } from "../../../utils/cache.js";
+import type { CacheClient } from "../../../utils/cache.js";
+import { createAuditLog } from "../../../utils/audit-log.js";
 
 // ─── 类型 ────────────────────────────────────────────────────
 

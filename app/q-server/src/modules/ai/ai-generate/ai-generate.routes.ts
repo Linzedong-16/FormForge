@@ -8,11 +8,11 @@
  * 超时：60 秒
  */
 import type { FastifyPluginAsync } from "fastify";
-import { authenticate } from "../user/auth.middleware.js";
+import { authenticate } from "../../user/auth/auth.middleware.js";
 import { AIGenerateService } from "./ai-generate.service.js";
 import { generateSurveySchema } from "./ai-generate.schemas.js";
-import { parseAndRespond } from "../../utils/zod.js";
-import { AppError } from "../../utils/errors.js";
+import { parseAndRespond } from "../../../utils/zod.js";
+import { AppError } from "../../../utils/errors.js";
 
 const aiGenerateRoutes: FastifyPluginAsync = async fastify => {
   const aiService = new AIGenerateService(fastify);

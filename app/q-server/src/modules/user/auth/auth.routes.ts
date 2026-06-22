@@ -15,8 +15,8 @@ import {
   verifyRegisterSchema,
   refreshTokenSchema,
   resetPasswordSchema
-} from "./schemas/user.schemas.js";
-import { parseAndRespond } from "../../utils/zod.js";
+} from "../schemas/user.schemas.js";
+import { parseAndRespond } from "../../../utils/zod.js";
 
 const authRoutes: FastifyPluginAsync = async fastify => {
   const authService = new AuthService(fastify);

@@ -15,10 +15,10 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
-import { uploadToMinioWithKey, deleteFromMinio } from "../../utils/upload.js";
-import { createAuditLog } from "../../utils/audit-log.js";
-import { AppError } from "../../utils/errors.js";
-import { BizCode } from "../../utils/response.js";
+import { uploadToMinioWithKey, deleteFromMinio } from "../../../utils/upload.js";
+import { createAuditLog } from "../../../utils/audit-log.js";
+import { AppError } from "../../../utils/errors.js";
+import { BizCode } from "../../../utils/response.js";
 import type {
   FileType,
   SurveyFileUploadResponse,

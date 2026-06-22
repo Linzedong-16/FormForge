@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { AuthService } from "../../modules/user/auth.service.js";
+import { AuthService } from "../../modules/user/auth/auth.service.js";
 import { AuthError } from "../../utils/errors.js";
 import { BizCode } from "../../utils/response.js";
 import { createFastifyMock, MOCK_USER, MOCK_ADMIN } from "../utils/test-helpers.js";

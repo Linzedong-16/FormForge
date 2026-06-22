@@ -7,7 +7,7 @@
  *   3. 逐组件校验 type 有效性，过滤无效组件
  *   4. 返回 { valid components, warnings[] }
  */
-import { aiResponseSchema, VALID_COMPONENT_TYPES, type AIComponent } from "./ai-generate.schemas.js";
+import { aiResponseSchema, VALID_COMPONENT_TYPES, type AIComponent } from "./ai-generate/ai-generate.schemas.js";
 import type { ValidationResult } from "@common/ai/ai.interface.js";
 
 // Re-export 共用类型（向后兼容）

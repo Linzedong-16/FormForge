@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import jwt from "jsonwebtoken";
-import { authenticate, requireSuperAdmin } from "../../modules/user/auth.middleware.js";
+import { authenticate, requireSuperAdmin } from "../../modules/user/auth/auth.middleware.js";
 import { createRequestMock, createReplyMock, createFastifyMock, MOCK_USER } from "../utils/test-helpers.js";
 
 describe("auth.middleware", () => {

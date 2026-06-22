@@ -7,8 +7,8 @@
 
 import type { FastifyPluginAsync } from "fastify";
 import type { FastifyReply } from "fastify";
-import { authenticate } from "../user/auth.middleware.js";
-import { SurveyService } from "./survey.service.js";
+import { authenticate } from "../../user/auth/auth.middleware.js";
+import { SurveyService } from "./survey-crud.service.js";
 import {
   createSurveySchema,
   updateSurveySchema,
@@ -17,8 +17,8 @@ import {
   closeSurveySchema,
   applyTemplateSchema,
   surveyIdSchema
-} from "./survey.schemas.js";
-import { parseAndRespond, parseQueryAndRespond } from "../../utils/zod.js";
+} from "./survey-crud.schemas.js";
+import { parseAndRespond, parseQueryAndRespond } from "../../../utils/zod.js";
 
 /** 解析并校验问卷 ID，非法格式返回 400 */
 function parseSurveyId(id: string, reply: FastifyReply): bigint | null {
@@ -30,7 +30,7 @@ function parseSurveyId(id: string, reply: FastifyReply): bigint | null {
   return result.data;
 }
 
-const surveyRoutes: FastifyPluginAsync = async fastify => {
+const surveyCrudRoutes: FastifyPluginAsync = async fastify => {
   const surveyService = new SurveyService(fastify);
 
   // ── 所有问卷接口均需认证 ────────────────────────────────────
@@ -247,4 +247,4 @@ const surveyRoutes: FastifyPluginAsync = async fastify => {
   );
 };
 
-export default surveyRoutes;
+export default surveyCrudRoutes;

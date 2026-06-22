@@ -6,11 +6,11 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { randomUUID, randomInt } from "node:crypto";
 import type { FastifyInstance } from "fastify";
-import { AuthError } from "../../utils/errors.js";
-import { BizCode } from "../../utils/response.js";
-import { createCache, CacheKeys, CacheTTL } from "../../utils/cache.js";
-import type { CacheClient } from "../../utils/cache.js";
-import { createAuditLog } from "../../utils/audit-log.js";
+import { AuthError } from "../../../utils/errors.js";
+import { BizCode } from "../../../utils/response.js";
+import { createCache, CacheKeys, CacheTTL } from "../../../utils/cache.js";
+import type { CacheClient } from "../../../utils/cache.js";
+import { createAuditLog } from "../../../utils/audit-log.js";
 
 // ─── Redis Key 常量 ──────────────────────────────────────────
 
@@ -626,7 +626,7 @@ export class AuthService {
       expiresIn: this.refreshExpire
     });
 
-    // 记录当前 Access Token JTI，供 Refresh 时精准黑名单旧 Token
+    // 更新用户当前 Access Token JTI（覆盖旧值）
     await this.fastify.redis.set(`${USER_ACCESS_PREFIX}${user.id}`, accessJti, "EX", this.accessExpire);
 
     return {
@@ -634,65 +634,58 @@ export class AuthService {
       tokenType: "Bearer",
       expiresIn: this.accessExpire,
       refreshToken,
-      refreshExpiresIn: this.refreshExpire,
-      accessJti
+      refreshExpiresIn: this.refreshExpire
     };
   }
 
-  /** 将 Token 加入黑名单 */
+  // ============================================================
+  //  Private — Token 黑名单
+  // ============================================================
+
+  /** 将 Token 加入黑名单（自动从 Payload 提取 jti） */
   private async blacklistToken(token: string): Promise<void> {
     try {
-      const decoded = jwt.decode(token) as JwtPayload | null;
-      if (decoded?.exp && decoded?.jti) {
-        const ttl = decoded.exp - Math.floor(Date.now() / 1000);
-        if (ttl > 0) {
-          await this.fastify.redis.set(`${JWT_BLACKLIST_PREFIX}${decoded.jti}`, "1", "EX", ttl);
-        }
+      const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8"));
+      if (payload.jti && payload.exp) {
+        const now = Math.floor(Date.now() / 1000);
+        const ttl = Math.max(1, payload.exp - now);
+        await this.fastify.redis.set(`${JWT_BLACKLIST_PREFIX}${payload.jti}`, "1", "EX", ttl);
       }
     } catch {
       // 解码失败忽略
     }
   }
 
-  /** 通过 JTI 将 Token 加入黑名单（用于 Refresh 时精准失效旧 Access Token） */
-  private async blacklistTokenByJti(jti: string, ttlSeconds: number): Promise<void> {
-    try {
-      if (ttlSeconds > 0) {
-        await this.fastify.redis.set(`${JWT_BLACKLIST_PREFIX}${jti}`, "1", "EX", ttlSeconds);
-      }
-    } catch {
-      // 忽略
-    }
+  /** 将指定 JTI 加入黑名单 */
+  private async blacklistTokenByJti(jti: string, ttl: number): Promise<void> {
+    await this.fastify.redis.set(`${JWT_BLACKLIST_PREFIX}${jti}`, "1", "EX", ttl);
   }
 
-  /** 检查 Token 是否在黑名单 */
+  /** 检查 Token 是否在黑名单中 */
   private async isTokenBlacklisted(jti: string): Promise<boolean> {
     const exists = await this.fastify.redis.exists(`${JWT_BLACKLIST_PREFIX}${jti}`);
     return exists === 1;
   }
 
   // ============================================================
-  //  Private — 登录安全
+  //  Private — 登录失败锁定
   // ============================================================
 
-  /** 记录登录失败（Lua 脚本保证原子性，避免并发竞态） */
-  private async recordLoginFail(email: string): Promise<number> {
+  /** 记录登录失败 — 使用 Lua 脚本保证原子性 */
+  private async recordLoginFail(email: string): Promise<void> {
     const failKey = `${LOGIN_FAIL_PREFIX}${email}`;
     const lockKey = `${LOGIN_LOCK_PREFIX}${email}`;
 
-    // Lua: 原子 incr + expire + 锁定判定
+    // Lua 原子操作：自增失败次数，达到 5 次设置锁定
     const script = `
-      local count = redis.call('incr', KEYS[1])
-      if count == 1 then
-        redis.call('expire', KEYS[1], tonumber(ARGV[1]))
-      end
-      if count >= tonumber(ARGV[2]) then
-        redis.call('set', KEYS[2], ARGV[3], 'ex', tonumber(ARGV[4]))
+      local count = redis.call("INCR", KEYS[1])
+      redis.call("EXPIRE", KEYS[1], ARGV[1])
+      if tonumber(count) >= tonumber(ARGV[2]) then
+        redis.call("SET", KEYS[2], ARGV[3], "EX", ARGV[4])
       end
       return count
     `;
-
-    const count = (await this.fastify.redis.eval(
+    await this.fastify.redis.eval(
       script,
       2,
       failKey,
@@ -701,9 +694,7 @@ export class AuthService {
       MAX_LOGIN_FAILS,
       String(Date.now()),
       LOGIN_LOCK_TTL
-    )) as number;
-
-    return count;
+    );
   }
 
   /** 获取登录失败次数 */

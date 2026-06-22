@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Fastify from "fastify";
 import fp from "fastify-plugin";
-import authRoutes from "../../modules/user/auth.routes.js";
+import authRoutes from "../../modules/user/auth/auth.routes.js";
 import { createPrismaMock, createRedisMock } from "../utils/test-helpers.js";
 
 // 模拟 response 插件

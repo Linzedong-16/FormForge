@@ -8,10 +8,10 @@
  * 权限：需超级管理员（authenticate + requireSuperAdmin）
  */
 import type { FastifyPluginAsync } from "fastify";
-import { authenticate, requireSuperAdmin } from "../user/auth.middleware.js";
+import { authenticate, requireSuperAdmin } from "../../user/auth/auth.middleware.js";
 import { AIConfigService } from "./ai-config.service.js";
 import { updateAIConfigSchema } from "./ai-config.schemas.js";
-import { parseAndRespond } from "../../utils/zod.js";
+import { parseAndRespond } from "../../../utils/zod.js";
 
 const aiConfigRoutes: FastifyPluginAsync = async fastify => {
   const aiConfigService = new AIConfigService(fastify);

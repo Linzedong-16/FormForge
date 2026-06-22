@@ -10,17 +10,17 @@
  */
 
 import type { FastifyInstance } from "fastify";
-import { createCache, CacheKeys, CacheTTL } from "../../utils/cache.js";
-import type { CacheClient } from "../../utils/cache.js";
-import { createAuditLog } from "../../utils/audit-log.js";
-import { buildPagination } from "../../utils/pagination.js";
-import { AppError } from "../../utils/errors.js";
+import { createCache, CacheKeys, CacheTTL } from "../../../utils/cache.js";
+import type { CacheClient } from "../../../utils/cache.js";
+import { createAuditLog } from "../../../utils/audit-log.js";
+import { buildPagination } from "../../../utils/pagination.js";
+import { AppError } from "../../../utils/errors.js";
 import type {
   CreateSurveyInput,
   UpdateSurveyInput,
   SurveyListQueryInput,
   ApplyTemplateInput
-} from "./survey.schemas.js";
+} from "./survey-crud.schemas.js";
 import type {
   SurveyListItem,
   SurveyComponentDetail,
@@ -402,7 +402,7 @@ export class SurveyService {
     // 文件级联清理：软删除问卷后清除 MinIO 文件 + survey_files 记录
     // 公共模板不删除文件（isTemplateApproved 为 true 时跳过）
     if (!isTemplateApproved) {
-      const { SurveyFileService } = await import("./file.service.js");
+      const { SurveyFileService } = await import("../file/file.service.js");
       const fileService = new SurveyFileService(this.fastify);
       fileService.cleanupBySurvey(surveyId).catch(err => {
         this.fastify.log.warn({ err, surveyId: String(surveyId) }, "问卷删除后文件级联清理失败");
@@ -569,13 +569,7 @@ export class SurveyService {
         const response = await this.fastify.prisma.response.findFirst({
           where: { id: responseId },
           include: {
-            survey: {
-              select: {
-                id: true,
-                user_id: true,
-                title: true
-              }
-            },
+            survey: { select: { user_id: true } },
             answers: true
           }
         });
@@ -584,39 +578,26 @@ export class SurveyService {
           throw new AppError("答卷不存在", 404);
         }
 
-        // 权限校验：只能查看自己问卷的答卷 或 自己提交的答卷
-        const raw = response as unknown as Record<string, unknown>;
-        const survey = (raw.survey as Record<string, unknown>) ?? {};
-        // Prisma 返回的 BigInt 字段可能与 userId 类型不同，统一转为字符串比较
-        const surveyUserId =
-          typeof survey.user_id === "bigint" ? survey.user_id : BigInt(survey.user_id as string | number);
-        const isOwner = surveyUserId === userId;
-        const isSubmitter = response.user_id === userId;
-        if (!isOwner && !isSubmitter) {
+        // 权限校验：仅问卷所有者可查看答卷
+        const surveyOwner = response.survey?.user_id;
+        if (surveyOwner !== userId) {
           throw new AppError("无权查看该答卷", 403);
         }
-
-        const answers = (raw.answers as Array<Record<string, unknown>> | undefined) ?? [];
 
         return {
           id: bigIntToStr(response.id),
           survey_id: bigIntToStr(response.survey_id),
           user_id: response.user_id ? bigIntToStr(response.user_id) : null,
-          anonymous_id: (response.anonymous_id as string | null) ?? null,
-          status: response.status,
-          submitted_at: response.submitted_at?.toISOString() ?? null,
-          created_at: response.created_at.toISOString(),
-          updated_at: response.updated_at.toISOString(),
-          answers: answers.map(a => ({
-            id: bigIntToStr(a.id as bigint),
-            response_id: bigIntToStr(a.response_id as bigint),
-            component_id: bigIntToStr(a.component_id as bigint),
-            value: (a.value as string) ?? null,
-            values: (a.values as string[]) ?? []
-          }))
+          answers: response.answers.map(a => ({
+            id: bigIntToStr(a.id),
+            component_id: bigIntToStr(a.component_id),
+            value: a.value,
+            values: a.values
+          })),
+          created_at: response.created_at.toISOString()
         };
       },
-      CacheTTL.RESPONSE
+      CacheTTL.SURVEY
     );
   }
 
@@ -626,39 +607,27 @@ export class SurveyService {
   async deleteResponse(userId: bigint, responseId: bigint): Promise<void> {
     const response = await this.fastify.prisma.response.findFirst({
       where: { id: responseId },
-      include: {
-        survey: {
-          select: {
-            id: true,
-            user_id: true
-          }
-        }
-      }
+      include: { survey: { select: { user_id: true } } }
     });
 
     if (!response) {
       throw new AppError("答卷不存在", 404);
     }
 
-    // 权限校验：只能删除自己问卷的答卷 或 自己提交的答卷
-    const survey = response.survey as Record<string, unknown>;
-    const surveyUserId =
-      typeof survey.user_id === "bigint" ? survey.user_id : BigInt(survey.user_id as string | number);
-    const isOwner = surveyUserId === userId;
-    const isSubmitter = response.user_id === userId;
-    if (!isOwner && !isSubmitter) {
+    const surveyOwner = response.survey?.user_id;
+    if (surveyOwner !== userId) {
       throw new AppError("无权删除该答卷", 403);
     }
 
-    // 事务内删除答卷及其关联的答案
-    await this.fastify.prisma.$transaction(async tx => {
-      await tx.answer.deleteMany({ where: { response_id: responseId } });
-      await tx.response.delete({ where: { id: responseId } });
-    });
+    // 删除答案，再删除答卷记录
+    await this.fastify.prisma.$transaction([
+      this.fastify.prisma.answer.deleteMany({ where: { response_id: responseId } }),
+      this.fastify.prisma.response.delete({ where: { id: responseId } })
+    ]);
 
     // 清除答卷缓存
     await this.cache.del(CacheKeys.responseDetail(bigIntToStr(responseId)));
 
-    await createAuditLog(this.fastify, userId, "delete_response", "response", responseId).catch(() => {});
+    createAuditLog(this.fastify, userId, "delete_response", "survey_response", responseId).catch(() => {});
   }
 }

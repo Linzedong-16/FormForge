@@ -6,12 +6,12 @@
 
 import bcrypt from "bcrypt";
 import type { FastifyInstance } from "fastify";
-import { AuthError, ValidationError } from "../../utils/errors.js";
-import { BizCode } from "../../utils/response.js";
-import { createCache, CacheKeys } from "../../utils/cache.js";
-import type { CacheClient } from "../../utils/cache.js";
-import { createAuditLog } from "../../utils/audit-log.js";
-import type { UpdateProfileInput } from "./schemas/user.schemas.js";
+import { AuthError, ValidationError } from "../../../utils/errors.js";
+import { BizCode } from "../../../utils/response.js";
+import { createCache, CacheKeys } from "../../../utils/cache.js";
+import type { CacheClient } from "../../../utils/cache.js";
+import { createAuditLog } from "../../../utils/audit-log.js";
+import type { UpdateProfileInput } from "../schemas/user.schemas.js";
 
 // ─── Redis Key 常量 ──────────────────────────────────────────
 

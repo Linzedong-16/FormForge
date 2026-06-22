@@ -10,14 +10,14 @@ import type {
   UpdateUserInput,
   UserListQueryInput,
   UpdateSmtpConfigInput
-} from "./schemas/user.schemas.js";
-import { AuthError, ValidationError } from "../../utils/errors.js";
-import { BizCode } from "../../utils/response.js";
-import { createCache, CacheKeys, CacheTTL } from "../../utils/cache.js";
-import type { CacheClient } from "../../utils/cache.js";
-import { createAuditLog } from "../../utils/audit-log.js";
-import { buildPagination, paginatedResult } from "../../utils/pagination.js";
-import { encrypt, decrypt, isEncrypted } from "../../utils/crypto.js";
+} from "../schemas/user.schemas.js";
+import { AuthError, ValidationError } from "../../../utils/errors.js";
+import { BizCode } from "../../../utils/response.js";
+import { createCache, CacheKeys, CacheTTL } from "../../../utils/cache.js";
+import type { CacheClient } from "../../../utils/cache.js";
+import { createAuditLog } from "../../../utils/audit-log.js";
+import { buildPagination, paginatedResult } from "../../../utils/pagination.js";
+import { encrypt, decrypt, isEncrypted } from "../../../utils/crypto.js";
 
 // ─── 类型重导出（保持向后兼容） ──────────────────────────────
 

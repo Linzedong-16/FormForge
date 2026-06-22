@@ -16,10 +16,10 @@
  */
 import type { FastifyInstance } from "fastify";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { createDeepSeekChat } from "../../config/langchain.js";
-import { buildSystemPrompt, type SystemPromptOptions } from "./prompt-templates/system-prompt.js";
-import { validateAIResponse } from "./schema-validator.js";
-import { createAuditLog } from "../../utils/audit-log.js";
+import { createDeepSeekChat } from "../../../config/langchain.js";
+import { buildSystemPrompt, type SystemPromptOptions } from "../prompt-templates/system-prompt.js";
+import { validateAIResponse } from "../schema-validator.js";
+import { createAuditLog } from "../../../utils/audit-log.js";
 
 // ─── 常量 ──────────────────────────────────────────────────────
 

@@ -10,7 +10,7 @@
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
 import { AuthService } from "./auth.service.js";
-import { AuthError } from "../../utils/errors.js";
+import { AuthError } from "../../../utils/errors.js";
 
 // ─── 扩展 FastifyRequest 类型 ────────────────────────────────
 

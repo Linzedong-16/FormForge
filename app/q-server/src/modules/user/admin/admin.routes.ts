@@ -7,15 +7,15 @@
 
 import type { FastifyPluginAsync } from "fastify";
 import { AdminService } from "./admin.service.js";
-import { authenticate, requireSuperAdmin } from "./auth.middleware.js";
+import { authenticate, requireSuperAdmin } from "../auth/auth.middleware.js";
 import {
   createUserSchema,
   updateUserSchema,
   userListQuerySchema,
   updateSmtpConfigSchema
-} from "./schemas/user.schemas.js";
-import { parseAndRespond, parseQueryAndRespond } from "../../utils/zod.js";
-import { AppError } from "../../utils/errors.js";
+} from "../schemas/user.schemas.js";
+import { parseAndRespond, parseQueryAndRespond } from "../../../utils/zod.js";
+import { AppError } from "../../../utils/errors.js";
 
 /** 校验并解析用户 ID 参数 */
 function parseUserIdParam(params: unknown): bigint {

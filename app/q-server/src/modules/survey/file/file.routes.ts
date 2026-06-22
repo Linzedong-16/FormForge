@@ -9,11 +9,11 @@
  * 所有接口均需认证。
  */
 import type { FastifyPluginAsync } from "fastify";
-import { authenticate } from "../user/auth.middleware.js";
+import { authenticate } from "../../user/auth/auth.middleware.js";
 import { SurveyFileService } from "./file.service.js";
 import { surveyIdSchema, fileIdSchema, fileListQuerySchema } from "./file.schemas.js";
-import { AppError } from "../../utils/errors.js";
-import { parseQueryAndRespond } from "../../utils/zod.js";
+import { AppError } from "../../../utils/errors.js";
+import { parseQueryAndRespond } from "../../../utils/zod.js";
 
 const fileRoutes: FastifyPluginAsync = async fastify => {
   const fileService = new SurveyFileService(fastify);

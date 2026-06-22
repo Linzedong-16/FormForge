@@ -6,13 +6,13 @@
  */
 
 import type { FastifyPluginAsync } from "fastify";
-import { authenticate } from "../user/auth.middleware.js";
-import { uploadToMinio } from "../../utils/upload.js";
-import { createAuditLog } from "../../utils/audit-log.js";
-import { AppError } from "../../utils/errors.js";
-import { BizCode } from "../../utils/response.js";
-import { SurveyFileService } from "./file.service.js";
-import { surveyIdSchema } from "./file.schemas.js";
+import { authenticate } from "../../user/auth/auth.middleware.js";
+import { uploadToMinio } from "../../../utils/upload.js";
+import { createAuditLog } from "../../../utils/audit-log.js";
+import { AppError } from "../../../utils/errors.js";
+import { BizCode } from "../../../utils/response.js";
+import { SurveyFileService } from "../file/file.service.js";
+import { surveyIdSchema } from "../file/file.schemas.js";
 import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE, MAX_SIGNATURE_SIZE } from "@common/survey/survey-file.interface.js";
 
 /** multipart 字段值：Fastify 将 form-data 字段包装为 { value: T } */

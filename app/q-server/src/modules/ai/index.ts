@@ -8,8 +8,8 @@
  *   ai-generate.schemas  Zod 校验 Schema
  *   ai-generate.routes   HTTP 路由
  */
-export { AIGenerateService } from "./ai-generate.service.js";
-export type { SSEEvent, GenerateOptions } from "./ai-generate.service.js";
+export { AIGenerateService } from "./ai-generate/ai-generate.service.js";
+export type { SSEEvent, GenerateOptions } from "./ai-generate/ai-generate.service.js";
 export { validateAIResponse } from "./schema-validator.js";
 export type { ValidationResult } from "./schema-validator.js";
 export { buildSystemPrompt } from "./prompt-templates/system-prompt.js";
@@ -21,12 +21,17 @@ export {
   VALID_COMPONENT_TYPES,
   aiComponentSchema,
   aiResponseSchema
-} from "./ai-generate.schemas.js";
-export type { GenerateSurveyInput, ValidComponentType, AIResponse, AIComponent } from "./ai-generate.schemas.js";
-export { default as aiGenerateRoutes } from "./ai-generate.routes.js";
+} from "./ai-generate/ai-generate.schemas.js";
+export type {
+  GenerateSurveyInput,
+  ValidComponentType,
+  AIResponse,
+  AIComponent
+} from "./ai-generate/ai-generate.schemas.js";
+export { default as aiGenerateRoutes } from "./ai-generate/ai-generate.routes.js";
 
 // ─── AI 配置管理（管理员） ─────────────────────────────────────
-export { AIConfigService } from "./ai-config.service.js";
-export type { UpdateAIConfigInput, AIConfigResponse } from "./ai-config.schemas.js";
-export { updateAIConfigSchema } from "./ai-config.schemas.js";
-export { default as aiConfigRoutes } from "./ai-config.routes.js";
+export { AIConfigService } from "./ai-config/ai-config.service.js";
+export type { UpdateAIConfigInput, AIConfigResponse } from "./ai-config/ai-config.schemas.js";
+export { updateAIConfigSchema } from "./ai-config/ai-config.schemas.js";
+export { default as aiConfigRoutes } from "./ai-config/ai-config.routes.js";

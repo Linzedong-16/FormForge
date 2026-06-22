@@ -18,9 +18,9 @@ import path from "node:path";
 import sharp from "sharp";
 import { fileTypeFromBuffer } from "file-type";
 import type { FastifyInstance } from "fastify";
-import { ValidationError } from "../../utils/errors.js";
-import { BizCode } from "../../utils/response.js";
-import { uploadToMinioWithKey, deleteFromMinio, extractKey } from "../../utils/upload.js";
+import { ValidationError } from "../../../utils/errors.js";
+import { BizCode } from "../../../utils/response.js";
+import { uploadToMinioWithKey, deleteFromMinio, extractKey } from "../../../utils/upload.js";
 import { ProfileService } from "./profile.service.js";
 
 // ─── 常量配置 ────────────────────────────────────────────────

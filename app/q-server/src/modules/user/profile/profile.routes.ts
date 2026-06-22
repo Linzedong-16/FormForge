@@ -6,11 +6,11 @@
  */
 
 import type { FastifyPluginAsync } from "fastify";
-import { authenticate, extractToken } from "../user/auth.middleware.js";
+import { authenticate, extractToken } from "../auth/auth.middleware.js";
 import { ProfileService } from "./profile.service.js";
 import { AvatarService } from "./avatar.service.js";
-import { parseAndRespond } from "../../utils/zod.js";
-import { updateProfileSchema, bindEmailSchema, changePasswordSchema } from "./schemas/user.schemas.js";
+import { parseAndRespond } from "../../../utils/zod.js";
+import { updateProfileSchema, bindEmailSchema, changePasswordSchema } from "../schemas/user.schemas.js";
 
 const profileRoutes: FastifyPluginAsync = async fastify => {
   const profileService = new ProfileService(fastify);

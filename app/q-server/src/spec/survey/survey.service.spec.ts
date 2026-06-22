@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { SurveyService } from "../../modules/survey/survey.service.js";
+import { SurveyService } from "../../modules/survey/survey-crud/survey-crud.service.js";
 import { AppError } from "../../utils/errors.js";
 import {
   createFastifyMock,

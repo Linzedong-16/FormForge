@@ -6,9 +6,9 @@
  */
 
 import type { FastifyPluginAsync } from "fastify";
-import { authenticate } from "../user/auth.middleware.js";
-import { UserService } from "./user.service.js";
-import { parseAndRespond } from "../../utils/zod.js";
+import { authenticate } from "../auth/auth.middleware.js";
+import { UserService } from "./user-crud.service.js";
+import { parseAndRespond } from "../../../utils/zod.js";
 import { z } from "zod";
 
 /** 更新用户信息请求体 Schema */
@@ -17,7 +17,7 @@ const updateProfileSchema = z.object({
   password: z.string().min(8).max(128).optional()
 });
 
-const userRoutes: FastifyPluginAsync = async fastify => {
+const userCrudRoutes: FastifyPluginAsync = async fastify => {
   const userService = new UserService(fastify);
 
   // 所有用户接口均需认证
@@ -39,4 +39,4 @@ const userRoutes: FastifyPluginAsync = async fastify => {
   });
 };
 
-export default userRoutes;
+export default userCrudRoutes;

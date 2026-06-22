@@ -16,7 +16,7 @@ const { mockAuth } = vi.hoisted(() => ({
   mockAuth: vi.fn(),
 }));
 
-vi.mock("../../modules/user/auth.middleware.js", () => ({
+vi.mock("../../modules/user/auth/auth.middleware.js", () => ({
   authenticate: mockAuth,
 }));
 

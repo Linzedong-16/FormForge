@@ -11,9 +11,9 @@
  *   - 操作需超级管理员权限
  */
 import type { FastifyInstance } from "fastify";
-import { encrypt, decrypt } from "../../utils/crypto.js";
-import { createAuditLog } from "../../utils/audit-log.js";
-import { invalidateAIConfigCache } from "../../config/langchain.js";
+import { encrypt, decrypt } from "../../../utils/crypto.js";
+import { createAuditLog } from "../../../utils/audit-log.js";
+import { invalidateAIConfigCache } from "../../../config/langchain.js";
 import type { UpdateAIConfigInput, AIConfigResponse } from "./ai-config.schemas.js";
 
 // ─── 常量 ──────────────────────────────────────────────────────

@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // import bcrypt from "bcrypt";
-import { AdminService } from "../../modules/user/admin.service.js";
+import { AdminService } from "../../modules/user/admin/admin.service.js";
 import { ValidationError } from "../../utils/errors.js";
 import { BizCode } from "../../utils/response.js";
 import { createFastifyMock, MOCK_USER, MOCK_ADMIN } from "../utils/test-helpers.js";

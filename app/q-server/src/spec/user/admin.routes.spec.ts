@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import Fastify from "fastify";
 import jwt from "jsonwebtoken";
 import fp from "fastify-plugin";
-import adminRoutes from "../../modules/user/admin.routes.js";
+import adminRoutes from "../../modules/user/admin/admin.routes.js";
 import { createPrismaMock, createRedisMock } from "../utils/test-helpers.js";
 
 // 模拟 response 插件
