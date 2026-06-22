@@ -84,24 +84,52 @@ async function handleApply() {
     return;
   }
 
-  // 编辑器有未保存内容时弹窗确认
-  if (editorStore.dirty) {
-    try {
-      await ElMessageBox.confirm(t("editor.aiApplyConfirm"), t("editor.confirmTitle"), {
-        confirmButtonText: t("editor.confirm"),
-        cancelButtonText: t("editor.cancel"),
-        type: "warning"
-      });
-    } catch {
-      return; // 用户取消
+  // 弹出模式选择对话框
+  let mode: "overwrite" | "append";
+  try {
+    await ElMessageBox.confirm(t("editor.aiApplyModeDesc"), t("editor.aiApplyModeTitle"), {
+      confirmButtonText: t("editor.aiApplyModeOverwrite"),
+      cancelButtonText: t("editor.aiApplyModeAppend"),
+      distinguishCancelAndClose: true,
+      type: "info"
+    });
+    mode = "overwrite";
+  } catch (action: unknown) {
+    if (action === "cancel") {
+      mode = "append";
+    } else {
+      return; // 用户关闭对话框
     }
   }
 
+  // 覆盖模式：需额外确认未保存内容
+  if (mode === "overwrite") {
+    if (editorStore.dirty) {
+      try {
+        await ElMessageBox.confirm(t("editor.aiApplyConfirm"), t("editor.confirmTitle"), {
+          confirmButtonText: t("editor.confirm"),
+          cancelButtonText: t("editor.cancel"),
+          type: "warning"
+        });
+      } catch {
+        return; // 用户取消
+      }
+    }
+    applyComponents(true);
+  } else {
+    applyComponents(false);
+  }
+}
+
+/**
+ * 将 AI 生成结果应用到编辑器
+ * @param overwrite true=覆盖（先清空），false=追加
+ */
+function applyComponents(overwrite: boolean) {
   // AIComponent[] → Status[] 转换
-  // 优先使用后端返回的完整组件数据（_rawComponents），回退到简化预览数据
   const rawComponents =
-    result.value._rawComponents ??
-    result.value.components.map(c => ({
+    result.value!._rawComponents ??
+    result.value!.components.map(c => ({
       type: c.type,
       config: {} as Record<string, unknown>
     }));
@@ -121,13 +149,15 @@ async function handleApply() {
     return;
   }
 
-  // 应用到编辑器：替换所有组件
-  editorStore.resetComs();
+  // 应用到编辑器
+  if (overwrite) {
+    editorStore.resetComs();
+  }
   for (const status of statuses) {
     editorStore.addCom(status);
   }
 
-  ElMessage.success(t("editor.aiApplySuccess"));
+  ElMessage.success(overwrite ? t("editor.aiApplyOverwriteSuccess") : t("editor.aiApplyAppendSuccess"));
   visible.value = false;
 }
 

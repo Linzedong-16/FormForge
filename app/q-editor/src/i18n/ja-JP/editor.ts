@@ -190,5 +190,46 @@ export default {
   matrixRows: "行",
   matrixCols: "列",
   matrixRow: "行",
-  matrixCol: "列"
+  matrixCol: "列",
+
+  // ══════════════════════════════════════════════════════════
+  //  AI ワンクリック生成
+  // ══════════════════════════════════════════════════════════
+  aiPanelTitle: "AI アンケート生成",
+  aiPanelDesc: "自然言語で要件を説明すると、AI が完全なアンケートを自動生成します",
+  aiPromptLabel: "要件説明",
+  aiPromptPlaceholder:
+    "例：従業員エンゲージメント調査を生成し、職務満足度、キャリア開発、チームワーク、報酬などの質問を含めてください",
+  aiCountLabel: "質問数",
+  aiLanguageLabel: "言語",
+  aiGenerateBtn: "生成開始",
+  aiCancelBtn: "キャンセル",
+  aiGenerating: "AI がアンケートを生成中...",
+  aiStreamPreview: "リアルタイムプレビュー",
+  aiGeneratedComponents: "生成されたコンポーネント",
+  aiPreviewBtn: "結果をプレビュー",
+  aiApplyBtn: "エディタに適用",
+  aiRetryBtn: "再生成",
+  aiCloseBtn: "閉じる",
+  aiHistoryTitle: "生成履歴",
+  aiNoHistory: "履歴がありません",
+  aiApplySuccess: "アンケートがエディタに適用されました",
+  aiApplyConfirm: "エディタに保存されていない内容があります。AI 生成結果を適用すると上書きされます。続行しますか？",
+  aiApplyModeTitle: "適用方法を選択",
+  aiApplyModeDesc: "AI 生成コンテンツの処理方法を選択してください：",
+  aiApplyModeOverwrite: "現在のアンケートを上書き",
+  aiApplyModeAppend: "現在のアンケートに追加",
+  aiApplyOverwriteSuccess: "アンケートが AI 生成コンテンツに置き換えられました",
+  aiApplyAppendSuccess: "AI 生成コンテンツが末尾に追加されました",
+  aiNetworkError: "ネットワークエラー。接続を確認して再試行してください",
+  aiTimeoutError: "AI 生成がタイムアウトしました。後でもう一度お試しください",
+  aiServiceError: "AI サービスが一時的に利用できません。後でもう一度お試しください",
+  aiRateLimitError: "リクエストが多すぎます。後でもう一度お試しください",
+  aiNotConfigured: "AI サービスが設定されていません。管理者にお問い合わせください",
+  aiEmptyPrompt: "要件説明を入力してください",
+  aiPromptTooShort: "要件説明は5文字以上必要です",
+  aiPromptTooLong: "要件説明は2000文字を超えることはできません",
+  aiNoComponents: "有効なコンポーネントが生成されませんでした。要件説明を調整して再試行してください",
+  aiWarningTitle: "生成警告",
+  aiWarningBadType: 'コンポーネントタイプ "{type}" はサポートされていないためスキップされました'
 };

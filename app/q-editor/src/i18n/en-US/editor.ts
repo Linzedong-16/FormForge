@@ -190,5 +190,46 @@ export default {
   matrixRows: "Rows",
   matrixCols: "Columns",
   matrixRow: "Row",
-  matrixCol: "Column"
+  matrixCol: "Column",
+
+  // ══════════════════════════════════════════════════════════
+  //  AI One-Click Generation
+  // ══════════════════════════════════════════════════════════
+  aiPanelTitle: "AI Generate Survey",
+  aiPanelDesc: "Describe your requirements in natural language, AI will generate a complete survey",
+  aiPromptLabel: "Requirements",
+  aiPromptPlaceholder:
+    "e.g. Generate an employee engagement survey covering job satisfaction, career development, teamwork, compensation, etc.",
+  aiCountLabel: "Number of Questions",
+  aiLanguageLabel: "Language",
+  aiGenerateBtn: "Generate",
+  aiCancelBtn: "Cancel",
+  aiGenerating: "AI is generating survey...",
+  aiStreamPreview: "Live Preview",
+  aiGeneratedComponents: "Generated Components",
+  aiPreviewBtn: "Preview Result",
+  aiApplyBtn: "Apply to Editor",
+  aiRetryBtn: "Regenerate",
+  aiCloseBtn: "Close",
+  aiHistoryTitle: "History",
+  aiNoHistory: "No history",
+  aiApplySuccess: "Survey applied to editor",
+  aiApplyConfirm: "Unsaved content exists in the editor. Applying AI results will overwrite it. Continue?",
+  aiApplyModeTitle: "Select Apply Mode",
+  aiApplyModeDesc: "Choose how to handle the AI-generated content:",
+  aiApplyModeOverwrite: "Overwrite Current Survey",
+  aiApplyModeAppend: "Append to Current Survey",
+  aiApplyOverwriteSuccess: "Survey replaced with AI-generated content",
+  aiApplyAppendSuccess: "AI-generated content appended to the end",
+  aiNetworkError: "Network error. Please check your connection and try again",
+  aiTimeoutError: "AI generation timed out. Please try again later",
+  aiServiceError: "AI service is temporarily unavailable. Please try again later",
+  aiRateLimitError: "Too many requests. Please try again later",
+  aiNotConfigured: "AI service is not configured. Please contact the administrator",
+  aiEmptyPrompt: "Please enter your requirements",
+  aiPromptTooShort: "Requirements must be at least 5 characters",
+  aiPromptTooLong: "Requirements must not exceed 2000 characters",
+  aiNoComponents: "No valid components generated. Please adjust your requirements and try again",
+  aiWarningTitle: "Generation Warnings",
+  aiWarningBadType: 'Component type "{type}" is not supported and has been skipped'
 };
