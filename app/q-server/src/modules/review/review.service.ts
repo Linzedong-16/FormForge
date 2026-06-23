@@ -112,7 +112,8 @@ export class ReviewService {
   /**
    * 查询未审核问卷列表（surveys 表 review_status = "none"）
    *
-   * 排除已有进行中审核记录的问卷，避免与已提交审核的问卷重复展示。
+   * 使用 Prisma 关系过滤 `reviews: { none: {...} }` 生成 NOT EXISTS 子查询，
+   * 避免 notIn 大数组导致的 SQL 参数超限，同时消除两次查询间的 TOCTOU 竞态。
    */
   private async listUnreviewedSurveys(
     review_type: string,
@@ -120,23 +121,20 @@ export class ReviewService {
     page_size: number,
     survey_type?: "personal" | "template" | undefined
   ): Promise<ReviewListResponse> {
-    // 1. 找到所有已有 pending review 的 survey_id（防止重复展示）
-    const reviewedSurveyIds = await this.fastify.prisma.review.findMany({
-      where: { review_type: review_type as ReviewType, status: "pending" },
-      select: { survey_id: true }
-    });
-    const excludeIds = reviewedSurveyIds.map(r => r.survey_id);
-
-    // 2. 查询 surveys
+    // 通过 reviews 关系过滤：排除已有同类型 pending 审核记录的问卷
+    // Prisma 将 `none` 编译为 NOT EXISTS 子查询，无参数数量限制且单次查询原子性
     const where: Record<string, unknown> = {
       deleted_at: null,
-      review_status: "none"
+      review_status: "none",
+      reviews: {
+        none: {
+          review_type: review_type as ReviewType,
+          status: "pending"
+        }
+      }
     };
     if (survey_type) {
       where.survey_type = survey_type;
-    }
-    if (excludeIds.length > 0) {
-      where.id = { notIn: excludeIds };
     }
 
     const [surveys, total] = await Promise.all([
@@ -160,9 +158,8 @@ export class ReviewService {
 
     this.fastify.log.info({ total, returned: surveys.length }, "[review] 未审核问卷查询完成");
 
-    // 3. 将 Survey 行转换为 ReviewListItem 兼容格式
     const list: ReviewListItem[] = surveys.map(s => ({
-      review_id: "", // 未提交审核，无 review 记录
+      review_id: "",
       survey_id: bigIntToStr(s.id),
       survey_title: s.title,
       survey_type: s.survey_type as ReviewListItem["survey_type"],
@@ -171,7 +168,7 @@ export class ReviewService {
       review_type: review_type as ReviewType,
       status: "none" as ReviewListItem["status"],
       submit_message: null,
-      submitted_at: s.created_at.toISOString() // 使用问卷创建时间代替提交时间
+      submitted_at: s.created_at.toISOString()
     }));
 
     return {
