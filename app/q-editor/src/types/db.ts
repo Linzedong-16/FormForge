@@ -15,6 +15,8 @@ export interface SurveyDBData {
   syncStatus?: "synced" | "unsynced";
   /** 远程问卷 ID（BigInt → string），首次同步后由后端返回 */
   remote_survey_id?: string;
+  /** 审核状态（从远程同步）：none / pending / approved / rejected */
+  review_status?: string;
 }
 
 /**

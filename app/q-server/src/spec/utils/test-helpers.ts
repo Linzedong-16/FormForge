@@ -18,7 +18,7 @@ interface PrismaMock {
   auditLog: { create: MockFn };
   survey: { findFirst: MockFn; findUnique: MockFn; findMany: MockFn; create: MockFn; update: MockFn; count: MockFn };
   surveyComponent: { findMany: MockFn; createMany: MockFn; deleteMany: MockFn };
-  review: { findFirst: MockFn; updateMany: MockFn; create: MockFn };
+  review: { findFirst: MockFn; findUnique: MockFn; findMany: MockFn; update: MockFn; create: MockFn; count: MockFn };
   $transaction: MockFn;
 }
 
@@ -93,8 +93,11 @@ export function createPrismaMock(): PrismaMock {
     },
     review: {
       findFirst: vi.fn(),
-      updateMany: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
       create: vi.fn(),
+      count: vi.fn()
     },
     $transaction: vi.fn(),
   };
@@ -290,4 +293,59 @@ export const MOCK_REVIEW = {
   reviewed_at: null,
   created_at: new Date("2026-06-15T10:00:00.000Z"),
   updated_at: new Date("2026-06-15T10:00:00.000Z"),
+};
+
+/** 模拟审核详情（含关联数据） */
+export const MOCK_REVIEW_DETAIL = {
+  ...MOCK_REVIEW,
+  survey: {
+    id: BigInt(300),
+    title: "客户满意度调查模板",
+    description: "用于收集客户反馈",
+    survey_type: "template",
+    category: "customer",
+    components: [
+      {
+        id: BigInt(1001),
+        type: "single-select",
+        config: { title: { status: "您的性别是？", isShow: true } },
+        order_index: 0,
+        required: 1 as const
+      },
+      {
+        id: BigInt(1002),
+        type: "text-input",
+        config: { title: { status: "请留下您的建议", isShow: true } },
+        order_index: 1,
+        required: 0 as const
+      }
+    ]
+  },
+  submitter: {
+    id: BigInt(2),
+    username: "测试用户"
+  },
+  reviewer: null
+};
+
+/** 模拟已审核通过的审核记录 */
+export const MOCK_APPROVED_REVIEW = {
+  ...MOCK_REVIEW,
+  id: BigInt(5002),
+  survey_id: BigInt(200),
+  status: "approved",
+  reviewer_id: BigInt(1),
+  review_comment: "内容合规，同意上架",
+  reviewed_at: new Date("2026-06-16T10:00:00.000Z"),
+};
+
+/** 模拟已驳回的审核记录 */
+export const MOCK_REJECTED_REVIEW = {
+  ...MOCK_REVIEW,
+  id: BigInt(5003),
+  survey_id: BigInt(301),
+  status: "rejected",
+  reviewer_id: BigInt(1),
+  review_comment: "问卷第3题包含敏感词汇，请修改后重新提交",
+  reviewed_at: new Date("2026-06-16T11:00:00.000Z"),
 };

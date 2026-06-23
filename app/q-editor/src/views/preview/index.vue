@@ -64,7 +64,7 @@ import { canUsedForPDF } from "@/types";
 import { ElMessage } from "element-plus";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 import { useI18n } from "vue-i18n";
-import { createSurvey, serializeComponents, getSurveyMetadata, publishSurvey } from "@/api/modules/survey";
+import { createSurvey, serializeComponents, getSurveyMetadata, submitReview } from "@/api/modules/survey";
 import { updateSurveyById } from "@/db/operation";
 
 const { t } = useI18n();
@@ -128,7 +128,13 @@ const generatePDF = () => {
 };
 
 /**
- * 提交审核（发布问卷）
+ * 提交问卷审核（所有个人问卷发布前的必经流程）
+ *
+ * 流程：
+ *   1. 从本地 IndexedDB 获取问卷数据与 remote_survey_id
+ *   2. 序列化当前组件状态
+ *   3. 调用 POST /api/surveys/:id/submit-review 创建问卷审核记录
+ *   4. 后端将问卷标记为 review_status=pending，进入审核流程
  */
 const handleSubmitReview = async () => {
   if (!id) {
@@ -141,7 +147,13 @@ const handleSubmitReview = async () => {
     return;
   }
   try {
-    const res = await publishSurvey(local.remote_survey_id);
+    // 序列化当前组件
+    const components = serializeComponents(store.coms as Parameters<typeof serializeComponents>[0]);
+
+    const res = await submitReview(local.remote_survey_id, {
+      submit_message: "从编辑器预览页提交审核",
+      components
+    });
     if (res.code === 0) {
       ElMessage.success(t("editor.reviewSuccess"));
     } else {

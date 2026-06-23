@@ -16,6 +16,7 @@ import {
   publishSurveySchema,
   closeSurveySchema,
   applyTemplateSchema,
+  submitReviewSchema,
   surveyIdSchema
 } from "./survey-crud.schemas.js";
 import { parseAndRespond, parseQueryAndRespond } from "../../../utils/zod.js";
@@ -180,6 +181,29 @@ const surveyCrudRoutes: FastifyPluginAsync = async fastify => {
 
       const result = await surveyService.close(request.user!.userId, surveyId);
       return reply.sendSuccess(result, "关闭成功");
+    }
+  );
+
+  // ════════════════════════════════════════════════════════════
+  // POST /api/surveys/:id/submit-review — 提交问卷审核
+  // ════════════════════════════════════════════════════════════
+  fastify.post(
+    "/surveys/:id/submit-review",
+    {
+      config: {
+        rateLimit: { max: 10, timeWindow: "1 minute" }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const surveyId = parseSurveyId(id, reply);
+      if (surveyId === null) return;
+
+      const body = parseAndRespond(submitReviewSchema.safeParse(request.body), reply);
+      if (!body) return;
+
+      const result = await surveyService.submitReview(request.user!.userId, surveyId, body);
+      return reply.sendSuccess(result, "审核申请已提交，等待管理员审核");
     }
   );
 

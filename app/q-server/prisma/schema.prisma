@@ -282,8 +282,16 @@ enum SurveyType {
 enum ReviewStatus {
   none // 未申请审核（个人问卷默认状态）
   pending // 审核中
-  approved // 已通过（模板市场上架）
+  approved // 已通过（问卷审核通过后可发布；模板审核通过后上架模板市场）
   rejected // 已驳回（违规/需修改）
+}
+
+// ============================================================
+// 枚举：审核类型
+// ============================================================
+enum ReviewType {
+  survey // 问卷审核（所有个人问卷发布前必须通过）
+  template // 模板审核（申请成为公共模板，需先通过问卷审核）
 }
 
 // ============================================================
@@ -303,6 +311,7 @@ model Review {
   survey_id      BigInt
   submitter_id   BigInt // 提交者（问卷作者）
   reviewer_id    BigInt? // 审核人（管理员），审核前为 null
+  review_type    ReviewType   @default(survey) // 审核类型：survey=问卷审核 / template=模板审核
   status         ReviewStatus @default(pending) // pending / approved / rejected
   submit_message String?      @db.Text // 提交时附加说明，最大 500 字符
   review_comment String?      @db.Text // 审核意见（通过/驳回时填写）
@@ -319,8 +328,10 @@ model Review {
   @@index([survey_id])
   @@index([submitter_id])
   @@index([reviewer_id])
+  @@index([review_type])
   @@index([status])
   @@index([submitted_at])
+  @@index([review_type, status]) // 高频：按审核类型+状态筛选
   @@index([survey_id, status]) // 高频：检查同一问卷是否已有审核中记录
   @@map("reviews")
 }

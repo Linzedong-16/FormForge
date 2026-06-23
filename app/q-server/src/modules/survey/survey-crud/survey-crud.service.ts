@@ -19,7 +19,8 @@ import type {
   CreateSurveyInput,
   UpdateSurveyInput,
   SurveyListQueryInput,
-  ApplyTemplateInput
+  ApplyTemplateInput,
+  SubmitReviewInput
 } from "./survey-crud.schemas.js";
 import type {
   SurveyListItem,
@@ -311,8 +312,8 @@ export class SurveyService {
         updateData.total_questions = countQuestions(components);
       }
 
-      // 若原为已审核模板且组件有变更，需重新审核
-      if (existing.review_status === "approved" && existing.survey_type === "template" && components) {
+      // 同步/保存问卷时，组件有变更则重置审核状态为"未审核"
+      if (components) {
         updateData.review_status = "none";
       }
 
@@ -425,6 +426,11 @@ export class SurveyService {
       if (existing.status === 1) throw new AppError("问卷已发布，无需重复操作", 409);
       if (existing.status === 2) throw new AppError("已关闭的问卷无法发布", 409);
 
+      // 所有问卷发布前均需通过问卷审核
+      if (existing.review_status !== "approved") {
+        throw new AppError("问卷需先通过审核才能发布，请在预览页提交审核", 403);
+      }
+
       const updated = await tx.survey.update({
         where: { id: surveyId, user_id: userId },
         data: {
@@ -495,29 +501,37 @@ export class SurveyService {
   }
 
   // ============================================================
-  //  申请共享模板
+  //  提交问卷审核
   // ============================================================
-  async applyTemplate(userId: bigint, surveyId: bigint, input: ApplyTemplateInput): Promise<ApplyTemplateResponse> {
+
+  /**
+   * 提交问卷审核（所有个人问卷发布前的必经流程）
+   *
+   * 流程：
+   *   1. 校验问卷是否存在且属于当前用户
+   *   2. 防止重复提交（同一问卷不能有进行中的问卷审核）
+   *   3. 更新组件（若提供）
+   *   4. 更新问卷 review_status → pending
+   *   5. 创建问卷审核记录（review_type = "survey"）
+   */
+  async submitReview(userId: bigint, surveyId: bigint, input: SubmitReviewInput): Promise<ApplyTemplateResponse> {
     const existing = await this.fastify.prisma.survey.findFirst({
       where: { id: surveyId, user_id: userId, deleted_at: null }
     });
     if (!existing) throw new AppError("问卷不存在", 404);
 
     const review = await this.fastify.prisma.$transaction(async tx => {
-      // 事务内检查：防止并发创建多条审核记录
+      // 防止重复提交问卷审核
       const pendingReview = await tx.review.findFirst({
-        where: { survey_id: surveyId, status: "pending" }
+        where: { survey_id: surveyId, review_type: "survey", status: "pending" }
       });
       if (pendingReview) {
         throw new AppError("该问卷已有审核中的申请", 409);
       }
 
-      // 1. 更新问卷：标记为模板 + 审核中（含组件变更时同步更新题目数）
+      // 1. 更新问卷审核状态
       const updateData: Record<string, unknown> = {
-        survey_type: "template",
-        review_status: "pending",
-        is_public: 1,
-        category: input.category
+        review_status: "pending"
       };
       if (input.components && input.components.length > 0) {
         updateData.total_questions = countQuestions(input.components);
@@ -533,11 +547,91 @@ export class SurveyService {
         await this.replaceComponents(tx, surveyId, input.components);
       }
 
-      // 3. 创建审核记录
+      // 3. 创建问卷审核记录
       return tx.review.create({
         data: {
           survey_id: surveyId,
           submitter_id: userId,
+          review_type: "survey",
+          status: "pending",
+          submit_message: input.submit_message ?? null
+        }
+      });
+    });
+
+    await createAuditLog(this.fastify, userId, "submit_review", "survey", surveyId, {
+      review_id: bigIntToStr(review.id)
+    });
+
+    await this.invalidateCache(surveyId, userId);
+
+    return {
+      review_id: bigIntToStr(review.id),
+      status: review.status
+    };
+  }
+
+  // ============================================================
+  //  申请共享模板
+  // ============================================================
+
+  /**
+   * 申请成为共享模板（需先通过问卷审核）
+   *
+   * 前置条件：
+   *   - 问卷必须已通过问卷审核（review_status === "approved"）
+   *   - 同一问卷不能有进行中的模板审核
+   *
+   * 流程：
+   *   1. 创建模板审核记录（review_type = "template", status = "pending"）
+   *   2. 保存分类信息到问卷
+   *   3. 若提供组件，同步更新
+   */
+  async applyTemplate(userId: bigint, surveyId: bigint, input: ApplyTemplateInput): Promise<ApplyTemplateResponse> {
+    const existing = await this.fastify.prisma.survey.findFirst({
+      where: { id: surveyId, user_id: userId, deleted_at: null }
+    });
+    if (!existing) throw new AppError("问卷不存在", 404);
+
+    // 前置条件：必须先通过问卷审核
+    if (existing.review_status !== "approved") {
+      throw new AppError("问卷需先通过问卷审核，才能申请成为模板", 403);
+    }
+
+    const review = await this.fastify.prisma.$transaction(async tx => {
+      // 事务内检查：防止并发创建多条模板审核记录
+      const pendingReview = await tx.review.findFirst({
+        where: { survey_id: surveyId, review_type: "template", status: "pending" }
+      });
+      if (pendingReview) {
+        throw new AppError("该问卷已有模板审核中的申请", 409);
+      }
+
+      // 1. 更新问卷分类 + 组件
+      const updateData: Record<string, unknown> = {
+        category: input.category,
+        is_public: 1
+      };
+      if (input.components && input.components.length > 0) {
+        updateData.total_questions = countQuestions(input.components);
+      }
+
+      await tx.survey.update({
+        where: { id: surveyId, user_id: userId },
+        data: updateData
+      });
+
+      // 2. 若有组件更新，同步保存
+      if (input.components && input.components.length > 0) {
+        await this.replaceComponents(tx, surveyId, input.components);
+      }
+
+      // 3. 创建模板审核记录
+      return tx.review.create({
+        data: {
+          survey_id: surveyId,
+          submitter_id: userId,
+          review_type: "template",
           status: "pending",
           submit_message: input.submit_message ?? null
         }

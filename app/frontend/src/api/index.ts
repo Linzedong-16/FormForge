@@ -10,3 +10,4 @@ export * from "./modules/auth";
 export * from "./modules/user";
 export * from "./modules/admin";
 export * from "./modules/log";
+export * from "./modules/review";

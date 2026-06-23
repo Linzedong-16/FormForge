@@ -236,6 +236,16 @@ export interface ApplyTemplateRequest {
   category: TemplateCategory;
 }
 
+/**
+ * POST /api/surveys/:id/submit-review — 提交问卷审核
+ */
+export interface SubmitReviewRequest {
+  /** 组件列表（可选，若提供则全量替换） */
+  components?: SurveyComponentPayload[];
+  /** 提交说明，最多 500 字符 */
+  submit_message?: string;
+}
+
 // ============================================================
 //  5. 问卷 API — 响应体
 // ============================================================
@@ -387,6 +397,7 @@ export interface SurveyApi {
   publishSurvey: { request: PublishSurveyRequest; response: SurveyDetail };
   closeSurvey: { request: CloseSurveyRequest; response: SurveyDetail };
   applyTemplate: { request: ApplyTemplateRequest; response: ApplyTemplateResponse };
+  submitReview: { request: SubmitReviewRequest; response: ApplyTemplateResponse };
   submitResponse: { request: SubmitResponseRequest; response: SubmitResponseResponse };
   getResponseList: { request: ResponseListQuery; response: ResponseListResponse };
   getResponseById: { request: void; response: SurveyResponseDetail };

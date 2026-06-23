@@ -20,6 +20,7 @@ import type {
   SurveyComponentPayload,
   ApplyTemplateRequest,
   ApplyTemplateResponse,
+  SubmitReviewRequest,
   SubmitResponseRequest,
   SubmitResponseResponse,
   ResponseListQuery,
@@ -84,6 +85,14 @@ export const applyTemplate = (
   surveyId: string,
   data: ApplyTemplateRequest
 ): Promise<ApiResponse<ApplyTemplateResponse>> => serverClient.post(`/surveys/${surveyId}/apply-template`, data);
+
+/**
+ * POST /api/surveys/:id/submit-review — 提交问卷审核
+ */
+export const submitReview = (
+  surveyId: string,
+  data: SubmitReviewRequest
+): Promise<ApiResponse<ApplyTemplateResponse>> => serverClient.post(`/surveys/${surveyId}/submit-review`, data);
 
 // ============================================================
 // 答卷
@@ -391,6 +400,7 @@ export type {
   SurveyComponentPayload,
   ApplyTemplateRequest,
   ApplyTemplateResponse,
+  SubmitReviewRequest,
   SubmitResponseRequest,
   SubmitResponseResponse,
   ResponseListQuery,

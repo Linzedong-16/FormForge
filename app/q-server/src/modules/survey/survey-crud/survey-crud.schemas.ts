@@ -96,6 +96,12 @@ export const applyTemplateSchema = z.object({
   category: categorySchema
 });
 
+/** POST /api/surveys/:id/submit-review — 提交问卷审核 */
+export const submitReviewSchema = z.object({
+  components: z.array(componentPayloadSchema).optional(),
+  submit_message: submitMessageSchema
+});
+
 /** 问卷 ID 参数校验 — 仅允许纯数字字符串，直接转为 BigInt */
 export const surveyIdSchema = z
   .string()
@@ -110,3 +116,4 @@ export type CreateSurveyInput = z.infer<typeof createSurveySchema>;
 export type UpdateSurveyInput = z.infer<typeof updateSurveySchema>;
 export type SurveyListQueryInput = z.infer<typeof surveyListQuerySchema>;
 export type ApplyTemplateInput = z.infer<typeof applyTemplateSchema>;
+export type SubmitReviewInput = z.infer<typeof submitReviewSchema>;

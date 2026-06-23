@@ -50,10 +50,6 @@
               {{ t("editor.aiGenerate") }}
             </el-button>
           </div>
-          <!-- 模板市场 -->
-          <el-button size="small" type="warning" plain class="ml-10" @click="onApplyShareTemplate">
-            {{ t("editor.applyShareTemplate") }}
-          </el-button>
         </div>
         <div v-if="id">
           <el-button type="primary" size="small" @click="preview">{{ t("editor.preview") }}</el-button>
@@ -64,7 +60,7 @@
       </div>
     </div>
 
-    <!-- 申请共享模板对话框 -->
+    <!-- AI 一键生成面板（Drawer，通过 ref 控制） 占位 -->
     <el-dialog v-model="templateDialogVisible" :title="t('editor.templateDialogTitle')" width="500px">
       <el-form :model="templateForm" label-width="100px">
         <el-form-item :label="t('editor.templateCategory')" required>
@@ -189,15 +185,6 @@ const templateForm = ref({
   category: "" as string,
   submit_message: ""
 });
-
-const resetTemplateForm = () => {
-  templateForm.value = { category: "", submit_message: "" };
-};
-
-const onApplyShareTemplate = () => {
-  resetTemplateForm();
-  templateDialogVisible.value = true;
-};
 
 /** 提交申请共享模板 */
 const submitApplyTemplate = async () => {

@@ -26,5 +26,33 @@ export default {
   syncFailed: "同步失败",
   // 远程同步
   syncingRemote: "正在同步远程数据...",
-  syncFailedHint: "远程数据同步失败，仅展示本地数据"
+  syncFailedHint: "远程数据同步失败，仅展示本地数据",
+  // 审核
+  columnReviewStatus: "审核状态",
+  submitReview: "提审",
+  reviewing: "审核中",
+  submitReviewTitle: "提交审核",
+  submitReviewSuccess: "审核申请已提交",
+  submitReviewFailed: "提交审核失败",
+  reviewStatus: {
+    none: "未审核",
+    pending: "审核中",
+    approved: "已通过",
+    rejected: "已驳回"
+  },
+  // 共享模板
+  shareTemplate: "共享",
+  shareTemplateTitle: "申请共享模板",
+  shareTemplateSuccess: "模板申请已提交",
+  shareTemplateFailed: "模板申请提交失败",
+  templateCategory: "模板分类",
+  templateCategoryRequired: "请选择模板分类",
+  templateCategoryEducation: "教育",
+  templateCategoryMarket: "市场调研",
+  templateCategoryHr: "人力资源",
+  templateCategoryCustomer: "客户服务",
+  templateCategoryEvent: "活动",
+  templateCategoryOther: "其他",
+  templateSubmitMessage: "提交说明",
+  templateSubmit: "提交"
 };
