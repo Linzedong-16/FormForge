@@ -146,6 +146,39 @@ export const useUserStore = defineStore(
       clearProfile();
     }
 
+    /**
+     * 登出 + 清空本地问卷数据（IndexedDB）
+     *
+     * 供 UI 层在用户确认退出后调用。
+     * 先清空 IndexedDB，再执行标准登出流程（Token 清除、API 调）。
+     */
+    async function handleLogoutAndClear() {
+      try {
+        const { clearAllSurveys, flushLogs } = await import("@/db/operation");
+        await clearAllSurveys();
+        const logs = flushLogs();
+        console.log("[useUser] 退出登录 IndexedDB 清理日志:", logs);
+      } catch (err) {
+        console.warn("[useUser] 退出登录时 IndexedDB 清理失败:", err);
+      }
+      await handleLogout();
+    }
+
+    /**
+     * 检测是否存在未同步问卷
+     *
+     * @returns { count: number, titles: string[] }
+     */
+    async function checkUnsyncedSurveys(): Promise<{ count: number; titles: string[] }> {
+      try {
+        const { getUnsyncedSurveyCount, getUnsyncedSurveyTitles } = await import("@/db/operation");
+        const [count, titles] = await Promise.all([getUnsyncedSurveyCount(), getUnsyncedSurveyTitles()]);
+        return { count, titles: titles.map(t => t.title) };
+      } catch {
+        return { count: 0, titles: [] };
+      }
+    }
+
     /** 获取系统状态 */
     async function fetchSystemStatus() {
       const res = await getSystemStatus();
@@ -285,6 +318,8 @@ export const useUserStore = defineStore(
       handleLogin,
       handleInitRegister,
       handleLogout,
+      handleLogoutAndClear,
+      checkUnsyncedSurveys,
       fetchSystemStatus,
       // 资料
       fetchProfile,

@@ -22,7 +22,6 @@ declare module 'vue' {
     DateTimeTypeEditor: typeof import('./src/components/SurveyComs/EditItems/DateTimeTypeEditor.vue')['default']
     DescEditor: typeof import('./src/components/SurveyComs/EditItems/DescEditor.vue')['default']
     EditPannel: typeof import('./src/components/SurveyComs/EditItems/EditPannel.vue')['default']
-    ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAutocomplete: typeof import('element-plus/es')['ElAutocomplete']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElBadge: typeof import('element-plus/es')['ElBadge']
@@ -98,9 +97,6 @@ declare module 'vue' {
     UserProfile: typeof import('./src/components/Common/UserProfile.vue')['default']
     WeightEditor: typeof import('./src/components/SurveyComs/EditItems/WeightEditor.vue')['default']
   }
-  export interface GlobalDirectives {
-    vLoading: typeof import('element-plus/es')['ElLoadingDirective']
-  }
 }
 
 // For TSX support
@@ -115,7 +111,6 @@ declare global {
   const DateTimeTypeEditor: typeof import('./src/components/SurveyComs/EditItems/DateTimeTypeEditor.vue')['default']
   const DescEditor: typeof import('./src/components/SurveyComs/EditItems/DescEditor.vue')['default']
   const EditPannel: typeof import('./src/components/SurveyComs/EditItems/EditPannel.vue')['default']
-  const ElAlert: typeof import('element-plus/es')['ElAlert']
   const ElAutocomplete: typeof import('element-plus/es')['ElAutocomplete']
   const ElAvatar: typeof import('element-plus/es')['ElAvatar']
   const ElBadge: typeof import('element-plus/es')['ElBadge']
