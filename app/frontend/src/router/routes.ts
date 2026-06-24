@@ -78,5 +78,34 @@ export const childrenRoutes: RouteRecordRaw[] = [
       title: "系统设置",
       icon: "settings"
     }
+  },
+  {
+    path: "/user-management",
+    name: "userManagement",
+    component: () => import("../views/user-management/UserManagementLayout.vue"),
+    meta: {
+      title: "用户管理",
+      icon: "userGroup"
+    },
+    children: [
+      {
+        path: "",
+        name: "userList",
+        component: () => import("../views/user-management/UserListView.vue"),
+        meta: { title: "用户列表", icon: "list" }
+      },
+      {
+        path: "roles",
+        name: "roleMgmt",
+        component: () => import("../views/user-management/RoleManagementView.vue"),
+        meta: { title: "角色管理", icon: "user" }
+      },
+      {
+        path: "permissions",
+        name: "permissions",
+        component: () => import("../views/user-management/PermissionView.vue"),
+        meta: { title: "权限设置", icon: "safe" }
+      }
+    ]
   }
 ];

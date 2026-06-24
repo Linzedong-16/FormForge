@@ -21,7 +21,11 @@
           <acro-icons :icon="(route.meta?.icon as any) || 'home'" />
         </template>
         <template #title>{{ route?.meta?.title }}</template>
-        <a-menu-item v-for="child in route.children" :key="child.path" @click="handlePush(child.path)">
+        <a-menu-item
+          v-for="child in route.children"
+          :key="child.path"
+          @click="handlePush((route.path + '/' + child.path).replace(/\/+/g, '/'))"
+        >
           <template #icon>
             <acro-icons :icon="(child.meta?.icon as any) || 'home'" />
           </template>

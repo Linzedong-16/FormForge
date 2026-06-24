@@ -64,16 +64,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import { useUserStore } from "@/store/modules/user";
+import { useTheme } from "@/composables/useTheme";
 import LoginModal from "@/components/LoginModal.vue";
 
 const userStore = useUserStore();
+const { isDark, toggleTheme } = useTheme();
 
 // 侧边栏折叠状态
 const isCollapsed = ref(false);
-// 主题状态
-const isDark = ref(false);
 const emit = defineEmits<{
   (e: "sidebar-toggle", val: boolean): void;
 }>();
@@ -106,16 +106,6 @@ const toggleFullscreen = () => {
   }
 };
 
-// 切换主题
-const toggleTheme = () => {
-  isDark.value = !isDark.value;
-  if (isDark.value) {
-    document.body.setAttribute("arco-theme", "dark");
-  } else {
-    document.body.removeAttribute("arco-theme");
-  }
-};
-
 // 登录弹窗
 function showLoginModal() {
   loginModalVisible.value = true;
@@ -131,12 +121,6 @@ async function handleLogout() {
   await userStore.handleLogout();
   window.location.reload();
 }
-
-// 监听全屏状态变化
-onMounted(() => {
-  const currentTheme = document.body.getAttribute("arco-theme");
-  isDark.value = currentTheme === "dark";
-});
 </script>
 
 <style scoped>
