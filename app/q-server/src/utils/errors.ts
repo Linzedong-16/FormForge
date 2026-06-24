@@ -21,10 +21,10 @@ export class AppError extends Error {
   }
 }
 
-/** 认证授权错误 */
+/** 认证授权错误 — httpStatus 为 HTTP 状态码，bizCode 为业务错误码（默认同 httpStatus） */
 export class AuthError extends AppError {
-  constructor(message: string, statusCode: number, details?: unknown) {
-    super(message, statusCode, statusCode, details);
+  constructor(message: string, httpStatus: number, bizCode?: number, details?: unknown) {
+    super(message, httpStatus, bizCode ?? httpStatus, details);
     this.name = "AuthError";
   }
 }

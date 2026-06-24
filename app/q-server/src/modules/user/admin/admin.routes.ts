@@ -1,5 +1,5 @@
 /**
- * 管理路由 — 用户管理、系统配置
+ * 管理路由 — 用户管理、封禁管理、系统配置
  * 挂载于 /api/admin
  *
  * 所有请求体/查询参数统一通过 Zod Schema 校验
@@ -12,7 +12,8 @@ import {
   createUserSchema,
   updateUserSchema,
   userListQuerySchema,
-  updateSmtpConfigSchema
+  updateSmtpConfigSchema,
+  banUserSchema
 } from "../schemas/user.schemas.js";
 import { parseAndRespond, parseQueryAndRespond } from "../../../utils/zod.js";
 import { AppError } from "../../../utils/errors.js";
@@ -43,7 +44,7 @@ const adminRoutes: FastifyPluginAsync = async fastify => {
     return reply.sendSuccess(result, "用户创建成功");
   });
 
-  // ── GET /users — 用户列表（分页+搜索） ───────────────────────
+  // ── GET /users — 用户列表（分页+搜索+封禁筛选） ─────────────
   fastify.get("/users", async (request, reply) => {
     const query = parseQueryAndRespond(userListQuerySchema.safeParse(request.query), reply);
     if (!query) return;
@@ -69,6 +70,25 @@ const adminRoutes: FastifyPluginAsync = async fastify => {
     const adminId = request.user!.userId;
     const result = await adminService.deleteUser(adminId, targetId);
     return reply.sendSuccess(result, "用户已删除");
+  });
+
+  // ── POST /users/:id/ban — 封禁用户 ───────────────────────────
+  fastify.post("/users/:id/ban", async (request, reply) => {
+    const body = parseAndRespond(banUserSchema.safeParse(request.body), reply);
+    if (!body) return;
+
+    const targetId = parseUserIdParam(request.params);
+    const adminId = request.user!.userId;
+    const result = await adminService.banUser(adminId, targetId, body);
+    return reply.sendSuccess(result, "用户已被封禁");
+  });
+
+  // ── DELETE /users/:id/ban — 解除封禁 ─────────────────────────
+  fastify.delete("/users/:id/ban", async (request, reply) => {
+    const targetId = parseUserIdParam(request.params);
+    const adminId = request.user!.userId;
+    const result = await adminService.unbanUser(adminId, targetId);
+    return reply.sendSuccess(result, "封禁已解除");
   });
 
   // ── GET /config — 获取系统配置 ────────────────────────────────

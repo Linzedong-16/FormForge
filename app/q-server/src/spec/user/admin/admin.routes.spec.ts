@@ -49,7 +49,6 @@ describe("admin.routes", () => {
     const basePrisma = createPrismaMock();
     const prisma = {
       ...basePrisma,
-      // authenticate 中间件查询用户 → 需返回有效用户
       user: {
         ...basePrisma.user,
         findFirst: vi.fn().mockResolvedValue({
@@ -77,6 +76,14 @@ describe("admin.routes", () => {
     } as any;
     const redis = createRedisMock();
     redis.exists.mockResolvedValue(0); // 不在 JWT 黑名单
+    redis.set.mockResolvedValue("OK");
+    const pipelineMock = {
+      exists: vi.fn().mockReturnThis(),
+      ttl: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValue([])
+    };
+    redis.pipeline.mockReturnValue(pipelineMock);
+
     app.decorate("prisma", prisma);
     app.decorate("redis", redis);
 
@@ -86,13 +93,15 @@ describe("admin.routes", () => {
   });
 
   // ────────────────────────────────────────────────────────────
+  //  POST /admin/users（简化版 — 仅需 email + username）
+  // ────────────────────────────────────────────────────────────
 
   describe("POST /admin/users", () => {
     it("无 Token → 401", async () => {
       const res = await app.inject({
         method: "POST",
         url: "/admin/users",
-        payload: { email: "x@x.com", username: "x", role: "user" }
+        payload: { email: "x@x.com", username: "x" }
       });
       expect(res.statusCode).toBe(401);
     });
@@ -102,22 +111,14 @@ describe("admin.routes", () => {
         method: "POST",
         url: "/admin/users",
         headers: { authorization: `Bearer ${createSuperAdminToken()}` },
-        payload: { email: "x@x.com" } // 缺少 username, role
-      });
-      expect(res.statusCode).toBe(400);
-    });
-
-    it("无效 role → 400", async () => {
-      const res = await app.inject({
-        method: "POST",
-        url: "/admin/users",
-        headers: { authorization: `Bearer ${createSuperAdminToken()}` },
-        payload: { email: "x@x.com", username: "x", role: "guest" }
+        payload: { email: "x@x.com" } // 缺少 username
       });
       expect(res.statusCode).toBe(400);
     });
   });
 
+  // ────────────────────────────────────────────────────────────
+  //  GET /admin/users
   // ────────────────────────────────────────────────────────────
 
   describe("GET /admin/users", () => {
@@ -127,6 +128,8 @@ describe("admin.routes", () => {
     });
   });
 
+  // ────────────────────────────────────────────────────────────
+  //  PUT /admin/users/:id
   // ────────────────────────────────────────────────────────────
 
   describe("PUT /admin/users/:id", () => {
@@ -141,6 +144,8 @@ describe("admin.routes", () => {
   });
 
   // ────────────────────────────────────────────────────────────
+  //  DELETE /admin/users/:id
+  // ────────────────────────────────────────────────────────────
 
   describe("DELETE /admin/users/:id", () => {
     it("无 Token → 401", async () => {
@@ -153,6 +158,57 @@ describe("admin.routes", () => {
   });
 
   // ────────────────────────────────────────────────────────────
+  //  POST /admin/users/:id/ban
+  // ────────────────────────────────────────────────────────────
+
+  describe("POST /admin/users/:id/ban", () => {
+    it("无 Token → 401", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/admin/users/2/ban",
+        payload: { ban_duration: 1440 }
+      });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it("缺少 ban_duration → 400", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/admin/users/2/ban",
+        headers: { authorization: `Bearer ${createSuperAdminToken()}` },
+        payload: {}
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it("ban_duration 超限 → 400", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/admin/users/2/ban",
+        headers: { authorization: `Bearer ${createSuperAdminToken()}` },
+        payload: { ban_duration: 99999 }
+      });
+      expect(res.statusCode).toBe(400);
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  //  DELETE /admin/users/:id/ban
+  // ────────────────────────────────────────────────────────────
+
+  describe("DELETE /admin/users/:id/ban", () => {
+    it("无 Token → 401", async () => {
+      const res = await app.inject({
+        method: "DELETE",
+        url: "/admin/users/2/ban"
+      });
+      expect(res.statusCode).toBe(401);
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  //  GET /admin/config
+  // ────────────────────────────────────────────────────────────
 
   describe("GET /admin/config", () => {
     it("无 Token → 401", async () => {
@@ -161,6 +217,8 @@ describe("admin.routes", () => {
     });
   });
 
+  // ────────────────────────────────────────────────────────────
+  //  PUT /admin/config/smtp
   // ────────────────────────────────────────────────────────────
 
   describe("PUT /admin/config/smtp", () => {

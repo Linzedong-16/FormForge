@@ -32,6 +32,7 @@ interface RedisMock {
   ping: MockFn;
   eval: MockFn;
   scan: MockFn;
+  pipeline: MockFn;
 }
 
 interface AmqpMock {
@@ -54,22 +55,38 @@ interface ReplyMock {
 
 /** 创建一个最小化的 Prisma mock */
 export function createPrismaMock(): PrismaMock {
+  const userMock = {
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    count: vi.fn(),
+  };
+  const userRoleMock = {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    count: vi.fn(),
+    deleteMany: vi.fn(),
+  };
+
+  // $transaction 回调模式：调用 fn(tx)，tx 复用 prisma 各方法的实现
+  const $transaction = vi.fn((fnOrArray: unknown) => {
+    if (typeof fnOrArray === "function") {
+      return fnOrArray({
+        user: { create: userMock.create },
+        userRole: { create: userRoleMock.create },
+        systemConfig: {},
+        auditLog: {},
+      });
+    }
+    return Promise.all(fnOrArray as Array<Promise<unknown>>);
+  });
+
   return {
-    user: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      count: vi.fn(),
-    },
-    userRole: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      count: vi.fn(),
-      deleteMany: vi.fn(),
-    },
+    user: userMock,
+    userRole: userRoleMock,
     systemConfig: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
@@ -99,7 +116,7 @@ export function createPrismaMock(): PrismaMock {
       create: vi.fn(),
       count: vi.fn()
     },
-    $transaction: vi.fn(),
+    $transaction,
   };
 }
 
@@ -117,6 +134,7 @@ export function createRedisMock(): RedisMock {
     ping: vi.fn(),
     eval: vi.fn(),
     scan: vi.fn(),
+    pipeline: vi.fn(),
   };
 }
 

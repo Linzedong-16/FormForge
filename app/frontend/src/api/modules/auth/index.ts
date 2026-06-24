@@ -38,7 +38,7 @@ interface UserInfo {
   id: string;
   email: string;
   username: string;
-  role: "super_admin" | "user" | "admin";
+  role: "super_admin" | "user";
 }
 
 interface LoginResponse extends TokenInfo {

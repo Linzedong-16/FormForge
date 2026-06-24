@@ -26,9 +26,10 @@ model User {
   status        Int       @default(1) // 0:禁用 1:启用
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
-  last_login_at DateTime?
-  deleted_at    DateTime? // 软删除标记
-  deleted_by    BigInt?   // 删除操作人 ID
+  last_login_at      DateTime?
+  password_updated_at DateTime? // NULL = 从未改密，首次登录强制修改
+  deleted_at         DateTime? // 软删除标记
+  deleted_by         BigInt?   // 删除操作人 ID
 
   // 关联关系
   surveys           Survey[]

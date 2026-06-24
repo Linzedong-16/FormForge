@@ -82,6 +82,16 @@ export enum BizCode {
   /** 账号已被注销 */
   ACCOUNT_DELETED = 2009,
 
+  // ─── 用户管理模块 ────────────────────────────────────────
+  /** 账号已被封禁 */
+  ACCOUNT_BANNED = 2010,
+  /** 不能封禁超级管理员 */
+  CANNOT_BAN_SUPER_ADMIN = 2011,
+  /** 封禁时长超限 */
+  BAN_DURATION_EXCEEDED = 2012,
+  /** 不能删除超级管理员 */
+  CANNOT_DELETE_SUPER_ADMIN = 2013,
+
   // ─── 问卷文件模块 ──────────────────────────────────────────
   /** 文件类型不支持 */
   UNSUPPORTED_FILE_TYPE = 3001,

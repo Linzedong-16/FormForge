@@ -19,6 +19,44 @@
 // ============================================================
 
 /**
+ * POST /api/admin/users/:id/ban — 封禁用户请求体
+ */
+export interface BanUserRequest {
+  /** 封禁时长（分钟），范围 1-43200（30 天） */
+  ban_duration: number;
+  /** 封禁原因（可选，最大 500 字符） */
+  reason?: string;
+}
+
+/**
+ * POST /api/admin/users/:id/ban — 封禁用户响应
+ */
+export interface BanUserResponse {
+  /** 用户 ID */
+  id: string;
+  /** 用户名 */
+  username: string;
+  /** 是否已封禁 */
+  isBanned: boolean;
+  /** 封禁剩余秒数 */
+  banRemaining: number;
+  /** 封禁到期时间（ISO 8601） */
+  bannedUntil: string;
+}
+
+/**
+ * DELETE /api/admin/users/:id/ban — 解除封禁响应
+ */
+export interface UnbanUserResponse {
+  /** 用户 ID */
+  id: string;
+  /** 用户名 */
+  username: string;
+  /** 是否已封禁 */
+  isBanned: false;
+}
+
+/**
  * 后端统一响应结构
  *
  * 与后端 `src/utils/response.ts` 中的 `ApiResponse<T>` 保持一致
@@ -112,7 +150,15 @@ export enum BizCode {
   /** 新密码与当前密码相同 */
   PasswordSameAsCurrent = 2008,
   /** 账号已注销 */
-  AccountDeleted = 2009
+  AccountDeleted = 2009,
+
+  // ── 用户管理模块 (2010~2019) ──────────────────────────────
+  /** 账号已被封禁 */
+  AccountBanned = 2010,
+  /** 不能封禁超级管理员 */
+  CannotBanSuperAdmin = 2011,
+  /** 封禁时长超限 */
+  BanDurationExceeded = 2012
 }
 
 // ============================================================
@@ -133,10 +179,10 @@ export interface UserInfo {
   username: string;
   /**
    * 角色
-   * - auth 接口（login/register）返回 `"super_admin" | "user"`
-   * - admin 接口（listUsers）返回 `"admin" | "user"`
+   * - 系统仅支持两种角色：`super_admin` 和 `user`
+   * - 对应数据库 RoleCode 枚举
    */
-  role: "super_admin" | "user" | "admin";
+  role: "super_admin" | "user";
 }
 
 /**
@@ -151,6 +197,12 @@ export interface UserAdminItem extends UserInfo {
   created_at: string;
   /** 最后登录时间（ISO 8601），可能为 null */
   last_login_at: string | null;
+  /** 是否处于封禁状态 */
+  isBanned: boolean;
+  /** 封禁剩余秒数，null = 未封禁 */
+  banRemaining: number | null;
+  /** 是否已被软删除 */
+  isDeleted: boolean;
 }
 
 /**
@@ -465,16 +517,14 @@ export interface UpdateCurrentUserRequest {
 
 /**
  * POST /api/admin/users — 创建用户请求体
+ *
+ * 简化版：仅需用户名 + 邮箱，角色固定为 user，密码默认 Aa123456
  */
 export interface CreateUserRequest {
   /** 邮箱地址 */
   email: string;
-  /** 用户名 */
+  /** 用户名（1-50字符） */
   username: string;
-  /** 角色 */
-  role: "user" | "admin";
-  /** 密码（可选，未提供则自动生成 12 位随机密码） */
-  password?: string;
 }
 
 /**
@@ -523,14 +573,14 @@ export interface CreateUserResponse {
   email: string;
   /** 用户名 */
   username: string;
-  /** 角色 */
-  role: "user" | "admin";
+  /** 角色，固定 "user" */
+  role: "user";
   /** 状态 */
   status: UserStatus;
-  /** 是否提供了密码 */
-  passwordProvided: boolean;
-  /** 系统生成的随机密码（仅当 passwordProvided=false 时存在） */
-  generatedPassword?: string;
+  /** 默认密码明文（仅在创建响应中返回一次） */
+  defaultPassword: string;
+  /** 是否需要首次登录修改密码 */
+  requirePasswordChange: boolean;
 }
 
 /**
@@ -545,6 +595,8 @@ export interface UserListQuery {
   email?: string;
   /** 状态筛选（可选） */
   status?: UserStatus;
+  /** 封禁状态筛选（可选）：banned=仅封禁 / active=仅活跃 */
+  ban_status?: "banned" | "active";
 }
 
 /**
@@ -582,6 +634,10 @@ export interface DeleteUserResponse {
   id: string;
   /** 是否已删除 */
   deleted: true;
+  /** 删除操作人 ID */
+  deletedBy: string;
+  /** 删除时间（ISO 8601） */
+  deletedAt: string;
 }
 
 /**
@@ -752,6 +808,16 @@ export interface AdminApi {
   deleteUser: {
     request: void;
     response: DeleteUserResponse;
+  };
+  /** POST /api/admin/users/:id/ban */
+  banUser: {
+    request: BanUserRequest;
+    response: BanUserResponse;
+  };
+  /** DELETE /api/admin/users/:id/ban */
+  unbanUser: {
+    request: void;
+    response: UnbanUserResponse;
   };
   /** GET /api/admin/config */
   getConfig: {

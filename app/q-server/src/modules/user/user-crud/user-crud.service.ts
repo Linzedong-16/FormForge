@@ -104,6 +104,7 @@ export class UserService {
       }
       const passwordHash = await bcrypt.hash(input.password, 10);
       data.password_hash = passwordHash;
+      data.password_updated_at = new Date(); // 标记改密时间，清除 requirePasswordChange
     }
 
     const user = await this.fastify.prisma.user.update({

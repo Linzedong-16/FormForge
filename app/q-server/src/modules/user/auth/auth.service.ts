@@ -59,6 +59,7 @@ export interface LoginResult {
   refreshToken: string;
   refreshExpiresIn: number;
   user: { id: string; email: string; username: string; role: string };
+  requirePasswordChange?: boolean;
 }
 
 /** 系统状态 */
@@ -165,7 +166,7 @@ export class AuthService {
   async login(email: string, password: string): Promise<LoginResult> {
     // 1. 检查账户是否被锁定
     if (await this.isAccountLocked(email)) {
-      throw new AuthError("登录失败次数过多，请30分钟后再试", BizCode.ACCOUNT_LOCKED);
+      throw new AuthError("登录失败次数过多，请30分钟后再试", 423, BizCode.ACCOUNT_LOCKED);
     }
 
     // 2. 查询用户
@@ -183,12 +184,12 @@ export class AuthService {
       await this.recordLoginFail(email);
       const failCount = await this.getLoginFailCount(email);
       const remainAttempts = Math.max(0, MAX_LOGIN_FAILS - failCount);
-      throw new AuthError("邮箱或密码错误", 401, { remainAttempts });
+      throw new AuthError("邮箱或密码错误", 401, undefined, { remainAttempts });
     }
 
     // 4. 检查账户状态
     if (user.status === 0) {
-      throw new AuthError("账户已被禁用，请联系管理员", BizCode.ACCOUNT_DISABLED);
+      throw new AuthError("账户已被禁用，请联系管理员", 403, BizCode.ACCOUNT_DISABLED);
     }
 
     // 5. 登录成功 — 清除失败记录 & 更新登录时间
@@ -219,7 +220,9 @@ export class AuthService {
         email: user.email,
         username: user.username,
         role
-      }
+      },
+      // password_updated_at 为 NULL 表示从未改密（管理员创建的用户），需前端提示修改
+      requirePasswordChange: !user.password_updated_at
     };
   }
 
@@ -239,24 +242,26 @@ export class AuthService {
       where: { email, deleted_at: null }
     });
     if (existing) {
-      throw new AuthError("该邮箱已被注册", BizCode.EMAIL_EXISTS);
+      throw new AuthError("该邮箱已被注册", 409, BizCode.EMAIL_EXISTS);
     }
 
-    // 3. 创建用户
+    // 3. 事务：创建用户 + 添加超级管理员角色，避免孤儿用户
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await this.fastify.prisma.user.create({
-      data: {
-        email,
-        password_hash: passwordHash,
-        username: username ?? email.split("@")[0],
-        role: "admin",
-        status: 1
-      }
-    });
-
-    // 4. 添加超级管理员角色
-    await this.fastify.prisma.userRole.create({
-      data: { user_id: user.id, role_code: "super_admin" }
+    const user = await this.fastify.prisma.$transaction(async tx => {
+      const newUser = await tx.user.create({
+        data: {
+          email,
+          password_hash: passwordHash,
+          username: username ?? email.split("@")[0],
+          role: "admin",
+          status: 1,
+          password_updated_at: new Date()
+        }
+      });
+      await tx.userRole.create({
+        data: { user_id: newUser.id, role_code: "super_admin" }
+      });
+      return newUser;
     });
 
     // 5. 生成 Token
@@ -295,19 +300,19 @@ export class AuthService {
   async sendCode(email: string, type: "register" | "reset_password" | "bind_email" | "change_password") {
     // 1. 检查 SMTP 是否配置
     if (!(await this.isSmtpConfigured())) {
-      throw new AuthError("邮件服务暂未配置，请联系管理员", BizCode.SMTP_NOT_CONFIGURED);
+      throw new AuthError("邮件服务暂未配置，请联系管理员", 503, BizCode.SMTP_NOT_CONFIGURED);
     }
 
     // 2. 根据类型做前置校验
     if (type === "register") {
       if (!(await this.isRegistrationEnabled())) {
-        throw new AuthError("暂未开放注册，请联系管理员", BizCode.REGISTRATION_CLOSED);
+        throw new AuthError("暂未开放注册，请联系管理员", 403, BizCode.REGISTRATION_CLOSED);
       }
       const existing = await this.fastify.prisma.user.findFirst({
         where: { email, deleted_at: null }
       });
       if (existing) {
-        throw new AuthError("该邮箱已被注册", BizCode.EMAIL_EXISTS);
+        throw new AuthError("该邮箱已被注册", 409, BizCode.EMAIL_EXISTS);
       }
     }
 
@@ -316,7 +321,7 @@ export class AuthService {
         where: { email, deleted_at: null }
       });
       if (!existing) {
-        throw new AuthError("该邮箱未注册", BizCode.EMAIL_NOT_EXISTS);
+        throw new AuthError("该邮箱未注册", 404, BizCode.EMAIL_NOT_EXISTS);
       }
     }
 
@@ -377,7 +382,7 @@ export class AuthService {
     // 1. 从 Redis 取出验证码
     const stored = await this.fastify.redis.get(`${VERIFY_CODE_PREFIX}${email}`);
     if (!stored) {
-      throw new AuthError("验证码已过期，请重新获取", BizCode.VERIFY_CODE_EXPIRED);
+      throw new AuthError("验证码已过期，请重新获取", 400, BizCode.VERIFY_CODE_EXPIRED);
     }
 
     let storedCode: string;
@@ -387,13 +392,13 @@ export class AuthService {
       storedCode = parsed.code;
       type = parsed.type;
     } catch {
-      throw new AuthError("验证码无效，请重新获取", BizCode.VERIFY_CODE_INVALID);
+      throw new AuthError("验证码无效，请重新获取", 400, BizCode.VERIFY_CODE_INVALID);
     }
     if (type !== "reset_password" || storedCode !== code) {
-      throw new AuthError("验证码错误", BizCode.VERIFY_CODE_INVALID);
+      throw new AuthError("验证码错误", 400, BizCode.VERIFY_CODE_INVALID);
     }
 
-    // 2. 删除已使用的验证码
+    // 2. 删除已使用的验证码（重置密码）
     await this.fastify.redis.del(`${VERIFY_CODE_PREFIX}${email}`);
 
     // 3. 查找用户
@@ -401,14 +406,14 @@ export class AuthService {
       where: { email, deleted_at: null }
     });
     if (!user) {
-      throw new AuthError("用户不存在", BizCode.EMAIL_NOT_EXISTS);
+      throw new AuthError("用户不存在", 404, BizCode.EMAIL_NOT_EXISTS);
     }
 
     // 4. 更新密码
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.fastify.prisma.user.update({
       where: { id: user.id },
-      data: { password_hash: passwordHash }
+      data: { password_hash: passwordHash, password_updated_at: new Date() }
     });
 
     // 5. 使该用户所有旧 Token 失效 & 清除认证缓存
@@ -426,7 +431,7 @@ export class AuthService {
     // 1. 从 Redis 取出验证码
     const stored = await this.fastify.redis.get(`${VERIFY_CODE_PREFIX}${email}`);
     if (!stored) {
-      throw new AuthError("验证码已过期，请重新获取", BizCode.VERIFY_CODE_EXPIRED);
+      throw new AuthError("验证码已过期，请重新获取", 400, BizCode.VERIFY_CODE_EXPIRED);
     }
 
     let storedCode2: string;
@@ -436,33 +441,35 @@ export class AuthService {
       storedCode2 = parsed.code;
       type2 = parsed.type;
     } catch {
-      throw new AuthError("验证码无效，请重新获取", BizCode.VERIFY_CODE_INVALID);
+      throw new AuthError("验证码无效，请重新获取", 400, BizCode.VERIFY_CODE_INVALID);
     }
     if (type2 !== "register") {
-      throw new AuthError("验证码类型错误", BizCode.VERIFY_CODE_INVALID);
+      throw new AuthError("验证码类型错误", 400, BizCode.VERIFY_CODE_INVALID);
     }
     if (storedCode2 !== code) {
-      throw new AuthError("验证码错误", BizCode.VERIFY_CODE_INVALID);
+      throw new AuthError("验证码错误", 400, BizCode.VERIFY_CODE_INVALID);
     }
 
-    // 2. 删除已使用的验证码
+    // 2. 删除已使用的验证码（注册验证）
     await this.fastify.redis.del(`${VERIFY_CODE_PREFIX}${email}`);
 
-    // 3. 创建用户
+    // 3. 事务：创建用户 + 添加普通用户角色，避免孤儿用户
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await this.fastify.prisma.user.create({
-      data: {
-        email,
-        password_hash: passwordHash,
-        username: username ?? email.split("@")[0],
-        role: "user",
-        status: 1
-      }
-    });
-
-    // 4. 添加普通用户角色
-    await this.fastify.prisma.userRole.create({
-      data: { user_id: user.id, role_code: "user" }
+    const user = await this.fastify.prisma.$transaction(async tx => {
+      const newUser = await tx.user.create({
+        data: {
+          email,
+          password_hash: passwordHash,
+          username: username ?? email.split("@")[0],
+          role: "user",
+          status: 1,
+          password_updated_at: new Date()
+        }
+      });
+      await tx.userRole.create({
+        data: { user_id: newUser.id, role_code: "user" }
+      });
+      return newUser;
     });
 
     // 5. 生成 Token
@@ -537,7 +544,8 @@ export class AuthService {
         email: user.email,
         username: user.username,
         role
-      }
+      },
+      requirePasswordChange: !user.password_updated_at
     };
   }
 

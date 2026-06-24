@@ -20,7 +20,13 @@ export type { AvatarUploadResult } from "./profile/avatar.service.js";
 export { default as profileRoutes } from "./profile/profile.routes.js";
 
 export { AdminService } from "./admin/admin.service.js";
-export type { CreateUserInput, UpdateUserInput, UserListQuery } from "./admin/admin.service.js";
+export type {
+  CreateUserInput,
+  UpdateUserInput,
+  UserListQuery,
+  BanUserResult,
+  UnbanUserResult
+} from "./admin/admin.service.js";
 export { default as adminRoutes } from "./admin/admin.routes.js";
 
 export { UserService } from "./user-crud/user-crud.service.js";
@@ -45,7 +51,8 @@ export {
   createUserSchema,
   updateUserSchema,
   userListQuerySchema,
-  updateSmtpConfigSchema
+  updateSmtpConfigSchema,
+  banUserSchema
 } from "./schemas/user.schemas.js";
 export type {
   LoginInput,
@@ -58,5 +65,6 @@ export type {
   BindEmailInput,
   ChangePasswordInput,
   UserListQueryInput,
-  UpdateSmtpConfigInput
+  UpdateSmtpConfigInput,
+  BanUserInput
 } from "./schemas/user.schemas.js";

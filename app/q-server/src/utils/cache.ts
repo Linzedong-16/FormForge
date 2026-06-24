@@ -159,6 +159,12 @@ export const CacheKeys = {
   /** 用户列表页缓存前缀（用于模糊匹配批量失效） */
   userListPrefix: "user:list:",
 
+  // ─── 用户封禁模块 ──────────────────────────────────────────
+  /** 用户封禁黑名单（value 任意非空字符串，TTL = 封禁期限） */
+  userBanStatus: (userId: string) => `user:ban:${userId}`,
+  /** 用户首次登录标记（value = "1"，TTL = 7天） */
+  userFirstLogin: (userId: string) => `user:first_login:${userId}`,
+
   // ─── 用户资料模块 ──────────────────────────────────────────
   /** 用户资料（含 UserProfile 全部字段） */
   userProfile: (userId: string) => `user:profile:${userId}`,

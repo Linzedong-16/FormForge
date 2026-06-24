@@ -332,11 +332,12 @@ export class ProfileService {
       throw new ValidationError("新密码不能与当前密码相同", BizCode.PASSWORD_SAME_AS_CURRENT);
     }
 
-    // 4. 更新密码
+    // 4. 更新密码 & 标记改密时间
     const passwordHash = await bcrypt.hash(newPassword, 10);
+    const now = new Date();
     await this.fastify.prisma.user.update({
       where: { id: userId },
-      data: { password_hash: passwordHash }
+      data: { password_hash: passwordHash, password_updated_at: now }
     });
 
     // 5. 使当前用户所有 Token 失效 & 清除认证缓存
