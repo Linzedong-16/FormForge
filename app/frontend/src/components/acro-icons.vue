@@ -24,7 +24,11 @@ import {
   IconInfo,
   IconBook,
   IconUser,
-  IconSettings
+  IconSettings,
+  IconUserGroup,
+  IconList,
+  IconSafe,
+  IconSend
 } from "@arco-design/web-vue/es/icon";
 import { computed } from "vue";
 
@@ -48,7 +52,11 @@ const iconMap = {
   info: IconInfo,
   book: IconBook,
   user: IconUser,
-  settings: IconSettings
+  settings: IconSettings,
+  userGroup: IconUserGroup,
+  list: IconList,
+  safe: IconSafe,
+  send: IconSend
 };
 
 type IconProps = {

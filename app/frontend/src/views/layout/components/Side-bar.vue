@@ -3,8 +3,10 @@
     :style="{ width: '100%', height: '100%' }"
     :inline-collapsed="isCollapsed"
     :selected-keys="selectedKeys"
+    :open-keys="openKeys"
     style="border-right: 0"
     mode="vertical"
+    @update:open-keys="onOpenKeysChange"
   >
     <!-- 遍历路由配置，自动生成导航菜单项 -->
     <div v-for="route in routes" :key="route.path">
@@ -20,7 +22,11 @@
         <template #icon>
           <acro-icons :icon="(route.meta?.icon as any) || 'home'" />
         </template>
-        <template #title>{{ route?.meta?.title }}</template>
+        <template #title>
+          <span @click.stop="handlePush((route.path + '/' + (route.children?.[0]?.path || '')).replace(/\/+/g, '/'))">
+            {{ route?.meta?.title }}
+          </span>
+        </template>
         <a-menu-item
           v-for="child in route.children"
           :key="child.path"
@@ -53,6 +59,31 @@ const selectedKeys = computed(() => {
   const path = currentRoute.path;
   return [path === "/" ? "" : path];
 });
+
+// 计算当前应展开的子菜单 key
+const manualOpenKeys = ref<string[]>([]);
+
+const openKeys = computed(() => {
+  const path = currentRoute.path;
+  const autoKeys: string[] = [];
+  for (const route of childrenRoutes) {
+    if (route.children?.length) {
+      const prefix = `sub-${route.path}`;
+      for (const child of route.children) {
+        const childPath = (route.path + "/" + child.path).replace(/\/+/g, "/");
+        if (path === childPath || path.startsWith(childPath + "/")) {
+          autoKeys.push(prefix);
+        }
+      }
+    }
+  }
+  // 合并自动展开 + 手动展开（自动优先）
+  return [...new Set([...autoKeys, ...manualOpenKeys.value])];
+});
+
+function onOpenKeysChange(keys: string[]) {
+  manualOpenKeys.value = keys;
+}
 
 // 定义属性
 const props = defineProps<{

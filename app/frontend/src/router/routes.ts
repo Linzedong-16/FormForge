@@ -62,13 +62,27 @@ export const childrenRoutes: RouteRecordRaw[] = [
     }
   },
   {
-    path: "/survey-preview",
-    name: "surveyPreview",
-    component: () => import("../views/survey-preview/SurveyPreviewView.vue"),
+    path: "/survey-management",
+    name: "surveyManagement",
+    component: () => import("../views/survey-management/SurveyManagementLayout.vue"),
     meta: {
-      title: "问卷预览",
+      title: "问卷管理",
       icon: "file"
-    }
+    },
+    children: [
+      {
+        path: "audit",
+        name: "surveyAudit",
+        component: () => import("../views/survey-preview/SurveyPreviewView.vue"),
+        meta: { title: "审核管理", icon: "safe" }
+      },
+      {
+        path: "publish",
+        name: "surveyPublish",
+        component: () => import("../views/survey-publish/SurveyPublishView.vue"),
+        meta: { title: "问卷发布", icon: "send" }
+      }
+    ]
   },
   {
     path: "/system-settings",
