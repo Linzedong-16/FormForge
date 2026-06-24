@@ -86,16 +86,16 @@ model Survey {
   template_ratings TemplateRating[] // 模板评分记录
   files            SurveyFile[] // 关联的问卷文件
 
-  @@index([user_id])
   @@index([status])
   @@index([created_at])
   @@index([is_public])
   @@index([deleted_at])
-  @@index([user_id, deleted_at]) // 高频：列表查询 WHERE user_id=? AND deleted_at IS NULL
+  @@index([user_id, deleted_at, updated_at]) // 高频：列表查询 WHERE user_id=? AND deleted_at IS NULL ORDER BY updated_at DESC
   @@index([survey_type, review_status]) // 模板市场查询：WHERE survey_type='template' AND review_status='approved'
   @@index([survey_type, category]) // 按分类筛选模板
   @@index([survey_type, download_count]) // 按热门排序模板
   @@index([survey_type, rating]) // 按评分排序模板
+  @@index([deleted_at, review_status, created_at]) // 未审核问卷查询：WHERE deleted_at IS NULL AND review_status='none' ORDER BY created_at DESC
   @@map("surveys")
 }
 
@@ -331,7 +331,7 @@ model Review {
   @@index([review_type])
   @@index([status])
   @@index([submitted_at])
-  @@index([review_type, status]) // 高频：按审核类型+状态筛选
+  @@index([review_type, status, submitted_at]) // 高频：审核列表 WHERE review_type=? AND status=? ORDER BY submitted_at DESC
   @@index([survey_id, status]) // 高频：检查同一问卷是否已有审核中记录
   @@map("reviews")
 }
