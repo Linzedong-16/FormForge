@@ -11,7 +11,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ============================================================
@@ -29,6 +28,7 @@ model User {
   updated_at    DateTime  @updatedAt
   last_login_at DateTime?
   deleted_at    DateTime? // 软删除标记
+  deleted_by    BigInt?   // 删除操作人 ID
 
   // 关联关系
   surveys           Survey[]
@@ -46,6 +46,7 @@ model User {
   @@index([email])
   @@index([status])
   @@index([deleted_at])
+  @@index([deleted_by])
   @@map("users")
 }
 
