@@ -418,12 +418,10 @@ onMounted(() => {
 .template-list {
   flex: 1;
   overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  grid-auto-rows: max-content;
-  gap: 8px;
   padding-right: 4px;
-  align-content: start;
+  /* 瀑布流：CSS 多列布局，卡片高度自然变化 */
+  columns: 2;
+  column-gap: 8px;
 }
 
 .template-card {
@@ -435,6 +433,9 @@ onMounted(() => {
   background: var(--white);
   display: flex;
   flex-direction: column;
+  /* 防止卡片在列之间断裂 */
+  break-inside: avoid;
+  margin-bottom: 8px;
 
   &:hover {
     border-color: var(--primary-color);
@@ -472,8 +473,11 @@ onMounted(() => {
     color: var(--font-color-light);
     margin: 0 0 6px;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    line-height: 1.5;
   }
 
   .card-footer {
