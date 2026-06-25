@@ -28,12 +28,6 @@ export enum SurveyStatus {
 }
 
 /**
- * 问卷类型
- * 对应 surveys.survey_type：personal 个人问卷 / template 公共模板
- */
-export type SurveyType = "personal" | "template";
-
-/**
  * 审核状态
  * 对应 surveys.review_status：none 未审核 / pending 审核中 / approved 已通过 / rejected 已驳回
  */
@@ -41,7 +35,7 @@ export type ReviewStatus = "none" | "pending" | "approved" | "rejected";
 
 /**
  * 模板分类
- * 对应 surveys.category：education / market / hr / customer / event / other
+ * 对应 templates.category：education / market / hr / customer / event / other
  */
 export type TemplateCategory = "education" | "market" | "hr" | "customer" | "event" | "other";
 
@@ -126,18 +120,8 @@ export interface SurveyListItem {
   responses_count: number;
   /** 是否公开：0 私有 / 1 公开（surveys.is_public） */
   is_public: 0 | 1;
-  /** 问卷类型：personal 个人问卷 / template 公共模板（surveys.survey_type） */
-  survey_type: SurveyType;
   /** 审核状态（surveys.review_status） */
   review_status: ReviewStatus;
-  /** 模板分类（surveys.category，个人问卷为 null） */
-  category: TemplateCategory | null;
-  /** 模板封面图 URL（surveys.cover_url） */
-  cover_url: string | null;
-  /** 模板使用次数（surveys.download_count，用于热门排序） */
-  download_count: number;
-  /** 模板平均评分 0.0 ~ 5.0（surveys.rating，BigInt → string） */
-  rating: string | null;
   /** 创建时间 */
   created_at: string;
   /** 最后更新时间 */
@@ -402,4 +386,103 @@ export interface SurveyApi {
   getResponseList: { request: ResponseListQuery; response: ResponseListResponse };
   getResponseById: { request: void; response: SurveyResponseDetail };
   deleteResponse: { request: void; response: null };
+}
+
+// ============================================================
+//  10. 模板实体 — 对应 templates 表（方案B：完全解耦）
+// ============================================================
+
+/**
+ * 模板列表条目（轻量视图）
+ */
+export interface TemplateListItem {
+  /** 模板 ID（templates.id，BigInt → string） */
+  id: string;
+  /** 作者 ID（templates.user_id） */
+  user_id: string;
+  /** 模板标题 */
+  title: string;
+  /** 模板描述 */
+  description: string | null;
+  /** 模板分类 */
+  category: TemplateCategory | null;
+  /** 封面图 URL */
+  cover_url: string | null;
+  /** 使用次数（用于热门排序） */
+  download_count: number;
+  /** 平均评分 0.0 ~ 5.0 */
+  rating: string | null;
+  /** 审核状态 */
+  review_status: ReviewStatus;
+  /** 创建时间 */
+  created_at: string;
+  /** 最后更新时间 */
+  updated_at: string;
+}
+
+/**
+ * 模板详情（含组件列表）
+ */
+export interface TemplateDetail extends TemplateListItem {
+  /** 来源问卷 ID */
+  source_survey_id: string | null;
+  /** 组件列表 */
+  components: SurveyComponentDetail[];
+}
+
+// ============================================================
+//  11. 模板 API 请求/响应类型
+// ============================================================
+
+/**
+ * GET /api/templates — 模板列表查询参数
+ */
+export interface TemplateListQuery {
+  page?: number;
+  page_size?: number;
+  category?: TemplateCategory;
+  keyword?: string;
+  sort?: "newest" | "popular" | "rating";
+}
+
+/**
+ * GET /api/templates — 模板列表响应
+ */
+export interface TemplateListResponse {
+  templates: TemplateListItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/**
+ * POST /api/templates/:id/apply — 使用模板创建问卷
+ */
+export interface UseTemplateRequest {
+  /** 问卷标题（可选，默认使用模板标题） */
+  title?: string;
+}
+
+/**
+ * POST /api/templates/:id/apply — 使用模板响应
+ */
+export interface UseTemplateResponse {
+  survey_id: string;
+  title: string;
+  created_at: string;
+}
+
+/**
+ * POST /api/templates/:id/rate — 模板评分请求
+ */
+export interface RateTemplateRequest {
+  /** 评分 1-5 */
+  score: number;
+}
+
+/**
+ * POST /api/templates/:id/rate — 模板评分响应
+ */
+export interface RateTemplateResponse {
+  rating: string;
 }

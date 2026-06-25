@@ -61,12 +61,7 @@ function toSurveyListItem(survey: Record<string, unknown>): SurveyListItem {
     total_questions: survey.total_questions as number,
     responses_count: survey.responses_count as number,
     is_public: survey.is_public as SurveyListItem["is_public"],
-    survey_type: survey.survey_type as SurveyListItem["survey_type"],
     review_status: survey.review_status as SurveyListItem["review_status"],
-    category: (survey.category as SurveyListItem["category"]) ?? null,
-    cover_url: (survey.cover_url as string) ?? null,
-    download_count: survey.download_count as number,
-    rating: survey.rating != null ? String(survey.rating) : null,
     created_at: (survey.created_at as Date).toISOString(),
     updated_at: (survey.updated_at as Date).toISOString(),
     published_at: survey.published_at ? (survey.published_at as Date).toISOString() : null,
@@ -144,7 +139,6 @@ export class SurveyService {
           total_questions: countQuestions(components ?? []),
           is_public: surveyData.is_public ?? 0,
           access_code: surveyData.access_code ?? null,
-          survey_type: "personal",
           review_status: "none"
         }
       });
@@ -208,12 +202,7 @@ export class SurveyService {
             total_questions: true,
             responses_count: true,
             is_public: true,
-            survey_type: true,
             review_status: true,
-            category: true,
-            cover_url: true,
-            download_count: true,
-            rating: true,
             created_at: true,
             updated_at: true,
             published_at: true,
@@ -293,11 +282,6 @@ export class SurveyService {
       });
       if (!existing) throw new AppError("问卷不存在", 404);
 
-      // 公共模板保护
-      if (existing.survey_type === "template" && existing.review_status === "approved") {
-        throw new AppError("公共模板不可直接修改，请先复制为个人问卷", 403);
-      }
-
       // 1. 更新问卷元数据
       const updateData: Record<string, unknown> = {};
       if (surveyData.title !== undefined) updateData.title = surveyData.title;
@@ -357,20 +341,12 @@ export class SurveyService {
   //  软删除问卷
   // ============================================================
   async delete(userId: bigint, surveyId: bigint): Promise<void> {
-    let isTemplateApproved = false;
-
     await this.fastify.prisma.$transaction(async tx => {
       // 事务内查询，避免 TOCTOU 竞态
       const existing = await tx.survey.findFirst({
         where: { id: surveyId, user_id: userId, deleted_at: null }
       });
       if (!existing) throw new AppError("问卷不存在", 404);
-
-      // 公共模板：不修改远程数据库，仅返回成功让前端清除本地数据
-      if (existing.survey_type === "template" && existing.review_status === "approved") {
-        isTemplateApproved = true;
-        return;
-      }
 
       // 审核中：关闭审核记录
       if (existing.review_status === "pending") {
@@ -396,19 +372,14 @@ export class SurveyService {
     });
 
     // 审计日志（不阻塞响应）
-    createAuditLog(this.fastify, userId, "delete_survey", "survey", surveyId, {
-      is_template_approved: isTemplateApproved
-    }).catch(() => {});
+    createAuditLog(this.fastify, userId, "delete_survey", "survey", surveyId).catch(() => {});
 
     // 文件级联清理：软删除问卷后清除 MinIO 文件 + survey_files 记录
-    // 公共模板不删除文件（isTemplateApproved 为 true 时跳过）
-    if (!isTemplateApproved) {
-      const { SurveyFileService } = await import("../file/file.service.js");
-      const fileService = new SurveyFileService(this.fastify);
-      fileService.cleanupBySurvey(surveyId).catch(err => {
-        this.fastify.log.warn({ err, surveyId: String(surveyId) }, "问卷删除后文件级联清理失败");
-      });
-    }
+    const { SurveyFileService } = await import("../file/file.service.js");
+    const fileService = new SurveyFileService(this.fastify);
+    fileService.cleanupBySurvey(surveyId).catch(err => {
+      this.fastify.log.warn({ err, surveyId: String(surveyId) }, "问卷删除后文件级联清理失败");
+    });
 
     await this.invalidateCache(surveyId, userId);
   }
@@ -582,10 +553,10 @@ export class SurveyService {
    *   - 问卷必须已通过问卷审核（review_status === "approved"）
    *   - 同一问卷不能有进行中的模板审核
    *
-   * 流程：
-   *   1. 创建模板审核记录（review_type = "template", status = "pending"）
-   *   2. 保存分类信息到问卷
-   *   3. 若提供组件，同步更新
+   * 流程（方案B：完全解耦）：
+   *   1. 不修改问卷的 survey_type（问卷保持独立）
+   *   2. 创建模板审核记录（review_type = "template", status = "pending"）
+   *   3. 审核通过后，在 templates 表创建独立记录
    */
   async applyTemplate(userId: bigint, surveyId: bigint, input: ApplyTemplateInput): Promise<ApplyTemplateResponse> {
     const existing = await this.fastify.prisma.survey.findFirst({
@@ -607,32 +578,19 @@ export class SurveyService {
         throw new AppError("该问卷已有模板审核中的申请", 409);
       }
 
-      // 1. 更新问卷分类 + 组件
-      const updateData: Record<string, unknown> = {
-        category: input.category,
-        is_public: 1
-      };
-      if (input.components && input.components.length > 0) {
-        updateData.total_questions = countQuestions(input.components);
-      }
-
-      await tx.survey.update({
-        where: { id: surveyId, user_id: userId },
-        data: updateData
-      });
-
-      // 2. 若有组件更新，同步保存
+      // 1. 若有组件更新，同步保存
       if (input.components && input.components.length > 0) {
         await this.replaceComponents(tx, surveyId, input.components);
       }
 
-      // 3. 创建模板审核记录
+      // 2. 创建模板审核记录（关联问卷，待审核通过后创建模板）
       return tx.review.create({
         data: {
           survey_id: surveyId,
           submitter_id: userId,
           review_type: "template",
           status: "pending",
+          category: input.category,
           submit_message: input.submit_message ?? null
         }
       });

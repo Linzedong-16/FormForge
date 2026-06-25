@@ -26,7 +26,14 @@ import type {
   ResponseListQuery,
   ResponseListResponse,
   SurveyResponseDetail,
-  AnswerItem
+  AnswerItem,
+  TemplateListQuery,
+  TemplateListResponse,
+  TemplateDetail,
+  UseTemplateRequest,
+  UseTemplateResponse,
+  RateTemplateRequest,
+  RateTemplateResponse
 } from "@common/survey/survey.interface";
 import serverClient from "../../clients/server";
 
@@ -385,6 +392,36 @@ export const getComponentMap = (
  */
 export { createAIGenerateStream, createAIPolishStream } from "monorepo-sse-client/ai";
 export type { AIGenerateStreamOptions, AIPolishStreamOptions, AIPolishResult } from "monorepo-sse-client/ai";
+
+// ============================================================
+// 模板 API（方案B：完全解耦）
+// ============================================================
+
+/**
+ * GET /api/templates — 模板市场列表
+ */
+export const getTemplateList = (params?: TemplateListQuery): Promise<ApiResponse<TemplateListResponse>> =>
+  serverClient.get("/templates", { params });
+
+/**
+ * GET /api/templates/:id — 模板详情
+ */
+export const getTemplateDetail = (templateId: string): Promise<ApiResponse<TemplateDetail>> =>
+  serverClient.get(`/templates/${templateId}`);
+
+/**
+ * POST /api/templates/:id/apply — 使用模板创建问卷
+ */
+export const useTemplate = (templateId: string, data?: UseTemplateRequest): Promise<ApiResponse<UseTemplateResponse>> =>
+  serverClient.post(`/templates/${templateId}/apply`, data ?? {});
+
+/**
+ * POST /api/templates/:id/rate — 模板评分
+ */
+export const rateTemplate = (
+  templateId: string,
+  data: RateTemplateRequest
+): Promise<ApiResponse<RateTemplateResponse>> => serverClient.post(`/templates/${templateId}/rate`, data);
 
 // ============================================================
 // 类型再导出（供外部模块按需直接引用）

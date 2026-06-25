@@ -49,8 +49,8 @@
           <span class="info-value">{{ detail.submitter_name }}</span>
           <a-divider direction="vertical" />
           <span class="info-label">问卷类型：</span>
-          <a-tag :color="detail.survey_type === 'template' ? 'arcoblue' : 'gray'" size="small">
-            {{ detail.survey_type === "template" ? "模板问卷" : "个人问卷" }}
+          <a-tag :color="detail.review_type === 'template' ? 'arcoblue' : 'gray'" size="small">
+            {{ detail.review_type === "template" ? "模板问卷" : "个人问卷" }}
           </a-tag>
           <a-divider direction="vertical" />
           <span class="info-label">审核状态：</span>

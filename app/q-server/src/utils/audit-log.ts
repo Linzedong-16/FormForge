@@ -10,6 +10,7 @@
 import { appendFile } from "node:fs/promises";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
+import type { InputJsonValue } from "@prisma/client/runtime/client";
 
 // ─── 降级文件配置 ──────────────────────────────────────────
 
@@ -50,7 +51,7 @@ export async function createAuditLog(
         action,
         resource_type: resourceType,
         resource_id: resourceId,
-        details: details as unknown as import("@prisma/client/runtime/library").InputJsonValue
+        details: details as InputJsonValue
       }
     });
   } catch {

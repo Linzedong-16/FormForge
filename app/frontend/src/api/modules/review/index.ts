@@ -47,12 +47,12 @@ export const REVIEW_STATUS_COLORS: Record<ReviewStatus, string> = {
   rejected: "red"
 };
 
-/** 审核列表项（对应后端 ReviewListItem） */
+/** 审核列表项（对应后端 ReviewListItem，方案B：模板解耦） */
 export interface ReviewListItem {
   review_id: string;
-  survey_id: string;
+  survey_id: string | null;
+  template_id: string | null;
   survey_title: string;
-  survey_type: "personal" | "template";
   category: string | null;
   submitter_name: string;
   review_type: ReviewType;
@@ -61,13 +61,13 @@ export interface ReviewListItem {
   submitted_at: string;
 }
 
-/** 审核详情（对应后端 ReviewDetail） */
+/** 审核详情（对应后端 ReviewDetail，方案B：模板解耦） */
 export interface ReviewDetail {
   review_id: string;
-  survey_id: string;
+  survey_id: string | null;
+  template_id: string | null;
   survey_title: string;
   survey_description: string | null;
-  survey_type: "personal" | "template";
   category: string | null;
   submitter_id: string;
   submitter_name: string;
@@ -95,7 +95,7 @@ export interface ReviewComponentItem {
 export interface ReviewListQuery {
   review_type?: ReviewType;
   status?: ReviewStatus;
-  survey_type?: "personal" | "template";
+  category?: string;
   page?: number;
   page_size?: number;
 }

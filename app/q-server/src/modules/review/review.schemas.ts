@@ -21,7 +21,7 @@ export const reviewIdSchema = z
 export const reviewListQuerySchema = z.object({
   review_type: z.enum(["survey", "template"]).default("survey"),
   status: z.enum(["none", "pending", "approved", "rejected"]).default("pending"),
-  survey_type: z.enum(["personal", "template"]).optional(),
+  category: z.enum(["education", "market", "hr", "customer", "event", "other"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   page_size: z.coerce.number().int().min(1).max(100).default(10)
 });

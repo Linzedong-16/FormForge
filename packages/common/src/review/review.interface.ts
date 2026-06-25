@@ -10,13 +10,13 @@
 //   - 请求/响应类型与后端 Zod Schema 一一对应
 // ──────────────────────────────────────────────────────────────────────────────
 
-import type { ReviewStatus, SurveyType } from "../survey/survey.interface.js";
+import type { ReviewStatus } from "../survey/survey.interface.js";
 
 // ============================================================
-//  1. 审核状态 / 问卷类型 / 审核类型 — 复用 survey 模块定义
+//  1. 审核状态 / 审核类型 — 复用 survey 模块定义
 // ============================================================
 
-export type { ReviewStatus, SurveyType };
+export type { ReviewStatus };
 
 /** 审核类型：survey = 问卷审核, template = 模板审核 */
 export type ReviewType = "survey" | "template";
@@ -32,13 +32,13 @@ export type ReviewType = "survey" | "template";
 export interface ReviewListItem {
   /** 审核记录 ID（reviews.id，BigInt → string） */
   review_id: string;
-  /** 问卷 ID（reviews.survey_id） */
-  survey_id: string;
-  /** 问卷标题（surveys.title） */
+  /** 问卷 ID（reviews.survey_id，问卷审核时） */
+  survey_id: string | null;
+  /** 模板 ID（reviews.template_id，模板审核时） */
+  template_id: string | null;
+  /** 问卷/模板标题 */
   survey_title: string;
-  /** 问卷类型：personal / template */
-  survey_type: SurveyType;
-  /** 模板分类（仅 template 时有值） */
+  /** 模板分类（仅模板审核时有值） */
   category: string | null;
   /** 提交者用户名（users.username） */
   submitter_name: string;
@@ -62,14 +62,14 @@ export interface ReviewListItem {
 export interface ReviewDetail {
   /** 审核记录 ID */
   review_id: string;
-  /** 问卷 ID */
-  survey_id: string;
-  /** 问卷标题 */
+  /** 问卷 ID（问卷审核时） */
+  survey_id: string | null;
+  /** 模板 ID（模板审核时） */
+  template_id: string | null;
+  /** 问卷/模板标题 */
   survey_title: string;
-  /** 问卷描述 */
+  /** 问卷/模板描述 */
   survey_description: string | null;
-  /** 问卷类型 */
-  survey_type: SurveyType;
   /** 模板分类 */
   category: string | null;
   /** 提交者 ID */
@@ -92,7 +92,7 @@ export interface ReviewDetail {
   submitted_at: string;
   /** 审核完成时间（ISO 8601，审核前为 null） */
   reviewed_at: string | null;
-  /** 问卷题目组件列表 */
+  /** 问卷/模板题目组件列表 */
   components: ReviewComponentItem[];
 }
 
@@ -118,7 +118,7 @@ export interface ReviewComponentItem {
 export interface ReviewListQuery {
   review_type?: ReviewType;
   status?: ReviewStatus;
-  survey_type?: SurveyType;
+  category?: string;
   page?: number;
   page_size?: number;
 }

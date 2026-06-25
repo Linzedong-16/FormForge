@@ -280,7 +280,6 @@ async function fetchRemoteList() {
       title: string;
       updated_at: string;
       status: number;
-      survey_type: string;
       review_status: string;
     }> = [];
     const downloadTasks: Array<() => Promise<void>> = [];
@@ -293,10 +292,8 @@ async function fetchRemoteList() {
       hasMore = page * pageSize < res.data.total;
       page++;
 
-      // 仅同步个人问卷，跳过模板；收集需要下载的问卷
+      // 所有问卷均为个人问卷（模板已解耦到独立的 templates 表）
       for (const remote of res.data.surveys) {
-        if (remote.survey_type !== "personal") continue;
-
         const localRecord = localMap.get(remote.id);
         const remoteUpdatedAt = new Date(remote.updated_at).getTime();
 
