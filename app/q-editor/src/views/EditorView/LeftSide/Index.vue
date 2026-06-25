@@ -24,7 +24,13 @@
         <span class="tab-item-title mt-5">{{ t("editor.outline") }}</span>
       </div>
       <!-- 模板市场 -->
-      <div class="tab-item" @click="switchTemplateMarket">
+      <div
+        class="tab-item"
+        :class="{
+          'tab-show': routeName === 'template-market'
+        }"
+        @click="switchTemplateMarket"
+      >
         <el-icon><Shop /></el-icon>
         <span class="tab-item-title mt-5">{{ t("editor.templateMarket") }}</span>
       </div>
@@ -54,7 +60,7 @@ const switchOutline = () => {
 };
 
 const switchTemplateMarket = () => {
-  // TODO: 跳转模板市场路由
+  router.push({ name: "template-market" });
 };
 </script>
 
@@ -69,7 +75,8 @@ const switchTemplateMarket = () => {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
   > .tabs {
-    width: 20%;
+    flex-shrink: 0;
+    width: 60px;
     height: 100%;
     border-right: 1px solid var(--border-color);
     > .tab-item {
@@ -91,11 +98,16 @@ const switchTemplateMarket = () => {
     }
   }
   > .tab-pane {
-    width: 80%;
+    flex: 1;
     // 高度需要减去padding部分，否则会溢出
     height: calc(100% - 50px);
     padding: 25px;
-    overflow-y: scroll;
+    overflow-y: auto;
+    /* 隐藏滚动条，保持滚动功能 */
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    scrollbar-width: none; /* Firefox */
   }
 }
 </style>

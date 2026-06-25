@@ -245,6 +245,7 @@ export function createAppRouter(base = "/"): Router {
           if (!to.params.id) {
             return { name: "survey-type" };
           }
+          return to.path;
         },
         children: [
           {
@@ -256,6 +257,11 @@ export function createAppRouter(base = "/"): Router {
             path: "outline",
             name: "outline",
             component: () => import("@/views/EditorView/LeftSide/Outline.vue")
+          },
+          {
+            path: "template-market",
+            name: "template-market",
+            component: () => import("@/views/EditorView/LeftSide/TemplateMarket.vue")
           }
         ]
       },

@@ -4,24 +4,33 @@
       <Header :id="id" :is-editor="true" />
     </div>
     <!-- 编辑器主体区域 -->
-    <div class="container">
+    <div class="container" :class="{ 'center-hidden': !centerVisible }">
       <LeftSide />
       <RightSide />
     </div>
-    <div>
+    <div v-show="centerVisible">
       <Center />
+    </div>
+
+    <!-- 居中视图切换按钮 -->
+    <div class="center-toggle" @click="centerVisible = !centerVisible">
+      <el-icon :size="16">
+        <ArrowLeft v-if="centerVisible" />
+        <ArrowRight v-else />
+      </el-icon>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide } from "vue";
+import { onMounted, onUnmounted, provide, ref, watch } from "vue";
 import Header from "@/components/Common/Header.vue";
 import LeftSide from "@/views/EditorView/LeftSide/Index.vue";
 import Center from "@/views/EditorView/Center.vue";
 import RightSide from "@/views/EditorView/RightSide.vue";
 import { computed } from "vue";
 import { useRoute, onBeforeRouteLeave } from "vue-router";
+import { ArrowLeft, ArrowRight } from "@element-plus/icons-vue";
 import { getSurveyById, updateSurveyById } from "@/db/operation";
 import { restoreComponentStatus } from "@/utils";
 import { ElMessage, ElMessageBox } from "element-plus";
@@ -37,6 +46,20 @@ import { useEditorStore } from "@/stores/useEditor";
 const store = useEditorStore();
 
 const id = computed(() => (route.params.id ? String(route.params.id) : ""));
+
+// ─── 居中视图显隐控制 ──────────────────────────────────────────
+const centerVisible = ref(true);
+// 进入模板市场时自动隐藏居中视图，切换回其他 Tab 时恢复
+watch(
+  () => route.name,
+  name => {
+    if (name === "template-market") {
+      centerVisible.value = false;
+    } else if (name === "survey-type" || name === "outline") {
+      centerVisible.value = true;
+    }
+  }
+);
 
 // ─── 快捷键保存处理 ──────────────────────────────────────────
 
@@ -271,5 +294,35 @@ onUnmounted(() => {
   background-color: var(--white);
   position: fixed;
   top: 50px;
+}
+
+/* 居中视图隐藏时，左侧面板宽度翻倍 */
+.center-hidden {
+  --editor-left-width: calc(300px * 2);
+}
+
+/* 居中视图切换按钮 */
+.center-toggle {
+  position: fixed;
+  right: calc(var(--editor-right-width) + var(--editor-gap) + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 11;
+  width: 28px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--border-color);
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: var(--font-color-light);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--primary-color);
+  }
 }
 </style>

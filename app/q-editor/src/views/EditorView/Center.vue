@@ -216,6 +216,11 @@ const removeCom = (index: number) => {
   position: relative;
   overflow: auto;
   max-height: calc(100vh - 140px); /* 70px margin top + 70px margin bottom */
+  /* 隐藏滚动条 */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  scrollbar-width: none; /* Firefox */
   .content {
     cursor: pointer;
     padding: 10px;
