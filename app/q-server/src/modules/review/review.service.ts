@@ -15,6 +15,8 @@
 
 import type { FastifyInstance } from "fastify";
 import { createAuditLog } from "../../utils/audit-log.js";
+import { createCache, CacheKeys } from "../../utils/cache.js";
+import type { CacheClient } from "../../utils/cache.js";
 import { AppError } from "../../utils/errors.js";
 import type { ReviewListQueryInput, ApproveReviewInput, RejectReviewInput } from "./review.schemas.js";
 import type {
@@ -61,7 +63,17 @@ function toReviewListItem(row: Record<string, unknown>): ReviewListItem {
 // ─── Service 类 ────────────────────────────────────────────────
 
 export class ReviewService {
-  constructor(private readonly fastify: FastifyInstance) {}
+  private readonly cache: CacheClient;
+
+  constructor(private readonly fastify: FastifyInstance) {
+    this.cache = createCache(fastify);
+  }
+
+  /** 审核操作后清除问卷列表缓存，确保前端查询时获取最新审核状态 */
+  private async invalidateSurveyCache(surveyId: bigint, userId: bigint): Promise<void> {
+    await this.cache.del(CacheKeys.surveyDetail(bigIntToStr(surveyId)));
+    await this.cache.delByPattern(CacheKeys.surveyListPattern(bigIntToStr(userId)));
+  }
 
   // ============================================================
   //  审核列表查询
@@ -294,6 +306,12 @@ export class ReviewService {
   async approveReview(adminId: bigint, reviewId: bigint, input: ApproveReviewInput): Promise<ReviewActionResponse> {
     this.fastify.log.info({ adminId: bigIntToStr(adminId), reviewId: bigIntToStr(reviewId) }, "[review] 审核通过请求");
 
+    // 提前读取 survey_id + submitter_id，用于审核后清除缓存
+    const preRead = await this.fastify.prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { survey_id: true, submitter_id: true }
+    });
+
     const review = await this.fastify.prisma.$transaction(async tx => {
       const existing = await tx.review.findUnique({ where: { id: reviewId } });
       if (!existing) {
@@ -385,6 +403,11 @@ export class ReviewService {
       comment: input.review_comment
     }).catch(() => {});
 
+    // 清除问卷缓存：审核后 survey.review_status 已更新，需让前端查询获取最新状态
+    if (preRead?.survey_id && preRead?.submitter_id) {
+      this.invalidateSurveyCache(preRead.survey_id, preRead.submitter_id).catch(() => {});
+    }
+
     this.fastify.log.info({ reviewId: bigIntToStr(reviewId), status: "approved" }, "[review] 审核通过完成");
 
     return {
@@ -408,6 +431,11 @@ export class ReviewService {
    */
   async rejectReview(adminId: bigint, reviewId: bigint, input: RejectReviewInput): Promise<ReviewActionResponse> {
     this.fastify.log.info({ adminId: bigIntToStr(adminId), reviewId: bigIntToStr(reviewId) }, "[review] 审核驳回请求");
+
+    const preRead = await this.fastify.prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { survey_id: true, submitter_id: true }
+    });
 
     const review = await this.fastify.prisma.$transaction(async tx => {
       const existing = await tx.review.findUnique({ where: { id: reviewId } });
@@ -450,6 +478,11 @@ export class ReviewService {
       template_id: review.template_id ? bigIntToStr(review.template_id) : null,
       comment: input.review_comment
     }).catch(() => {});
+
+    // 清除问卷缓存
+    if (preRead?.survey_id && preRead?.submitter_id) {
+      this.invalidateSurveyCache(preRead.survey_id, preRead.submitter_id).catch(() => {});
+    }
 
     this.fastify.log.info({ reviewId: bigIntToStr(reviewId), status: "rejected" }, "[review] 审核驳回完成");
 
