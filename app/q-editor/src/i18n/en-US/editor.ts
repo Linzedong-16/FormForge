@@ -246,5 +246,38 @@ export default {
   aiPolishFailed: "AI Polish Failed",
   aiPolishApplyConfirm: "Polish result will completely replace the current survey content. Continue?",
   aiPolishApplyTitle: "Confirm Apply",
-  aiPolishApplySuccess: "Polish result applied"
+  aiPolishApplySuccess: "Polish result applied",
+
+  // Template Market
+  template: {
+    searchPlaceholder: "Search templates...",
+    categoryAll: "All",
+    categoryEducation: "Education",
+    categoryMarket: "Market Research",
+    categoryHr: "Human Resources",
+    categoryCustomer: "Customer Service",
+    categoryEvent: "Events",
+    categoryOther: "Other",
+    sortLabel: "Sort",
+    sortNewest: "Latest",
+    sortPopular: "Popular",
+    sortRating: "Rating",
+    loading: "Loading...",
+    retry: "Retry",
+    emptyHint: "No templates available",
+    fetchFailed: "Failed to load templates",
+    fetchDetailFailed: "Failed to load template detail",
+    noDescription: "No description",
+    noComponents: "Template has no components",
+    useCount: "uses",
+    componentPreview: "Component Preview",
+    required: "Required",
+    useTemplate: "Use This Template",
+    yourRating: "Rate",
+    useTemplateSuccess: "Template applied to editor",
+    useTemplateFailed: "Failed to apply template",
+    rateSuccess: "Rated successfully",
+    rateFailed: "Failed to rate",
+    detailTitle: "Template Detail"
+  }
 };

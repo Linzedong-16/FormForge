@@ -77,6 +77,7 @@ export default {
     fetchFailed: "获取模板列表失败",
     fetchDetailFailed: "获取模板详情失败",
     noDescription: "暂无描述",
+    noComponents: "模板无可用组件",
     useCount: "次使用",
     componentPreview: "组件预览",
     required: "必填",

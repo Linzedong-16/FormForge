@@ -245,5 +245,38 @@ export default {
   aiPolishFailed: "ブラッシュアップ失敗",
   aiPolishApplyConfirm: "ブラッシュアップ結果は現在のアンケート内容を完全に置き換えます。続行しますか？",
   aiPolishApplyTitle: "適用確認",
-  aiPolishApplySuccess: "ブラッシュアップ結果を適用しました"
+  aiPolishApplySuccess: "ブラッシュアップ結果を適用しました",
+
+  // テンプレート市場
+  template: {
+    searchPlaceholder: "テンプレートを検索...",
+    categoryAll: "すべて",
+    categoryEducation: "教育",
+    categoryMarket: "市場調査",
+    categoryHr: "人事",
+    categoryCustomer: "顧客サービス",
+    categoryEvent: "イベント",
+    categoryOther: "その他",
+    sortLabel: "並び替え",
+    sortNewest: "最新",
+    sortPopular: "人気",
+    sortRating: "評価",
+    loading: "読み込み中...",
+    retry: "再試行",
+    emptyHint: "テンプレートがありません",
+    fetchFailed: "テンプレートの取得に失敗しました",
+    fetchDetailFailed: "テンプレート詳細の取得に失敗しました",
+    noDescription: "説明なし",
+    noComponents: "テンプレートにコンポーネントがありません",
+    useCount: "回使用",
+    componentPreview: "コンポーネントプレビュー",
+    required: "必須",
+    useTemplate: "このテンプレートを使用",
+    yourRating: "評価",
+    useTemplateSuccess: "テンプレートをエディタに適用しました",
+    useTemplateFailed: "テンプレートの適用に失敗しました",
+    rateSuccess: "評価しました",
+    rateFailed: "評価に失敗しました",
+    detailTitle: "テンプレート詳細"
+  }
 };
