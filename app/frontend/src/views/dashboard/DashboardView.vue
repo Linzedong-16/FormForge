@@ -133,7 +133,7 @@
               <template #icon><icon-history /></template>
               日志审计
             </a-button>
-            <a-button type="outline" @click="$router.push('/statistics')">
+            <a-button type="outline" @click="$router.push('/survey-management/statistics')">
               <template #icon><icon-cloud /></template>
               答卷统计
             </a-button>

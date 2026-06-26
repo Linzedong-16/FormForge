@@ -44,15 +44,6 @@ export const childrenRoutes: RouteRecordRaw[] = [
     }
   },
   {
-    path: "/statistics",
-    name: "statistics",
-    component: () => import("../views/statistics/SurveyStatisticsView.vue"),
-    meta: {
-      title: "答卷统计",
-      icon: "cloud"
-    }
-  },
-  {
     path: "/api-tokens",
     name: "apiTokens",
     component: () => import("../views/api-tokens/ApiTokensView.vue"),
@@ -81,6 +72,12 @@ export const childrenRoutes: RouteRecordRaw[] = [
         name: "surveyPublish",
         component: () => import("../views/survey-publish/SurveyPublishView.vue"),
         meta: { title: "问卷发布", icon: "send" }
+      },
+      {
+        path: "statistics",
+        name: "surveyStatistics",
+        component: () => import("../views/statistics/SurveyStatisticsView.vue"),
+        meta: { title: "答卷统计", icon: "cloud" }
       }
     ]
   },

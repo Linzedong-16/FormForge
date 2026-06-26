@@ -76,7 +76,7 @@ const surveyCrudRoutes: FastifyPluginAsync = async fastify => {
       const query = parseQueryAndRespond(surveyListQuerySchema.safeParse(request.query), reply);
       if (!query) return;
 
-      const result = await surveyService.list(request.user!.userId, query);
+      const result = await surveyService.list(request.user!.userId, query, request.user!.role);
       return reply.sendSuccess(result);
     }
   );

@@ -190,13 +190,16 @@ export class SurveyService {
   // ============================================================
   //  问卷列表
   // ============================================================
-  async list(userId: bigint, query: SurveyListQueryInput): Promise<SurveyListResponse> {
+  async list(userId: bigint, query: SurveyListQueryInput, role?: string): Promise<SurveyListResponse> {
     const { page, page_size, status, keyword } = query;
 
+    // 超级管理员可查看所有用户的问卷，普通用户仅查看自己的
     const where: Record<string, unknown> = {
-      user_id: userId,
       deleted_at: null
     };
+    if (!role || role !== "super_admin") {
+      where.user_id = userId;
+    }
     if (status !== undefined) where.status = status;
     if (keyword) where.title = { contains: keyword };
 

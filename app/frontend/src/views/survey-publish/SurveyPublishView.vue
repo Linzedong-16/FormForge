@@ -20,7 +20,6 @@
           <a-option value="draft">草稿</a-option>
           <a-option value="published">已发布</a-option>
           <a-option value="offline">已下线</a-option>
-          <a-option value="archived">已归档</a-option>
         </a-select>
         <a-divider direction="vertical" />
         <a-input-search
@@ -42,45 +41,59 @@
 
     <!-- 问卷列表表格 -->
     <a-table
-      :data="filteredList"
-      :loading="false"
-      :pagination="pagination"
+      :data="surveyList"
+      :loading="loading"
+      :pagination="{
+        current: currentPage,
+        pageSize: pageSize,
+        total: total,
+        showTotal: true,
+        showPageSize: true,
+        pageSizeOptions: [10, 20, 50]
+      }"
       :stripe="true"
       :bordered="{ wrapper: true, cell: true }"
       column-resizable
       row-key="id"
       @page-change="handlePageChange"
+      @page-size-change="
+        (size: number) => {
+          pageSize = size;
+          loadSurveyList();
+        }
+      "
     >
       <template #columns>
-        <a-table-column title="问卷标题" data-index="title" :ellipsis="true" :width="260">
+        <a-table-column title="问卷 ID" data-index="id" :width="80" align="center" />
+        <a-table-column title="问卷标题" data-index="title" :ellipsis="true" :width="240">
           <template #cell="{ record }">
-            <span class="title-link">{{ record.title }}</span>
+            <span class="title-link" @click="handlePreview(record)">{{ record.title }}</span>
           </template>
         </a-table-column>
-        <a-table-column title="创建人" data-index="creator" :width="100" align="center" />
-        <a-table-column title="发布状态" :width="100" align="center">
+        <a-table-column title="创建者 ID" data-index="creator" :width="100" align="center" />
+        <a-table-column title="发布状态" :width="90" align="center">
           <template #cell="{ record }">
             <a-tag :color="statusColor(record.status)" size="small">{{ statusLabel(record.status) }}</a-tag>
           </template>
         </a-table-column>
-        <a-table-column title="题目数" data-index="questionCount" :width="80" align="center" />
+        <a-table-column title="题目数" data-index="questionCount" :width="70" align="center" />
         <a-table-column title="答卷数" data-index="responseCount" :width="80" align="center">
           <template #cell="{ record }">
             <span v-if="record.status !== 'draft'">{{ record.responseCount }}</span>
             <span v-else class="text-muted">—</span>
           </template>
         </a-table-column>
-        <a-table-column title="创建时间" :width="170" align="center">
+        <a-table-column title="创建时间" :width="160" align="center">
           <template #cell="{ record }">
             {{ formatDate(record.createdAt) }}
           </template>
         </a-table-column>
-        <a-table-column title="发布时间" :width="170" align="center">
+        <a-table-column title="发布时间" :width="160" align="center">
           <template #cell="{ record }">
             {{ formatDate(record.publishedAt) }}
           </template>
         </a-table-column>
-        <a-table-column title="操作" :width="240" align="center" fixed="right">
+        <a-table-column title="操作" :width="220" align="center" fixed="right">
           <template #cell="{ record }">
             <a-space :size="0">
               <a-button type="text" size="small" @click="handlePreview(record)">预览</a-button>
@@ -102,8 +115,15 @@
               >
                 下线
               </a-button>
-              <a-button type="text" size="small" @click="handleEdit(record)">编辑</a-button>
-              <a-button type="text" size="small" status="danger" @click="handleArchive(record)">归档</a-button>
+              <a-button
+                v-if="record.status !== 'offline'"
+                type="text"
+                size="small"
+                status="danger"
+                @click="handleArchive(record)"
+              >
+                归档
+              </a-button>
             </a-space>
           </template>
         </a-table-column>
@@ -143,176 +163,115 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, onMounted } from "vue";
 import { Message } from "@arco-design/web-vue";
 import { IconPlus } from "@arco-design/web-vue/es/icon";
+import { getSurveyList, publishSurvey, closeSurvey, deleteSurvey } from "@/api/modules/survey";
+import type { SurveyListItem, SurveyStatus } from "@common/survey/survey.interface";
 
-// ─── Mock 数据 ──────────────────────────────────────────────────
+// ─── 展示用数据类型（后端 SurveyListItem → 前端展示字段） ──────
 
-interface SurveyItem {
+/** 后端 status → 前端展示状态 */
+type DisplayStatus = "draft" | "published" | "offline";
+
+interface SurveyDisplayItem {
   id: string;
   title: string;
   creator: string;
-  status: "draft" | "published" | "offline" | "archived";
+  status: DisplayStatus;
   questionCount: number;
   responseCount: number;
   createdAt: string;
   publishedAt: string | null;
 }
 
-const mockSurveys: SurveyItem[] = [
-  {
-    id: "1",
-    title: "2025 年度员工满意度调查",
-    creator: "张管理",
-    status: "published",
-    questionCount: 25,
-    responseCount: 186,
-    createdAt: "2025-03-10T09:00:00Z",
-    publishedAt: "2025-03-12T10:30:00Z"
-  },
-  {
-    id: "2",
-    title: "客户服务体验反馈问卷",
-    creator: "李运营",
-    status: "published",
-    questionCount: 12,
-    responseCount: 432,
-    createdAt: "2025-04-05T14:20:00Z",
-    publishedAt: "2025-04-06T08:00:00Z"
-  },
-  {
-    id: "3",
-    title: "新产品功能需求调研",
-    creator: "王产品",
-    status: "draft",
-    questionCount: 18,
-    responseCount: 0,
-    createdAt: "2025-05-20T16:45:00Z",
-    publishedAt: null
-  },
-  {
-    id: "4",
-    title: "培训课程效果评估表",
-    creator: "赵培训",
-    status: "published",
-    questionCount: 10,
-    responseCount: 67,
-    createdAt: "2025-06-01T09:00:00Z",
-    publishedAt: "2025-06-02T11:00:00Z"
-  },
-  {
-    id: "5",
-    title: "团建活动意向征集",
-    creator: "钱行政",
-    status: "offline",
-    questionCount: 8,
-    responseCount: 45,
-    createdAt: "2025-05-15T10:00:00Z",
-    publishedAt: "2025-05-16T09:00:00Z"
-  },
-  {
-    id: "6",
-    title: "内部流程优化建议收集",
-    creator: "孙管理",
-    status: "draft",
-    questionCount: 6,
-    responseCount: 0,
-    createdAt: "2025-06-10T08:30:00Z",
-    publishedAt: null
-  },
-  {
-    id: "7",
-    title: "2024 年终绩效考核自评",
-    creator: "周 HR",
-    status: "archived",
-    questionCount: 30,
-    responseCount: 298,
-    createdAt: "2024-12-01T09:00:00Z",
-    publishedAt: "2024-12-05T10:00:00Z"
-  },
-  {
-    id: "8",
-    title: "秋季校招笔试测评卷",
-    creator: "吴招聘",
-    status: "published",
-    questionCount: 40,
-    responseCount: 521,
-    createdAt: "2025-09-01T09:00:00Z",
-    publishedAt: "2025-09-05T08:00:00Z"
-  },
-  {
-    id: "9",
-    title: "办公环境改善意见调查",
-    creator: "郑行政",
-    status: "offline",
-    questionCount: 15,
-    responseCount: 89,
-    createdAt: "2025-04-20T13:00:00Z",
-    publishedAt: "2025-04-21T10:00:00Z"
-  },
-  {
-    id: "10",
-    title: "供应商服务质量评估",
-    creator: "冯采购",
-    status: "draft",
-    questionCount: 22,
-    responseCount: 0,
-    createdAt: "2025-06-15T11:00:00Z",
-    publishedAt: null
-  }
-];
+/** 后端 SurveyListItem → 前端展示数据 */
+function toDisplayItem(item: SurveyListItem): SurveyDisplayItem {
+  const statusMap: Record<number, DisplayStatus> = {
+    0: "draft",
+    1: "published",
+    2: "offline"
+  };
+  return {
+    id: item.id,
+    title: item.title,
+    creator: item.user_id,
+    status: statusMap[item.status] ?? "draft",
+    questionCount: item.total_questions,
+    responseCount: item.responses_count,
+    createdAt: item.created_at,
+    publishedAt: item.published_at
+  };
+}
 
 // ─── 状态 ──────────────────────────────────────────────────────
 
-const surveyList = ref<SurveyItem[]>([...mockSurveys]);
+const surveyList = ref<SurveyDisplayItem[]>([]);
+const loading = ref(false);
 const filterStatus = ref("");
 const searchKeyword = ref("");
 const currentPage = ref(1);
 const pageSize = ref(10);
+const total = ref(0);
 
-// 发布/下线
+// 发布/下线/归档
 const publishVisible = ref(false);
 const publishing = ref(false);
 const offlineVisible = ref(false);
 const offlining = ref(false);
-const currentItem = ref<SurveyItem | null>(null);
+const currentItem = ref<SurveyDisplayItem | null>(null);
+
+// ─── 数据加载 ──────────────────────────────────────────────────
+
+/** 从后端分页加载问卷列表 */
+async function loadSurveyList() {
+  loading.value = true;
+  try {
+    // 筛选状态 → 后端 status 数字
+    let statusParam: number | undefined;
+    if (filterStatus.value === "draft") statusParam = 0;
+    else if (filterStatus.value === "published") statusParam = 1;
+    else if (filterStatus.value === "offline") statusParam = 2;
+
+    const res = await getSurveyList({
+      page: currentPage.value,
+      page_size: pageSize.value,
+      status: statusParam as SurveyStatus | undefined,
+      keyword: searchKeyword.value || undefined
+    });
+
+    if (res.code === 0 && res.data) {
+      surveyList.value = res.data.surveys.map(toDisplayItem);
+      total.value = res.data.total;
+    }
+  } catch {
+    Message.error("加载问卷列表失败");
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => {
+  loadSurveyList();
+});
 
 // ─── 筛选 ──────────────────────────────────────────────────────
 
-const filteredList = computed(() => {
-  let list = surveyList.value;
-  if (filterStatus.value) {
-    list = list.filter(item => item.status === filterStatus.value);
-  }
-  if (searchKeyword.value.trim()) {
-    const kw = searchKeyword.value.trim().toLowerCase();
-    list = list.filter(item => item.title.toLowerCase().includes(kw));
-  }
-  return list;
-});
-
-// ─── 分页 ──────────────────────────────────────────────────────
-
-const pagination = computed(() => ({
-  current: currentPage.value,
-  pageSize: pageSize.value,
-  total: filteredList.value.length,
-  showTotal: true,
-  showPageSize: true,
-  pageSizeOptions: [10, 20, 50]
-}));
-
-function handlePageChange(page: number) {
-  currentPage.value = page;
-}
-
 function handleFilterChange() {
   currentPage.value = 1;
+  loadSurveyList();
 }
 
 function handleSearch() {
   currentPage.value = 1;
+  loadSurveyList();
+}
+
+// ─── 分页 ──────────────────────────────────────────────────────
+
+function handlePageChange(page: number) {
+  currentPage.value = page;
+  loadSurveyList();
 }
 
 // ─── 状态映射 ──────────────────────────────────────────────────
@@ -321,8 +280,7 @@ function statusLabel(status: string): string {
   const map: Record<string, string> = {
     draft: "草稿",
     published: "已发布",
-    offline: "已下线",
-    archived: "已归档"
+    offline: "已下线"
   };
   return map[status] ?? status;
 }
@@ -331,8 +289,7 @@ function statusColor(status: string): string {
   const map: Record<string, string> = {
     draft: "gray",
     published: "green",
-    offline: "orange",
-    archived: "arcoblue"
+    offline: "orange"
   };
   return map[status] ?? "gray";
 }
@@ -350,61 +307,83 @@ function formatDate(val: string | null): string {
 // ─── 操作 ──────────────────────────────────────────────────────
 
 function handleCreate() {
-  Message.info("新建问卷功能待实现");
+  Message.info("新建问卷功能请在 Q-Editor 编辑器中操作");
 }
 
-function handlePreview(record: SurveyItem) {
-  Message.info(`预览问卷：《${record.title}》`);
+/** 预览问卷 — 新标签页打开 C 端填答页面 */
+function handlePreview(record: SurveyDisplayItem) {
+  if (record.status === "draft") {
+    Message.warning("草稿状态的问卷无法预览，请先发布");
+    return;
+  }
+  window.open(`/survey/${record.id}`, "_blank");
 }
 
-function handleEdit(record: SurveyItem) {
-  Message.info(`编辑问卷：《${record.title}》`);
-}
-
-function handlePublish(record: SurveyItem) {
+function handlePublish(record: SurveyDisplayItem) {
   currentItem.value = record;
   publishVisible.value = true;
 }
 
-function confirmPublish() {
+/** 确认发布 — 调用后端 API */
+async function confirmPublish() {
+  if (!currentItem.value) return;
   publishing.value = true;
-  setTimeout(() => {
-    if (currentItem.value) {
-      currentItem.value.status = "published";
-      currentItem.value.publishedAt = new Date().toISOString();
+  try {
+    const res = await publishSurvey(currentItem.value.id);
+    if (res.code === 0) {
       Message.success(`问卷「${currentItem.value.title}」已发布`);
+      loadSurveyList();
+    } else {
+      Message.error(res.msg || "发布失败");
     }
+  } catch {
+    Message.error("发布失败，请检查网络连接");
+  } finally {
     publishing.value = false;
     publishVisible.value = false;
     currentItem.value = null;
-  }, 600);
+  }
 }
 
-function handleOffline(record: SurveyItem) {
+function handleOffline(record: SurveyDisplayItem) {
   currentItem.value = record;
   offlineVisible.value = true;
 }
 
-function confirmOffline() {
+/** 确认下线 — 调用后端 API */
+async function confirmOffline() {
+  if (!currentItem.value) return;
   offlining.value = true;
-  setTimeout(() => {
-    if (currentItem.value) {
-      currentItem.value.status = "offline";
+  try {
+    const res = await closeSurvey(currentItem.value.id);
+    if (res.code === 0) {
       Message.success(`问卷「${currentItem.value.title}」已下线`);
+      loadSurveyList();
+    } else {
+      Message.error(res.msg || "下线失败");
     }
+  } catch {
+    Message.error("下线失败，请检查网络连接");
+  } finally {
     offlining.value = false;
     offlineVisible.value = false;
     currentItem.value = null;
-  }, 600);
+  }
 }
 
-function handleArchive(record: SurveyItem) {
-  if (record.status === "archived") {
-    Message.warning("该问卷已归档");
-    return;
+/** 归档 — 软删除问卷 */
+async function handleArchive(record: SurveyDisplayItem) {
+  try {
+    const res = await deleteSurvey(record.id);
+    if (res.code === 0) {
+      Message.success(`问卷「${record.title}」已归档`);
+      loadSurveyList();
+    } else {
+      Message.error(res.msg || "归档失败");
+    }
+  } catch {
+    Message.error("归档失败，请检查网络连接");
   }
-  record.status = "archived";
-  Message.success(`问卷「${record.title}」已归档`);
 }
 </script>
 
