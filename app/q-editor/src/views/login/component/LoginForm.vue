@@ -2,11 +2,26 @@
   <div class="login-form">
     <h2 class="form-title" style="text-align: center">{{ t("login.loginTitle") }}</h2>
 
-    <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" class="form-content">
+    <!--
+      语义化说明：
+        - autocomplete="email"/"current-password" → 浏览器密码管理器识别字段
+        - name="email"/"password" → 浏览器用 name 作为凭证存储键
+        - type="email" → 语义化输入类型，触发生效自动填充
+        - @submit.prevent + native-type="submit" → 原生表单提交语义，触发"保存密码"弹窗
+    -->
+    <el-form
+      ref="loginFormRef"
+      :model="loginForm"
+      :rules="loginRules"
+      class="form-content"
+      @submit.prevent="handleLogin"
+    >
       <el-form-item prop="email">
         <el-input
           v-model="loginForm.email"
-          type="text"
+          name="email"
+          type="email"
+          autocomplete="email"
           :placeholder="t('login.emailPlaceholder')"
           class="form-input"
           :prefix-icon="Message"
@@ -16,7 +31,9 @@
       <el-form-item prop="password">
         <el-input
           v-model="loginForm.password"
+          name="password"
           type="password"
+          autocomplete="current-password"
           :placeholder="t('login.passwordPlaceholder')"
           class="form-input"
           :prefix-icon="Lock"
@@ -27,7 +44,7 @@
 
       <el-form-item>
         <div style="width: 100%; display: flex; justify-content: center; align-items: center">
-          <el-button type="primary" class="submit-btn" :loading="isLoading" @click="handleLogin">
+          <el-button native-type="submit" type="primary" class="submit-btn" :loading="isLoading">
             {{ t("login.loginButton") }}
           </el-button>
         </div>
