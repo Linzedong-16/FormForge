@@ -8,3 +8,5 @@
 @import url("./theme-dark.scss");
 // 色弱模式 —— html[data-color-blind] 覆盖语义色，与亮暗主题正交叠加
 @import url("./color-blind.scss");
+// 问卷组件作用域 —— 强制锁定亮色变量，消除主题对问卷渲染的影响（最后加载，最高优先级）
+@import url("./survey-scope.scss");

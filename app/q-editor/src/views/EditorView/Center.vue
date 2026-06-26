@@ -1,5 +1,5 @@
 <template>
-  <div ref="centerContainer" class="center-container">
+  <div ref="centerContainer" class="center-container survey-scope">
     <draggable
       :list="store.coms"
       item-key="id"
@@ -212,7 +212,8 @@ const removeCom = (index: number) => {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
   padding: 20px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--white);
+  opacity: 0.9;
   position: relative;
   overflow: auto;
   max-height: calc(100vh - 140px); /* 70px margin top + 70px margin bottom */

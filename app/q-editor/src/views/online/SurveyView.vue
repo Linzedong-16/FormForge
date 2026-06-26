@@ -1,6 +1,6 @@
 <template>
   <div v-if="surveyData">
-    <div class="survey-container mc">
+    <div class="survey-container mc survey-scope">
       <!-- 问卷标题与状态信息 -->
       <div class="survey-header mt-30 mb-20">
         <h2 class="survey-title">{{ surveyData.title || "问卷" }}</h2>
