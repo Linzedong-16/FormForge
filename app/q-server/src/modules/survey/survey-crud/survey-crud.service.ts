@@ -1035,8 +1035,8 @@ export class SurveyService {
     // 8. 清除答卷列表缓存 + 统计缓存
     await this.cache.delByPattern(CacheKeys.responsePattern(surveyIdStr));
     // 清除统计缓存（概览 + 单问卷统计）
-    await this.cache.del("admin:stats:overview").catch(() => {});
-    await this.cache.del(`admin:stats:survey:${surveyIdStr}`).catch(() => {});
+    await this.cache.del(CacheKeys.statsOverview).catch(() => {});
+    await this.cache.del(CacheKeys.statsBySurvey(surveyIdStr)).catch(() => {});
 
     // 写审计日志（C 端匿名提交，user_id 为 null，不阻塞响应）
     createAuditLog(this.fastify, null, "submit_response", "survey_response", response.id, {

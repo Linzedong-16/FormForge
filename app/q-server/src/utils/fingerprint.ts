@@ -17,9 +17,20 @@ import type { FastifyInstance } from "fastify";
 
 // ─── 配置 ──────────────────────────────────────────────────
 
-/** 指纹哈希加盐 — 从环境变量注入，未配置则使用默认值（生产环境必须配置） */
+/** 指纹哈希加盐 — 生产环境必须通过环境变量 FINGERPRINT_SALT 注入 */
 function getFingerprintSalt(): string {
-  return process.env.FINGERPRINT_SALT ?? "questionnaire-sys-default-salt-2026";
+  const salt = process.env.FINGERPRINT_SALT;
+  if (!salt) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "FINGERPRINT_SALT 环境变量未配置。生产环境下必须设置此变量以保障指纹哈希安全，" +
+          "请参考文档 app/q-server/doc/survey/browser-fingerprint-prevention.md §7"
+      );
+    }
+    // 非生产环境允许使用默认值
+    return "questionnaire-sys-dev-salt";
+  }
+  return salt;
 }
 
 /** Token 有效期（秒），默认 30 分钟 */
@@ -143,17 +154,18 @@ export async function consumeToken(fastify: FastifyInstance, surveyId: string, t
 // ════════════════════════════════════════════════════════════
 
 /**
- * 检查是否已提交（防重复提交）
+ * 检查并预留去重记录（原子操作）
  *
- * 去重维度：同一设备（指纹）+ 同一问卷 → 24 小时内不可重复提交
- * 使用 Redis SET NX 原子操作：
- *   - 若 key 不存在 → 返回 null（首次提交）
- *   - 若 key 已存在 → 返回已有记录（重复提交）
+ * 使用 Redis SET NX 原子操作确保并发安全：
+ *   - 若 key 不存在 → SET NX 成功 → 返回 null（首次提交）
+ *   - 若 key 已存在 → SET NX 失败 → 返回已有记录（重复提交）
+ *
+ * 相比先 GET 后 SET 的非原子方案，此实现消除了 TOCTOU 竞态窗口。
  *
  * @param fastify Fastify 实例
  * @param surveyId 问卷 ID（字符串）
  * @param fingerprintHash 服务端加盐后的指纹哈希
- * @returns 已存在的提交记录，或 null（首次提交）
+ * @returns 已存在的提交记录，或 null（首次提交，已预留占位）
  */
 export async function checkDuplicateSubmit(
   fastify: FastifyInstance,
@@ -162,23 +174,36 @@ export async function checkDuplicateSubmit(
 ): Promise<{ response_id: string; submitted_at: number } | null> {
   try {
     const key = CacheKeys.submitRecord(surveyId, fingerprintHash);
+    // 原子 SET NX：key 不存在时写入占位符并返回 "OK"，已存在时返回 null
+    const placeholder = JSON.stringify({ reserved: true, timestamp: Date.now() });
+    const result = await fastify.redis.set(key, placeholder, "EX", SUBMIT_RECORD_TTL, "NX");
 
-    // 先检查是否已存在
-    const existing = await fastify.redis.get(key);
-    if (existing) {
-      return JSON.parse(existing) as { response_id: string; submitted_at: number };
+    if (result === "OK") {
+      // 首次提交，占位符已写入
+      return null;
     }
 
+    // Key 已存在 → 读取已有记录
+    const existing = await fastify.redis.get(key);
+    if (existing) {
+      try {
+        return JSON.parse(existing) as { response_id: string; submitted_at: number };
+      } catch {
+        // 记录损坏，视为重复
+        return { response_id: "unknown", submitted_at: 0 };
+      }
+    }
     return null;
   } catch {
     fastify.log.warn("[fingerprint] Redis 检查去重记录失败，降级放行");
-    // Redis 不可用时降级放行
     return null;
   }
 }
 
 /**
- * 记录提交（写入去重缓存）
+ * 更新去重记录（将占位符替换为实际答卷 ID）
+ *
+ * 无需 NX 标志——checkDuplicateSubmit 已确保调用者持有该 key
  *
  * @param fastify Fastify 实例
  * @param surveyId 问卷 ID（字符串）
@@ -197,10 +222,10 @@ export async function recordSubmit(
       response_id: responseId,
       submitted_at: Date.now()
     });
-    // SET NX：仅当 key 不存在时写入，防止并发覆盖
-    await fastify.redis.set(key, value, "EX", SUBMIT_RECORD_TTL, "NX");
+    // 覆盖占位符（此时 key 已由 checkDuplicateSubmit 预留，无需 NX）
+    await fastify.redis.set(key, value, "EX", SUBMIT_RECORD_TTL);
   } catch {
-    fastify.log.warn(`[fingerprint] Redis 记录提交失败: responseId=${responseId}`);
+    fastify.log.warn(`[fingerprint] Redis 更新去重记录失败: responseId=${responseId}`);
   }
 }
 

@@ -15,7 +15,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
-import { createCache, CacheTTL } from "../../../utils/cache.js";
+import { createCache, CacheKeys, CacheTTL } from "../../../utils/cache.js";
 import type { CacheClient } from "../../../utils/cache.js";
 import { AppError } from "../../../utils/errors.js";
 import { buildPagination } from "../../../utils/pagination.js";
@@ -86,46 +86,36 @@ export class SurveyStatsService {
    * 避免每次 Dashboard 刷新都执行多个 COUNT 查询
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async getOverview(query: StatsOverviewQueryInput): Promise<StatsOverviewResponse> {
-    const cacheKey = "admin:stats:overview";
-    const cached = await this.cache.get<StatsOverviewResponse>(cacheKey);
-    if (cached) return cached;
+  async getOverview(_query: StatsOverviewQueryInput): Promise<StatsOverviewResponse> {
+    return this.cache.getOrSet(
+      CacheKeys.statsOverview,
+      async () => {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const weekStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+        // 并行查询全部基础数据（含本周答卷，减少一次往返）
+        const [totalSurveys, publishedSurveys, totalResponses, responsesToday, responsesThisWeek] = await Promise.all([
+          this.fastify.prisma.survey.count({ where: { deleted_at: null } }),
+          this.fastify.prisma.survey.count({ where: { deleted_at: null, status: 1 } }),
+          this.fastify.prisma.response.count(),
+          this.fastify.prisma.response.count({ where: { submitted_at: { gte: todayStart } } }),
+          this.fastify.prisma.response.count({ where: { submitted_at: { gte: weekStart } } })
+        ]);
 
-    // 并行查询基础统计数据
-    const [totalSurveys, publishedSurveys, totalResponses, responsesToday] = await Promise.all([
-      this.fastify.prisma.survey.count({ where: { deleted_at: null } }),
-      this.fastify.prisma.survey.count({ where: { deleted_at: null, status: 1 } }),
-      this.fastify.prisma.response.count(),
-      this.fastify.prisma.response.count({
-        where: { submitted_at: { gte: todayStart } }
-      })
-    ]);
+        const trend7Days = await this.getDailyTrend(7);
 
-    // 本周答卷数
-    const responsesThisWeek = await this.fastify.prisma.response.count({
-      where: { submitted_at: { gte: weekStart } }
-    });
-
-    // 7 天日趋势 — 使用原生 SQL 按天聚合
-    const trend7Days = await this.getDailyTrend(7);
-
-    const result: StatsOverviewResponse = {
-      total_surveys: totalSurveys,
-      published_surveys: publishedSurveys,
-      total_responses: totalResponses,
-      responses_today: responsesToday,
-      responses_this_week: responsesThisWeek,
-      trend_7_days: trend7Days
-    };
-
-    // 缓存 5 分钟
-    await this.cache.set(cacheKey, result, CacheTTL.SURVEY);
-
-    return result;
+        return {
+          total_surveys: totalSurveys,
+          published_surveys: publishedSurveys,
+          total_responses: totalResponses,
+          responses_today: responsesToday,
+          responses_this_week: responsesThisWeek,
+          trend_7_days: trend7Days
+        };
+      },
+      CacheTTL.SURVEY
+    );
   }
 
   // ============================================================
@@ -142,114 +132,112 @@ export class SurveyStatsService {
    */
   async getSurveyStats(surveyId: bigint): Promise<SurveyStatsResponse> {
     const surveyIdStr = bigIntToStr(surveyId);
-    const cacheKey = `admin:stats:survey:${surveyIdStr}`;
 
-    // 优先读缓存
-    const cached = await this.cache.get<SurveyStatsResponse>(cacheKey);
-    if (cached) return cached;
+    return this.cache.getOrSet(
+      CacheKeys.statsBySurvey(surveyIdStr),
+      async () => {
+        // 校验问卷存在
+        const survey = await this.fastify.prisma.survey.findFirst({
+          where: { id: surveyId, deleted_at: null },
+          select: { id: true, title: true, status: true }
+        });
+        if (!survey) {
+          throw new AppError("问卷不存在", 404);
+        }
 
-    // 校验问卷存在
-    const survey = await this.fastify.prisma.survey.findFirst({
-      where: { id: surveyId, deleted_at: null },
-      select: { id: true, title: true, status: true }
-    });
-    if (!survey) {
-      throw new AppError("问卷不存在", 404);
-    }
+        const surveyTitle = survey.title;
 
-    const surveyTitle = survey.title;
+        // 并行查询
+        const [totalResponses, validResponses, components] = await Promise.all([
+          this.fastify.prisma.response.count({ where: { survey_id: surveyId } }),
+          this.fastify.prisma.response.count({ where: { survey_id: surveyId, status: 1 } }),
+          // 仅统计题目组件（排除 text_note 展示型）
+          this.fastify.prisma.surveyComponent.findMany({
+            where: { survey_id: surveyId, type: { notIn: Array.from(NON_QUESTION_TYPES) } },
+            orderBy: { order_index: "asc" },
+            select: { id: true, type: true, config: true, order_index: true }
+          }),
+          // 全量组件（用于复原组件名）
+          this.fastify.prisma.surveyComponent.findMany({
+            where: { survey_id: surveyId },
+            orderBy: { order_index: "asc" },
+            select: { id: true, type: true, config: true, order_index: true }
+          })
+        ]);
 
-    // 并行查询
-    const [totalResponses, validResponses, components] = await Promise.all([
-      this.fastify.prisma.response.count({ where: { survey_id: surveyId } }),
-      this.fastify.prisma.response.count({ where: { survey_id: surveyId, status: 1 } }),
-      // 仅统计题目组件（排除 text_note 展示型）
-      this.fastify.prisma.surveyComponent.findMany({
-        where: { survey_id: surveyId, type: { notIn: Array.from(NON_QUESTION_TYPES) } },
-        orderBy: { order_index: "asc" },
-        select: { id: true, type: true, config: true, order_index: true }
-      }),
-      // 全量组件（用于复原组件名）
-      this.fastify.prisma.surveyComponent.findMany({
-        where: { survey_id: surveyId },
-        orderBy: { order_index: "asc" },
-        select: { id: true, type: true, config: true, order_index: true }
-      })
-    ]);
+        // 每日趋势
+        const dailyTrend = await this.getSurveyDailyTrend(surveyId);
 
-    // 每日趋势
-    const dailyTrend = await this.getSurveyDailyTrend(surveyId);
+        // 逐题分析
+        const questions: QuestionStats[] = [];
 
-    // 逐题分析
-    const questions: QuestionStats[] = [];
+        for (const comp of components) {
+          const componentId = bigIntToStr(comp.id);
+          const compType = comp.type;
+          const compConfig = comp.config as Record<string, unknown>;
+          const compTitle = extractTitleFromConfig(compConfig) ?? TYPE_NAME_MAP[compType] ?? compType;
 
-    for (const comp of components) {
-      const componentId = bigIntToStr(comp.id);
-      const compType = comp.type;
-      const compConfig = comp.config as Record<string, unknown>;
-      const compTitle = extractTitleFromConfig(compConfig) ?? TYPE_NAME_MAP[compType] ?? compType;
+          const stat: QuestionStats = {
+            component_id: componentId,
+            type: compType,
+            title: compTitle,
+            order_index: comp.order_index,
+            total_answers: 0
+          };
 
-      const stat: QuestionStats = {
-        component_id: componentId,
-        type: compType,
-        title: compTitle,
-        order_index: comp.order_index,
-        total_answers: 0
-      };
+          // 该题的答案总数
+          const answerCount = await this.fastify.prisma.answer.count({
+            where: { component_id: comp.id }
+          });
+          stat.total_answers = answerCount;
 
-      // 该题的答案总数
-      const answerCount = await this.fastify.prisma.answer.count({
-        where: { component_id: comp.id }
-      });
-      stat.total_answers = answerCount;
+          if (answerCount === 0) {
+            questions.push(stat);
+            continue;
+          }
 
-      if (answerCount === 0) {
-        questions.push(stat);
-        continue;
-      }
+          // 按题型分别处理
+          if (JSON_ARRAY_TYPES.has(compType)) {
+            // 多选 / 图片多选 / 排序 → 展开 JSON 数组聚合
+            stat.options_distribution = await this.getJsonArrayDistribution(comp.id, compConfig, compType);
+          } else if (NUMERIC_TYPES.has(compType)) {
+            // 评分 / 滑块 → 数值聚合 + 分布
+            const numStats = await this.getNumericStats(comp.id);
+            stat.average = numStats.average;
+            stat.min = numStats.min;
+            stat.max = numStats.max;
+            stat.options_distribution = await this.getNumericDistribution(comp.id, compConfig);
+          } else if (TEXT_TYPES.has(compType) || compType.startsWith("personal-info-")) {
+            // 文本 / 个人信息 → 抽样
+            stat.sample_answers = await this.getTextSamples(comp.id);
+          } else if (compType === "matrix_single") {
+            // 矩阵单选 → 解析 JSON 统计
+            stat.options_distribution = await this.getMatrixDistribution(comp.id, compConfig);
+          } else {
+            // 单选 / 下拉 / 图片单选 / 日期 / 级联 → GROUP BY value
+            stat.options_distribution = await this.getSingleValueDistribution(comp.id, compConfig, compType);
+          }
 
-      // 按题型分别处理
-      if (JSON_ARRAY_TYPES.has(compType)) {
-        // 多选 / 图片多选 / 排序 → 展开 JSON 数组聚合
-        stat.options_distribution = await this.getJsonArrayDistribution(comp.id, compConfig, compType);
-      } else if (NUMERIC_TYPES.has(compType)) {
-        // 评分 / 滑块 → 数值聚合 + 分布
-        const numStats = await this.getNumericStats(comp.id);
-        stat.average = numStats.average;
-        stat.min = numStats.min;
-        stat.max = numStats.max;
-        stat.options_distribution = await this.getNumericDistribution(comp.id, compConfig);
-      } else if (TEXT_TYPES.has(compType) || compType.startsWith("personal-info-")) {
-        // 文本 / 个人信息 → 抽样
-        stat.sample_answers = await this.getTextSamples(comp.id);
-      } else if (compType === "matrix_single") {
-        // 矩阵单选 → 解析 JSON 统计
-        stat.options_distribution = await this.getMatrixDistribution(comp.id, compConfig);
-      } else {
-        // 单选 / 下拉 / 图片单选 / 日期 / 级联 → GROUP BY value
-        stat.options_distribution = await this.getSingleValueDistribution(comp.id, compConfig, compType);
-      }
+          questions.push(stat);
+        }
 
-      questions.push(stat);
-    }
+        // 完成率
+        const completionRate = totalResponses > 0 ? Math.round((validResponses / totalResponses) * 100 * 10) / 10 : 0;
 
-    // 完成率
-    const completionRate = totalResponses > 0 ? Math.round((validResponses / totalResponses) * 100 * 10) / 10 : 0;
+        const result: SurveyStatsResponse = {
+          survey_id: surveyIdStr,
+          title: surveyTitle,
+          total_responses: totalResponses,
+          valid_responses: validResponses,
+          completion_rate: completionRate,
+          daily_trend: dailyTrend,
+          questions
+        };
 
-    const result: SurveyStatsResponse = {
-      survey_id: surveyIdStr,
-      title: surveyTitle,
-      total_responses: totalResponses,
-      valid_responses: validResponses,
-      completion_rate: completionRate,
-      daily_trend: dailyTrend,
-      questions
-    };
-
-    // 缓存统计结果
-    await this.cache.set(cacheKey, result, CacheTTL.SURVEY);
-
-    return result;
+        return result;
+      },
+      CacheTTL.SURVEY
+    );
   }
 
   // ============================================================

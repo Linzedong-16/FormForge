@@ -86,7 +86,7 @@ export function createCache(fastify: FastifyInstance): CacheClient {
         const [nextCursor, keys] = await redis.scan(cursor, "MATCH", `${CACHE_PREFIX}${pattern}`, "COUNT", "100");
         cursor = nextCursor;
         if (keys.length > 0) {
-          await redis.del(...keys);
+          await redis.unlink(...keys);
         }
       } while (cursor !== "0");
     } catch {
@@ -111,6 +111,10 @@ export function createCache(fastify: FastifyInstance): CacheClient {
 
     if (locked) {
       try {
+        // 双检查：另一个锁持有者可能已经回填了缓存
+        const fresh = await get<T>(key);
+        if (fresh !== null) return fresh;
+
         const data = await factory();
         // 同步写回，确保后续请求立即命中
         try {
@@ -134,8 +138,14 @@ export function createCache(fastify: FastifyInstance): CacheClient {
     const retry = await get<T>(key);
     if (retry !== null) return retry;
 
-    // 降级：直接回源（不写缓存，下次请求会重新竞争锁）
-    return factory();
+    // 降级：直接回源，尝试写入缓存以减少后续击穿
+    const data = await factory();
+    try {
+      await redis.set(`${CACHE_PREFIX}${key}`, JSON.stringify(data), "EX", ttl);
+    } catch {
+      // 写缓存失败不影响返回
+    }
+    return data;
   }
 
   return { get, set, del, delByPattern, getOrSet };
@@ -185,6 +195,12 @@ export const CacheKeys = {
   responseDetail: (id: string) => `response:detail:${id}`,
   /** 答卷缓存前缀（用于批量失效） */
   responsePattern: (surveyId: string) => `response:survey:${surveyId}:*`,
+
+  // ─── 统计模块 ──────────────────────────────────────────
+  /** 平台统计概览 */
+  statsOverview: "admin:stats:overview",
+  /** 单问卷统计 */
+  statsBySurvey: (surveyId: string) => `admin:stats:survey:${surveyId}`,
 
   // ─── 问卷文件模块 ──────────────────────────────────────────
   /** 问卷文件列表 */
