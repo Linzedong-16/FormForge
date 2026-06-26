@@ -142,14 +142,16 @@ export const changePasswordSchema = z.object({
 //  管理员接口 Schema
 // ══════════════════════════════════════════════════════════════════
 
-/** POST /api/admin/users */
+/** POST /api/admin/users — 简化版：管理员创建普通用户，仅需 username + email */
 export const createUserSchema = z.object({
   email: emailSchema,
-  username: usernameSchema,
-  role: z.enum(["user", "admin"], {
-    message: "角色必须为 user 或 admin"
-  }),
-  password: passwordSchema.optional()
+  username: usernameSchema
+});
+
+/** POST /api/admin/users/:id/ban — 封禁用户 */
+export const banUserSchema = z.object({
+  ban_duration: z.number().int().min(1, "封禁时长至少1分钟").max(43200, "封禁时长不能超过30天"), // 43200 分钟 = 30 天
+  reason: z.string().max(500, "封禁原因最多500个字符").optional()
 });
 
 /** PUT /api/admin/users/:id */
@@ -162,7 +164,8 @@ export const updateUserSchema = z.object({
 /** GET /api/admin/users */
 export const userListQuerySchema = paginationSchema.extend({
   email: z.string().optional(),
-  status: z.coerce.number().int().min(0).max(1).optional()
+  status: z.coerce.number().int().min(0).max(1).optional(),
+  ban_status: z.enum(["banned", "active"]).optional()
 });
 
 /** PUT /api/admin/config/smtp */
@@ -189,6 +192,7 @@ export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type UserListQueryInput = z.infer<typeof userListQuerySchema>;
 export type UpdateSmtpConfigInput = z.infer<typeof updateSmtpConfigSchema>;
+export type BanUserInput = z.infer<typeof banUserSchema>;
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type BindEmailInput = z.infer<typeof bindEmailSchema>;

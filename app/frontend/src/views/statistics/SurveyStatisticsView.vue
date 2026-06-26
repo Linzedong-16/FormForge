@@ -17,69 +17,61 @@
 
     <!-- 汇总统计指标 -->
     <a-row :gutter="16">
-      <a-col :span="6">
+      <a-col v-for="card in statCards" :key="card.title" :span="6">
         <a-card :bordered="false" class="stat-card">
-          <a-statistic title="累计答卷总数" :value="48320">
-            <template #suffix><span class="stat-unit">份</span></template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="6">
-        <a-card :bordered="false" class="stat-card">
-          <a-statistic title="平均完成率" :value="78.4" :precision="1" :value-style="{ color: 'rgb(var(--green-6))' }">
-            <template #suffix><span class="stat-unit">%</span></template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="6">
-        <a-card :bordered="false" class="stat-card">
-          <a-statistic title="平均答题时长" :value="4.5" :precision="1">
-            <template #suffix><span class="stat-unit">分钟</span></template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="6">
-        <a-card :bordered="false" class="stat-card">
-          <a-statistic title="参与问卷数" :value="12">
-            <template #suffix><span class="stat-unit">份</span></template>
+          <a-statistic
+            :title="card.title"
+            :value="card.value"
+            :value-style="card.color ? { color: card.color } : undefined"
+          >
+            <template #suffix
+              ><span class="stat-unit">{{ card.unit }}</span></template
+            >
           </a-statistic>
         </a-card>
       </a-col>
     </a-row>
 
-    <!-- 图表区域 -->
-    <a-row :gutter="16">
-      <a-col :span="16">
-        <a-card title="每日答卷量趋势" :bordered="false">
-          <div class="chart-placeholder">
-            <icon-bar-chart class="placeholder-icon" />
-            <p>日答卷量折线/柱状图（集成 ECharts 后展示）</p>
+    <!-- 7 日答卷趋势 -->
+    <a-card v-if="trendBars.length > 0" title="近 7 日答卷趋势" :bordered="false">
+      <div class="trend-chart">
+        <div v-for="bar in trendBars" :key="bar.date" class="trend-bar-row">
+          <span class="trend-date">{{ bar.date }}</span>
+          <div class="trend-bar-track">
+            <div class="trend-bar-fill" :style="{ width: bar.pct + '%' }"></div>
           </div>
-        </a-card>
-      </a-col>
-      <a-col :span="8">
-        <a-card title="完成率分布" :bordered="false">
-          <div class="chart-placeholder small">
-            <icon-cloud class="placeholder-icon" />
-            <p>完成率饼图（集成图表库后展示）</p>
-          </div>
-        </a-card>
-      </a-col>
-    </a-row>
+          <span class="trend-count">{{ bar.count }} 份</span>
+        </div>
+      </div>
+    </a-card>
+    <a-card v-else :bordered="false">
+      <div class="chart-placeholder">
+        <p style="color: var(--color-text-3)">暂无答卷数据</p>
+      </div>
+    </a-card>
 
     <!-- 各问卷数据明细 -->
-    <a-card title="问卷数据明细" :bordered="false">
-      <a-table :data="surveyStats" :columns="columns" :pagination="{ pageSize: 8, showTotal: true }" row-key="id">
-        <!-- 完成率进度条 -->
-        <template #completionRate="{ record }">
-          <div class="rate-cell">
-            <a-progress :percent="record.completionRate / 100" :stroke-width="6" :show-text="false" animation />
-            <span class="rate-text">{{ record.completionRate }}%</span>
-          </div>
+    <a-card title="已发布问卷数据明细" :bordered="false">
+      <a-table
+        :data="publishedSurveys"
+        :columns="columns"
+        :loading="loading"
+        :pagination="{ pageSize: 10, showTotal: true }"
+        row-key="id"
+      >
+        <template #status="{ record }">
+          <a-tag :color="record.status === 1 ? 'green' : 'gray'" size="small">
+            {{ statusLabel(record.status) }}
+          </a-tag>
         </template>
-        <!-- 操作 -->
+        <template #published_at="{ record }">
+          {{ formatDate(record.published_at) }}
+        </template>
+        <template #updated_at="{ record }">
+          {{ formatDate(record.updated_at) }}
+        </template>
         <template #operations="{ record }">
-          <a-button type="text" size="small" @click="handleViewDetail(record)">查看详情</a-button>
+          <a-button type="text" size="small" @click="handleViewDetail(record)">统计详情</a-button>
         </template>
       </a-table>
     </a-card>
@@ -87,77 +79,120 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { Message } from "@arco-design/web-vue";
+import { useRouter } from "vue-router";
+import { getStatsOverview, getSurveyList } from "@/api/modules/survey";
+import type { StatsOverviewResponse } from "@common/survey/survey-stats.interface";
+import type { SurveyListItem } from "@common/survey/survey.interface";
 
-const dateRange = ref([]);
+const router = useRouter();
+
+// ─── 状态 ──────────────────────────────────────────────────────
+
+const loading = ref(false);
+const overview = ref<StatsOverviewResponse | null>(null);
+const publishedSurveys = ref<SurveyListItem[]>([]);
+const dateRange = ref<string[]>([]);
+
+// ─── 汇总指标 ──────────────────────────────────────────────────
+
+const statCards = ref([
+  { title: "累计答卷总数", value: 0, unit: "份", color: "" },
+  { title: "已发布问卷", value: 0, unit: "份", color: "rgb(var(--green-6))" },
+  { title: "今日新增答卷", value: 0, unit: "份", color: "" },
+  { title: "本周新增答卷", value: 0, unit: "份", color: "" }
+]);
+
+// ─── 表格列 ────────────────────────────────────────────────────
 
 const columns = [
   { title: "问卷标题", dataIndex: "title", ellipsis: true },
-  { title: "总答卷数", dataIndex: "totalCount", width: 110, sorter: true },
-  { title: "有效答卷", dataIndex: "validCount", width: 110 },
-  { title: "完成率", dataIndex: "completionRate", slotName: "completionRate", width: 200 },
-  { title: "平均时长", dataIndex: "avgDuration", width: 120 },
-  { title: "最近更新", dataIndex: "lastUpdated", width: 160 },
+  { title: "状态", dataIndex: "status", slotName: "status", width: 90 },
+  { title: "总答卷数", dataIndex: "responses_count", width: 90, sorter: true },
+  { title: "题目数", dataIndex: "total_questions", width: 80 },
+  { title: "发布时间", dataIndex: "published_at", width: 160 },
+  { title: "最近更新", dataIndex: "updated_at", width: 160 },
   { title: "操作", slotName: "operations", width: 100 }
 ];
 
-// 占位数据
-const surveyStats = ref([
-  {
-    id: "s001",
-    title: "用户满意度调查 2024",
-    totalCount: 12480,
-    validCount: 11230,
-    completionRate: 89,
-    avgDuration: "3分42秒",
-    lastUpdated: "2024-12-05 10:00"
-  },
-  {
-    id: "s002",
-    title: "产品功能需求调研",
-    totalCount: 8320,
-    validCount: 6890,
-    completionRate: 82,
-    avgDuration: "5分15秒",
-    lastUpdated: "2024-12-04 18:30"
-  },
-  {
-    id: "s003",
-    title: "员工年度评估问卷",
-    totalCount: 420,
-    validCount: 418,
-    completionRate: 99,
-    avgDuration: "8分20秒",
-    lastUpdated: "2024-12-03 09:00"
-  },
-  {
-    id: "s004",
-    title: "市场调研问卷 Q4",
-    totalCount: 5280,
-    validCount: 3620,
-    completionRate: 68,
-    avgDuration: "4分05秒",
-    lastUpdated: "2024-11-30 15:45"
-  },
-  {
-    id: "s005",
-    title: "NPS 评分问卷",
-    totalCount: 21820,
-    validCount: 16340,
-    completionRate: 74,
-    avgDuration: "1分30秒",
-    lastUpdated: "2024-12-05 08:00"
+// ─── 趋势图数据 ────────────────────────────────────────────────
+
+const trendMax = ref(0);
+const trendBars = ref<Array<{ date: string; count: number; pct: number }>>([]);
+
+// ─── 数据加载 ──────────────────────────────────────────────────
+
+async function loadData() {
+  loading.value = true;
+  try {
+    // 并行加载概览和问卷列表
+    const [overviewRes, surveyRes] = await Promise.all([
+      getStatsOverview(),
+      getSurveyList({ page_size: 50, status: 1 }) // 仅已发布
+    ]);
+
+    if (overviewRes.code === 0 && overviewRes.data) {
+      const d = overviewRes.data;
+      overview.value = d;
+      statCards.value[0].value = d.total_responses;
+      statCards.value[1].value = d.published_surveys;
+      statCards.value[2].value = d.responses_today;
+      statCards.value[3].value = d.responses_this_week;
+
+      // 构建趋势柱状图数据
+      if (d.trend_7_days && d.trend_7_days.length > 0) {
+        trendMax.value = Math.max(...d.trend_7_days.map(t => t.count), 1);
+        trendBars.value = d.trend_7_days.map(t => ({
+          date: t.date.slice(5), // "MM-DD"
+          count: t.count,
+          pct: Math.round((t.count / trendMax.value) * 100)
+        }));
+      }
+    }
+
+    if (surveyRes.code === 0 && surveyRes.data) {
+      publishedSurveys.value = surveyRes.data.surveys;
+    }
+  } catch {
+    Message.error("加载统计数据失败");
+  } finally {
+    loading.value = false;
   }
-]);
+}
 
-const handleExport = () => {
-  Message.info("报表导出功能开发中");
-};
+onMounted(() => {
+  loadData();
+});
 
-const handleViewDetail = (record: { title: string }) => {
-  Message.info(`查看详情：${record.title}`);
-};
+// 日期范围筛选变化时重新加载
+watch(dateRange, () => {
+  loadData();
+});
+
+// ─── 格式化 ────────────────────────────────────────────────────
+
+function formatDate(val: string | null): string {
+  if (!val) return "—";
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return "—";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function statusLabel(status: number): string {
+  return status === 1 ? "已发布" : status === 0 ? "草稿" : "已关闭";
+}
+
+// ─── 操作 ──────────────────────────────────────────────────────
+
+function handleExport() {
+  Message.info("CSV 导出功能开发中");
+}
+
+function handleViewDetail(record: SurveyListItem) {
+  router.push(`/survey-management/statistics/${record.id}`);
+}
 </script>
 
 <style scoped>
@@ -192,37 +227,55 @@ const handleViewDetail = (record: { title: string }) => {
   margin-left: 4px;
 }
 
-.chart-placeholder {
+/* ── 7 日趋势柱状图 ─────────────────────────────────────── */
+
+.trend-chart {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 220px;
-  color: var(--color-text-4);
-  font-size: 14px;
+  gap: 10px;
 }
 
-.chart-placeholder.small {
-  height: 200px;
-}
-
-.placeholder-icon {
-  font-size: 48px;
-  color: var(--color-fill-3);
-  margin-bottom: 12px;
-}
-
-/* 完成率列布局 */
-.rate-cell {
+.trend-bar-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.rate-text {
+.trend-date {
+  width: 48px;
   font-size: 13px;
   color: var(--color-text-2);
-  width: 40px;
   text-align: right;
+}
+
+.trend-bar-track {
+  flex: 1;
+  height: 22px;
+  background: var(--color-fill-3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.trend-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgb(var(--primary-5)), rgb(var(--primary-6)));
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+.trend-count {
+  width: 60px;
+  font-size: 13px;
+  color: var(--color-text-2);
+}
+
+/* ── 空数据占位 ────────────────────────────────────────── */
+
+.chart-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
 }
 </style>

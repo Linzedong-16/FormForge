@@ -20,6 +20,7 @@ import { useUserStore } from "./store/modules/user";
 
 // 导入问卷引擎的 i18n 消息，确保引擎组件渲染时 useI18n() 能获取到文案
 import { engineMessages } from "monorepo-survey-engine";
+import { initTheme } from "./composables/useTheme";
 
 // i18n 实例：合并引擎翻译消息，保证问卷组件渲染时 useI18n() 能获取到文案
 const i18n = createI18n({
@@ -53,6 +54,9 @@ function render(container?: Element | null, routerBase = "/") {
   instance.use(i18n);
   instance.use(pinia);
   instance.use(appRouter);
+
+  // ── 主题初始化：从 localStorage 恢复/系统偏好回退 ─────────
+  initTheme();
 
   // ── 路由守卫：非登录页校验认证状态 ──────────────────────
   appRouter.beforeEach(async (to, _from, next) => {

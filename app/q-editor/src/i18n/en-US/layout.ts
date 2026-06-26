@@ -26,5 +26,47 @@ export default {
   syncFailed: "Sync failed",
   // Remote sync
   syncingRemote: "Syncing remote data...",
-  syncFailedHint: "Remote sync failed, showing local data only"
+  syncFailedHint: "Remote sync failed, showing local data only",
+  // Review
+  columnReviewStatus: "Review Status",
+  submitReview: "Submit",
+  reviewing: "Reviewing",
+  submitReviewTitle: "Submit for Review",
+  submitReviewSuccess: "Review submitted",
+  submitReviewFailed: "Submission failed",
+  reviewStatus: {
+    none: "Unreviewed",
+    pending: "Pending",
+    approved: "Approved",
+    rejected: "Rejected"
+  },
+  // Share Template
+  shareTemplate: "Share",
+  shareTemplateTitle: "Apply as Template",
+  shareTemplateSuccess: "Template application submitted",
+  shareTemplateFailed: "Application failed",
+  templateCategory: "Category",
+  templateCategoryRequired: "Please select a category",
+  templateCategoryEducation: "Education",
+  templateCategoryMarket: "Market Research",
+  templateCategoryHr: "Human Resources",
+  templateCategoryCustomer: "Customer Service",
+  templateCategoryEvent: "Events",
+  templateCategoryOther: "Other",
+  templateSubmitMessage: "Note",
+  templateSubmit: "Submit",
+  // Generate Survey Link
+  generateLink: "Generate Link",
+  generateLinkTitle: "Generate Survey Link",
+  generateLinkDeadline: "Deadline",
+  generateLinkDeadlineRequired: "Please select a deadline",
+  generateLinkDeadlineHint: "The survey will automatically close and stop accepting responses after the deadline",
+  generateLinkGenerate: "Generate Link",
+  generateLinkSuccess: "Survey link generated successfully",
+  generateLinkFailed: "Failed to generate survey link",
+  generating: "Generating...",
+  copyLink: "Copy Link",
+  copySuccess: "Link copied to clipboard",
+  goToSurvey: "Go to Survey",
+  linkLabel: "Survey Link"
 };

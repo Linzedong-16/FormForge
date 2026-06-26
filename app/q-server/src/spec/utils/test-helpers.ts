@@ -18,7 +18,10 @@ interface PrismaMock {
   auditLog: { create: MockFn };
   survey: { findFirst: MockFn; findUnique: MockFn; findMany: MockFn; create: MockFn; update: MockFn; count: MockFn };
   surveyComponent: { findMany: MockFn; createMany: MockFn; deleteMany: MockFn };
-  review: { findFirst: MockFn; updateMany: MockFn; create: MockFn };
+  template: { findFirst: MockFn; findUnique: MockFn; findMany: MockFn; create: MockFn; update: MockFn; count: MockFn };
+  templateComponent: { findMany: MockFn; createMany: MockFn };
+  templateRating: { findFirst: MockFn; upsert: MockFn; aggregate: MockFn };
+  review: { findFirst: MockFn; findUnique: MockFn; findMany: MockFn; update: MockFn; create: MockFn; count: MockFn };
   $transaction: MockFn;
 }
 
@@ -32,6 +35,7 @@ interface RedisMock {
   ping: MockFn;
   eval: MockFn;
   scan: MockFn;
+  pipeline: MockFn;
 }
 
 interface AmqpMock {
@@ -54,22 +58,38 @@ interface ReplyMock {
 
 /** 创建一个最小化的 Prisma mock */
 export function createPrismaMock(): PrismaMock {
+  const userMock = {
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    count: vi.fn(),
+  };
+  const userRoleMock = {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    count: vi.fn(),
+    deleteMany: vi.fn(),
+  };
+
+  // $transaction 回调模式：调用 fn(tx)，tx 复用 prisma 各方法的实现
+  const $transaction = vi.fn((fnOrArray: unknown) => {
+    if (typeof fnOrArray === "function") {
+      return fnOrArray({
+        user: { create: userMock.create },
+        userRole: { create: userRoleMock.create },
+        systemConfig: {},
+        auditLog: {},
+      });
+    }
+    return Promise.all(fnOrArray as Array<Promise<unknown>>);
+  });
+
   return {
-    user: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      count: vi.fn(),
-    },
-    userRole: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      count: vi.fn(),
-      deleteMany: vi.fn(),
-    },
+    user: userMock,
+    userRole: userRoleMock,
     systemConfig: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
@@ -91,12 +111,32 @@ export function createPrismaMock(): PrismaMock {
       createMany: vi.fn(),
       deleteMany: vi.fn(),
     },
+    template: {
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      count: vi.fn(),
+    },
+    templateComponent: {
+      findMany: vi.fn(),
+      createMany: vi.fn(),
+    },
+    templateRating: {
+      findFirst: vi.fn(),
+      upsert: vi.fn(),
+      aggregate: vi.fn(),
+    },
     review: {
       findFirst: vi.fn(),
-      updateMany: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
       create: vi.fn(),
+      count: vi.fn()
     },
-    $transaction: vi.fn(),
+    $transaction,
   };
 }
 
@@ -114,6 +154,7 @@ export function createRedisMock(): RedisMock {
     ping: vi.fn(),
     eval: vi.fn(),
     scan: vi.fn(),
+    pipeline: vi.fn(),
   };
 }
 
@@ -208,7 +249,7 @@ export const MOCK_ADMIN = {
 
 // ─── 问卷模块测试用固定数据 ───────────────────────────────────
 
-/** 模拟一个普通问卷 */
+/** 模拟一个普通问卷（方案B：不再有 survey_type 等模板字段） */
 export const MOCK_SURVEY = {
   id: BigInt(100),
   user_id: BigInt(2),
@@ -220,12 +261,7 @@ export const MOCK_SURVEY = {
   responses_count: 0,
   is_public: 0,
   access_code: null,
-  survey_type: "personal",
   review_status: "none",
-  category: null,
-  cover_url: null,
-  download_count: 0,
-  rating: null,
   created_at: new Date("2026-06-01T10:00:00.000Z"),
   updated_at: new Date("2026-06-10T10:00:00.000Z"),
   published_at: null,
@@ -233,24 +269,26 @@ export const MOCK_SURVEY = {
   deleted_at: null,
 };
 
-/** 模拟一个已发布的公共模板问卷 */
-export const MOCK_TEMPLATE_SURVEY = {
-  ...MOCK_SURVEY,
+/** 模拟一个已上架的公共模板（方案B：独立于 Survey 的 Template 表） */
+export const MOCK_TEMPLATE = {
   id: BigInt(200),
+  user_id: BigInt(2),
   title: "客户满意度调查模板",
-  survey_type: "template",
-  review_status: "approved",
-  is_public: 1,
+  description: "用于收集客户反馈",
   category: "customer",
+  cover_url: null,
   download_count: 42,
   rating: 4.5,
+  review_status: "approved",
+  source_survey_id: BigInt(100),
+  created_at: new Date("2026-06-01T10:00:00.000Z"),
+  updated_at: new Date("2026-06-10T10:00:00.000Z"),
 };
 
 /** 模拟一个审核中的问卷 */
 export const MOCK_PENDING_SURVEY = {
   ...MOCK_SURVEY,
   id: BigInt(300),
-  survey_type: "template",
   review_status: "pending",
   is_public: 1,
 };
@@ -281,13 +319,70 @@ export const MOCK_DELETED_SURVEY = {
 export const MOCK_REVIEW = {
   id: BigInt(5001),
   survey_id: BigInt(300),
+  template_id: null,
   submitter_id: BigInt(2),
   reviewer_id: null,
+  review_type: "survey",
   status: "pending",
-  submit_message: "请审核该模板",
+  submit_message: "请审核该问卷",
   review_comment: null,
   submitted_at: new Date("2026-06-15T10:00:00.000Z"),
   reviewed_at: null,
   created_at: new Date("2026-06-15T10:00:00.000Z"),
   updated_at: new Date("2026-06-15T10:00:00.000Z"),
+};
+
+/** 模拟审核详情（含关联数据） */
+export const MOCK_REVIEW_DETAIL = {
+  ...MOCK_REVIEW,
+  survey: {
+    id: BigInt(300),
+    title: "客户满意度调查模板",
+    description: "用于收集客户反馈",
+    category: "customer",
+    components: [
+      {
+        id: BigInt(1001),
+        type: "single-select",
+        config: { title: { status: "您的性别是？", isShow: true } },
+        order_index: 0,
+        required: 1 as const
+      },
+      {
+        id: BigInt(1002),
+        type: "text-input",
+        config: { title: { status: "请留下您的建议", isShow: true } },
+        order_index: 1,
+        required: 0 as const
+      }
+    ]
+  },
+  template: null,
+  submitter: {
+    id: BigInt(2),
+    username: "测试用户"
+  },
+  reviewer: null
+};
+
+/** 模拟已审核通过的审核记录 */
+export const MOCK_APPROVED_REVIEW = {
+  ...MOCK_REVIEW,
+  id: BigInt(5002),
+  survey_id: BigInt(200),
+  status: "approved",
+  reviewer_id: BigInt(1),
+  review_comment: "内容合规，同意上架",
+  reviewed_at: new Date("2026-06-16T10:00:00.000Z"),
+};
+
+/** 模拟已驳回的审核记录 */
+export const MOCK_REJECTED_REVIEW = {
+  ...MOCK_REVIEW,
+  id: BigInt(5003),
+  survey_id: BigInt(301),
+  status: "rejected",
+  reviewer_id: BigInt(1),
+  review_comment: "问卷第3题包含敏感词汇，请修改后重新提交",
+  reviewed_at: new Date("2026-06-16T11:00:00.000Z"),
 };

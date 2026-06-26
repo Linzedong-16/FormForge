@@ -59,9 +59,17 @@ export interface EditorStore extends Actions {
 }
 
 export type QuizData = {
+  /** 问卷标题 */
+  title?: string;
+  /** 问卷描述 */
+  description?: string;
+  /** 发布时间（ISO 8601 格式） */
+  publishedAt?: string;
+  /** 题目数量（排除展示型组件） */
   surveyCount: number;
+  /** 问卷组件列表 */
   coms: Status[];
-  // 分页配置：每页展示的组件数量（在线问卷经分享链接 query 携带）
+  /** 分页配置：每页展示的组件数量（在线问卷经分享链接 query 携带） */
   pageSize?: number;
 };
 // 该数组记录适合生成PDF的题目类型

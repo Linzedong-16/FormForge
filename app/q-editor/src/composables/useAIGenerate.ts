@@ -117,6 +117,13 @@ export function useAIGenerate() {
           components.value = [...components.value, comp];
         },
         onDone(data) {
+          console.log("[AI-Generate] 生成完成", {
+            title: data.title,
+            componentCount: data.components?.length ?? 0,
+            warningCount: data.warnings?.length ?? 0,
+            warnings: data.warnings,
+            fullText: streamText.value.slice(-2000)
+          });
           result.value = data;
           phase.value = "done";
 
@@ -137,6 +144,11 @@ export function useAIGenerate() {
           }
         },
         onError(msg) {
+          console.error("[AI-Generate] 生成失败", {
+            error: msg,
+            textLength: streamText.value.length,
+            fullText: streamText.value.slice(-2000)
+          });
           // 根据错误消息映射 i18n key
           if (msg.includes("频繁")) {
             errorMessage.value = "aiRateLimitError";

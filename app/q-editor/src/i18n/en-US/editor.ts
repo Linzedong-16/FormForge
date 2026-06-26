@@ -231,5 +231,53 @@ export default {
   aiPromptTooLong: "Requirements must not exceed 2000 characters",
   aiNoComponents: "No valid components generated. Please adjust your requirements and try again",
   aiWarningTitle: "Generation Warnings",
-  aiWarningBadType: 'Component type "{type}" is not supported and has been skipped'
+  aiWarningBadType: 'Component type "{type}" is not supported and has been skipped',
+
+  // AI Polish
+  aiPolishLabel: "Polish Instructions",
+  aiPolishPlaceholder:
+    "e.g., Reorder questions from easy to hard; Improve the wording of question 3 to be more neutral",
+  aiPolishAspects: "Polish Dimensions (multi-select, all if none selected)",
+  aiPolishStart: "Start Polish",
+  aiPolishing: "AI is polishing the survey...",
+  aiPolishDone: "Polish Complete",
+  aiPolishChanges: "Changes",
+  aiPolishApply: "Apply Polish Result",
+  aiPolishFailed: "AI Polish Failed",
+  aiPolishApplyConfirm: "Polish result will completely replace the current survey content. Continue?",
+  aiPolishApplyTitle: "Confirm Apply",
+  aiPolishApplySuccess: "Polish result applied",
+
+  // Template Market
+  template: {
+    searchPlaceholder: "Search templates...",
+    categoryAll: "All",
+    categoryEducation: "Education",
+    categoryMarket: "Market Research",
+    categoryHr: "Human Resources",
+    categoryCustomer: "Customer Service",
+    categoryEvent: "Events",
+    categoryOther: "Other",
+    sortLabel: "Sort",
+    sortNewest: "Latest",
+    sortPopular: "Popular",
+    sortRating: "Rating",
+    loading: "Loading...",
+    retry: "Retry",
+    emptyHint: "No templates available",
+    fetchFailed: "Failed to load templates",
+    fetchDetailFailed: "Failed to load template detail",
+    noDescription: "No description",
+    noComponents: "Template has no components",
+    useCount: "uses",
+    componentPreview: "Component Preview",
+    required: "Required",
+    useTemplate: "Use This Template",
+    yourRating: "Rate",
+    useTemplateSuccess: "Template applied to editor",
+    useTemplateFailed: "Failed to apply template",
+    rateSuccess: "Rated successfully",
+    rateFailed: "Failed to rate",
+    detailTitle: "Template Detail"
+  }
 };

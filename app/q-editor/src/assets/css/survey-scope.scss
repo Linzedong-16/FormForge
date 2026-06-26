@@ -1,0 +1,102 @@
+/**
+ * 问卷组件作用域 —— 消除亮暗色主题、色弱模式对问卷渲染的影响
+ *
+ * 问卷组件（题型组件、EP 组件、公共组件）是低代码引擎动态渲染的核心产物，
+ * 在编辑器、预览、在线填答三处均需保持统一亮色外观，不受编辑器主题切换干扰。
+ *
+ * 使用方式：在渲染问卷组件的容器元素上添加 class="survey-scope"。
+ * 当前三处容器：EditorView/Center.vue、preview/index.vue、online/SurveyView.vue
+ */
+
+// ═══════════════════════════════════════════════════════════════
+// 亮色默认值变量集（项目自定义 + Element Plus）
+// ═══════════════════════════════════════════════════════════════
+@mixin survey-light-vars {
+  // ── 项目自定义语义色 ──────────────────────────────────
+  --primary-color: #18181b;
+  --success-color: #16a34a;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --info-color: #71717a;
+
+  // ── 项目自定义排版色 ──────────────────────────────────
+  --font-color: #18181b;
+  --font-color-light: #3f3f46;
+  --font-color-lighter: #71717a;
+  --font-color-lightest: #d4d4d8;
+
+  // ── 项目自定义表面色 ──────────────────────────────────
+  --border-color: #e4e4e7;
+  --background-color: #f4f4f5;
+  --white: #fff;
+  --black: #000;
+
+  // ── Element Plus 主色系 ──────────────────────────────
+  --el-color-primary: #18181b;
+  --el-color-primary-light-3: #71717a;
+  --el-color-primary-light-5: #a1a1aa;
+  --el-color-primary-light-7: #d4d4d8;
+  --el-color-primary-light-8: #e4e4e7;
+  --el-color-primary-light-9: #f4f4f5;
+  --el-color-primary-dark-2: #09090b;
+
+  // ── Element Plus 语义色 ──────────────────────────────
+  --el-color-success: #16a34a;
+  --el-color-warning: #f59e0b;
+  --el-color-danger: #ef4444;
+  --el-color-error: #ef4444;
+  --el-color-info: #71717a;
+
+  // ── Element Plus 文字色 ──────────────────────────────
+  --el-text-color-primary: #18181b;
+  --el-text-color-regular: #3f3f46;
+  --el-text-color-secondary: #71717a;
+  --el-text-color-placeholder: #a1a1aa;
+  --el-text-color-disabled: #d4d4d8;
+
+  // ── Element Plus 边框色 ──────────────────────────────
+  --el-border-color: #d4d4d8;
+  --el-border-color-light: #e4e4e7;
+  --el-border-color-lighter: #f4f4f5;
+  --el-border-color-extra-light: #fafafa;
+  --el-border-color-dark: #a1a1aa;
+  --el-border-color-darker: #71717a;
+
+  // ── Element Plus 填充色 ──────────────────────────────
+  --el-fill-color: #f4f4f5;
+  --el-fill-color-light: #fafafa;
+  --el-fill-color-lighter: #fafafa;
+  --el-fill-color-extra-light: #fafafa;
+  --el-fill-color-blank: #fff;
+
+  // ── Element Plus 背景色 ──────────────────────────────
+  --el-bg-color: #fff;
+  --el-bg-color-page: #f4f4f5;
+  --el-bg-color-overlay: #fff;
+
+  // ── Element Plus 按钮（主色按钮文字永远是白色） ──────
+  --el-button-text-color: #fff;
+  --el-button-hover-text-color: #fff;
+  --el-button-hover-bg-color: #3f3f46;
+  --el-button-active-bg-color: #09090b;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 选择器：按特异性递增覆盖
+// ═══════════════════════════════════════════════════════════════
+
+.survey-scope {
+  @include survey-light-vars;
+}
+
+html.dark .survey-scope {
+  @include survey-light-vars;
+}
+
+html[data-color-blind] .survey-scope {
+  @include survey-light-vars;
+}
+
+html.dark[data-color-blind] .survey-scope {
+  @include survey-light-vars;
+}

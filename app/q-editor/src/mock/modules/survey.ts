@@ -716,8 +716,43 @@ export const surveyMocks: MockMethod[] = [
   },
 
   // ════════════════════════════════════════════════════════════
+  // GET /api/surveys/:id/public — 问卷公开详情（C 端，无需登录）
+  // ════════════════════════════════════════════════════════════
+  {
+    url: "/api/surveys/:id/public",
+    method: "get",
+    response: (req: unknown) => {
+      const surveyId = getParams(req, ["id"]).id || "";
+      const survey = surveyStore.find(s => s.id === surveyId);
+      if (!survey) return fail(404, "问卷不存在或未发布");
+      if (survey.status !== 1) return fail(404, "问卷不存在或未发布");
+
+      log("GET /api/surveys/:id/public", { surveyId });
+      return ok(survey);
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════
+  // GET /api/surveys/:id/token — 获取临时提交凭证
+  // ════════════════════════════════════════════════════════════
+  {
+    url: "/api/surveys/:id/token",
+    method: "get",
+    response: (req: unknown) => {
+      const surveyId = getParams(req, ["id"]).id || "";
+      const survey = surveyStore.find(s => s.id === surveyId);
+      if (!survey) return fail(404, "问卷不存在");
+      if (survey.status !== 1) return fail(400, "问卷未发布，无法获取提交凭证");
+
+      log("GET /api/surveys/:id/token", { surveyId });
+
+      return ok({ token: crypto.randomUUID?.() ?? `mock_token_${Date.now()}`, expires_in: 1800 });
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════
   // POST /api/surveys/:id/responses — 提交答卷
-  // 接收 SubmitResponseRequest，返回 SubmitResponseResponse
+  // 接收 SubmitResponseRequest（含 fingerprint + token），返回 SubmitResponseResponse
   // ════════════════════════════════════════════════════════════
   {
     url: "/api/surveys/:id/responses",
@@ -732,7 +767,12 @@ export const surveyMocks: MockMethod[] = [
       const rawAnswers = Array.isArray(b.answers) ? (b.answers as Array<Record<string, unknown>>) : [];
       const anonymous_id = b.anonymous_id ? String(b.anonymous_id) : null;
 
-      log("POST /api/surveys/:id/responses", { surveyId, answerCount: rawAnswers.length });
+      log("POST /api/surveys/:id/responses", {
+        surveyId,
+        answerCount: rawAnswers.length,
+        fingerprint: b.fingerprint ? "provided" : "missing",
+        token: b.token ? "provided" : "missing"
+      });
 
       const now = new Date().toISOString();
       const responseId = uid();

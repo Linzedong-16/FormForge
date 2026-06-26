@@ -9,6 +9,7 @@
  */
 import { defaultStatusMap } from "@/configs/defaultStatus/defaultStatusMap";
 import { componentMap } from "@/configs/componentMap";
+import { restoreComponentStatus } from "@/utils";
 import type { Status } from "@/types";
 import type { AIComponent } from "monorepo-code-common";
 import { v4 as uuidv4 } from "uuid";
@@ -82,6 +83,10 @@ export function aiComponentsToStatus(components: AIComponent[]): ConvertResult {
       );
     }
   }
+
+  // 5. 恢复所有嵌套的 editCom 引用（JSON 序列化会丢失 Vue 组件引用）
+  //    restoreComponentStatus 从 componentMap 按 name 字段重新挂载编辑组件
+  restoreComponentStatus(statuses);
 
   return { statuses, warnings };
 }

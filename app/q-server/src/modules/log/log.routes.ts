@@ -12,7 +12,7 @@
  */
 
 import type { FastifyPluginAsync } from "fastify";
-import { authenticate, requireSuperAdmin } from "../user/auth.middleware.js";
+import { authenticate, requireSuperAdmin } from "../user/auth/auth.middleware.js";
 import { LogService } from "./log.service.js";
 import {
   logListQuerySchema,

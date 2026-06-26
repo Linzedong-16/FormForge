@@ -45,6 +45,17 @@
           </el-tag>
         </template>
       </el-table-column>
+      <!-- 审核状态 -->
+      <el-table-column :label="t('layout.columnReviewStatus')" width="90" align="center">
+        <template #default="scope">
+          <template v-if="scope.row.review_status && scope.row.syncStatus === 'synced'">
+            <el-tag :type="reviewStatusType(scope.row.review_status)" size="small" effect="plain">
+              {{ t("layout.reviewStatus." + scope.row.review_status) }}
+            </el-tag>
+          </template>
+          <span v-else class="text-muted">—</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="title" :label="t('layout.columnTitle')" />
       <el-table-column prop="surveyCount" :label="t('layout.columnQuestionCount')" width="150" align="center" />
       <el-table-column
@@ -55,7 +66,7 @@
         sortable="custom"
         :formatter="formatDate"
       />
-      <el-table-column fixed="right" :label="t('layout.columnAction')" width="300" align="center">
+      <el-table-column fixed="right" :label="t('layout.columnAction')" width="380" align="center">
         <template #default="scope">
           <el-button
             link
@@ -65,6 +76,36 @@
             :loading="syncingId === scope.row.id"
             @click="syncSurvey(scope.row)"
             >{{ t("layout.syncSurvey") }}</el-button
+          >
+          <el-button
+            v-if="scope.row.remote_survey_id && scope.row.review_status !== 'approved'"
+            link
+            type="warning"
+            size="small"
+            :disabled="scope.row.review_status === 'pending'"
+            @click="handleSubmitForReview(scope.row)"
+            >{{ scope.row.review_status === "pending" ? t("layout.reviewing") : t("layout.submitReview") }}
+          </el-button>
+          <el-button
+            v-if="
+              scope.row.remote_survey_id && scope.row.review_status === 'approved' && scope.row.syncStatus === 'synced'
+            "
+            link
+            type="success"
+            size="small"
+            @click="handleShareTemplate(scope.row)"
+            >{{ t("layout.shareTemplate") }}</el-button
+          >
+          <!-- 生成问卷链接：仅在已同步且审核通过后可用 -->
+          <el-button
+            v-if="
+              scope.row.remote_survey_id && scope.row.review_status === 'approved' && scope.row.syncStatus === 'synced'
+            "
+            link
+            type="warning"
+            size="small"
+            @click="handleGenerateLink(scope.row)"
+            >{{ t("layout.generateLink") }}</el-button
           >
           <el-button link type="primary" size="small" @click="viewSurvey(scope.row)">{{
             t("layout.viewSurvey")
@@ -87,11 +128,55 @@
         background
       />
     </div>
+
+    <!-- 申请共享模板对话框 -->
+    <el-dialog v-model="templateDialogVisible" :title="t('layout.shareTemplateTitle')" width="500px">
+      <el-form :model="templateForm" label-width="100px">
+        <el-form-item :label="t('layout.templateCategory')" required>
+          <el-select
+            v-model="templateForm.category"
+            :placeholder="t('layout.templateCategoryRequired')"
+            style="width: 100%"
+          >
+            <el-option :label="t('layout.templateCategoryEducation')" value="education" />
+            <el-option :label="t('layout.templateCategoryMarket')" value="market" />
+            <el-option :label="t('layout.templateCategoryHr')" value="hr" />
+            <el-option :label="t('layout.templateCategoryCustomer')" value="customer" />
+            <el-option :label="t('layout.templateCategoryEvent')" value="event" />
+            <el-option :label="t('layout.templateCategoryOther')" value="other" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="t('layout.templateSubmitMessage')">
+          <el-input
+            v-model="templateForm.submit_message"
+            type="textarea"
+            :rows="3"
+            maxlength="500"
+            show-word-limit
+            :placeholder="t('layout.templateSubmitMessage')"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="templateDialogVisible = false">{{ t("layout.cancel") }}</el-button>
+        <el-button type="primary" :loading="templateApplying" @click="submitApplyTemplate">
+          {{ t("layout.templateSubmit") }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 生成问卷链接对话框 -->
+    <GenerateLinkDialog
+      v-model="generateLinkDialogVisible"
+      :survey-id="generateLinkSurveyId"
+      @generated="onLinkGenerated"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import headerNav from "@/components/Common/header-nav.vue";
+import GenerateLinkDialog from "@/components/Common/GenerateLinkDialog.vue";
 
 import { Plus, Compass, ArrowLeft, Refresh } from "@element-plus/icons-vue";
 import { ref, watch, computed, onMounted } from "vue";
@@ -119,8 +204,11 @@ import {
   getSurveyById,
   deserializeSurveyDetail,
   serializeComponents,
-  extractSurveyMetadata
+  extractSurveyMetadata,
+  submitReview,
+  applyTemplate
 } from "@/api/modules/survey";
+import type { TemplateCategory } from "@common/survey/survey.interface";
 
 import { qiankunWindow } from "vite-plugin-qiankun/es/helper";
 
@@ -211,7 +299,7 @@ async function fetchRemoteList() {
       title: string;
       updated_at: string;
       status: number;
-      survey_type: string;
+      review_status: string;
     }> = [];
     const downloadTasks: Array<() => Promise<void>> = [];
 
@@ -223,10 +311,8 @@ async function fetchRemoteList() {
       hasMore = page * pageSize < res.data.total;
       page++;
 
-      // 仅同步个人问卷，跳过模板；收集需要下载的问卷
+      // 所有问卷均为个人问卷（模板已解耦到独立的 templates 表）
       for (const remote of res.data.surveys) {
-        if (remote.survey_type !== "personal") continue;
-
         const localRecord = localMap.get(remote.id);
         const remoteUpdatedAt = new Date(remote.updated_at).getTime();
 
@@ -234,7 +320,7 @@ async function fetchRemoteList() {
           !localRecord || remoteUpdatedAt > localRecord.updateDate || localRecord.syncStatus !== "synced";
 
         if (needsDownload) {
-          downloadTasks.push(() => downloadAndPersistSurvey(remote.id, remoteUpdatedAt));
+          downloadTasks.push(() => downloadAndPersistSurvey(remote.id, remoteUpdatedAt, remote.review_status));
         } else if (localRecord && localRecord.syncStatus !== "synced") {
           await updateSurveyById(localRecord.id, { syncStatus: "synced" });
         }
@@ -271,7 +357,11 @@ async function fetchRemoteList() {
  * @param remoteSurveyId 远程问卷 ID
  * @param remoteUpdatedAt 远程更新时间戳（ms），用于设置本地 updateDate
  */
-async function downloadAndPersistSurvey(remoteSurveyId: string, remoteUpdatedAt: number): Promise<void> {
+async function downloadAndPersistSurvey(
+  remoteSurveyId: string,
+  remoteUpdatedAt: number,
+  reviewStatus?: string
+): Promise<void> {
   try {
     // 获取远程问卷详情（含组件列表）
     const detailRes = await getSurveyById(remoteSurveyId);
@@ -305,8 +395,9 @@ async function downloadAndPersistSurvey(remoteSurveyId: string, remoteUpdatedAt:
         pageSize: detail.page_size ?? 10,
         updateDate: remoteUpdatedAt,
         syncStatus: "synced",
-        remote_survey_id: remoteSurveyId
-      });
+        remote_survey_id: remoteSurveyId,
+        review_status: reviewStatus ?? existingLocal.review_status ?? "none"
+      } as any);
     } else {
       // 本地无记录 → 新建
       const now = Date.now();
@@ -318,8 +409,9 @@ async function downloadAndPersistSurvey(remoteSurveyId: string, remoteUpdatedAt:
         createDate: new Date(detail.created_at).getTime() || now,
         updateDate: remoteUpdatedAt || now,
         syncStatus: "synced",
-        remote_survey_id: remoteSurveyId
-      });
+        remote_survey_id: remoteSurveyId,
+        review_status: reviewStatus ?? "none"
+      } as any);
     }
   } catch (err) {
     console.warn(`[Layout] 同步问卷 ${remoteSurveyId} 失败:`, err);
@@ -343,6 +435,121 @@ watch(
     }
   }
 );
+
+// ─── 审核状态映射 ──────────────────────────────────────────────
+
+/** 审核状态 → Element Plus Tag type */
+function reviewStatusType(status: string): "warning" | "success" | "danger" | "info" {
+  const map: Record<string, "warning" | "success" | "danger" | "info"> = {
+    none: "info",
+    pending: "warning",
+    approved: "success",
+    rejected: "danger"
+  };
+  return map[status] ?? "info";
+}
+
+// ─── 申请共享模板 ──────────────────────────────────────────────
+
+const templateDialogVisible = ref(false);
+const templateApplying = ref(false);
+const sharingSurveyId = ref("");
+const templateForm = ref({
+  category: "" as string,
+  submit_message: ""
+});
+
+// ─── 生成问卷链接 ──────────────────────────────────────────────
+
+/** 生成链接弹窗可见性 */
+const generateLinkDialogVisible = ref(false);
+/** 当前要生成链接的问卷 ID（远程 ID） */
+const generateLinkSurveyId = ref("");
+
+/** 打开生成链接弹窗 */
+const handleGenerateLink = (surveyInfo: SurveyDBReturnData) => {
+  if (!surveyInfo.remote_survey_id) {
+    ElMessage.warning("请先同步问卷到远程数据库");
+    return;
+  }
+  generateLinkSurveyId.value = surveyInfo.remote_survey_id;
+  generateLinkDialogVisible.value = true;
+};
+
+/** 链接生成成功后的回调 */
+const onLinkGenerated = () => {
+  // 可以在此处刷新本地数据
+};
+
+const resetTemplateForm = () => {
+  templateForm.value = { category: "", submit_message: "" };
+};
+
+const handleShareTemplate = (surveyInfo: SurveyDBReturnData) => {
+  if (!surveyInfo.remote_survey_id) return;
+  sharingSurveyId.value = surveyInfo.remote_survey_id;
+  resetTemplateForm();
+  templateDialogVisible.value = true;
+};
+
+const submitApplyTemplate = async () => {
+  if (!templateForm.value.category) {
+    ElMessage.warning(t("layout.templateCategoryRequired"));
+    return;
+  }
+  templateApplying.value = true;
+  try {
+    const res = await applyTemplate(sharingSurveyId.value, {
+      category: templateForm.value.category as TemplateCategory,
+      submit_message: templateForm.value.submit_message || undefined
+    });
+    if (res.code === 0) {
+      templateDialogVisible.value = false;
+      ElMessage.success(t("layout.shareTemplateSuccess"));
+      await getLocalData();
+    } else {
+      ElMessage.error(res.msg || t("layout.shareTemplateFailed"));
+    }
+  } catch (err: any) {
+    ElMessage.error(err?.response?.data?.msg || err?.message || t("layout.shareTemplateFailed"));
+  } finally {
+    templateApplying.value = false;
+  }
+};
+
+/** 提审操作 */
+const handleSubmitForReview = async (surveyInfo: SurveyDBReturnData) => {
+  if (!surveyInfo.remote_survey_id) {
+    ElMessage.warning("请先同步问卷到远程数据库");
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认将问卷《${surveyInfo.title}》提交审核？提交后需等待管理员审核通过方可发布。`,
+      t("layout.submitReviewTitle"),
+      { confirmButtonText: t("layout.confirm"), cancelButtonText: t("layout.cancel"), type: "warning" }
+    );
+  } catch {
+    return;
+  }
+
+  try {
+    const res = await submitReview(surveyInfo.remote_survey_id, {
+      submit_message: "从主页提交审核"
+    });
+    if (res.code === 0) {
+      // 更新本地 review_status
+      await updateSurveyById(surveyInfo.id, { review_status: "pending" } as any);
+      await getLocalData();
+      ElMessage.success(t("layout.submitReviewSuccess"));
+    } else {
+      ElMessage.error(res.msg || t("layout.submitReviewFailed"));
+    }
+  } catch (err: any) {
+    ElMessage.error(err?.response?.data?.msg || err?.message || t("layout.submitReviewFailed"));
+  }
+};
 
 // ─── 导航 ──────────────────────────────────────────────────────
 
@@ -471,6 +678,11 @@ const syncSurvey = async (surveyInfo: SurveyDBReturnData) => {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+.text-muted {
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
 }
 
 .sync-hint {

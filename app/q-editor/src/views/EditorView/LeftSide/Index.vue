@@ -24,7 +24,13 @@
         <span class="tab-item-title mt-5">{{ t("editor.outline") }}</span>
       </div>
       <!-- 模板市场 -->
-      <div class="tab-item" @click="switchTemplateMarket">
+      <div
+        class="tab-item"
+        :class="{
+          'tab-show': routeName === 'template-market'
+        }"
+        @click="switchTemplateMarket"
+      >
         <el-icon><Shop /></el-icon>
         <span class="tab-item-title mt-5">{{ t("editor.templateMarket") }}</span>
       </div>
@@ -54,7 +60,7 @@ const switchOutline = () => {
 };
 
 const switchTemplateMarket = () => {
-  // TODO: 跳转模板市场路由
+  router.push({ name: "template-market" });
 };
 </script>
 
@@ -69,7 +75,8 @@ const switchTemplateMarket = () => {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
   > .tabs {
-    width: 20%;
+    flex-shrink: 0;
+    width: 60px;
     height: 100%;
     border-right: 1px solid var(--border-color);
     > .tab-item {
@@ -82,20 +89,55 @@ const switchTemplateMarket = () => {
       color: var(--font-color-light);
       text-decoration: none;
       cursor: pointer;
+      position: relative;
+      transition:
+        color 0.2s ease,
+        background-color 0.2s ease;
       > .tab-item-title {
         font-size: var(--font-size-base);
+      }
+      // 左侧高亮指示条
+      &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 0;
+        background: var(--primary-color);
+        border-radius: 0 2px 2px 0;
+        transition: height 0.2s ease;
+      }
+      &:hover {
+        color: var(--primary-color);
+        background-color: var(--background-color);
       }
     }
     > .tab-show {
       color: var(--primary-color);
+      font-weight: 600;
+      background-color: var(--background-color);
+      // 选中态指示条展开
+      &::before {
+        height: 28px;
+      }
     }
   }
   > .tab-pane {
-    width: 80%;
-    // 高度需要减去padding部分，否则会溢出
+    flex: 1;
     height: calc(100% - 50px);
     padding: 25px;
-    overflow-y: scroll;
+    overflow-y: auto;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    scrollbar-width: none;
   }
+}
+
+/* 暗色模式：面板背景 + 容器背景适配 */
+html.dark .left-side-container {
+  background: rgba(24, 24, 27, 0.92);
 }
 </style>

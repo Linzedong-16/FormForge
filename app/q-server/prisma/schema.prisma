@@ -11,7 +11,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ============================================================
@@ -27,11 +26,14 @@ model User {
   status        Int       @default(1) // 0:禁用 1:启用
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
-  last_login_at DateTime?
-  deleted_at    DateTime? // 软删除标记
+  last_login_at      DateTime?
+  password_updated_at DateTime? // NULL = 从未改密，首次登录强制修改
+  deleted_at         DateTime? // 软删除标记
+  deleted_by         BigInt?   // 删除操作人 ID
 
   // 关联关系
   surveys           Survey[]
+  templates         Template[]
   responses         Response[]
   tokens            ApiToken[]
   audit_logs        AuditLog[]         @relation("AuditLogUser")
@@ -46,6 +48,7 @@ model User {
   @@index([email])
   @@index([status])
   @@index([deleted_at])
+  @@index([deleted_by])
   @@map("users")
 }
 
@@ -69,12 +72,6 @@ model Survey {
   closed_at       DateTime?
   deleted_at      DateTime? // 软删除标记
 
-  // ─── 新增字段：模板市场相关 ───────────────────────────────────
-  survey_type    SurveyType   @default(personal) // 问卷类型：personal=个人问卷 / template=公共模板
-  category       String? // 模板分类：education / market / hr / customer / event / other
-  cover_url      String? // 模板封面图 URL（MinIO 对象存储）
-  download_count Int          @default(0) // 模板使用次数（用于热门排序）
-  rating         Decimal?     @default(0) @db.Decimal(2, 1) // 模板平均评分 0.0 ~ 5.0
   review_status  ReviewStatus @default(none) // 审核状态：none / pending / approved / rejected
 
   // 关联关系
@@ -83,19 +80,14 @@ model Survey {
   responses        Response[]
   permissions      SurveyPermission[]
   reviews          Review[] // 审核记录
-  template_ratings TemplateRating[] // 模板评分记录
   files            SurveyFile[] // 关联的问卷文件
 
-  @@index([user_id])
   @@index([status])
   @@index([created_at])
   @@index([is_public])
   @@index([deleted_at])
-  @@index([user_id, deleted_at]) // 高频：列表查询 WHERE user_id=? AND deleted_at IS NULL
-  @@index([survey_type, review_status]) // 模板市场查询：WHERE survey_type='template' AND review_status='approved'
-  @@index([survey_type, category]) // 按分类筛选模板
-  @@index([survey_type, download_count]) // 按热门排序模板
-  @@index([survey_type, rating]) // 按评分排序模板
+  @@index([user_id, deleted_at, updated_at]) // 高频：列表查询 WHERE user_id=? AND deleted_at IS NULL ORDER BY updated_at DESC
+  @@index([deleted_at, review_status, created_at]) // 未审核问卷查询：WHERE deleted_at IS NULL AND review_status='none' ORDER BY created_at DESC
   @@map("surveys")
 }
 
@@ -122,7 +114,60 @@ model SurveyComponent {
 }
 
 // ============================================================
-// 4. 答卷表 (responses)
+// 4. 模板表 (templates) — 方案B：完全解耦，独立于 Survey 表
+// ============================================================
+model Template {
+  id               BigInt        @id @default(autoincrement())
+  user_id          BigInt
+  title            String
+  description      String?
+  category         String? // 模板分类：education / market / hr / customer / event / other
+  cover_url        String? // 模板封面图 URL（MinIO 对象存储）
+  download_count   Int           @default(0) // 模板使用次数（用于热门排序）
+  rating           Decimal?      @default(0) @db.Decimal(2, 1) // 模板平均评分 0.0 ~ 5.0
+  review_status    ReviewStatus  @default(approved) // 审核状态：模板上架后默认为 approved
+  source_survey_id BigInt? // 来源问卷 ID（通过审核的问卷，用于追溯）
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+
+  // 关联关系
+  user       User                @relation(fields: [user_id], references: [id])
+  components TemplateComponent[]
+  ratings    TemplateRating[]
+  reviews    Review[]
+
+  @@index([user_id])
+  @@index([category])
+  @@index([review_status])
+  @@index([category, review_status]) // 模板市场查询：WHERE category=? AND review_status='approved'
+  @@index([download_count]) // 按热门排序
+  @@index([rating]) // 按评分排序
+  @@map("templates")
+}
+
+// ============================================================
+// 5. 模板组件表 (template_components)
+// ============================================================
+model TemplateComponent {
+  id          BigInt   @id @default(autoincrement())
+  template_id BigInt
+  type        String // 组件类型
+  config      Json     @default("{}") // 组件配置 JSON
+  order_index Int      @default(0) // 排序索引
+  required    Int      @default(0) // 0:非必填 1:必填
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // 关联关系
+  template Template @relation(fields: [template_id], references: [id], onDelete: Cascade)
+
+  @@index([template_id])
+  @@index([template_id, order_index])
+  @@map("template_components")
+}
+
+// ============================================================
+// 6. 答卷表 (responses)
 // ============================================================
 model Response {
   id           BigInt    @id @default(autoincrement())
@@ -269,21 +314,21 @@ enum RoleCode {
 }
 
 // ============================================================
-// 枚举：问卷类型
-// ============================================================
-enum SurveyType {
-  personal // 个人问卷（默认）
-  template // 公共模板
-}
-
-// ============================================================
 // 枚举：审核状态
 // ============================================================
 enum ReviewStatus {
   none // 未申请审核（个人问卷默认状态）
   pending // 审核中
-  approved // 已通过（模板市场上架）
+  approved // 已通过（问卷审核通过后可发布；模板审核通过后上架模板市场）
   rejected // 已驳回（违规/需修改）
+}
+
+// ============================================================
+// 枚举：审核类型
+// ============================================================
+enum ReviewType {
+  survey // 问卷审核（所有个人问卷发布前必须通过）
+  template // 模板审核（申请成为公共模板，需先通过问卷审核）
 }
 
 // ============================================================
@@ -300,10 +345,13 @@ enum FileType {
 // ============================================================
 model Review {
   id             BigInt       @id @default(autoincrement())
-  survey_id      BigInt
+  survey_id      BigInt? // 问卷 ID（问卷审核时必填，模板审核时可为 null）
+  template_id    BigInt? // 模板 ID（模板审核通过后回填，问卷审核时为 null）
   submitter_id   BigInt // 提交者（问卷作者）
   reviewer_id    BigInt? // 审核人（管理员），审核前为 null
+  review_type    ReviewType   @default(survey) // 审核类型：survey=问卷审核 / template=模板审核
   status         ReviewStatus @default(pending) // pending / approved / rejected
+  category       String? // 模板分类（模板审核时由 applyTemplate 传入，问卷审核时为 null）
   submit_message String?      @db.Text // 提交时附加说明，最大 500 字符
   review_comment String?      @db.Text // 审核意见（通过/驳回时填写）
   submitted_at   DateTime     @default(now()) // 提交时间
@@ -312,16 +360,21 @@ model Review {
   updated_at     DateTime     @updatedAt
 
   // 关联关系
-  survey    Survey @relation(fields: [survey_id], references: [id], onDelete: Cascade)
-  submitter User   @relation("ReviewSubmitter", fields: [submitter_id], references: [id])
-  reviewer  User?  @relation("ReviewReviewer", fields: [reviewer_id], references: [id])
+  survey    Survey?   @relation(fields: [survey_id], references: [id], onDelete: Cascade)
+  template  Template? @relation(fields: [template_id], references: [id], onDelete: Cascade)
+  submitter User      @relation("ReviewSubmitter", fields: [submitter_id], references: [id])
+  reviewer  User?     @relation("ReviewReviewer", fields: [reviewer_id], references: [id])
 
   @@index([survey_id])
+  @@index([template_id])
   @@index([submitter_id])
   @@index([reviewer_id])
+  @@index([review_type])
   @@index([status])
   @@index([submitted_at])
+  @@index([review_type, status, submitted_at]) // 高频：审核列表 WHERE review_type=? AND status=? ORDER BY submitted_at DESC
   @@index([survey_id, status]) // 高频：检查同一问卷是否已有审核中记录
+  @@index([template_id, status]) // 高频：检查同一模板是否已有审核中记录
   @@map("reviews")
 }
 
@@ -330,15 +383,15 @@ model Review {
 // ============================================================
 model TemplateRating {
   id          BigInt   @id @default(autoincrement())
-  template_id BigInt // 模板对应的 Survey ID
+  template_id BigInt // 模板 ID
   user_id     BigInt // 评分用户
   score       Int // 评分 1-5
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   // 关联关系
-  template Survey @relation(fields: [template_id], references: [id], onDelete: Cascade)
-  user     User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  template Template @relation(fields: [template_id], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([template_id, user_id]) // 同一用户对同一模板仅一条评分记录
   @@index([template_id])

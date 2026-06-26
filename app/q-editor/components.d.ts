@@ -35,7 +35,9 @@ declare module 'vue' {
     ElColorPicker: typeof import('element-plus/es')['ElColorPicker']
     ElDatePicker: typeof import('element-plus/es')['ElDatePicker']
     ElDialog: typeof import('element-plus/es')['ElDialog']
+    ElDivider: typeof import('element-plus/es')['ElDivider']
     ElDrawer: typeof import('element-plus/es')['ElDrawer']
+    ElEmpty: typeof import('element-plus/es')['ElEmpty']
     ElForm: typeof import('element-plus/es')['ElForm']
     ElFormItem: typeof import('element-plus/es')['ElFormItem']
     ElIcon: typeof import('element-plus/es')['ElIcon']
@@ -47,6 +49,7 @@ declare module 'vue' {
     ElPagination: typeof import('element-plus/es')['ElPagination']
     ElPopover: typeof import('element-plus/es')['ElPopover']
     ElRadio: typeof import('element-plus/es')['ElRadio']
+    ElRadioButton: typeof import('element-plus/es')['ElRadioButton']
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']
     ElRate: typeof import('element-plus/es')['ElRate']
     ElResult: typeof import('element-plus/es')['ElResult']
@@ -60,6 +63,7 @@ declare module 'vue' {
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElTransfer: typeof import('element-plus/es')['ElTransfer']
     ElUpload: typeof import('element-plus/es')['ElUpload']
+    GenerateLinkDialog: typeof import('./src/components/Common/GenerateLinkDialog.vue')['default']
     Header: typeof import('./src/components/Common/Header.vue')['default']
     HeaderNav: typeof import('./src/components/Common/header-nav.vue')['default']
     ItalicEditor: typeof import('./src/components/SurveyComs/EditItems/ItalicEditor.vue')['default']
@@ -97,9 +101,6 @@ declare module 'vue' {
     UserProfile: typeof import('./src/components/Common/UserProfile.vue')['default']
     WeightEditor: typeof import('./src/components/SurveyComs/EditItems/WeightEditor.vue')['default']
   }
-  export interface GlobalDirectives {
-    vLoading: typeof import('element-plus/es')['ElLoadingDirective']
-  }
 }
 
 // For TSX support
@@ -127,7 +128,9 @@ declare global {
   const ElColorPicker: typeof import('element-plus/es')['ElColorPicker']
   const ElDatePicker: typeof import('element-plus/es')['ElDatePicker']
   const ElDialog: typeof import('element-plus/es')['ElDialog']
+  const ElDivider: typeof import('element-plus/es')['ElDivider']
   const ElDrawer: typeof import('element-plus/es')['ElDrawer']
+  const ElEmpty: typeof import('element-plus/es')['ElEmpty']
   const ElForm: typeof import('element-plus/es')['ElForm']
   const ElFormItem: typeof import('element-plus/es')['ElFormItem']
   const ElIcon: typeof import('element-plus/es')['ElIcon']
@@ -139,6 +142,7 @@ declare global {
   const ElPagination: typeof import('element-plus/es')['ElPagination']
   const ElPopover: typeof import('element-plus/es')['ElPopover']
   const ElRadio: typeof import('element-plus/es')['ElRadio']
+  const ElRadioButton: typeof import('element-plus/es')['ElRadioButton']
   const ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']
   const ElRate: typeof import('element-plus/es')['ElRate']
   const ElResult: typeof import('element-plus/es')['ElResult']
@@ -152,6 +156,7 @@ declare global {
   const ElTooltip: typeof import('element-plus/es')['ElTooltip']
   const ElTransfer: typeof import('element-plus/es')['ElTransfer']
   const ElUpload: typeof import('element-plus/es')['ElUpload']
+  const GenerateLinkDialog: typeof import('./src/components/Common/GenerateLinkDialog.vue')['default']
   const Header: typeof import('./src/components/Common/Header.vue')['default']
   const HeaderNav: typeof import('./src/components/Common/header-nav.vue')['default']
   const ItalicEditor: typeof import('./src/components/SurveyComs/EditItems/ItalicEditor.vue')['default']

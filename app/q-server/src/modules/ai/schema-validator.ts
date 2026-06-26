@@ -7,11 +7,90 @@
  *   3. 逐组件校验 type 有效性，过滤无效组件
  *   4. 返回 { valid components, warnings[] }
  */
-import { aiResponseSchema, VALID_COMPONENT_TYPES, type AIComponent } from "./ai-generate.schemas.js";
+import type { FastifyInstance } from "fastify";
+import { aiResponseSchema, VALID_COMPONENT_TYPES, type AIComponent } from "./ai-generate/ai-generate.schemas.js";
 import type { ValidationResult } from "@common/ai/ai.interface.js";
 
 // Re-export 共用类型（向后兼容）
 export type { ValidationResult };
+
+// ─── AI 原始输出日志工具 ────────────────────────────────────────
+
+/** 日志截断长度（字符） */
+const LOG_MAX_LENGTH = 8000;
+
+/**
+ * 将 AI 流式输出的完整原始文本写入日志，用于排障
+ */
+export function logAIRawResponse(fastify: FastifyInstance, userId: bigint, action: string, rawText: string): void {
+  const truncated =
+    rawText.length > LOG_MAX_LENGTH
+      ? rawText.slice(0, LOG_MAX_LENGTH) + `...（共 ${rawText.length} 字符，已截断）`
+      : rawText;
+
+  fastify.log.info(
+    { userId: String(userId), action, textLength: rawText.length, rawText: truncated },
+    `AI ${action} 原始输出（共 ${rawText.length} 字符）`
+  );
+}
+
+// ─── 公共 JSON 解析 ────────────────────────────────────────────
+
+/**
+ * 从 AI 原始文本中提取 JSON 对象的解析结果
+ *
+ * 三级容错策略：
+ *   1. 直接 JSON.parse() 尝试解析
+ *   2. 若失败，正则提取 markdown 代码块中的 JSON
+ *   3. 若仍失败，找到第一个 { 和最后一个 } 之间的内容
+ *
+ * 此函数供 validateAIResponse 和 extractChanges 等场景复用，
+ * 避免 JSON 解析逻辑重复。
+ *
+ * @param rawText  AI 返回的原始文本
+ * @returns 解析后的对象，若完全无法解析则返回 null
+ */
+export function parseJSONFromRawText(rawText: string): Record<string, unknown> | null {
+  // 步骤 1：直接解析
+  try {
+    const parsed = JSON.parse(rawText.trim());
+    // 处理 DeepSeek 将 JSON 输出为字符串值的情况
+    if (typeof parsed === "string" && parsed.trim().startsWith("{")) {
+      try {
+        return JSON.parse(parsed);
+      } catch {
+        // 二次解析失败，继续容错
+      }
+    } else if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // 继续容错
+  }
+
+  // 步骤 2：markdown 代码块提取
+  const codeBlockMatch = rawText.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  if (codeBlockMatch) {
+    try {
+      return JSON.parse(codeBlockMatch[1].trim());
+    } catch {
+      // 继续
+    }
+  }
+
+  // 步骤 3：提取第一个 { 到最后一个 }
+  const firstBrace = rawText.indexOf("{");
+  const lastBrace = rawText.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      return JSON.parse(rawText.slice(firstBrace, lastBrace + 1));
+    } catch {
+      // 所有尝试均失败
+    }
+  }
+
+  return null;
+}
 
 // ─── 核心函数 ──────────────────────────────────────────────────
 
@@ -20,6 +99,7 @@ export type { ValidationResult };
  *
  * 容错策略：
  *   1. 直接 JSON.parse() 尝试解析
+ *   1.5 若解析结果是字符串且以 { 开头，再 parse 一次（DeepSeek 偶发将 JSON 输出为字符串值）
  *   2. 若失败，正则提取 markdown 代码块中的 JSON
  *   3. 若仍失败，尝试找到第一个 { 和最后一个 } 之间的内容
  *   4. Zod 校验整体结构 → 过滤无效组件 → 返回有效部分
@@ -29,59 +109,47 @@ export type { ValidationResult };
  */
 export function validateAIResponse(rawText: string): ValidationResult {
   const warnings: string[] = [];
-  let parsed: unknown;
+  const parsed = parseJSONFromRawText(rawText);
 
-  // 步骤 1：尝试直接解析
-  try {
-    parsed = JSON.parse(rawText.trim());
-  } catch {
-    // 步骤 2：尝试从 markdown 代码块中提取
-    const codeBlockMatch = rawText.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-    if (codeBlockMatch) {
-      try {
-        parsed = JSON.parse(codeBlockMatch[1].trim());
-        warnings.push("AI 输出被包裹在 markdown 代码块中，已自动提取 JSON");
-      } catch {
-        // 继续下一步
+  // 完全无法解析
+  if (!parsed) {
+    return {
+      data: { title: "", description: "", components: [] },
+      warnings: ["AI 返回内容无法解析为 JSON，请重试"]
+    };
+  }
+
+  // 检查是否是从字符串展开的
+  if (rawText.trim().startsWith('"')) {
+    try {
+      const firstPass = JSON.parse(rawText.trim());
+      if (typeof firstPass === "string" && firstPass.trim().startsWith("{")) {
+        warnings.push("AI 输出被包裹为 JSON 字符串，已自动展开");
       }
-    }
-
-    // 步骤 3：尝试提取第一个 { 到最后一个 } 之间的内容
-    if (!parsed) {
-      const firstBrace = rawText.indexOf("{");
-      const lastBrace = rawText.lastIndexOf("}");
-      if (firstBrace !== -1 && lastBrace > firstBrace) {
-        try {
-          parsed = JSON.parse(rawText.slice(firstBrace, lastBrace + 1));
-          warnings.push("AI 输出包含非 JSON 内容，已自动提取 JSON 部分");
-        } catch {
-          // 所有尝试均失败
-        }
-      }
-    }
-
-    // 完全无法解析
-    if (!parsed) {
-      return {
-        data: { title: "", description: "", components: [] },
-        warnings: ["AI 返回内容无法解析为 JSON，请重试"]
-      };
+    } catch {
+      // 非字符串包裹
     }
   }
 
-  // 步骤 4：Zod 校验 + 过滤无效组件
+  // 检查是否是从 markdown 提取的
+  if (/```(?:json)?\s*\n/.test(rawText)) {
+    warnings.push("AI 输出被包裹在 markdown 代码块中，已自动提取 JSON");
+  } else if (rawText.indexOf("{") > 0 || rawText.lastIndexOf("}") < rawText.length - 1) {
+    warnings.push("AI 输出包含非 JSON 内容，已自动提取 JSON 部分");
+  }
+
+  // Zod 校验 + 过滤无效组件
   const zodResult = aiResponseSchema.safeParse(parsed);
   if (!zodResult.success) {
-    // 顶层结构校验失败时，尝试修复
     return attemptRepair(
-      parsed as Record<string, unknown>,
+      parsed,
       zodResult.error.issues.map(i => i.message)
     );
   }
 
   const data = zodResult.data;
 
-  // 步骤 5：过滤无效组件
+  // 过滤无效组件
   const validComponents: AIComponent[] = [];
   for (let i = 0; i < data.components.length; i++) {
     const comp = data.components[i];

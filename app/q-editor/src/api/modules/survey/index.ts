@@ -20,12 +20,22 @@ import type {
   SurveyComponentPayload,
   ApplyTemplateRequest,
   ApplyTemplateResponse,
+  SubmitReviewRequest,
   SubmitResponseRequest,
   SubmitResponseResponse,
   ResponseListQuery,
   ResponseListResponse,
   SurveyResponseDetail,
-  AnswerItem
+  AnswerItem,
+  TemplateListQuery,
+  TemplateListResponse,
+  TemplateDetail,
+  UseTemplateRequest,
+  UseTemplateResponse,
+  RateTemplateRequest,
+  RateTemplateResponse,
+  GenerateLinkRequest,
+  GenerateLinkResponse
 } from "@common/survey/survey.interface";
 import serverClient from "../../clients/server";
 
@@ -48,10 +58,16 @@ export const getSurveyList = (params?: SurveyListQuery): Promise<ApiResponse<Sur
   serverClient.get("/surveys", { params });
 
 /**
- * GET /api/surveys/:id — 获取问卷详情（含组件列表）
+ * GET /api/surveys/:id — 获取问卷详情（含组件列表，B 端，需登录）
  */
 export const getSurveyById = (surveyId: string): Promise<ApiResponse<SurveyDetail>> =>
   serverClient.get(`/surveys/${surveyId}`);
+
+/**
+ * GET /api/surveys/:id/public — 获取已发布问卷的公开详情（C 端，无需登录）
+ */
+export const getPublicSurveyById = (surveyId: string): Promise<ApiResponse<SurveyDetail>> =>
+  serverClient.get(`/surveys/${surveyId}/public`);
 
 /**
  * PUT /api/surveys/:id — 更新问卷
@@ -85,17 +101,46 @@ export const applyTemplate = (
   data: ApplyTemplateRequest
 ): Promise<ApiResponse<ApplyTemplateResponse>> => serverClient.post(`/surveys/${surveyId}/apply-template`, data);
 
+/**
+ * POST /api/surveys/:id/submit-review — 提交问卷审核
+ */
+export const submitReview = (
+  surveyId: string,
+  data: SubmitReviewRequest
+): Promise<ApiResponse<ApplyTemplateResponse>> => serverClient.post(`/surveys/${surveyId}/submit-review`, data);
+
 // ============================================================
 // 答卷
 // ============================================================
 
 /**
+ * GET /api/surveys/:surveyId/token — 获取临时提交凭证（防重复提交）
+ */
+export const getSurveyToken = (surveyId: string): Promise<ApiResponse<{ token: string; expires_in: number }>> =>
+  serverClient.get(`/surveys/${surveyId}/token`);
+
+/**
  * POST /api/surveys/:surveyId/responses — 提交答卷
+ *
+ * 防重复提交：
+ *   - fingerprint: 浏览器指纹 SHA-256 哈希（前端采集）
+ *   - token: 临时提交凭证（从 getSurveyToken 获取）
  */
 export const submitResponse = (
   surveyId: string,
   data: SubmitResponseRequest
 ): Promise<ApiResponse<SubmitResponseResponse>> => serverClient.post(`/surveys/${surveyId}/responses`, data);
+
+/**
+ * POST /api/surveys/:id/generate-link — 生成定时问卷链接
+ *
+ * @param surveyId 问卷 ID
+ * @param data 包含截止时间 deadline（ISO 8601 格式）
+ */
+export const generateSurveyLink = (
+  surveyId: string,
+  data: GenerateLinkRequest
+): Promise<ApiResponse<GenerateLinkResponse>> => serverClient.post(`/surveys/${surveyId}/generate-link`, data);
 
 /**
  * GET /api/surveys/:surveyId/responses — 获取答卷列表
@@ -274,11 +319,11 @@ export const getSurveyMetadata = (store: {
 /**
  * 将前端答案格式转换为后端提交格式
  *
- * @param answers    前端答案对象 { [serialNum]: value }（题目序号从 1 开始）
+ * @param answers    前端答案对象 { [orderIndex]: value }（组件下标 = order_index）
  * @param components 来自后端响应的组件详情（须包含真实数据库 id）
  */
 export const serializeAnswers = (
-  answers: Record<number, string | number | Date | string[]>,
+  answers: Record<number, string | number | Date | string[] | Record<number, unknown>>,
   components: Array<{ id: string; order_index: number }>
 ): AnswerItem[] => {
   const result: AnswerItem[] = [];
@@ -292,10 +337,16 @@ export const serializeAnswers = (
     const item: AnswerItem = { component_id: component.id };
 
     if (Array.isArray(value)) {
+      // 多选题 / 级联选择 / 排序题 → values 数组
       item.values = value.map(v => String(v));
     } else if (value instanceof Date) {
+      // 日期时间题 → ISO 8601 字符串
       item.value = value.toISOString();
+    } else if (typeof value === "object" && value !== null) {
+      // 矩阵题等对象类型 → JSON 字符串存储，消费时 JSON.parse 还原
+      item.value = JSON.stringify(value);
     } else {
+      // 单选 / 文本 / 评分 / 滑块 / 下拉 / 签名 URL 等标量 → 直接转字符串
       item.value = String(value);
     }
 
@@ -374,7 +425,38 @@ export const getComponentMap = (
  * });
  * ```
  */
-export { createAIGenerateStream, type AIGenerateStreamOptions } from "monorepo-sse-client/ai";
+export { createAIGenerateStream, createAIPolishStream } from "monorepo-sse-client/ai";
+export type { AIGenerateStreamOptions, AIPolishStreamOptions, AIPolishResult } from "monorepo-sse-client/ai";
+
+// ============================================================
+// 模板 API（方案B：完全解耦）
+// ============================================================
+
+/**
+ * GET /api/templates — 模板市场列表
+ */
+export const getTemplateList = (params?: TemplateListQuery): Promise<ApiResponse<TemplateListResponse>> =>
+  serverClient.get("/templates", { params });
+
+/**
+ * GET /api/templates/:id — 模板详情
+ */
+export const getTemplateDetail = (templateId: string): Promise<ApiResponse<TemplateDetail>> =>
+  serverClient.get(`/templates/${templateId}`);
+
+/**
+ * POST /api/templates/:id/apply — 使用模板创建问卷
+ */
+export const useTemplate = (templateId: string, data?: UseTemplateRequest): Promise<ApiResponse<UseTemplateResponse>> =>
+  serverClient.post(`/templates/${templateId}/apply`, data ?? {});
+
+/**
+ * POST /api/templates/:id/rate — 模板评分
+ */
+export const rateTemplate = (
+  templateId: string,
+  data: RateTemplateRequest
+): Promise<ApiResponse<RateTemplateResponse>> => serverClient.post(`/templates/${templateId}/rate`, data);
 
 // ============================================================
 // 类型再导出（供外部模块按需直接引用）
@@ -390,10 +472,13 @@ export type {
   SurveyComponentPayload,
   ApplyTemplateRequest,
   ApplyTemplateResponse,
+  SubmitReviewRequest,
   SubmitResponseRequest,
   SubmitResponseResponse,
   ResponseListQuery,
   ResponseListResponse,
   SurveyResponseDetail,
-  AnswerItem
+  AnswerItem,
+  GenerateLinkRequest,
+  GenerateLinkResponse
 };

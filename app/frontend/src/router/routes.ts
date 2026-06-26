@@ -44,15 +44,6 @@ export const childrenRoutes: RouteRecordRaw[] = [
     }
   },
   {
-    path: "/statistics",
-    name: "statistics",
-    component: () => import("../views/statistics/SurveyStatisticsView.vue"),
-    meta: {
-      title: "答卷统计",
-      icon: "cloud"
-    }
-  },
-  {
     path: "/api-tokens",
     name: "apiTokens",
     component: () => import("../views/api-tokens/ApiTokensView.vue"),
@@ -62,13 +53,33 @@ export const childrenRoutes: RouteRecordRaw[] = [
     }
   },
   {
-    path: "/survey-preview",
-    name: "surveyPreview",
-    component: () => import("../views/survey-preview/SurveyPreviewView.vue"),
+    path: "/survey-management",
+    name: "surveyManagement",
+    component: () => import("../views/survey-management/SurveyManagementLayout.vue"),
     meta: {
-      title: "问卷预览",
+      title: "问卷管理",
       icon: "file"
-    }
+    },
+    children: [
+      {
+        path: "audit",
+        name: "surveyAudit",
+        component: () => import("../views/survey-preview/SurveyPreviewView.vue"),
+        meta: { title: "审核管理", icon: "safe" }
+      },
+      {
+        path: "publish",
+        name: "surveyPublish",
+        component: () => import("../views/survey-publish/SurveyPublishView.vue"),
+        meta: { title: "问卷发布", icon: "send" }
+      },
+      {
+        path: "statistics",
+        name: "surveyStatistics",
+        component: () => import("../views/statistics/SurveyStatisticsView.vue"),
+        meta: { title: "答卷统计", icon: "cloud" }
+      }
+    ]
   },
   {
     path: "/system-settings",
@@ -78,5 +89,34 @@ export const childrenRoutes: RouteRecordRaw[] = [
       title: "系统设置",
       icon: "settings"
     }
+  },
+  {
+    path: "/user-management",
+    name: "userManagement",
+    component: () => import("../views/user-management/UserManagementLayout.vue"),
+    meta: {
+      title: "用户管理",
+      icon: "userGroup"
+    },
+    children: [
+      {
+        path: "",
+        name: "userList",
+        component: () => import("../views/user-management/UserListView.vue"),
+        meta: { title: "用户列表", icon: "list" }
+      },
+      {
+        path: "roles",
+        name: "roleMgmt",
+        component: () => import("../views/user-management/RoleManagementView.vue"),
+        meta: { title: "角色管理", icon: "user" }
+      },
+      {
+        path: "permissions",
+        name: "permissions",
+        component: () => import("../views/user-management/PermissionView.vue"),
+        meta: { title: "权限设置", icon: "safe" }
+      }
+    ]
   }
 ];

@@ -4,7 +4,7 @@
       <a-layout-header>
         <HeaderTop @sidebar-toggle="handleCollapse" />
       </a-layout-header>
-      <a-layout style="height: calc(100% - 64px)">
+      <a-layout class="inner-layout" style="height: calc(100% - 64px)">
         <a-layout-sider :width="200" collapsible :collapsed="isCollapsed" style="background: var(--color-bg-1)">
           <SideBar :collapsed="isCollapsed" />
         </a-layout-sider>
@@ -36,12 +36,16 @@ const handleCollapse = (val: boolean) => {
   overflow: hidden;
 }
 
+/* 内层 Layout 背景跟随主题（消除侧边栏与内容区间隙的白色） */
+.inner-layout {
+  background-color: var(--color-bg-1) !important;
+}
+
 .layout-content {
   margin: 24px;
   padding: 24px;
   background-color: var(--color-bg-1);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   overflow: auto;
 }
 </style>

@@ -1,16 +1,12 @@
 <template>
   <div class="preview-container pb-40">
-    <div class="center mc">
+    <div class="center mc survey-scope">
       <!-- 上面的按钮组 -->
       <div class="button-group flex space-between align-items-center no-print">
         <!-- 左边按钮 -->
         <div class="flex space-between">
           <el-button type="danger" @click="gobackHandle">{{ t("preview.back") }}</el-button>
-          <el-button v-permiss="'admin'" type="success" @click="generateOnlineSurvey">{{
-            t("preview.generateOnline")
-          }}</el-button>
           <el-button type="warning" @click="generatePDF">{{ t("preview.generatePDF") }}</el-button>
-          <el-button type="primary" @click="handleSubmitReview">{{ t("preview.submitReview") }}</el-button>
         </div>
         <!-- 题目数量 -->
         <div class="mr-15">
@@ -36,14 +32,6 @@
           />
         </div>
       </div>
-      <el-dialog v-model="dialogVisible" :title="t('preview.onlineSurvey')" width="500">
-        {{ t("preview.shareLink") }}: <a :href="shareLink" target="_blank">{{ shareLink }}</a>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-button type="primary" @click="copyLink">{{ t("preview.copyLink") }}</el-button>
-          </div>
-        </template>
-      </el-dialog>
     </div>
   </div>
 </template>
@@ -64,13 +52,9 @@ import { canUsedForPDF } from "@/types";
 import { ElMessage } from "element-plus";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 import { useI18n } from "vue-i18n";
-import { createSurvey, serializeComponents, getSurveyMetadata, publishSurvey } from "@/api/modules/survey";
-import { updateSurveyById } from "@/db/operation";
 
 const { t } = useI18n();
 
-const dialogVisible = ref(false);
-const shareLink = ref("");
 /** 打印模式：为 true 时展示全部组件，绕过分页的 v-show 限制 */
 const isPrinting = ref(false);
 
@@ -78,14 +62,6 @@ const isPrinting = ref(false);
 const isInCurrentPage = (index: number) => {
   const start = (store.currentPage - 1) * store.pageSize;
   return index >= start && index < start + store.pageSize;
-};
-
-const copyLink = () => {
-  const link = shareLink.value;
-  if (link) {
-    navigator.clipboard.writeText(link);
-    ElMessage.success(t("preview.copySuccess"));
-  }
 };
 
 // 获取序号
@@ -125,92 +101,6 @@ const generatePDF = () => {
     window.addEventListener("afterprint", cleanup);
     window.print();
   });
-};
-
-/**
- * 提交审核（发布问卷）
- */
-const handleSubmitReview = async () => {
-  if (!id) {
-    ElMessage.warning(t("editor.noSurveyData"));
-    return;
-  }
-  const local = await getSurveyById(id);
-  if (!local?.remote_survey_id) {
-    ElMessage.warning(t("editor.reviewNeedOnline"));
-    return;
-  }
-  try {
-    const res = await publishSurvey(local.remote_survey_id);
-    if (res.code === 0) {
-      ElMessage.success(t("editor.reviewSuccess"));
-    } else {
-      ElMessage.error(res.msg || t("editor.reviewFailed"));
-    }
-  } catch {
-    ElMessage.error(t("editor.reviewFailed"));
-  }
-};
-
-/**
- * 生成在线问卷
- *
- * 流程：
- *   1. 从 text-type 组件中提取问卷标题/描述（surveys.title / surveys.description）
- *   2. 将 Status[] 序列化为 SurveyComponentPayload[]（name → snake_case type，status → config）
- *   3. 调用 POST /api/surveys 创建问卷
- *   4. 用后端返回的真实 survey_id 构建分享链接
- */
-const generateOnlineSurvey = async () => {
-  try {
-    // store.coms 的结构与 serializeComponents/getSurveyMetadata 参数兼容
-    // （Status.name: Material extends string，Status.status: Record<string,TP|OP> extends Record<string,unknown>）
-    const storeComs = store.coms as Array<{ name: string; status: Record<string, unknown>; [key: string]: unknown }>;
-
-    // 提取问卷级别标题与描述（surveys.title / surveys.description 必须正确传递）
-    const { title, description } = getSurveyMetadata({ coms: storeComs });
-
-    // 序列化组件：Material kebab-case → snake_case type，status 整体作为 config JSON
-    const components = serializeComponents(storeComs);
-
-    if (components.length === 0) {
-      ElMessage.warning("问卷中暂无组件，请先添加题目");
-      return;
-    }
-
-    // 调用创建问卷接口（POST /api/surveys）
-    const res = await createSurvey({
-      title: title || "未命名问卷",
-      description: description || undefined,
-      page_size: store.pageSize,
-      is_public: 1,
-      components
-    });
-
-    // 后端统一响应：code === 0 表示成功
-    if (res.code !== 0 || !res.data) {
-      ElMessage.error(res.msg || t("preview.onlineError"));
-      return;
-    }
-
-    // 用后端返回的真实 survey_id 构建填答分享链接
-    const surveyId = res.data.survey_id;
-    shareLink.value = `${window.location.origin}/survey/${surveyId}?pageSize=${store.pageSize}`;
-    dialogVisible.value = true;
-
-    // 将远程问卷 ID 写回本地 IndexedDB，以便后续同步/删除
-    if (id) {
-      await updateSurveyById(id, {
-        remote_survey_id: surveyId,
-        syncStatus: "synced"
-      });
-    }
-
-    ElMessage.success(t("preview.onlineSuccess"));
-  } catch (err) {
-    console.error("[generateOnlineSurvey]", err);
-    ElMessage.error(t("preview.onlineError"));
-  }
 };
 </script>
 

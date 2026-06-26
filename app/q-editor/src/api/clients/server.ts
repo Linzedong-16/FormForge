@@ -23,7 +23,13 @@ serverClient.interceptors.request.use(config => {
   return config;
 });
 
-// ─── 响应拦截器：处理 401 + 超时 + 网络错误 ────────────────────
+// ─── 响应拦截器：处理 401 + 超时 + 网络错误 + 5xx ────────────
+//
+// 设计原则：
+//   - 业务错误（400/403/404/409 等）不弹窗，直接返回 response.data，
+//     由调用方通过 res.code 统一处理
+//   - 基础设施/传输错误（超时、断网、5xx）在拦截器中统一弹窗提示
+//   - 401 单独处理：自动刷新 Token 后重试
 
 serverClient.interceptors.response.use(
   response => response.data,
@@ -42,22 +48,24 @@ serverClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    const status = error.response.status;
+
     // ── 5xx 服务器错误 — 统一提示，不重试 ────────────────────────
-    if (error.response.status >= 500) {
+    if (status >= 500) {
       const msg = error.response.data?.msg || "服务器内部错误，请稍后重试";
       ElMessage.error(msg);
       return Promise.reject(error);
     }
 
     // ── 429 限流 — 提示用户稍后重试 ──────────────────────────────
-    if (error.response.status === 429) {
+    if (status === 429) {
       const msg = error.response.data?.msg || "请求过于频繁，请稍后重试";
       ElMessage.warning(msg);
       return Promise.reject(error);
     }
 
     // ── 401 未认证 — 尝试刷新 Token ─────────────────────────────
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -69,7 +77,6 @@ serverClient.interceptors.response.use(
           return serverClient(originalRequest);
         }
       } catch {
-        // 刷新失败 → 清理状态并跳转登录
         userStore.handleLogout();
       }
 
@@ -77,10 +84,10 @@ serverClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // ── 其他错误 — 透传后端 msg ──────────────────────────────────
-    const msg = error.response.data?.msg || `请求失败 (${error.response.status})`;
-    ElMessage.error(msg);
-    return Promise.reject(error);
+    // ── 业务错误（400/403/404/409 等） ──────────────────────────
+    // 不做弹窗、不 reject，直接返回 response.data，
+    // 让调用方通过 res.code / res.msg 统一处理业务逻辑
+    return error.response.data;
   }
 );
 

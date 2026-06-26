@@ -8,8 +8,8 @@
       </a-button>
       <span class="header-divider">|</span>
       <span class="header-title">{{ surveyTitle || "加载中..." }}</span>
-      <a-tag v-if="detail" :color="REVIEW_STATUS_COLORS[detail.reviewStatus]">
-        {{ REVIEW_STATUS_LABELS[detail.reviewStatus] }}
+      <a-tag v-if="detail" :color="REVIEW_STATUS_COLORS[detail.status]">
+        {{ REVIEW_STATUS_LABELS[detail.status] }}
       </a-tag>
     </header>
 
@@ -18,8 +18,23 @@
       <div style="min-height: 300px" />
     </a-spin>
 
+    <!-- 错误状态 -->
+    <a-result v-else-if="errorMsg" status="error" title="加载失败" :subtitle="errorMsg">
+      <template #extra>
+        <a-space>
+          <a-button type="primary" @click="loadDetail">重试</a-button>
+          <a-button @click="goBack">返回列表</a-button>
+        </a-space>
+      </template>
+    </a-result>
+
     <!-- 空状态 -->
-    <a-result v-else-if="!loading && !detail" status="404" title="问卷未找到" subtitle="该问卷可能已被删除或 ID 不正确">
+    <a-result
+      v-else-if="!loading && !detail"
+      status="404"
+      title="审核记录未找到"
+      subtitle="该审核记录可能已被删除或 ID 不正确"
+    >
       <template #extra>
         <a-button type="primary" @click="goBack">返回列表</a-button>
       </template>
@@ -27,15 +42,45 @@
 
     <!-- 问卷渲染区 -->
     <template v-else-if="detail && coms.length > 0">
-      <!-- 问卷描述 -->
-      <div class="survey-description">
-        <p class="desc-text">{{ detail.description }}</p>
-        <div class="survey-meta">
-          <a-tag color="arcoblue" size="small">{{ detail.surveyType === "template" ? "模板问卷" : "个人问卷" }}</a-tag>
-          <a-tag size="small">{{ coms.length }} 题</a-tag>
-          <span class="meta-text">作者：{{ detail.author }}</span>
-          <span class="meta-text">更新于 {{ formatDateTime(detail.updatedAt) }}</span>
+      <!-- 审核信息卡片 -->
+      <div class="review-info-card">
+        <div class="info-row">
+          <span class="info-label">提交者：</span>
+          <span class="info-value">{{ detail.submitter_name }}</span>
+          <a-divider direction="vertical" />
+          <span class="info-label">问卷类型：</span>
+          <a-tag :color="detail.review_type === 'template' ? 'arcoblue' : 'gray'" size="small">
+            {{ detail.review_type === "template" ? "模板问卷" : "个人问卷" }}
+          </a-tag>
+          <a-divider direction="vertical" />
+          <span class="info-label">审核状态：</span>
+          <a-tag :color="REVIEW_STATUS_COLORS[detail.status]" size="small">
+            {{ REVIEW_STATUS_LABELS[detail.status] }}
+          </a-tag>
+          <a-divider direction="vertical" />
+          <span class="info-label">提交时间：</span>
+          <span class="info-value">{{ formatDateTime(detail.submitted_at) }}</span>
         </div>
+        <div v-if="detail.submit_message" class="info-row">
+          <span class="info-label">提交说明：</span>
+          <span class="info-value">{{ detail.submit_message }}</span>
+        </div>
+        <div v-if="detail.review_comment" class="info-row">
+          <span class="info-label">审核意见：</span>
+          <span class="info-value review-comment">{{ detail.review_comment }}</span>
+        </div>
+        <div v-if="detail.reviewer_name" class="info-row">
+          <span class="info-label">审核人：</span>
+          <span class="info-value">{{ detail.reviewer_name }}</span>
+          <a-divider direction="vertical" />
+          <span class="info-label">审核时间：</span>
+          <span class="info-value">{{ formatDateTime(detail.reviewed_at!) }}</span>
+        </div>
+      </div>
+
+      <!-- 问卷描述 -->
+      <div v-if="detail.survey_description" class="survey-description">
+        <p class="desc-text">{{ detail.survey_description }}</p>
       </div>
 
       <!-- 题目数量提示 -->
@@ -46,18 +91,17 @@
       <!-- 问卷内容卡片 -->
       <div class="content-card">
         <div v-for="(com, index) in paginatedComs" :key="com.id || index" class="content-item">
-          <component :is="componentMap[com.name as keyof typeof componentMap]" :status="com.status" />
+          <component :is="componentMap[com.name as keyof typeof componentMap]" :status="(com as any).status" />
         </div>
 
         <!-- 分页器 -->
         <div v-if="totalPages > 1" class="pagination-wrap">
-          <el-pagination
-            v-model:current-page="currentPage"
-            background
-            layout="prev, pager, next"
+          <a-pagination
+            v-model:current="currentPage"
             :total="coms.length"
             :page-size="pageSize"
-            @current-change="handlePageChange"
+            show-total
+            @change="handlePageChange"
           />
         </div>
       </div>
@@ -69,15 +113,15 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { IconLeft } from "@arco-design/web-vue/es/icon";
-import { componentMap, useEditorStore, restoreComponentStatus } from "monorepo-survey-engine";
+import { componentMap, useEditorStore, restoreComponentStatus, defaultStatusMap } from "monorepo-survey-engine";
 import type { Status } from "monorepo-survey-engine";
 import {
-  getMockSurveyDetail,
-  mockDelay,
+  getReviewDetail,
   REVIEW_STATUS_LABELS,
   REVIEW_STATUS_COLORS,
-  type MockSurveyDetail
-} from "@/api/modules/survey-preview/mockData";
+  type ReviewDetail,
+  type ReviewComponentItem
+} from "@/api/modules/review";
 
 const route = useRoute();
 const router = useRouter();
@@ -86,7 +130,8 @@ const store = useEditorStore();
 // ── 状态 ──────────────────────────────────────────────────────
 
 const loading = ref(false);
-const detail = ref<MockSurveyDetail | null>(null);
+const errorMsg = ref("");
+const detail = ref<ReviewDetail | null>(null);
 const surveyTitle = ref("");
 const pageSize = ref(10);
 const currentPage = ref(1);
@@ -111,42 +156,66 @@ function handlePageChange(page: number) {
 // ── 格式化日期 ────────────────────────────────────────────────
 
 function formatDateTime(iso: string): string {
+  if (!iso) return "—";
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// ── 加载问卷详情 ──────────────────────────────────────────────
+// ── 将 API 组件数据转为引擎 Status 格式 ────────────────────────
 
-async function loadSurveyDetail(surveyId: string) {
+function convertComponents(items: ReviewComponentItem[]): Status[] {
+  return items
+    .map(item => {
+      const factory = defaultStatusMap[item.type.replace(/_/g, "-")];
+      if (!factory) {
+        console.warn(`[SurveyDetail] 未知组件类型: ${item.type}，跳过渲染`);
+        return null;
+      }
+      const status = factory();
+      status.id = item.id;
+      // 合并 API 返回的 config 到 status 中（覆盖默认值）
+      if (item.config && typeof item.config === "object") {
+        for (const key of Object.keys(item.config)) {
+          if (key in status.status) {
+            (status.status[key] as unknown as Record<string, unknown>).status =
+              (item.config[key] as Record<string, unknown>)?.status ?? item.config[key];
+          }
+        }
+      }
+      return status;
+    })
+    .filter((s): s is Status => s !== null);
+}
+
+// ── 加载审核详情 ──────────────────────────────────────────────
+
+async function loadDetail() {
   loading.value = true;
+  errorMsg.value = "";
   try {
-    // 模拟网络延迟
-    await mockDelay(500);
-    const data = getMockSurveyDetail(surveyId);
-    if (!data) {
+    const reviewId = route.params.id as string;
+    const res = await getReviewDetail(reviewId);
+    if (!res.data) {
       detail.value = null;
-      surveyTitle.value = "问卷未找到";
+      surveyTitle.value = "审核记录未找到";
       return;
     }
 
-    detail.value = data;
-    surveyTitle.value = data.title;
+    detail.value = res.data;
+    surveyTitle.value = res.data.survey_title;
 
-    // 恢复组件引用并设置渲染数据
-    const components = data.components;
+    // 转换组件数据为引擎可渲染的 Status 格式
+    const components = convertComponents(res.data.components);
     restoreComponentStatus(components);
     coms.value = components;
 
-    // 同步到 engine store
-    store.setStore({
-      coms: components,
-      surveyCount: components.filter((c: Status) => c.name !== "text-note").length
-    });
+    // 同步到 engine store（直接赋值避免 SurveyDBData 类型不匹配）
+    store.coms = components;
+    store.surveyCount = components.filter(c => c.name !== "text-note").length;
   } catch (err) {
-    console.error("[SurveyDetail] 加载问卷详情失败:", err);
+    errorMsg.value = err instanceof Error ? err.message : "加载审核详情失败";
     detail.value = null;
-    surveyTitle.value = "加载失败";
   } finally {
     loading.value = false;
   }
@@ -155,18 +224,16 @@ async function loadSurveyDetail(surveyId: string) {
 // ── 导航 ──────────────────────────────────────────────────────
 
 function goBack() {
-  // 尝试关闭标签页（适用于 window.open 打开的），否则跳回列表
   window.close();
-  // 如果浏览器阻止关闭（非脚本打开的标签页），延迟跳回列表
   setTimeout(() => {
     router.push({ name: "surveyPreview" });
   }, 200);
 }
 
 onMounted(() => {
-  const surveyId = route.params.id as string;
-  if (surveyId) {
-    loadSurveyDetail(surveyId);
+  const reviewId = route.params.id as string;
+  if (reviewId) {
+    loadDetail();
   }
 });
 </script>
@@ -214,8 +281,8 @@ onMounted(() => {
   flex: 1;
 }
 
-/* ── 问卷描述卡片 ──────────────────────────────────────── */
-.survey-description {
+/* ── 审核信息卡片 ──────────────────────────────────────── */
+.review-info-card {
   max-width: 800px;
   width: 100%;
   margin: 20px auto 0;
@@ -226,23 +293,49 @@ onMounted(() => {
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.06);
 }
 
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  color: #71717a;
+}
+
+.info-value {
+  color: #3f3f46;
+}
+
+.review-comment {
+  color: #e53e3e;
+  font-weight: 500;
+}
+
+/* ── 问卷描述卡片 ──────────────────────────────────────── */
+.survey-description {
+  max-width: 800px;
+  width: 100%;
+  margin: 16px auto 0;
+  padding: 16px 24px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e4e4e7;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.06);
+}
+
 .desc-text {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 14px;
   color: #3f3f46;
   line-height: 1.7;
-}
-
-.survey-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.meta-text {
-  font-size: 12px;
-  color: #a1a1aa;
 }
 
 /* ── 题目数量提示 ──────────────────────────────────────── */
@@ -254,7 +347,7 @@ onMounted(() => {
   color: #71717a;
 }
 
-/* ── 问卷内容卡片（参照 q-editor 预览样式） ────────────── */
+/* ── 问卷内容卡片 ──────────────────────────────────────── */
 .content-card {
   max-width: 800px;
   width: 100%;

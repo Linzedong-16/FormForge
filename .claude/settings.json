@@ -10,11 +10,12 @@
       "Bash(ls -la node_modules/vue-cropper/src/)",
       "Bash(pnpm remove *)",
       "Bash(npx prisma *)",
-      "Bash(conda --version)",
-      "Bash(where python *)",
-      "Bash(conda env *)",
-      "Bash(conda create *)",
-      "Bash(conda run *)"
+      "Bash(node -e \"const pkg = require\\('./node_modules/vue/package.json'\\); console.log\\(pkg.version\\)\")",
+      "WebFetch(domain:api-docs.deepseek.com)",
+      "WebSearch"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\linze\\.claude\\projects\\D--coding-project-questionnaireSys\\2a9e2a12-0654-488d-9658-1c387340c917\\workflows\\scripts"
     ]
   }
 }

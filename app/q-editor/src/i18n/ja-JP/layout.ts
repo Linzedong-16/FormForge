@@ -26,5 +26,47 @@ export default {
   syncFailed: "同期失敗",
   // リモート同期
   syncingRemote: "リモートデータを同期中...",
-  syncFailedHint: "リモート同期に失敗しました。ローカルデータのみ表示します"
+  syncFailedHint: "リモート同期に失敗しました。ローカルデータのみ表示します",
+  // 審査
+  columnReviewStatus: "審査状態",
+  submitReview: "審査依頼",
+  reviewing: "審査中",
+  submitReviewTitle: "審査依頼",
+  submitReviewSuccess: "審査依頼を提出しました",
+  submitReviewFailed: "審査依頼に失敗しました",
+  reviewStatus: {
+    none: "未審査",
+    pending: "審査中",
+    approved: "承認済",
+    rejected: "却下"
+  },
+  // 共有テンプレート
+  shareTemplate: "共有",
+  shareTemplateTitle: "共有テンプレート申請",
+  shareTemplateSuccess: "テンプレート申請を提出しました",
+  shareTemplateFailed: "申請に失敗しました",
+  templateCategory: "カテゴリ",
+  templateCategoryRequired: "カテゴリを選択してください",
+  templateCategoryEducation: "教育",
+  templateCategoryMarket: "市場調査",
+  templateCategoryHr: "人事",
+  templateCategoryCustomer: "顧客サービス",
+  templateCategoryEvent: "イベント",
+  templateCategoryOther: "その他",
+  templateSubmitMessage: "説明",
+  templateSubmit: "提出",
+  // アンケートリンク生成
+  generateLink: "リンク生成",
+  generateLinkTitle: "アンケートリンクの生成",
+  generateLinkDeadline: "締切時間",
+  generateLinkDeadlineRequired: "締切時間を選択してください",
+  generateLinkDeadlineHint: "締切時間を過ぎると、アンケートは自動的に終了し回答を受け付けなくなります",
+  generateLinkGenerate: "リンク生成",
+  generateLinkSuccess: "アンケートリンクが生成されました",
+  generateLinkFailed: "リンクの生成に失敗しました",
+  generating: "生成中...",
+  copyLink: "リンクをコピー",
+  copySuccess: "リンクをクリップボードにコピーしました",
+  goToSurvey: "回答ページへ",
+  linkLabel: "アンケートリンク"
 };

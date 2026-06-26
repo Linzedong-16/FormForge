@@ -4,18 +4,18 @@
       <Header :id="id" :is-editor="true" />
     </div>
     <!-- 编辑器主体区域 -->
-    <div class="container">
+    <div class="container" :class="{ 'center-hidden': !centerVisible }">
       <LeftSide />
       <RightSide />
     </div>
-    <div>
+    <div v-show="centerVisible">
       <Center />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide } from "vue";
+import { onMounted, onUnmounted, provide, ref, watch } from "vue";
 import Header from "@/components/Common/Header.vue";
 import LeftSide from "@/views/EditorView/LeftSide/Index.vue";
 import Center from "@/views/EditorView/Center.vue";
@@ -37,6 +37,20 @@ import { useEditorStore } from "@/stores/useEditor";
 const store = useEditorStore();
 
 const id = computed(() => (route.params.id ? String(route.params.id) : ""));
+const saving = ref(false); // 防重复保存锁
+
+// ─── 居中视图显隐控制（模板市场自动隐藏，其他 Tab 恢复） ────
+const centerVisible = ref(true);
+watch(
+  () => route.name,
+  name => {
+    if (name === "template-market") {
+      centerVisible.value = false;
+    } else if (name === "survey-type" || name === "outline") {
+      centerVisible.value = true;
+    }
+  }
+);
 
 // ─── 快捷键保存处理 ──────────────────────────────────────────
 
@@ -114,58 +128,66 @@ async function syncToRemote(localId: number): Promise<ReturnType<typeof serializ
 
 /** 统一的保存/更新逻辑：已有 id 直接更新，新建则提示标题。保存后自动同步到远程，返回序列化组件 */
 async function doSave(): Promise<ReturnType<typeof serializeComponents>> {
-  const surveyId = store.savedSurveyId || (id.value ? Number(id.value) : null);
+  // 防重复保存：正在保存中时忽略后续调用（Ctrl+S 连击 / 按钮快速双击等）
+  if (saving.value) return [];
+  saving.value = true;
 
-  if (surveyId) {
-    // 从组件中提取当前标题，确保 IndexedDB 中的标题与编辑器内容一致
-    const { title: currentTitle } = extractSurveyMetadata(store.coms as Parameters<typeof extractSurveyMetadata>[0]);
-    // 已有问卷：直接更新本地 IndexedDB
-    await store.updateComs(surveyId, {
-      title: currentTitle || undefined,
-      updateDate: new Date().getTime(),
-      surveyCount: store.surveyCount,
-      coms: JSON.parse(JSON.stringify(store.coms)),
-      pageSize: store.pageSize,
-      syncStatus: "unsynced"
-    } as SurveyDBData);
-    store.lastUpdatedId = surveyId;
+  try {
+    const surveyId = store.savedSurveyId || (id.value ? Number(id.value) : null);
 
-    // 同步到远程
-    const components = await syncToRemote(surveyId);
-    ElMessage.success(t("editor.updateSuccess"));
-    return components;
-  } else {
-    // 新建问卷：第一次保存需输入标题
-    const item = await ElMessageBox.prompt(t("editor.savePromptTitle"), t("editor.confirmTitle"), {
-      confirmButtonText: t("editor.confirmButton"),
-      cancelButtonText: t("editor.cancelButton"),
-      type: "info"
-    }).catch(() => null);
+    if (surveyId) {
+      // 从组件中提取当前标题，确保 IndexedDB 中的标题与编辑器内容一致
+      const { title: currentTitle } = extractSurveyMetadata(store.coms as Parameters<typeof extractSurveyMetadata>[0]);
+      // 已有问卷：直接更新本地 IndexedDB
+      await store.updateComs(surveyId, {
+        title: currentTitle || undefined,
+        updateDate: new Date().getTime(),
+        surveyCount: store.surveyCount,
+        coms: JSON.parse(JSON.stringify(store.coms)),
+        pageSize: store.pageSize,
+        syncStatus: "unsynced"
+      } as SurveyDBData);
+      store.lastUpdatedId = surveyId;
 
-    if (!item) return [];
+      // 同步到远程
+      const components = await syncToRemote(surveyId);
+      ElMessage.success(t("editor.updateSuccess"));
+      return components;
+    } else {
+      // 新建问卷：第一次保存需输入标题
+      const item = await ElMessageBox.prompt(t("editor.savePromptTitle"), t("editor.confirmTitle"), {
+        confirmButtonText: t("editor.confirmButton"),
+        cancelButtonText: t("editor.cancelButton"),
+        type: "info"
+      }).catch(() => null);
 
-    const safeItem = item as unknown as PromptItem;
-    const userTitle = safeItem?.value as string;
+      if (!item) return [];
 
-    // 将提示对话框输入的标题同步到 text-note 组件，确保 UI 与数据一致
-    const textNoteCom = store.coms[0];
-    if (textNoteCom?.status?.title) {
-      store.setTextStatus(textNoteCom.status.title as TextProps, userTitle);
+      const safeItem = item as unknown as PromptItem;
+      const userTitle = safeItem?.value as string;
+
+      // 将提示对话框输入的标题同步到 text-note 组件，确保 UI 与数据一致
+      const textNoteCom = store.coms[0];
+      if (textNoteCom?.status?.title) {
+        store.setTextStatus(textNoteCom.status.title as TextProps, userTitle);
+      }
+
+      const newId = await store.saveComs({
+        createDate: new Date().getTime(),
+        title: userTitle,
+        updateDate: new Date().getTime(),
+        surveyCount: store.surveyCount,
+        coms: JSON.parse(JSON.stringify(store.coms)),
+        pageSize: store.pageSize,
+        syncStatus: "unsynced"
+      });
+      // 同步到远程
+      const components = await syncToRemote(newId);
+      ElMessage.success(t("editor.saveSuccess"));
+      return components;
     }
-
-    const newId = await store.saveComs({
-      createDate: new Date().getTime(),
-      title: userTitle,
-      updateDate: new Date().getTime(),
-      surveyCount: store.surveyCount,
-      coms: JSON.parse(JSON.stringify(store.coms)),
-      pageSize: store.pageSize,
-      syncStatus: "unsynced"
-    });
-    // 同步到远程
-    const components = await syncToRemote(newId);
-    ElMessage.success(t("editor.saveSuccess"));
-    return components;
+  } finally {
+    saving.value = false;
   }
 }
 
@@ -271,5 +293,10 @@ onUnmounted(() => {
   background-color: var(--white);
   position: fixed;
   top: 50px;
+}
+
+/* 居中视图隐藏时，左侧面板宽度翻倍 */
+.center-hidden {
+  --editor-left-width: calc(300px * 2);
 }
 </style>

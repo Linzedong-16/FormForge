@@ -43,15 +43,13 @@
           />
           <!-- AI 功能按钮组 -->
           <div class="ai-btn-group ml-15 flex align-items-center">
-            <el-button size="small" plain disabled>{{ t("editor.aiPolish") }}</el-button>
+            <el-tooltip content="该功能模块还在开发中" placement="bottom">
+              <el-button size="small" plain disabled>{{ t("editor.aiPolish") }}</el-button>
+            </el-tooltip>
             <el-button size="small" type="primary" plain @click="aiGenPanelRef?.open()">
               {{ t("editor.aiGenerate") }}
             </el-button>
           </div>
-          <!-- 模板市场 -->
-          <el-button size="small" type="warning" plain class="ml-10" @click="onApplyShareTemplate">
-            {{ t("editor.applyShareTemplate") }}
-          </el-button>
         </div>
         <div v-if="id">
           <el-button type="primary" size="small" @click="preview">{{ t("editor.preview") }}</el-button>
@@ -62,7 +60,7 @@
       </div>
     </div>
 
-    <!-- 申请共享模板对话框 -->
+    <!-- AI 一键生成面板（Drawer，通过 ref 控制） 占位 -->
     <el-dialog v-model="templateDialogVisible" :title="t('editor.templateDialogTitle')" width="500px">
       <el-form :model="templateForm" label-width="100px">
         <el-form-item :label="t('editor.templateCategory')" required>
@@ -187,15 +185,6 @@ const templateForm = ref({
   category: "" as string,
   submit_message: ""
 });
-
-const resetTemplateForm = () => {
-  templateForm.value = { category: "", submit_message: "" };
-};
-
-const onApplyShareTemplate = () => {
-  resetTemplateForm();
-  templateDialogVisible.value = true;
-};
 
 /** 提交申请共享模板 */
 const submitApplyTemplate = async () => {

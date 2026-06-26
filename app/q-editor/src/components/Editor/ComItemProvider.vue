@@ -7,6 +7,9 @@ import { provide } from "vue";
 import type { PicLink, OptionsProps } from "@/types";
 import { useEditorStore } from "@/stores/useEditor";
 
+// 禁用透传 attribute 继承：组件仅提供 inject 上下文，不需要接收 draggable 等父级 attribute
+defineOptions({ inheritAttrs: false });
+
 const props = defineProps<{
   comIndex: number;
 }>();

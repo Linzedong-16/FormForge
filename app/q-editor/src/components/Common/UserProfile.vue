@@ -91,6 +91,7 @@
 import { computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { ElMessageBox } from "element-plus";
 import { Setting, SwitchButton, Sunny, Moon, View } from "@element-plus/icons-vue";
 import { useTheme } from "@/utils/useTheme";
 import { useColorBlind, type ColorBlindMode } from "@/utils/useColorBlind";
@@ -156,8 +157,60 @@ const onSettings = () => {
 
 // 退出登录
 const onLogout = async () => {
-  await userStore.handleLogout();
-  // 登出后跳转到登录页或首页
+  // 1. 检测是否存在未同步问卷
+  let unsyncedCount = 0;
+  let unsyncedTitles: string[] = [];
+  try {
+    const result = await userStore.checkUnsyncedSurveys();
+    unsyncedCount = result.count;
+    unsyncedTitles = result.titles;
+  } catch {
+    // 检测失败不阻塞退出流程
+  }
+
+  console.log(
+    `[UserProfile] 退出登录操作 - 用户: ${userStore.user?.email}, 未同步问卷数: ${unsyncedCount}, ` +
+      `未同步问卷: ${unsyncedTitles.join("、") || "无"}`
+  );
+
+  // 2. 存在未同步问卷 → 弹出确认对话框
+  if (unsyncedCount > 0) {
+    const titleList = unsyncedTitles
+      .slice(0, 5)
+      .map(t => `「${t}」`)
+      .join("、");
+    const moreHint = unsyncedTitles.length > 5 ? ` 等 ${unsyncedTitles.length} 份问卷` : "";
+    const content =
+      `<p style="margin-bottom:8px">检测到有 <strong>${unsyncedCount}</strong> 份未完成同步的问卷：</p>` +
+      `<p style="color:#909399;font-size:13px;margin-bottom:12px">${titleList}${moreHint}</p>` +
+      `<p style="color:#e6a23c;font-size:13px">⚠ 直接退出将清空本地所有问卷记录，未同步数据将永久丢失。</p>`;
+
+    try {
+      await ElMessageBox.confirm(content, "退出登录确认", {
+        dangerouslyUseHTMLString: true,
+        confirmButtonText: "先同步再退出",
+        cancelButtonText: "直接退出（数据将被清空）",
+        distinguishCancelAndClose: true,
+        type: "warning"
+      });
+      // 用户选择"先同步再退出" → 不退出，跳转到首页让用户手动同步
+      console.log("[UserProfile] 用户选择先同步再退出，跳转到首页");
+      router.push({ name: "home" });
+      return;
+    } catch (action: unknown) {
+      // action === 'cancel' → 直接退出
+      // action === 'close' → 点击右上角 X，视为取消操作
+      if (action === "close") {
+        console.log("[UserProfile] 用户关闭退出对话框，取消操作");
+        return;
+      }
+      console.log("[UserProfile] 用户选择直接退出，清空 IndexedDB 并登出");
+    }
+  }
+
+  // 3. 执行登出 + 清空 IndexedDB
+  console.log("[UserProfile] 执行登出操作，清空 IndexedDB");
+  await userStore.handleLogoutAndClear();
   window.location.reload();
 };
 </script>

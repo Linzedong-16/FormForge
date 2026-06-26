@@ -58,7 +58,38 @@ export default {
   aiClear: "清空",
 
   // 模板市场
-  applyShareTemplate: "申请共享模板",
+  template: {
+    searchPlaceholder: "搜索模板...",
+    categoryAll: "全部",
+    categoryEducation: "教育",
+    categoryMarket: "市场调研",
+    categoryHr: "人力资源",
+    categoryCustomer: "客户服务",
+    categoryEvent: "活动",
+    categoryOther: "其他",
+    sortLabel: "排序",
+    sortNewest: "最新",
+    sortPopular: "最热",
+    sortRating: "评分",
+    loading: "加载中...",
+    retry: "重试",
+    emptyHint: "暂无可用模板",
+    fetchFailed: "获取模板列表失败",
+    fetchDetailFailed: "获取模板详情失败",
+    noDescription: "暂无描述",
+    noComponents: "模板无可用组件",
+    useCount: "次使用",
+    componentPreview: "组件预览",
+    required: "必填",
+    useTemplate: "使用此模板创建问卷",
+    yourRating: "评分",
+    useTemplateSuccess: "模板应用成功，已创建新问卷",
+    useTemplateFailed: "模板应用失败",
+    rateSuccess: "评分成功",
+    rateFailed: "评分失败",
+    detailTitle: "模板详情",
+    applyShareTemplate: "申请共享模板"
+  },
   templateDialogTitle: "申请共享模板",
   templateCategory: "模板分类",
   templateCategoryRequired: "请选择模板分类",
@@ -230,5 +261,21 @@ export default {
   aiPromptTooLong: "需求描述不能超过 2000 个字符",
   aiNoComponents: "未生成任何有效组件，请尝试调整需求描述后重试",
   aiWarningTitle: "生成提示",
-  aiWarningBadType: '组件类型 "{type}" 不支持，已跳过'
+  aiWarningBadType: '组件类型 "{type}" 不支持，已跳过',
+
+  // ══════════════════════════════════════════════════════════
+  //  AI 润色问卷
+  // ══════════════════════════════════════════════════════════
+  aiPolishLabel: "润色指令",
+  aiPolishPlaceholder: "例如：优化题目逻辑顺序，让问题从易到难排列；改善第3题的措辞使其更中立",
+  aiPolishAspects: "润色维度（可多选，不选则全维度润色）",
+  aiPolishStart: "开始润色",
+  aiPolishing: "AI 正在润色问卷...",
+  aiPolishDone: "润色完成",
+  aiPolishChanges: "变更说明",
+  aiPolishApply: "应用润色结果",
+  aiPolishFailed: "AI 润色失败",
+  aiPolishApplyConfirm: "润色结果将完全替换当前问卷内容，是否继续？",
+  aiPolishApplyTitle: "确认应用润色",
+  aiPolishApplySuccess: "润色结果已应用"
 };

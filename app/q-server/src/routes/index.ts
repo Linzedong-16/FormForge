@@ -1,14 +1,19 @@
 import type { FastifyPluginAsync } from "fastify";
-import authRoutes from "../modules/user/auth.routes.js";
-import adminRoutes from "../modules/user/admin.routes.js";
-import userRoutes from "../modules/user/user.routes.js";
-import profileRoutes from "../modules/user/profile.routes.js";
-import surveyRoutes from "../modules/survey/survey.routes.js";
-import fileRoutes from "../modules/survey/file.routes.js";
-import uploadRoutes from "../modules/survey/upload.routes.js";
-import aiGenerateRoutes from "../modules/ai/ai-generate.routes.js";
-import aiConfigRoutes from "../modules/ai/ai-config.routes.js";
+import authRoutes from "../modules/user/auth/auth.routes.js";
+import adminRoutes from "../modules/user/admin/admin.routes.js";
+import userCrudRoutes from "../modules/user/user-crud/user-crud.routes.js";
+import profileRoutes from "../modules/user/profile/profile.routes.js";
+import surveyCrudRoutes from "../modules/survey/survey-crud/survey-crud.routes.js";
+import fileRoutes from "../modules/survey/file/file.routes.js";
+import uploadRoutes from "../modules/survey/upload/upload.routes.js";
+import aiGenerateRoutes from "../modules/ai/ai-generate/ai-generate.routes.js";
+import aiPolishRoutes from "../modules/ai/ai-polish/ai-polish.routes.js";
+import aiConfigRoutes from "../modules/ai/ai-config/ai-config.routes.js";
+import aiUsageRoutes from "../modules/ai/ai-usage/ai-usage.routes.js";
 import logRoutes from "../modules/log/log.routes.js";
+import reviewRoutes from "../modules/review/review.routes.js";
+import templateRoutes from "../modules/template/template.routes.js";
+import surveyStatsRoutes from "../modules/survey/survey-stats/survey-stats.routes.js";
 
 const routes: FastifyPluginAsync = async fastify => {
   // 健康检查 — 探测 PostgreSQL、Redis、RabbitMQ 连通性
@@ -80,19 +85,29 @@ const routes: FastifyPluginAsync = async fastify => {
   /// 统一配置 modules 路由
   fastify.register(authRoutes, { prefix: "/auth" });
   fastify.register(adminRoutes, { prefix: "/admin" });
-  fastify.register(userRoutes, { prefix: "/user" });
+  fastify.register(userCrudRoutes, { prefix: "/user" });
   fastify.register(profileRoutes, { prefix: "/user" });
   fastify.register(uploadRoutes, { prefix: "/q-editor" });
-  // survey.routes.ts 内部路径已为 /surveys、/responses 等完整路径，无需额外前缀
-  fastify.register(surveyRoutes);
+  // survey-crud.routes.ts 内部路径已为 /surveys、/responses 等完整路径，无需额外前缀
+  fastify.register(surveyCrudRoutes);
   // file.routes.ts 内部路径为 /surveys/:id/files、/survey-files/:id
   fastify.register(fileRoutes);
   // ai-generate.routes.ts 内部路径为 /surveys/generate（SSE 流式）
   fastify.register(aiGenerateRoutes);
+  // ai-polish.routes.ts 内部路径为 /surveys/polish（SSE 流式）
+  fastify.register(aiPolishRoutes);
   // ai-config.routes.ts 内部路径为 /config/ai（管理员 AI 配置管理）
   fastify.register(aiConfigRoutes, { prefix: "/admin" });
+  // ai-usage.routes.ts 内部路径为 /ai/usage（管理员 DeepSeek 用量查询）
+  fastify.register(aiUsageRoutes, { prefix: "/admin" });
   // log.routes.ts 内部路径为 /logs、/logs/stats（管理员日志查询）
   fastify.register(logRoutes);
+  // review.routes.ts 内部路径为 /reviews（管理员审核管理）
+  fastify.register(reviewRoutes, { prefix: "/admin" });
+  // survey-stats.routes.ts 内部路径为 /stats、/surveys（管理员统计分析）
+  fastify.register(surveyStatsRoutes, { prefix: "/admin" });
+  // template.routes.ts 内部路径为 /templates（模板市场）
+  fastify.register(templateRoutes);
 };
 
 export default routes;

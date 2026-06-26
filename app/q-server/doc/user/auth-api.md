@@ -353,23 +353,21 @@ Authorization: Bearer <access_token>
 POST /api/admin/users
 ```
 
+**说明**：管理员创建普通用户，角色固定为 `user`，默认密码 `Aa123456`（首次登录需修改）。
+
 **请求体**：
 
 ```json
 {
   "email": "newuser@example.com",
-  "username": "新用户",
-  "role": "user",
-  "password": "User123!"
+  "username": "新用户"
 }
 ```
 
-| 参数     | 类型   | 必填 | 说明                                             |
-| -------- | ------ | ---- | ------------------------------------------------ |
-| email    | string | 是   | 邮箱                                             |
-| username | string | 是   | 用户名                                           |
-| role     | string | 是   | `user`（普通用户）/ `admin`（管理员）            |
-| password | string | 否   | 密码（未提供则自动生成12位随机密码，响应中返回） |
+| 参数     | 类型   | 必填 | 说明   |
+| -------- | ------ | ---- | ------ |
+| email    | string | 是   | 邮箱   |
+| username | string | 是   | 用户名 |
 
 **成功响应**：
 
@@ -381,8 +379,8 @@ POST /api/admin/users
     "username": "新用户",
     "role": "user",
     "status": 1,
-    "passwordProvided": false,
-    "generatedPassword": "aB3$kL9mN2pQ"
+    "defaultPassword": "Aa123456",
+    "requirePasswordChange": true
   },
   "code": 0,
   "msg": "用户创建成功"
@@ -394,15 +392,16 @@ POST /api/admin/users
 ### 3.2 获取用户列表
 
 ```
-GET /api/admin/users?page=1&limit=20&email=&status=
+GET /api/admin/users?page=1&limit=20&email=&status=&ban_status=
 ```
 
-| 参数   | 类型   | 必填 | 默认值 | 说明                      |
-| ------ | ------ | ---- | ------ | ------------------------- |
-| page   | number | 否   | 1      | 页码                      |
-| limit  | number | 否   | 20     | 每页数量（最大100）       |
-| email  | string | 否   | -      | 邮箱模糊搜索              |
-| status | number | 否   | -      | 状态筛选（0禁用 / 1启用） |
+| 参数       | 类型   | 必填 | 默认值 | 说明                                   |
+| ---------- | ------ | ---- | ------ | -------------------------------------- |
+| page       | number | 否   | 1      | 页码                                   |
+| limit      | number | 否   | 20     | 每页数量（最大100）                    |
+| email      | string | 否   | -      | 邮箱模糊搜索                           |
+| status     | number | 否   | -      | 状态筛选（0禁用 / 1启用）              |
+| ban_status | string | 否   | -      | `banned`（仅封禁）/ `active`（仅活跃） |
 
 **成功响应**：
 
@@ -416,6 +415,9 @@ GET /api/admin/users?page=1&limit=20&email=&status=
         "username": "管理员",
         "role": "admin",
         "status": 1,
+        "isBanned": false,
+        "banRemaining": null,
+        "isDeleted": false,
         "created_at": "2026-06-06T10:00:00.000Z",
         "last_login_at": "2026-06-06T12:00:00.000Z"
       }
@@ -464,7 +466,7 @@ PUT /api/admin/users/:id
 DELETE /api/admin/users/:id
 ```
 
-**说明**：软删除（设置 `deleted_at`），不会物理删除记录。不能删除自己。
+**说明**：软删除（设置 `deleted_at` + `deleted_by`），不会物理删除记录。不能删除自己。
 
 **成功响应**：
 
@@ -472,7 +474,9 @@ DELETE /api/admin/users/:id
 {
   "data": {
     "id": "3",
-    "deleted": true
+    "deleted": true,
+    "deletedBy": "1",
+    "deletedAt": "2026-06-24T12:00:00.000Z"
   },
   "code": 0,
   "msg": "用户已删除"
@@ -545,6 +549,82 @@ PUT /api/admin/config/smtp
 
 ---
 
+### 3.7 封禁用户
+
+```
+POST /api/admin/users/:id/ban
+```
+
+**说明**：基于期限封禁用户，封禁期间所有 API 请求均被拒绝。不能封禁自己或超级管理员。
+
+**路径参数**：`id` — 目标用户 ID
+
+**请求体**：
+
+```json
+{
+  "ban_duration": 1440,
+  "reason": "发布违规内容"
+}
+```
+
+| 参数         | 类型   | 必填 | 说明                                    |
+| ------------ | ------ | ---- | --------------------------------------- |
+| ban_duration | number | 是   | 封禁时长（分钟），范围 1-43200（30 天） |
+| reason       | string | 否   | 封禁原因，最大 500 字符                 |
+
+**成功响应**：
+
+```json
+{
+  "data": {
+    "id": "3",
+    "username": "违规用户",
+    "isBanned": true,
+    "banRemaining": 86400,
+    "bannedUntil": "2026-06-25T10:00:00.000Z"
+  },
+  "code": 0,
+  "msg": "用户已被封禁"
+}
+```
+
+**错误响应**：
+
+| code | msg                         | 说明           |
+| ---- | --------------------------- | -------------- |
+| 404  | 用户不存在                  |                |
+| 403  | 不能封禁超级管理员          | 系统保护       |
+| 400  | 封禁时长超限 / 不能封禁自己 | 参数或逻辑错误 |
+
+---
+
+### 3.8 解除封禁
+
+```
+DELETE /api/admin/users/:id/ban
+```
+
+**说明**：手动解除用户封禁，恢复其 API 访问权限。
+
+**路径参数**：`id` — 目标用户 ID
+
+**成功响应**：
+
+```json
+{
+  "data": {
+    "id": "3",
+    "username": "违规用户",
+    "isBanned": false
+  },
+  "code": 0,
+  "msg": "封禁已解除"
+}
+```
+
+---
+
 ## 4. 健康检查 /api/health
 
 ```
@@ -604,6 +684,9 @@ GET /api/health
 | 1008 | SYSTEM_NOT_INITIALIZED | 系统未初始化             |
 | 1009 | REGISTRATION_CLOSED    | 用户注册已关闭           |
 | 1010 | SMTP_NOT_CONFIGURED    | SMTP 邮件服务未配置      |
+| 2010 | ACCOUNT_BANNED         | 账户已被管理员封禁       |
+| 2011 | CANNOT_BAN_SUPER_ADMIN | 不允许封禁超级管理员     |
+| 2012 | BAN_DURATION_EXCEEDED  | 封禁时长超出允许范围     |
 
 ### 5.3 登录安全
 
@@ -635,10 +718,12 @@ GET /api/health
 | GET    | /api/admin/users          | Bearer | 用户列表       |
 | PUT    | /api/admin/users/:id      | Bearer | 更新用户       |
 | DELETE | /api/admin/users/:id      | Bearer | 删除用户       |
+| POST   | /api/admin/users/:id/ban  | Bearer | 封禁用户       |
+| DELETE | /api/admin/users/:id/ban  | Bearer | 解除封禁       |
 | GET    | /api/admin/config         | Bearer | 获取系统配置   |
 | PUT    | /api/admin/config/smtp    | Bearer | 更新 SMTP 配置 |
 
 ---
 
-**文档版本**: v1.0  
-**生成日期**: 2026-06-06
+**文档版本**: v1.1  
+**更新日期**: 2026-06-24
