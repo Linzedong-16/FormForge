@@ -1029,8 +1029,11 @@ export class SurveyService {
       await recordSubmit(this.fastify, serverFingerprintHash, input.token, bigIntToStr(response.id));
     }
 
-    // 8. 清除答卷列表缓存
+    // 8. 清除答卷列表缓存 + 统计缓存
     await this.cache.delByPattern(CacheKeys.responsePattern(surveyIdStr));
+    // 清除统计缓存（概览 + 单问卷统计）
+    await this.cache.del("admin:stats:overview").catch(() => {});
+    await this.cache.del(`admin:stats:survey:${surveyIdStr}`).catch(() => {});
 
     // 写审计日志（不阻塞响应）
     createAuditLog(this.fastify, BigInt(0), "submit_response", "survey_response", response.id, {

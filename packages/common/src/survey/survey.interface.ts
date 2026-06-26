@@ -296,10 +296,10 @@ export interface SubmitResponseRequest {
   answers: AnswerItem[];
   /** 匿名用户标识（responses.anonymous_id，登录用户可不传） */
   anonymous_id?: string;
-  /** 浏览器指纹 SHA-256 哈希（防重复提交） */
-  fingerprint?: string;
-  /** 临时提交凭证（从 GET /api/surveys/:surveyId/token 获取） */
-  token?: string;
+  /** 浏览器指纹 SHA-256 哈希（防重复提交，前端始终发送，采集失败时使用降级值） */
+  fingerprint: string;
+  /** 临时提交凭证（从 GET /api/surveys/:surveyId/token 获取，获取失败时使用客户端降级 token） */
+  token: string;
 }
 
 /**
