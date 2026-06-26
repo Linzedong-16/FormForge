@@ -54,5 +54,19 @@ export default {
   templateCategoryEvent: "Events",
   templateCategoryOther: "Other",
   templateSubmitMessage: "Note",
-  templateSubmit: "Submit"
+  templateSubmit: "Submit",
+  // Generate Survey Link
+  generateLink: "Generate Link",
+  generateLinkTitle: "Generate Survey Link",
+  generateLinkDeadline: "Deadline",
+  generateLinkDeadlineRequired: "Please select a deadline",
+  generateLinkDeadlineHint: "The survey will automatically close and stop accepting responses after the deadline",
+  generateLinkGenerate: "Generate Link",
+  generateLinkSuccess: "Survey link generated successfully",
+  generateLinkFailed: "Failed to generate survey link",
+  generating: "Generating...",
+  copyLink: "Copy Link",
+  copySuccess: "Link copied to clipboard",
+  goToSurvey: "Go to Survey",
+  linkLabel: "Survey Link"
 };

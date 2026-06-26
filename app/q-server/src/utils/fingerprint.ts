@@ -36,8 +36,8 @@ const CacheKeys = {
   token: (surveyId: string, token: string) => `survey:token:${surveyId}:${token}`,
   /** 上一个 token 标记（防重放）：survey:token:prev:{surveyId} */
   prevToken: (surveyId: string) => `survey:token:prev:${surveyId}`,
-  /** 提交去重记录：survey:submit:{fingerprintHash}:{token} */
-  submitRecord: (fingerprintHash: string, token: string) => `survey:submit:${fingerprintHash}:${token}`
+  /** 提交去重记录：survey:submit:{surveyId}:{fingerprintHash}（同一设备+同一问卷不可重复提交） */
+  submitRecord: (surveyId: string, fingerprintHash: string) => `survey:submit:${surveyId}:${fingerprintHash}`
 };
 
 // ════════════════════════════════════════════════════════════
@@ -145,22 +145,23 @@ export async function consumeToken(fastify: FastifyInstance, surveyId: string, t
 /**
  * 检查是否已提交（防重复提交）
  *
+ * 去重维度：同一设备（指纹）+ 同一问卷 → 24 小时内不可重复提交
  * 使用 Redis SET NX 原子操作：
- *   - 若 key 不存在 → 写入并返回 null（首次提交）
+ *   - 若 key 不存在 → 返回 null（首次提交）
  *   - 若 key 已存在 → 返回已有记录（重复提交）
  *
  * @param fastify Fastify 实例
+ * @param surveyId 问卷 ID（字符串）
  * @param fingerprintHash 服务端加盐后的指纹哈希
- * @param token 临时 token
  * @returns 已存在的提交记录，或 null（首次提交）
  */
 export async function checkDuplicateSubmit(
   fastify: FastifyInstance,
-  fingerprintHash: string,
-  token: string
+  surveyId: string,
+  fingerprintHash: string
 ): Promise<{ response_id: string; submitted_at: number } | null> {
   try {
-    const key = CacheKeys.submitRecord(fingerprintHash, token);
+    const key = CacheKeys.submitRecord(surveyId, fingerprintHash);
 
     // 先检查是否已存在
     const existing = await fastify.redis.get(key);
@@ -180,18 +181,18 @@ export async function checkDuplicateSubmit(
  * 记录提交（写入去重缓存）
  *
  * @param fastify Fastify 实例
+ * @param surveyId 问卷 ID（字符串）
  * @param fingerprintHash 服务端加盐后的指纹哈希
- * @param token 临时 token
  * @param responseId 答卷 ID
  */
 export async function recordSubmit(
   fastify: FastifyInstance,
+  surveyId: string,
   fingerprintHash: string,
-  token: string,
   responseId: string
 ): Promise<void> {
   try {
-    const key = CacheKeys.submitRecord(fingerprintHash, token);
+    const key = CacheKeys.submitRecord(surveyId, fingerprintHash);
     const value = JSON.stringify({
       response_id: responseId,
       submitted_at: Date.now()

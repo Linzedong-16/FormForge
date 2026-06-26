@@ -54,5 +54,19 @@ export default {
   templateCategoryEvent: "イベント",
   templateCategoryOther: "その他",
   templateSubmitMessage: "説明",
-  templateSubmit: "提出"
+  templateSubmit: "提出",
+  // アンケートリンク生成
+  generateLink: "リンク生成",
+  generateLinkTitle: "アンケートリンクの生成",
+  generateLinkDeadline: "締切時間",
+  generateLinkDeadlineRequired: "締切時間を選択してください",
+  generateLinkDeadlineHint: "締切時間を過ぎると、アンケートは自動的に終了し回答を受け付けなくなります",
+  generateLinkGenerate: "リンク生成",
+  generateLinkSuccess: "アンケートリンクが生成されました",
+  generateLinkFailed: "リンクの生成に失敗しました",
+  generating: "生成中...",
+  copyLink: "リンクをコピー",
+  copySuccess: "リンクをクリップボードにコピーしました",
+  goToSurvey: "回答ページへ",
+  linkLabel: "アンケートリンク"
 };

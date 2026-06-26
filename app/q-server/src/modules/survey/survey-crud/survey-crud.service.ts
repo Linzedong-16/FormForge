@@ -965,7 +965,7 @@ export class SurveyService {
 
     // 3. 去重检查（降级指纹不具有唯一性，跳过去重）
     if (!isFingerprintFallback) {
-      const duplicate = await checkDuplicateSubmit(this.fastify, serverFingerprintHash, input.token);
+      const duplicate = await checkDuplicateSubmit(this.fastify, surveyIdStr, serverFingerprintHash);
       if (duplicate) {
         throw new AppError("请勿重复提交，您已提交过该问卷", 409);
       }
@@ -1026,7 +1026,7 @@ export class SurveyService {
 
     // 7. 记录去重标记（降级指纹无唯一性，跳过记录）
     if (!isFingerprintFallback) {
-      await recordSubmit(this.fastify, serverFingerprintHash, input.token, bigIntToStr(response.id));
+      await recordSubmit(this.fastify, surveyIdStr, serverFingerprintHash, bigIntToStr(response.id));
     }
 
     // 8. 清除答卷列表缓存 + 统计缓存
@@ -1035,8 +1035,8 @@ export class SurveyService {
     await this.cache.del("admin:stats:overview").catch(() => {});
     await this.cache.del(`admin:stats:survey:${surveyIdStr}`).catch(() => {});
 
-    // 写审计日志（不阻塞响应）
-    createAuditLog(this.fastify, BigInt(0), "submit_response", "survey_response", response.id, {
+    // 写审计日志（C 端匿名提交，user_id 为 null，不阻塞响应）
+    createAuditLog(this.fastify, null, "submit_response", "survey_response", response.id, {
       survey_id: surveyIdStr,
       answer_count: input.answers.length
     }).catch(() => {});
