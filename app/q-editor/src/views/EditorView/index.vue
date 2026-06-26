@@ -11,14 +11,6 @@
     <div v-show="centerVisible">
       <Center />
     </div>
-
-    <!-- 居中视图切换按钮 -->
-    <div class="center-toggle" @click="centerVisible = !centerVisible">
-      <el-icon :size="16">
-        <ArrowLeft v-if="centerVisible" />
-        <ArrowRight v-else />
-      </el-icon>
-    </div>
   </div>
 </template>
 
@@ -30,7 +22,6 @@ import Center from "@/views/EditorView/Center.vue";
 import RightSide from "@/views/EditorView/RightSide.vue";
 import { computed } from "vue";
 import { useRoute, onBeforeRouteLeave } from "vue-router";
-import { ArrowLeft, ArrowRight } from "@element-plus/icons-vue";
 import { getSurveyById, updateSurveyById } from "@/db/operation";
 import { restoreComponentStatus } from "@/utils";
 import { ElMessage, ElMessageBox } from "element-plus";
@@ -48,9 +39,8 @@ const store = useEditorStore();
 const id = computed(() => (route.params.id ? String(route.params.id) : ""));
 const saving = ref(false); // 防重复保存锁
 
-// ─── 居中视图显隐控制 ──────────────────────────────────────────
+// ─── 居中视图显隐控制（模板市场自动隐藏，其他 Tab 恢复） ────
 const centerVisible = ref(true);
-// 进入模板市场时自动隐藏居中视图，切换回其他 Tab 时恢复
 watch(
   () => route.name,
   name => {
@@ -308,30 +298,5 @@ onUnmounted(() => {
 /* 居中视图隐藏时，左侧面板宽度翻倍 */
 .center-hidden {
   --editor-left-width: calc(300px * 2);
-}
-
-/* 居中视图切换按钮 */
-.center-toggle {
-  position: fixed;
-  right: calc(var(--editor-right-width) + var(--editor-gap) + 8px);
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 11;
-  width: 28px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid var(--border-color);
-  border-radius: 0 6px 6px 0;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  color: var(--font-color-light);
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.95);
-    color: var(--primary-color);
-  }
 }
 </style>

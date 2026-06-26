@@ -10,8 +10,8 @@
   >
     <!-- 遍历路由配置，自动生成导航菜单项 -->
     <div v-for="route in routes" :key="route.path">
-      <!-- 无子路由：直接渲染菜单项 -->
-      <a-menu-item v-if="!route.children?.length" :key="route.path" @click="handlePush(route.path)">
+      <!-- 无子路由：直接渲染菜单项（首页空路径 → key="/"） -->
+      <a-menu-item v-if="!route.children?.length" :key="route.path || '/'" @click="handlePush(route.path)">
         <template #icon>
           <acro-icons :icon="(route.meta?.icon as any) || 'home'" />
         </template>
@@ -29,7 +29,7 @@
         </template>
         <a-menu-item
           v-for="child in route.children"
-          :key="child.path"
+          :key="(route.path + '/' + child.path).replace(/\/+/g, '/')"
           @click="handlePush((route.path + '/' + child.path).replace(/\/+/g, '/'))"
         >
           <template #icon>
@@ -54,11 +54,7 @@ const currentRoute = useRoute();
 const router = useRouter();
 
 // 根据当前路由路径计算高亮菜单项
-// 首页子路由 path 为 ""，但 vue-router 解析后为 "/"，需做映射
-const selectedKeys = computed(() => {
-  const path = currentRoute.path;
-  return [path === "/" ? "" : path];
-});
+const selectedKeys = computed(() => [currentRoute.path]);
 
 // 计算当前应展开的子菜单 key
 const manualOpenKeys = ref<string[]>([]);
@@ -101,7 +97,6 @@ watch(
 );
 
 const handlePush = (path: string) => {
-  // 空路径对应首页 "/"
   router.push(path || "/");
 };
 
@@ -120,10 +115,78 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ── 菜单容器 ──────────────────────────────────────────── */
+
 :deep(.arco-menu) {
-  background-color: var(--color-bg-1);
+  background-color: var(--color-menu-bg, var(--color-bg-1));
   width: 100%;
   height: 100%;
   border-right: 0;
+}
+
+/* ── 菜单项默认态 ──────────────────────────────────────── */
+
+:deep(.arco-menu-item) {
+  border-radius: 0 20px 20px 0;
+  margin: 2px 8px 2px 0;
+  padding-left: 16px;
+  transition: all 0.2s ease;
+}
+
+/* ── 菜单项悬停态 ──────────────────────────────────────── */
+
+:deep(.arco-menu-item:hover) {
+  background-color: var(--color-fill-2);
+}
+
+/* ── 菜单项选中高亮态 ──────────────────────────────────── */
+
+:deep(.arco-menu-item.arco-menu-selected) {
+  background: linear-gradient(90deg, rgb(var(--primary-6)), rgb(var(--primary-5)));
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(var(--primary-6), 0.3);
+}
+
+/* 选中态的图标颜色 */
+:deep(.arco-menu-item.arco-menu-selected .arco-icon) {
+  color: #fff;
+}
+
+/* ── 子菜单标题 ────────────────────────────────────────── */
+
+:deep(.arco-menu-inline-header) {
+  border-radius: 0 20px 20px 0;
+  margin: 2px 8px 2px 0;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+:deep(.arco-menu-inline-header:hover) {
+  background-color: var(--color-fill-2);
+}
+
+/* 子菜单中有子项选中时，父级标题高亮 */
+:deep(.arco-menu-inline-header.arco-menu-inline-header-selected) {
+  background-color: var(--color-primary-light-1);
+  color: rgb(var(--primary-6));
+  font-weight: 600;
+}
+
+/* ── 子菜单内菜单项 ────────────────────────────────────── */
+
+:deep(.arco-menu-inline .arco-menu-item) {
+  padding-left: 48px;
+}
+
+/* 折叠模式适配 */
+:deep(.arco-menu-collapse) {
+  padding: 8px 0;
+}
+
+:deep(.arco-menu-collapse .arco-menu-item),
+:deep(.arco-menu-collapse .arco-menu-inline-header) {
+  border-radius: 0;
+  margin: 2px 4px;
 }
 </style>

@@ -89,25 +89,55 @@ const switchTemplateMarket = () => {
       color: var(--font-color-light);
       text-decoration: none;
       cursor: pointer;
+      position: relative;
+      transition:
+        color 0.2s ease,
+        background-color 0.2s ease;
       > .tab-item-title {
         font-size: var(--font-size-base);
+      }
+      // 左侧高亮指示条
+      &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 0;
+        background: var(--primary-color);
+        border-radius: 0 2px 2px 0;
+        transition: height 0.2s ease;
+      }
+      &:hover {
+        color: var(--primary-color);
+        background-color: var(--background-color);
       }
     }
     > .tab-show {
       color: var(--primary-color);
+      font-weight: 600;
+      background-color: var(--background-color);
+      // 选中态指示条展开
+      &::before {
+        height: 28px;
+      }
     }
   }
   > .tab-pane {
     flex: 1;
-    // 高度需要减去padding部分，否则会溢出
     height: calc(100% - 50px);
     padding: 25px;
     overflow-y: auto;
-    /* 隐藏滚动条，保持滚动功能 */
     &::-webkit-scrollbar {
       display: none;
     }
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
   }
+}
+
+/* 暗色模式：面板背景 + 容器背景适配 */
+html.dark .left-side-container {
+  background: rgba(24, 24, 27, 0.92);
 }
 </style>

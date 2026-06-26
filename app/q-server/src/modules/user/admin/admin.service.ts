@@ -444,19 +444,35 @@ export class AdminService {
   //  系统配置
   // ============================================================
 
-  /** 获取所有系统配置 — 敏感字段自动解密 */
+  /** 获取所有系统配置 — 敏感字段自动脱敏/解密 */
   async getConfig() {
     const configs = await this.fastify.prisma.systemConfig.findMany({
       orderBy: { category: "asc" }
     });
 
-    // 按分类组织，SMTP 密码自动解密
+    // 按分类组织，SMTP 密码自动解密，AI API Key 脱敏
     const grouped: Record<string, Record<string, string>> = {};
     for (const c of configs) {
       if (!grouped[c.category]) grouped[c.category] = {};
-      const value = c.value ?? "";
-      // 自动解密 SMTP 密码（通过 ENC: 前缀判断，替代长度启发式）
-      grouped[c.category][c.key] = c.key === "smtp_password" && isEncrypted(value) ? decrypt(value) : value;
+      let value = c.value ?? "";
+
+      if (c.key === "smtp_password" && isEncrypted(value)) {
+        // SMTP 密码解密
+        value = decrypt(value);
+      } else if (c.key === "ai_api_key") {
+        // AI API Key 脱敏：仅显示 sk-****末尾4位
+        try {
+          const plainKey = isEncrypted(value) ? decrypt(value) : value;
+          value = plainKey.length > 10 ? `${plainKey.slice(0, 5)}****${plainKey.slice(-4)}` : "sk-****";
+        } catch {
+          value = "***解密失败***";
+        }
+      } else if (value.length > 64) {
+        // 其他长密文截断（如加密后的 SMTP 密码等）
+        value = value.substring(0, 32) + "…";
+      }
+
+      grouped[c.category][c.key] = value;
     }
 
     return grouped;

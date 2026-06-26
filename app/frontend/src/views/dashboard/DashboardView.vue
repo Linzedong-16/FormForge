@@ -6,41 +6,49 @@
       <p class="page-desc">问卷低代码平台运营数据汇总</p>
     </div>
 
-    <!-- 核心指标卡片 -->
+    <!-- 核心指标卡片（对接后端统计数据） -->
     <a-row :gutter="16" class="stats-row">
       <a-col :span="6">
         <a-card :bordered="false" class="stat-card">
-          <a-statistic title="问卷总数" :value="128" :value-style="{ color: 'rgb(var(--arcoblue-6))' }">
+          <a-statistic title="问卷总数" :value="statsCards[0].value" :value-style="{ color: 'rgb(var(--arcoblue-6))' }">
             <template #suffix><span class="stat-unit">份</span></template>
           </a-statistic>
         </a-card>
       </a-col>
       <a-col :span="6">
         <a-card :bordered="false" class="stat-card">
-          <a-statistic title="今日填写次数" :value="2346" :value-style="{ color: 'rgb(var(--green-6))' }">
-            <template #suffix><span class="stat-unit">次</span></template>
+          <a-statistic title="今日答卷" :value="statsCards[1].value" :value-style="{ color: 'rgb(var(--green-6))' }">
+            <template #suffix><span class="stat-unit">份</span></template>
           </a-statistic>
         </a-card>
       </a-col>
       <a-col :span="6">
         <a-card :bordered="false" class="stat-card">
-          <a-statistic title="当前在线并发" :value="43" :value-style="{ color: 'rgb(var(--orangered-6))' }">
-            <template #suffix><span class="stat-unit">人</span></template>
+          <a-statistic
+            title="累计答卷"
+            :value="statsCards[2].value"
+            :value-style="{ color: 'rgb(var(--orangered-6))' }"
+          >
+            <template #suffix><span class="stat-unit">份</span></template>
           </a-statistic>
         </a-card>
       </a-col>
       <a-col :span="6">
         <a-card :bordered="false" class="stat-card">
-          <a-statistic title="Token 月使用量" :value="18920" :value-style="{ color: 'rgb(var(--purple-6))' }">
-            <template #suffix><span class="stat-unit">次</span></template>
+          <a-statistic
+            title="本月 AI Token 用量"
+            :value="statsCards[3].value"
+            :value-style="{ color: 'rgb(var(--purple-6))' }"
+          >
+            <template #suffix><span class="stat-unit">tokens</span></template>
           </a-statistic>
         </a-card>
       </a-col>
     </a-row>
 
-    <!-- 系统健康 + SMTP 状态 -->
+    <!-- 系统健康 + 系统配置（同一行，左右对齐） -->
     <a-row :gutter="16" class="content-row">
-      <a-col :span="16">
+      <a-col :span="14">
         <a-card title="系统健康状态" :bordered="false">
           <a-spin :loading="healthLoading" tip="检测中...">
             <div v-if="healthData" class="health-panel">
@@ -73,8 +81,8 @@
         </a-card>
       </a-col>
 
-      <a-col :span="8">
-        <a-card title="系统配置总览" :bordered="false" class="config-overview-card">
+      <a-col :span="10">
+        <a-card title="系统配置总览" :bordered="false">
           <a-spin :loading="configLoading" tip="加载中...">
             <div v-if="configData" class="config-list">
               <div v-for="(items, category) in configData" :key="category" class="config-group">
@@ -85,33 +93,42 @@
                 </div>
               </div>
             </div>
-            <a-empty v-else description="超级管理员可查看系统配置" />
+            <a-empty v-else description="仅超级管理员可见" />
           </a-spin>
         </a-card>
       </a-col>
     </a-row>
 
-    <!-- 趋势图表 + 最近操作 -->
+    <!-- 答卷趋势 + 审计日志 -->
     <a-row :gutter="16" class="content-row">
       <a-col :span="16">
-        <a-card title="近 7 日答卷趋势" :bordered="false">
-          <div class="chart-placeholder">
-            <icon-bar-chart class="placeholder-icon" />
-            <p>折线图表（接入图表库后展示）</p>
+        <a-card title="近 7 日答卷趋势" :bordered="false" :loading="statsLoading" class="trend-card">
+          <div v-if="trendBars.length > 0" class="trend-chart">
+            <div v-for="bar in trendBars" :key="bar.date" class="trend-bar-row">
+              <span class="trend-date">{{ bar.date }}</span>
+              <div class="trend-bar-track">
+                <div class="trend-bar-fill" :style="{ width: bar.pct + '%' }"></div>
+              </div>
+              <span class="trend-count">{{ bar.count }}</span>
+            </div>
           </div>
+          <a-empty v-else description="暂无答卷数据" />
         </a-card>
       </a-col>
       <a-col :span="8">
-        <a-card title="最近操作记录" :bordered="false" class="log-card">
-          <a-list :bordered="false" size="small">
-            <a-list-item v-for="item in recentLogs" :key="item.id">
-              <div class="log-item">
-                <a-badge :status="item.status as any" />
-                <span class="log-text">{{ item.text }}</span>
-              </div>
-              <span class="log-time">{{ item.time }}</span>
-            </a-list-item>
-          </a-list>
+        <a-card title="最近操作记录" :bordered="false" class="log-card" :loading="logsLoading">
+          <div v-if="recentLogs.length > 0" class="log-scroll">
+            <a-list :bordered="false" size="small">
+              <a-list-item v-for="item in recentLogs" :key="item.id">
+                <div class="log-item">
+                  <a-badge :status="item.ok ? 'success' : 'danger'" />
+                  <span class="log-text">{{ item.action }}</span>
+                </div>
+                <span class="log-time">{{ item.time }}</span>
+              </a-list-item>
+            </a-list>
+          </div>
+          <a-empty v-else description="暂无操作记录" />
         </a-card>
       </a-col>
     </a-row>
@@ -155,11 +172,53 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useUserStore } from "@/store/modules/user";
-import { getHealthStatus } from "@/api/modules/admin";
-import { getAdminConfig } from "@/api/modules/admin";
+import { getHealthStatus, getAdminConfig } from "@/api/modules/admin";
+import { getStatsOverview } from "@/api/modules/survey";
+import { getAIUsage } from "@/api/modules/admin";
+import { getAuditLogList } from "@/api/modules/log";
 import type { HealthCheckResult, SystemConfig } from "@/api/modules/admin";
 
 const userStore = useUserStore();
+
+// ── 统计指标卡片 ──────────────────────────────────────────
+
+const statsCards = ref([{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }]);
+
+// ── 7 日趋势 ──────────────────────────────────────────────
+
+const statsLoading = ref(false);
+const trendBars = ref<Array<{ date: string; count: number; pct: number }>>([]);
+
+async function fetchStats() {
+  statsLoading.value = true;
+  try {
+    const [overviewRes, aiUsageRes] = await Promise.allSettled([getStatsOverview(), getAIUsage()]);
+
+    if (overviewRes.status === "fulfilled" && overviewRes.value.code === 0 && overviewRes.value.data) {
+      const d = overviewRes.value.data;
+      statsCards.value[0].value = d.total_surveys;
+      statsCards.value[1].value = d.responses_today;
+      statsCards.value[2].value = d.total_responses;
+
+      if (d.trend_7_days?.length) {
+        const max = Math.max(...d.trend_7_days.map(t => t.count), 1);
+        trendBars.value = d.trend_7_days.map(t => ({
+          date: t.date.slice(5),
+          count: t.count,
+          pct: Math.round((t.count / max) * 100)
+        }));
+      }
+    }
+
+    if (aiUsageRes.status === "fulfilled" && aiUsageRes.value.code === 0 && aiUsageRes.value.data) {
+      statsCards.value[3].value = aiUsageRes.value.data.usage_summary.total_tokens;
+    }
+  } catch {
+    // 非阻塞
+  } finally {
+    statsLoading.value = false;
+  }
+}
 
 // ── 健康检查 ──────────────────────────────────────────────
 
@@ -200,6 +259,61 @@ async function fetchConfig() {
   }
 }
 
+// ── 审计日志 ──────────────────────────────────────────────
+
+const logsLoading = ref(false);
+const recentLogs = ref<Array<{ id: string; action: string; time: string; ok: boolean }>>([]);
+
+async function fetchLogs() {
+  logsLoading.value = true;
+  try {
+    const res = await getAuditLogList({ page: 1, pageSize: 8 });
+    if (res.code === 0 && res.data?.items) {
+      recentLogs.value = res.data.items.map((item: { id: string; action: string; time: string }) => ({
+        id: item.id,
+        action: formatAction(item.action),
+        time: formatRelativeTime(item.time),
+        ok: true
+      }));
+    }
+  } catch {
+    // 非阻塞
+  } finally {
+    logsLoading.value = false;
+  }
+}
+
+/** 操作类型 → 可读中文 */
+function formatAction(action: string): string {
+  const map: Record<string, string> = {
+    login: "用户登录系统",
+    create_survey: "创建问卷",
+    update_survey: "更新问卷",
+    delete_survey: "删除问卷",
+    publish_survey: "发布问卷",
+    submit_response: "提交答卷",
+    generate_survey_link: "生成问卷链接",
+    submit_review: "提交审核",
+    update_smtp_config: "更新 SMTP 配置",
+    update_ai_config: "更新 AI 配置",
+    create_user: "创建用户",
+    delete_user: "删除用户",
+    ban_user: "封禁用户",
+    unban_user: "解封用户"
+  };
+  return map[action] ?? action;
+}
+
+/** ISO 时间 → "x分钟前" / "x小时前" */
+function formatRelativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 60) return min <= 0 ? "刚刚" : `${min}分钟前`;
+  const hour = Math.floor(min / 60);
+  if (hour < 24) return `${hour}小时前`;
+  return `${Math.floor(hour / 24)}天前`;
+}
+
 // ── 工具 ──────────────────────────────────────────────────
 
 function formatUptime(seconds: number): string {
@@ -220,31 +334,24 @@ function formatServiceName(name: string): string {
   return map[name] || name;
 }
 
-/** 敏感字段脱敏 */
+/** 敏感字段脱敏 + 超长截断 */
 function maskSensitive(key: string, value: string): string {
   if (!value) return "—";
-  if (key.includes("password") || key.includes("secret")) {
-    return value.length > 6 ? "••••••••" : "••••";
+  if (key.includes("password") || key.includes("secret") || key.includes("api_key") || key.includes("token")) {
+    if (value.includes("****")) return value;
+    return value.length > 8 ? "••••••••" : "••••";
   }
-  if (value.length > 40) return value.substring(0, 40) + "...";
+  if (value.length > 28) return value.substring(0, 28) + "…";
   return value;
 }
-
-// ── 最近操作记录 ──────────────────────────────────────────
-
-const recentLogs = [
-  { id: 1, status: "success", text: "上传问卷配置 survey_001.json", time: "10分钟前" },
-  { id: 2, status: "success", text: "用户 admin 登录系统", time: "25分钟前" },
-  { id: 3, status: "warning", text: "并发数超过阈值警告", time: "1小时前" },
-  { id: 4, status: "success", text: "新建 API Token", time: "2小时前" },
-  { id: 5, status: "normal", text: "导出答卷数据报表", time: "3小时前" }
-];
 
 // ── 挂载 ──────────────────────────────────────────────────
 
 onMounted(() => {
+  fetchStats();
   fetchHealth();
   fetchConfig();
+  fetchLogs();
 });
 </script>
 
@@ -347,66 +454,117 @@ onMounted(() => {
   min-height: 200px;
 }
 
-.config-list {
+/* ── 趋势 + 日志卡片等高 ────────────────────────────────── */
+
+.trend-card .trend-chart {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
 }
 
-.config-group {
+.trend-bar-row {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+}
+
+.trend-date {
+  width: 42px;
+  font-size: 12px;
+  color: var(--color-text-3);
+  text-align: right;
+}
+
+.trend-bar-track {
+  flex: 1;
+  height: 16px;
+  background: var(--color-fill-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.trend-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgb(var(--primary-5)), rgb(var(--primary-6)));
+  border-radius: 3px;
+  min-width: 2px;
+}
+
+.trend-count {
+  width: 44px;
+  font-size: 12px;
+  color: var(--color-text-3);
+  text-align: right;
+}
+
+/* ── 最近操作滚动容器 ──────────────────────────────────── */
+
+.log-scroll {
+  max-height: 196px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* ── 操作记录 ──────────────────────────────────────────── */
+
+.config-group {
+  flex: 1 1 360px;
+  min-width: 320px;
 }
 
 .config-category {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   color: var(--color-text-3);
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--color-fill-3);
 }
 
 .config-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 3px 0;
+  padding: 7px 10px;
   font-size: 13px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.config-item:nth-child(odd) {
+  background: var(--color-fill-1);
+}
+
+.config-item:hover {
+  background: var(--color-fill-2);
 }
 
 .config-key {
   color: var(--color-text-2);
   font-family: "SF Mono", "Monaco", "Consolas", monospace;
-  font-size: 12px;
+  font-size: 11px;
+  flex-shrink: 0;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.5;
+  margin-right: 16px;
 }
 
 .config-value {
   color: var(--color-text-1);
-  max-width: 180px;
+  flex-shrink: 1;
   text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* ── 图表占位区域 ───────────────────────────────────────── */
-
-.chart-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 220px;
-  color: var(--color-text-4);
-  font-size: 14px;
-}
-
-.placeholder-icon {
-  font-size: 48px;
-  color: var(--color-fill-3);
-  margin-bottom: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  min-width: 0;
+  margin-left: auto;
 }
 
 /* ── 操作记录 ──────────────────────────────────────────── */

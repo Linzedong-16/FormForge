@@ -219,3 +219,52 @@ export const updateAIConfig = (data: AIConfigUpdateInput): Promise<ApiResponse<A
 
 /** GET /api/health — 服务健康检查 */
 export const getHealthStatus = (): Promise<ApiResponse<HealthCheckResult>> => authClient.get("/health");
+
+// ══════════════════════════════════════════════════════════════
+//  DeepSeek API 用量查询
+// ══════════════════════════════════════════════════════════════
+
+/** 余额信息 */
+export interface DeepSeekBalance {
+  currency: string;
+  total_balance: string;
+  granted_balance: string;
+  topped_up_balance: string;
+}
+
+/** 用量数据点 */
+export interface DeepSeekUsagePoint {
+  date: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  request_count: number;
+}
+
+/** 用量查询响应 */
+export interface DeepSeekUsageResponse {
+  balance: {
+    is_available: boolean;
+    balance_infos: DeepSeekBalance[];
+  } | null;
+  usage_summary: {
+    total_prompt_tokens: number;
+    total_completion_tokens: number;
+    total_tokens: number;
+    total_requests: number;
+  };
+  daily_usage: DeepSeekUsagePoint[];
+  estimated_cost: {
+    input_cost: number;
+    output_cost: number;
+    total_cost: number;
+    currency: string;
+  };
+  queried_at: string;
+}
+
+/** GET /api/admin/ai/usage — 查询 DeepSeek 余额 + Token 用量 */
+export const getAIUsage = (params?: {
+  start_date?: string;
+  end_date?: string;
+}): Promise<ApiResponse<DeepSeekUsageResponse>> => serverClient.get("/admin/ai/usage", { params });

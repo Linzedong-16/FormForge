@@ -10,7 +10,9 @@
       "Bash(ls -la node_modules/vue-cropper/src/)",
       "Bash(pnpm remove *)",
       "Bash(npx prisma *)",
-      "Bash(node -e \"const pkg = require\\('./node_modules/vue/package.json'\\); console.log\\(pkg.version\\)\")"
+      "Bash(node -e \"const pkg = require\\('./node_modules/vue/package.json'\\); console.log\\(pkg.version\\)\")",
+      "WebFetch(domain:api-docs.deepseek.com)",
+      "WebSearch"
     ]
   }
 }

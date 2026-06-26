@@ -3,216 +3,217 @@
     <!-- 页面标题 -->
     <div class="page-header">
       <div class="title-area">
-        <h2 class="page-title">API Token 用量统计与管理</h2>
-        <p class="page-desc">管理问卷平台 API 访问凭证，监控用量消耗与配额</p>
+        <h2 class="page-title">DeepSeek API 用量监控</h2>
+        <p class="page-desc">查询 DeepSeek API 账户余额、Token 消耗量与预估费用</p>
       </div>
-      <a-button type="primary" @click="handleCreateToken">
-        <template #icon><icon-plus /></template>
-        创建 Token
-      </a-button>
+      <a-space>
+        <a-button type="outline" :loading="loading" @click="handleRefresh">
+          <template #icon><icon-refresh /></template>
+          刷新数据
+        </a-button>
+      </a-space>
     </div>
 
-    <!-- 用量汇总 -->
+    <!-- 汇总卡片 -->
     <a-row :gutter="16">
-      <a-col :span="6">
-        <a-card :bordered="false" class="stat-card">
-          <a-statistic title="Token 总数" :value="8" :value-style="{ fontSize: '28px' }" />
-        </a-card>
-      </a-col>
-      <a-col :span="6">
+      <a-col v-for="card in statCards" :key="card.title" :span="6">
         <a-card :bordered="false" class="stat-card">
           <a-statistic
-            title="本月调用总量"
-            :value="18920"
-            :value-style="{ fontSize: '28px', color: 'rgb(var(--arcoblue-6))' }"
+            :title="card.title"
+            :value="typeof card.value === 'number' ? card.value : undefined"
+            :value-style="card.color ? { color: card.color } : { fontSize: '28px' }"
           >
-            <template #suffix><span class="stat-unit">次</span></template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="6">
-        <a-card :bordered="false" class="stat-card">
-          <a-statistic
-            title="月配额剩余"
-            :value="81080"
-            :value-style="{ fontSize: '28px', color: 'rgb(var(--green-6))' }"
-          >
-            <template #suffix><span class="stat-unit">次</span></template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="6">
-        <a-card :bordered="false" class="stat-card">
-          <a-statistic title="配额使用率" :value="18.9" :precision="1" :value-style="{ fontSize: '28px' }">
-            <template #suffix><span class="stat-unit">%</span></template>
+            <template #suffix
+              ><span class="stat-unit">{{ card.unit }}</span></template
+            >
+            <!-- 字符串类型值（费用/余额） -->
+            <template v-if="typeof card.value === 'string'" #default>
+              <span class="stat-string">{{ card.value }}</span>
+            </template>
           </a-statistic>
         </a-card>
       </a-col>
     </a-row>
 
-    <!-- 用量趋势图 -->
+    <!-- 用量明细 + 余额信息 -->
     <a-row :gutter="16">
-      <a-col :span="16">
-        <a-card title="近 30 日 API 调用量趋势" :bordered="false">
-          <div class="chart-placeholder">
-            <icon-bar-chart class="placeholder-icon" />
-            <p>API 调用量折线图（集成图表库后展示）</p>
-          </div>
-        </a-card>
-      </a-col>
-      <a-col :span="8">
-        <a-card title="各 Token 用量占比" :bordered="false">
-          <div class="chart-placeholder small">
-            <icon-lock class="placeholder-icon" />
-            <p>用量占比饼图（集成图表库后展示）</p>
-          </div>
-        </a-card>
-      </a-col>
-    </a-row>
-
-    <!-- Token 列表 -->
-    <a-card title="Token 列表" :bordered="false">
-      <a-table :data="tokens" :columns="columns" :pagination="{ pageSize: 8, showTotal: true }" row-key="id">
-        <!-- Token 值（脱敏展示） -->
-        <template #tokenValue="{ record }">
-          <a-space>
-            <span class="token-mask">{{ record.tokenMask }}</span>
-            <a-button type="text" size="mini" @click="handleCopyToken(record)">复制</a-button>
-          </a-space>
-        </template>
-        <!-- 状态 -->
-        <template #status="{ record }">
-          <a-switch
-            :model-value="record.status === 'active'"
-            size="small"
-            @change="val => handleToggleStatus(record, val)"
+      <a-col :span="14">
+        <a-card title="Token 用量明细" :bordered="false">
+          <a-table
+            :data="usageRows()"
+            :columns="columns"
+            :loading="loading"
+            :pagination="false"
+            :bordered="false"
+            row-key="label"
           />
-        </template>
-        <!-- 用量进度 -->
-        <template #usage="{ record }">
-          <div class="rate-cell">
-            <a-progress
-              :percent="record.usageRate / 100"
-              :stroke-width="6"
-              :show-text="false"
-              :status="record.usageRate > 80 ? 'danger' : 'normal'"
-              animation
-            />
-            <span class="rate-text">{{ record.usageRate }}%</span>
+        </a-card>
+      </a-col>
+      <a-col :span="10">
+        <a-card title="DeepSeek 账户余额" :bordered="false" :loading="loading">
+          <template v-if="hasBalanceData() && usageData?.balance?.balance_infos?.[0]">
+            <div class="balance-display">
+              <div class="balance-total">
+                <span class="balance-label">总余额</span>
+                <span class="balance-value">¥{{ usageData!.balance!.balance_infos[0].total_balance }}</span>
+              </div>
+              <a-divider :margin="12" />
+              <div class="balance-detail">
+                <div class="balance-row">
+                  <span>赠送余额</span>
+                  <span class="text-muted">¥{{ usageData!.balance!.balance_infos[0].granted_balance }}</span>
+                </div>
+                <div class="balance-row">
+                  <span>充值余额</span>
+                  <span class="text-muted">¥{{ usageData!.balance!.balance_infos[0].topped_up_balance }}</span>
+                </div>
+                <div class="balance-row">
+                  <span>账户状态</span>
+                  <a-tag :color="usageData!.balance!.is_available ? 'green' : 'red'" size="small">
+                    {{ usageData!.balance!.is_available ? "可用" : "余额不足" }}
+                  </a-tag>
+                </div>
+              </div>
+            </div>
+          </template>
+          <div v-else class="chart-placeholder">
+            <p style="color: var(--color-text-3)">暂未获取到余额信息</p>
           </div>
-        </template>
-        <!-- 操作 -->
-        <template #operations="{ record }">
-          <a-space>
-            <a-button type="text" size="small" @click="handleViewUsage(record)">用量详情</a-button>
-            <a-popconfirm content="确认吊销该 Token？此操作不可恢复。" @ok="handleRevoke(record)">
-              <a-button type="text" size="small" status="danger">吊销</a-button>
-            </a-popconfirm>
-          </a-space>
-        </template>
-      </a-table>
-    </a-card>
+        </a-card>
+
+        <!-- 日用量趋势 -->
+        <a-card
+          v-if="usageData?.daily_usage?.length"
+          title="近 30 日 Token 消耗趋势"
+          :bordered="false"
+          style="margin-top: 16px"
+        >
+          <div class="trend-chart">
+            <div v-for="bar in usageData.daily_usage.slice(-14)" :key="bar.date" class="trend-bar-row">
+              <span class="trend-date">{{ bar.date.slice(5) }}</span>
+              <div class="trend-bar-track">
+                <div class="trend-bar-fill" :style="{ width: barPct(bar.total_tokens) + '%' }"></div>
+              </div>
+              <span class="trend-count">{{ formatTokens(bar.total_tokens) }}</span>
+            </div>
+          </div>
+        </a-card>
+      </a-col>
+    </a-row>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { Message } from "@arco-design/web-vue";
+import { getAIUsage } from "@/api/modules/admin";
+import type { DeepSeekUsageResponse, DeepSeekBalance } from "@/api/modules/admin";
 
-interface TokenItem {
-  id: string;
-  name: string;
-  tokenMask: string;
-  monthlyQuota: number;
-  usedCount: number;
-  usageRate: number;
-  status: "active" | "disabled";
-  createdAt: string;
-  lastUsed: string;
-}
+// ─── 状态 ──────────────────────────────────────────────────────
 
-const columns = [
-  { title: "名称", dataIndex: "name", width: 160 },
-  { title: "Token", dataIndex: "tokenValue", slotName: "tokenValue", width: 200 },
-  { title: "月配额", dataIndex: "monthlyQuota", width: 100 },
-  { title: "本月已用", dataIndex: "usedCount", width: 100 },
-  { title: "用量占比", dataIndex: "usage", slotName: "usage", width: 160 },
-  { title: "启用", dataIndex: "status", slotName: "status", width: 70 },
-  { title: "创建时间", dataIndex: "createdAt", width: 160 },
-  { title: "最后使用", dataIndex: "lastUsed", width: 160 },
-  { title: "操作", slotName: "operations", width: 150 }
-];
+const loading = ref(false);
+const usageData = ref<DeepSeekUsageResponse | null>(null);
 
-// 占位数据
-const tokens = ref<TokenItem[]>([
-  {
-    id: "t001",
-    name: "前端生产环境",
-    tokenMask: "sk-prod-****...****a1b2",
-    monthlyQuota: 50000,
-    usedCount: 12430,
-    usageRate: 24,
-    status: "active",
-    createdAt: "2024-10-01 09:00",
-    lastUsed: "2024-12-05 10:22"
-  },
-  {
-    id: "t002",
-    name: "数据分析服务",
-    tokenMask: "sk-ana-****...****c3d4",
-    monthlyQuota: 30000,
-    usedCount: 6490,
-    usageRate: 21,
-    status: "active",
-    createdAt: "2024-11-01 10:00",
-    lastUsed: "2024-12-05 09:45"
-  },
-  {
-    id: "t003",
-    name: "测试环境 Token",
-    tokenMask: "sk-test-****...****e5f6",
-    monthlyQuota: 10000,
-    usedCount: 8920,
-    usageRate: 89,
-    status: "active",
-    createdAt: "2024-09-15 14:30",
-    lastUsed: "2024-12-05 08:10"
-  },
-  {
-    id: "t004",
-    name: "已停用的旧 Token",
-    tokenMask: "sk-old-****...****g7h8",
-    monthlyQuota: 10000,
-    usedCount: 0,
-    usageRate: 0,
-    status: "disabled",
-    createdAt: "2024-06-01 11:00",
-    lastUsed: "2024-09-30 17:00"
-  }
+// ─── 汇总指标 ──────────────────────────────────────────────────
+
+const statCards = ref([
+  { title: "当月 Token 消耗", value: 0, unit: "tokens", color: "" },
+  { title: "当月 API 调用", value: 0, unit: "次", color: "rgb(var(--arcoblue-6))" },
+  { title: "估算费用 (当月)", value: "¥0.00", unit: "", color: "rgb(var(--green-6))" },
+  { title: "账户余额", value: "¥—", unit: "", color: "" }
 ]);
 
-const handleCreateToken = () => {
-  // TODO: 打开创建 Token 弹窗
-  Message.info("创建 Token 功能开发中");
+// ─── 表格列 ────────────────────────────────────────────────────
+
+const columns = [
+  { title: "指标", dataIndex: "label", width: 200 },
+  { title: "数值", dataIndex: "value", width: 200 }
+];
+
+// ─── 数据加载 ──────────────────────────────────────────────────
+
+async function loadData() {
+  loading.value = true;
+  try {
+    const res = await getAIUsage();
+    if (res.code === 0 && res.data) {
+      usageData.value = res.data;
+      const d = res.data;
+
+      // 汇总指标
+      statCards.value[0].value = d.usage_summary.total_tokens;
+      statCards.value[1].value = d.usage_summary.total_requests;
+      statCards.value[2].value = `¥${d.estimated_cost.total_cost.toFixed(2)}`;
+      if (d.balance?.balance_infos?.[0]) {
+        statCards.value[3].value = `¥${d.balance.balance_infos[0].total_balance}`;
+      } else {
+        statCards.value[3].value = "¥—";
+      }
+    }
+  } catch {
+    Message.error("加载 DeepSeek 用量数据失败");
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => {
+  loadData();
+});
+
+// ─── 计算属性 ──────────────────────────────────────────────────
+
+/** 用量明细表格数据 */
+const usageRows = (): Array<{ label: string; value: string }> => {
+  const d = usageData.value;
+  if (!d) return [];
+
+  const rows: Array<{ label: string; value: string }> = [
+    { label: "总 Token 消耗（当月）", value: d.usage_summary.total_tokens.toLocaleString() },
+    { label: "输入 Token（Prompt）", value: d.usage_summary.total_prompt_tokens.toLocaleString() },
+    { label: "输出 Token（Completion）", value: d.usage_summary.total_completion_tokens.toLocaleString() },
+    { label: "API 调用次数", value: d.usage_summary.total_requests.toLocaleString() },
+    { label: "估算费用（输入）", value: `¥${d.estimated_cost.input_cost.toFixed(2)}` },
+    { label: "估算费用（输出）", value: `¥${d.estimated_cost.output_cost.toFixed(2)}` },
+    { label: "估算费用（合计）", value: `¥${d.estimated_cost.total_cost.toFixed(2)}` }
+  ];
+
+  if (d.balance?.balance_infos?.[0]) {
+    const b: DeepSeekBalance = d.balance.balance_infos[0];
+    rows.push(
+      { label: "账户总余额", value: `¥${b.total_balance}` },
+      { label: "赠送余额", value: `¥${b.granted_balance}` },
+      { label: "充值余额", value: `¥${b.topped_up_balance}` }
+    );
+  }
+
+  rows.push({ label: "数据更新时间", value: new Date(d.queried_at).toLocaleString("zh-CN") });
+
+  return rows;
 };
 
-const handleCopyToken = (record: TokenItem) => {
-  Message.success(`${record.name} Token 已复制到剪贴板`);
+const hasBalanceData = (): boolean => {
+  return !!usageData.value?.balance?.balance_infos?.length;
 };
 
-const handleToggleStatus = (record: TokenItem, val: boolean | (string | number | boolean)) => {
-  record.status = val ? "active" : "disabled";
-  Message.success(`Token「${record.name}」已${val ? "启用" : "停用"}`);
-};
+// ─── 操作 ──────────────────────────────────────────────────────
 
-const handleViewUsage = (record: TokenItem) => {
-  Message.info(`查看用量详情：${record.name}`);
-};
+function handleRefresh() {
+  loadData();
+}
 
-const handleRevoke = (record: TokenItem) => {
-  tokens.value = tokens.value.filter(t => t.id !== record.id);
-  Message.success(`Token「${record.name}」已吊销`);
-};
+/** 日趋势柱状图百分比 */
+function barPct(tokens: number): number {
+  const max = usageData.value?.daily_usage?.reduce((m, d) => Math.max(m, d.total_tokens), 0) ?? 1;
+  return Math.round((tokens / Math.max(max, 1)) * 100);
+}
+
+/** Token 数格式化 */
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
+  return String(n);
+}
 </script>
 
 <style scoped>
@@ -247,44 +248,101 @@ const handleRevoke = (record: TokenItem) => {
   margin-left: 4px;
 }
 
-.chart-placeholder {
+/* ── 字符串类型统计值 ───────────────────────────────────── */
+
+.stat-string {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+/* ── 余额展示 ─────────────────────────────────────────── */
+
+.balance-display {
+  padding: 8px 0;
+}
+
+.balance-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.balance-label {
+  font-size: 14px;
+  color: var(--color-text-2);
+}
+
+.balance-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: rgb(var(--green-6));
+}
+
+.balance-detail {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: var(--color-text-4);
+  gap: 8px;
+}
+
+.balance-row {
+  display: flex;
+  justify-content: space-between;
   font-size: 14px;
 }
 
-.chart-placeholder.small {
-  height: 180px;
+.text-muted {
+  color: var(--color-text-3);
 }
 
-.placeholder-icon {
-  font-size: 48px;
-  color: var(--color-fill-3);
-  margin-bottom: 12px;
+/* ── 日趋势柱状图 ─────────────────────────────────────── */
+
+.trend-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* Token 脱敏文本 */
-.token-mask {
-  font-family: "Courier New", monospace;
-  font-size: 13px;
-  color: var(--color-text-2);
-  letter-spacing: 0.5px;
-}
-
-.rate-cell {
+.trend-bar-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.rate-text {
-  font-size: 13px;
-  color: var(--color-text-2);
-  width: 40px;
+.trend-date {
+  width: 44px;
+  font-size: 12px;
+  color: var(--color-text-3);
   text-align: right;
+}
+
+.trend-bar-track {
+  flex: 1;
+  height: 18px;
+  background: var(--color-fill-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.trend-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgb(var(--arcoblue-4)), rgb(var(--arcoblue-6)));
+  border-radius: 3px;
+  min-width: 2px;
+}
+
+.trend-count {
+  width: 48px;
+  font-size: 12px;
+  color: var(--color-text-2);
+  text-align: right;
+}
+
+/* ── 空数据占位 ──────────────────────────────────────── */
+
+.chart-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
 }
 </style>

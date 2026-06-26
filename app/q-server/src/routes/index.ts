@@ -9,6 +9,7 @@ import uploadRoutes from "../modules/survey/upload/upload.routes.js";
 import aiGenerateRoutes from "../modules/ai/ai-generate/ai-generate.routes.js";
 import aiPolishRoutes from "../modules/ai/ai-polish/ai-polish.routes.js";
 import aiConfigRoutes from "../modules/ai/ai-config/ai-config.routes.js";
+import aiUsageRoutes from "../modules/ai/ai-usage/ai-usage.routes.js";
 import logRoutes from "../modules/log/log.routes.js";
 import reviewRoutes from "../modules/review/review.routes.js";
 import templateRoutes from "../modules/template/template.routes.js";
@@ -97,6 +98,8 @@ const routes: FastifyPluginAsync = async fastify => {
   fastify.register(aiPolishRoutes);
   // ai-config.routes.ts 内部路径为 /config/ai（管理员 AI 配置管理）
   fastify.register(aiConfigRoutes, { prefix: "/admin" });
+  // ai-usage.routes.ts 内部路径为 /ai/usage（管理员 DeepSeek 用量查询）
+  fastify.register(aiUsageRoutes, { prefix: "/admin" });
   // log.routes.ts 内部路径为 /logs、/logs/stats（管理员日志查询）
   fastify.register(logRoutes);
   // review.routes.ts 内部路径为 /reviews（管理员审核管理）
