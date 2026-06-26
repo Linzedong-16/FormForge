@@ -20,8 +20,20 @@ import type {
   UpdateSurveyInput,
   SurveyListQueryInput,
   ApplyTemplateInput,
-  SubmitReviewInput
+  SubmitReviewInput,
+  SubmitResponseInput,
+  ResponseListQueryInput,
+  GenerateLinkInput
 } from "./survey-crud.schemas.js";
+import {
+  hashFingerprint,
+  generateToken,
+  storeToken,
+  validateToken,
+  consumeToken,
+  checkDuplicateSubmit,
+  recordSubmit
+} from "../../../utils/fingerprint.js";
 import type {
   SurveyListItem,
   SurveyComponentDetail,
@@ -256,6 +268,87 @@ export class SurveyService {
 
         if (!survey) {
           throw new AppError("问卷不存在", 404);
+        }
+
+        const raw = survey as Record<string, unknown>;
+        return {
+          ...toSurveyListItem(raw),
+          access_code: (raw.access_code as string) ?? null,
+          components: ((raw.components as Record<string, unknown>[]) ?? []).map(toComponentDetail)
+        };
+      },
+      CACHE_TTL_SURVEY
+    );
+  }
+
+  // ============================================================
+  //  问卷公开详情（C 端，无需登录）
+  // ============================================================
+
+  /**
+   * 获取已发布问卷的公开详情（供 C 端填卷人加载问卷内容）
+   *
+   * 与 getById 的区别：
+   *   - 无需 userId（匿名访问）
+   *   - 仅返回 status=1（已发布）的问卷
+   *   - 检查问卷截止时间：若已超过截止时间，自动关闭问卷
+   *
+   * 截止时间校验：
+   *   1. 读取 Redis 中的 survey:deadline:{surveyId}
+   *   2. 若存在且 currentTime > deadline → 将问卷状态更新为 2（已关闭）→ 返回 404
+   *   3. 若不存在 → 正常流程（可能未设置截止时间或 Redis 数据过期）
+   */
+  async getPublicById(surveyId: bigint): Promise<SurveyDetail> {
+    const surveyIdStr = bigIntToStr(surveyId);
+    const cacheKey = CacheKeys.surveyDetail(surveyIdStr);
+
+    // 检查是否设置了截止时间（使用统一缓存 Key 规范）
+    const deadlineKey = CacheKeys.surveyDeadline(surveyIdStr);
+    try {
+      const deadlineRaw = await this.fastify.redis.get(deadlineKey);
+      if (deadlineRaw) {
+        const deadlineData = JSON.parse(deadlineRaw) as { deadline: string };
+        const deadlineMs = new Date(deadlineData.deadline).getTime();
+        if (Date.now() > deadlineMs) {
+          // 截止时间已过，自动关闭问卷
+          this.fastify.log.info(
+            { surveyId: surveyIdStr, deadline: deadlineData.deadline },
+            "[getPublicById] 问卷截止时间已过，自动关闭"
+          );
+          await this.fastify.prisma.survey.update({
+            where: { id: surveyId },
+            data: { status: 2, closed_at: new Date() }
+          });
+          // 清除缓存和 Redis 截止时间标记
+          await this.cache.del(cacheKey);
+          await this.fastify.redis.del(deadlineKey).catch(() => {});
+          throw new AppError("问卷已截止，不再接受填写", 404);
+        }
+      }
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      // Redis 读取失败时降级放行（不阻塞问卷访问）
+      this.fastify.log.warn({ surveyId: surveyIdStr }, "[getPublicById] Redis 截止时间检查失败，降级放行");
+    }
+
+    return this.cache.getOrSet(
+      cacheKey,
+      async () => {
+        const survey = await this.fastify.prisma.survey.findFirst({
+          where: {
+            id: surveyId,
+            status: 1,
+            deleted_at: null
+          },
+          include: {
+            components: {
+              orderBy: { order_index: "asc" }
+            }
+          }
+        });
+
+        if (!survey) {
+          throw new AppError("问卷不存在或未发布", 404);
         }
 
         const raw = survey as Record<string, unknown>;
@@ -610,6 +703,106 @@ export class SurveyService {
   }
 
   // ============================================================
+  //  生成定时问卷链接
+  // ============================================================
+
+  /**
+   * 为指定问卷生成定时填写链接
+   *
+   * 流程：
+   *   1. 校验问卷存在且属于当前用户
+   *   2. 校验问卷已通过审核
+   *   3. 若未发布则自动发布（状态 0 → 1）
+   *   4. 将截止时间存储到 Redis（设置 TTL 为截止时间 + 1 小时缓冲）
+   *   5. 返回问卷链接信息
+   *
+   * Redis 存储：
+   *   Key: survey:deadline:{surveyId}
+   *   Value: { deadline: ISO, generated_at: timestamp, user_id: string }
+   *   TTL: 距截止时间的秒数 + 3600（1小时缓冲）
+   */
+  async generateSurveyLink(
+    userId: bigint,
+    surveyId: bigint,
+    input: GenerateLinkInput
+  ): Promise<{ survey_id: string; link_url: string; deadline: string; status: "active" }> {
+    const surveyIdStr = bigIntToStr(surveyId);
+
+    // 事务内校验 + 自动发布（若需要）
+    const survey = await this.fastify.prisma.$transaction(async tx => {
+      const existing = await tx.survey.findFirst({
+        where: { id: surveyId, user_id: userId, deleted_at: null },
+        select: { id: true, status: true, review_status: true, title: true }
+      });
+
+      if (!existing) {
+        throw new AppError("问卷不存在", 404);
+      }
+
+      // 必须通过问卷审核
+      if (existing.review_status !== "approved") {
+        throw new AppError("问卷需先通过审核才能生成填写链接，请在预览页提交审核", 403);
+      }
+
+      // 若问卷未发布，自动发布
+      if (existing.status !== 1) {
+        if (existing.status === 2) {
+          throw new AppError("已关闭的问卷无法生成链接", 409);
+        }
+        // 状态 0（草稿）→ 自动发布
+        await tx.survey.update({
+          where: { id: surveyId, user_id: userId },
+          data: { status: 1, published_at: new Date() }
+        });
+      }
+
+      return existing;
+    });
+
+    // 将截止时间写入 Redis
+    const deadlineDate = new Date(input.deadline);
+    const deadlineMs = deadlineDate.getTime();
+    const nowMs = Date.now();
+    // TTL = 距截止时间的秒数 + 1 小时缓冲（确保截止后仍可查询状态）
+    const ttlSeconds = Math.ceil((deadlineMs - nowMs) / 1000) + 3600;
+
+    const deadlineKey = CacheKeys.surveyDeadline(surveyIdStr);
+    const deadlineValue = JSON.stringify({
+      deadline: input.deadline,
+      generated_at: new Date().toISOString(),
+      user_id: bigIntToStr(userId),
+      survey_title: survey.title
+    });
+
+    try {
+      await this.fastify.redis.set(deadlineKey, deadlineValue, "EX", Math.max(60, ttlSeconds));
+    } catch {
+      this.fastify.log.warn(`[generateLink] Redis 存储截止时间失败: surveyId=${surveyIdStr}`);
+      // Redis 不可用时仍返回成功（截止时间校验降级放行）
+    }
+
+    // 写审计日志
+    createAuditLog(this.fastify, userId, "generate_survey_link", "survey", surveyId, {
+      deadline: input.deadline,
+      ttl_seconds: ttlSeconds
+    }).catch(() => {});
+
+    // 清除问卷缓存
+    await this.invalidateCache(surveyId, userId);
+
+    // 构建前端访问链接（使用环境变量中的前端域名）
+    const frontendBaseUrl = process.env.FRONTEND_BASE_URL || "http://localhost:5173";
+    const linkUrl = `${frontendBaseUrl}/survey/${surveyIdStr}`;
+
+    return {
+      survey_id: surveyIdStr,
+      link_url: linkUrl,
+      deadline: input.deadline,
+      status: "active"
+    };
+  }
+
+  // ============================================================
   //  答卷详情
   // ============================================================
   async getResponseById(userId: bigint, responseId: bigint): Promise<Record<string, unknown>> {
@@ -681,5 +874,247 @@ export class SurveyService {
     await this.cache.del(CacheKeys.responseDetail(bigIntToStr(responseId)));
 
     createAuditLog(this.fastify, userId, "delete_response", "survey_response", responseId).catch(() => {});
+  }
+
+  // ============================================================
+  //  生成临时 token（防重复提交）
+  // ============================================================
+
+  /**
+   * 为指定问卷生成临时 token
+   *
+   * 调用场景：
+   *   - 前端加载问卷页面时自动请求
+   *   - 前端切换问卷或刷新页面时重新请求
+   *
+   * Token 特性：
+   *   - UUID v4 格式，全局唯一
+   *   - 与问卷 ID 绑定，存储在 Redis 中
+   *   - 有效期 30 分钟，过期自动清除
+   *   - 每个问卷同时可存在多个有效 token（多端/多标签页场景）
+   */
+  async generateSurveyToken(surveyId: bigint): Promise<{ token: string; expires_in: number }> {
+    const token = generateToken();
+    const surveyIdStr = bigIntToStr(surveyId);
+
+    await storeToken(this.fastify, surveyIdStr, token);
+
+    return {
+      token,
+      expires_in: 1800 // 30 分钟
+    };
+  }
+
+  // ============================================================
+  //  提交答卷（含防重复提交校验）
+  // ============================================================
+
+  /**
+   * 提交答卷（C 端接口，无需登录）
+   *
+   * 防重复提交流程：
+   *   1. 校验 token 是否有效（存在且未过期）
+   *   2. 对前端指纹哈希进行服务端二次加盐哈希
+   *   3. 检查 Redis 去重记录（fingerprint_hash + token 组合）
+   *   4. 若已存在 → 返回 409（重复提交）
+   *   5. 若不存在 → 写入答卷数据 + 设置去重标记
+   *
+   * 兼容性设计：
+   *   - Redis 不可用时降级放行，不阻塞正常提交
+   *   - Token 不可用时仍允许提交（仅记录警告日志）
+   */
+  async submitResponse(
+    surveyId: bigint,
+    input: SubmitResponseInput
+  ): Promise<{ response_id: string; submitted_at: string }> {
+    const surveyIdStr = bigIntToStr(surveyId);
+
+    // 1. 验证 token 有效性
+    const tokenValid = await validateToken(this.fastify, surveyIdStr, input.token);
+    if (!tokenValid) {
+      throw new AppError("临时凭证已过期，请刷新页面后重新提交", 400);
+    }
+
+    // 1.5. 检查问卷截止时间（防止页面加载后截止时间到达仍可提交的竞态）
+    try {
+      const deadlineRaw = await this.fastify.redis.get(CacheKeys.surveyDeadline(surveyIdStr));
+      if (deadlineRaw) {
+        const deadlineData = JSON.parse(deadlineRaw) as { deadline: string };
+        if (Date.now() > new Date(deadlineData.deadline).getTime()) {
+          // 截止时间已过，自动关闭问卷并拒绝提交
+          this.fastify.log.info({ surveyId: surveyIdStr }, "[submitResponse] 截止时间已过，拒绝提交并自动关闭");
+          await this.fastify.prisma.survey
+            .update({
+              where: { id: surveyId },
+              data: { status: 2, closed_at: new Date() }
+            })
+            .catch(() => {});
+          await this.fastify.redis.del(CacheKeys.surveyDeadline(surveyIdStr)).catch(() => {});
+          throw new AppError("问卷已截止，不再接受填写", 400);
+        }
+      }
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      // Redis 不可用时降级放行（不阻塞正常提交）
+      this.fastify.log.warn({ surveyId: surveyIdStr }, "[submitResponse] 截止时间检查失败，降级放行");
+    }
+
+    // 2. 指纹处理：服务端二次加盐哈希
+    const serverFingerprintHash = hashFingerprint(input.fingerprint);
+    const isFingerprintFallback = input.fingerprint.startsWith("fallback_");
+
+    // 3. 去重检查（降级指纹不具有唯一性，跳过去重）
+    if (!isFingerprintFallback) {
+      const duplicate = await checkDuplicateSubmit(this.fastify, serverFingerprintHash, input.token);
+      if (duplicate) {
+        throw new AppError("请勿重复提交，您已提交过该问卷", 409);
+      }
+    } else {
+      this.fastify.log.info({ surveyId: surveyIdStr }, "[submitResponse] 使用降级指纹，跳过去重检查");
+    }
+
+    // 4. 校验问卷存在且已发布
+    const survey = await this.fastify.prisma.survey.findFirst({
+      where: { id: surveyId, deleted_at: null },
+      select: { id: true, status: true }
+    });
+    if (!survey) {
+      throw new AppError("问卷不存在", 404);
+    }
+    if (survey.status !== 1) {
+      throw new AppError("问卷未发布，无法提交", 400);
+    }
+
+    // 5. 事务写入答卷 + 答案
+    const response = await this.fastify.prisma.$transaction(async tx => {
+      const created = await tx.response.create({
+        data: {
+          survey_id: surveyId,
+          anonymous_id: input.anonymous_id ?? null,
+          status: 1, // 已提交
+          submitted_at: new Date()
+        }
+      });
+
+      // 批量创建答案
+      if (input.answers.length > 0) {
+        const answerRows = input.answers
+          .filter(a => a.value !== undefined || (a.values && a.values.length > 0))
+          .map(a => ({
+            response_id: created.id,
+            component_id: BigInt(a.component_id),
+            value: a.value ?? null,
+            values: a.values ?? null
+          }));
+
+        if (answerRows.length > 0) {
+          await tx.answer.createMany({ data: answerRows });
+        }
+      }
+
+      // 更新答卷数缓存
+      await tx.survey.update({
+        where: { id: surveyId },
+        data: { responses_count: { increment: 1 } }
+      });
+
+      return created;
+    });
+
+    // 6. 消费 token（删除，防止复用）
+    await consumeToken(this.fastify, surveyIdStr, input.token);
+
+    // 7. 记录去重标记（降级指纹无唯一性，跳过记录）
+    if (!isFingerprintFallback) {
+      await recordSubmit(this.fastify, serverFingerprintHash, input.token, bigIntToStr(response.id));
+    }
+
+    // 8. 清除答卷列表缓存
+    await this.cache.delByPattern(CacheKeys.responsePattern(surveyIdStr));
+
+    // 写审计日志（不阻塞响应）
+    createAuditLog(this.fastify, BigInt(0), "submit_response", "survey_response", response.id, {
+      survey_id: surveyIdStr,
+      answer_count: input.answers.length
+    }).catch(() => {});
+
+    return {
+      response_id: bigIntToStr(response.id),
+      submitted_at: response.submitted_at!.toISOString()
+    };
+  }
+
+  // ============================================================
+  //  答卷列表
+  // ============================================================
+
+  /**
+   * 查询指定问卷的答卷列表（分页）
+   */
+  async listResponses(
+    userId: bigint,
+    surveyId: bigint,
+    query: ResponseListQueryInput
+  ): Promise<{
+    responses: Array<{
+      id: string;
+      survey_id: string;
+      survey_title: string;
+      user_id: string | null;
+      anonymous_id: string | null;
+      status: number;
+      submitted_at: string | null;
+      created_at: string;
+    }>;
+    total: number;
+    page: number;
+    page_size: number;
+  }> {
+    const { page, page_size } = query;
+
+    // 校验权限：仅问卷所有者可查看答卷
+    const survey = await this.fastify.prisma.survey.findFirst({
+      where: { id: surveyId, user_id: userId, deleted_at: null },
+      select: { id: true, title: true }
+    });
+    if (!survey) {
+      throw new AppError("问卷不存在", 404);
+    }
+
+    const where = { survey_id: surveyId };
+
+    const [items, total] = await Promise.all([
+      this.fastify.prisma.response.findMany({
+        where,
+        select: {
+          id: true,
+          survey_id: true,
+          user_id: true,
+          anonymous_id: true,
+          status: true,
+          submitted_at: true,
+          created_at: true
+        },
+        orderBy: { created_at: "desc" },
+        ...buildPagination({ page, pageSize: page_size })
+      }),
+      this.fastify.prisma.response.count({ where })
+    ]);
+
+    return {
+      responses: (items as Record<string, unknown>[]).map(r => ({
+        id: bigIntToStr(r.id as bigint),
+        survey_id: bigIntToStr(r.survey_id as bigint),
+        survey_title: survey.title,
+        user_id: r.user_id ? bigIntToStr(r.user_id as bigint) : null,
+        anonymous_id: (r.anonymous_id as string) ?? null,
+        status: r.status as number,
+        submitted_at: r.submitted_at ? (r.submitted_at as Date).toISOString() : null,
+        created_at: (r.created_at as Date).toISOString()
+      })),
+      total,
+      page,
+      page_size
+    };
   }
 }

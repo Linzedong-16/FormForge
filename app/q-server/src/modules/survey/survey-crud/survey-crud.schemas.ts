@@ -109,6 +109,76 @@ export const surveyIdSchema = z
   .transform(val => BigInt(val));
 
 // ══════════════════════════════════════════════════════════════════
+//  防重复提交相关 Schema
+// ══════════════════════════════════════════════════════════════════
+
+/** 浏览器指纹哈希 — 前端 SHA-256 后的 hex 字符串（64 字符），或降级标识 */
+const fingerprintHashSchema = z
+  .string()
+  .max(128)
+  .refine(val => /^[a-f0-9]{64}$/.test(val) || val.startsWith("fallback_"), "指纹哈希格式错误");
+
+/** 临时 token — UUID v4 格式，或降级客户端 token */
+const tokenSchema = z
+  .string()
+  .max(128)
+  .refine(
+    val => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) || val.startsWith("client_"),
+    "临时 token 格式错误"
+  );
+
+/** 答案项 */
+const answerItemSchema = z.object({
+  component_id: z.string().min(1, "组件 ID 不能为空"),
+  value: z.string().optional(),
+  values: z.array(z.string()).optional()
+});
+
+/** POST /api/surveys/:surveyId/token — 获取临时 token（无需认证） */
+export const getTokenSchema = z.object({});
+
+/** POST /api/surveys/:surveyId/responses — 提交答卷 */
+export const submitResponseSchema = z.object({
+  answers: z.array(answerItemSchema).min(1, "至少需要提交一个答案"),
+  anonymous_id: z.string().max(100).optional(),
+  /** 浏览器指纹哈希（前端 SHA-256 后的 hex） */
+  fingerprint: fingerprintHashSchema,
+  /** 临时 token（从后端获取） */
+  token: tokenSchema
+});
+
+/** 答卷列表查询参数 */
+export const responseListQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(100).default(10)
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  生成问卷链接相关 Schema
+// ══════════════════════════════════════════════════════════════════
+
+/** POST /api/surveys/:id/generate-link — 生成定时问卷链接 */
+export const generateLinkSchema = z.object({
+  /** 问卷截止时间（ISO 8601 格式，必须是未来时间） */
+  deadline: z
+    .string()
+    .datetime({ message: "截止时间格式错误，请使用 ISO 8601 格式（如 2026-12-31T23:59:59.000Z）" })
+    .refine(val => new Date(val).getTime() > Date.now(), {
+      message: "截止时间必须在当前时间之后"
+    })
+    .refine(
+      val => {
+        // 截止时间不能超过 90 天后（防止不合理设置）
+        const maxDeadline = Date.now() + 90 * 24 * 60 * 60 * 1000;
+        return new Date(val).getTime() <= maxDeadline;
+      },
+      {
+        message: "截止时间最多可设置为 90 天后"
+      }
+    )
+});
+
+// ══════════════════════════════════════════════════════════════════
 //  导出类型（供 Service 层复用）
 // ══════════════════════════════════════════════════════════════════
 
@@ -117,3 +187,6 @@ export type UpdateSurveyInput = z.infer<typeof updateSurveySchema>;
 export type SurveyListQueryInput = z.infer<typeof surveyListQuerySchema>;
 export type ApplyTemplateInput = z.infer<typeof applyTemplateSchema>;
 export type SubmitReviewInput = z.infer<typeof submitReviewSchema>;
+export type SubmitResponseInput = z.infer<typeof submitResponseSchema>;
+export type ResponseListQueryInput = z.infer<typeof responseListQuerySchema>;
+export type GenerateLinkInput = z.infer<typeof generateLinkSchema>;

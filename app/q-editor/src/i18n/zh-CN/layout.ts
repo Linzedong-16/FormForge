@@ -54,5 +54,19 @@ export default {
   templateCategoryEvent: "活动",
   templateCategoryOther: "其他",
   templateSubmitMessage: "提交说明",
-  templateSubmit: "提交"
+  templateSubmit: "提交",
+  // 生成问卷链接
+  generateLink: "生成问卷链接",
+  generateLinkTitle: "生成问卷填写链接",
+  generateLinkDeadline: "截止时间",
+  generateLinkDeadlineRequired: "请选择截止时间",
+  generateLinkDeadlineHint: "到达截止时间后，问卷将自动关闭不再接受填写",
+  generateLinkGenerate: "生成链接",
+  generateLinkSuccess: "问卷链接生成成功",
+  generateLinkFailed: "问卷链接生成失败",
+  generating: "生成中...",
+  copyLink: "复制链接",
+  copySuccess: "链接已复制到剪贴板",
+  goToSurvey: "前往填写页面",
+  linkLabel: "问卷链接"
 };

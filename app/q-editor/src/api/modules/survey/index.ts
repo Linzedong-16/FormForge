@@ -33,7 +33,9 @@ import type {
   UseTemplateRequest,
   UseTemplateResponse,
   RateTemplateRequest,
-  RateTemplateResponse
+  RateTemplateResponse,
+  GenerateLinkRequest,
+  GenerateLinkResponse
 } from "@common/survey/survey.interface";
 import serverClient from "../../clients/server";
 
@@ -56,10 +58,16 @@ export const getSurveyList = (params?: SurveyListQuery): Promise<ApiResponse<Sur
   serverClient.get("/surveys", { params });
 
 /**
- * GET /api/surveys/:id — 获取问卷详情（含组件列表）
+ * GET /api/surveys/:id — 获取问卷详情（含组件列表，B 端，需登录）
  */
 export const getSurveyById = (surveyId: string): Promise<ApiResponse<SurveyDetail>> =>
   serverClient.get(`/surveys/${surveyId}`);
+
+/**
+ * GET /api/surveys/:id/public — 获取已发布问卷的公开详情（C 端，无需登录）
+ */
+export const getPublicSurveyById = (surveyId: string): Promise<ApiResponse<SurveyDetail>> =>
+  serverClient.get(`/surveys/${surveyId}/public`);
 
 /**
  * PUT /api/surveys/:id — 更新问卷
@@ -106,12 +114,33 @@ export const submitReview = (
 // ============================================================
 
 /**
+ * GET /api/surveys/:surveyId/token — 获取临时提交凭证（防重复提交）
+ */
+export const getSurveyToken = (surveyId: string): Promise<ApiResponse<{ token: string; expires_in: number }>> =>
+  serverClient.get(`/surveys/${surveyId}/token`);
+
+/**
  * POST /api/surveys/:surveyId/responses — 提交答卷
+ *
+ * 防重复提交：
+ *   - fingerprint: 浏览器指纹 SHA-256 哈希（前端采集）
+ *   - token: 临时提交凭证（从 getSurveyToken 获取）
  */
 export const submitResponse = (
   surveyId: string,
   data: SubmitResponseRequest
 ): Promise<ApiResponse<SubmitResponseResponse>> => serverClient.post(`/surveys/${surveyId}/responses`, data);
+
+/**
+ * POST /api/surveys/:id/generate-link — 生成定时问卷链接
+ *
+ * @param surveyId 问卷 ID
+ * @param data 包含截止时间 deadline（ISO 8601 格式）
+ */
+export const generateSurveyLink = (
+  surveyId: string,
+  data: GenerateLinkRequest
+): Promise<ApiResponse<GenerateLinkResponse>> => serverClient.post(`/surveys/${surveyId}/generate-link`, data);
 
 /**
  * GET /api/surveys/:surveyId/responses — 获取答卷列表
@@ -443,5 +472,7 @@ export type {
   ResponseListQuery,
   ResponseListResponse,
   SurveyResponseDetail,
-  AnswerItem
+  AnswerItem,
+  GenerateLinkRequest,
+  GenerateLinkResponse
 };

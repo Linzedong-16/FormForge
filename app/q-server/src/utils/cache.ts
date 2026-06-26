@@ -190,7 +190,11 @@ export const CacheKeys = {
   /** 问卷文件列表 */
   surveyFileList: (surveyId: string) => `survey:file:list:${surveyId}`,
   /** 问卷文件列表缓存前缀（用于批量失效） */
-  surveyFileListPattern: (surveyId: string) => `survey:file:list:${surveyId}:*`
+  surveyFileListPattern: (surveyId: string) => `survey:file:list:${surveyId}:*`,
+
+  // ─── 问卷链接模块 ──────────────────────────────────────────
+  /** 问卷链接截止时间 */
+  surveyDeadline: (surveyId: string) => `survey:deadline:${surveyId}`
 } as const;
 
 /** 缓存 TTL（秒）常量 */

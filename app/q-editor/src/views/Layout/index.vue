@@ -96,6 +96,17 @@
             @click="handleShareTemplate(scope.row)"
             >{{ t("layout.shareTemplate") }}</el-button
           >
+          <!-- 生成问卷链接：仅在已同步且审核通过后可用 -->
+          <el-button
+            v-if="
+              scope.row.remote_survey_id && scope.row.review_status === 'approved' && scope.row.syncStatus === 'synced'
+            "
+            link
+            type="warning"
+            size="small"
+            @click="handleGenerateLink(scope.row)"
+            >{{ t("layout.generateLink") }}</el-button
+          >
           <el-button link type="primary" size="small" @click="viewSurvey(scope.row)">{{
             t("layout.viewSurvey")
           }}</el-button>
@@ -153,11 +164,19 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 生成问卷链接对话框 -->
+    <GenerateLinkDialog
+      v-model="generateLinkDialogVisible"
+      :survey-id="generateLinkSurveyId"
+      @generated="onLinkGenerated"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import headerNav from "@/components/Common/header-nav.vue";
+import GenerateLinkDialog from "@/components/Common/GenerateLinkDialog.vue";
 
 import { Plus, Compass, ArrowLeft, Refresh } from "@element-plus/icons-vue";
 import { ref, watch, computed, onMounted } from "vue";
@@ -439,6 +458,28 @@ const templateForm = ref({
   category: "" as string,
   submit_message: ""
 });
+
+// ─── 生成问卷链接 ──────────────────────────────────────────────
+
+/** 生成链接弹窗可见性 */
+const generateLinkDialogVisible = ref(false);
+/** 当前要生成链接的问卷 ID（远程 ID） */
+const generateLinkSurveyId = ref("");
+
+/** 打开生成链接弹窗 */
+const handleGenerateLink = (surveyInfo: SurveyDBReturnData) => {
+  if (!surveyInfo.remote_survey_id) {
+    ElMessage.warning("请先同步问卷到远程数据库");
+    return;
+  }
+  generateLinkSurveyId.value = surveyInfo.remote_survey_id;
+  generateLinkDialogVisible.value = true;
+};
+
+/** 链接生成成功后的回调 */
+const onLinkGenerated = () => {
+  // 可以在此处刷新本地数据
+};
 
 const resetTemplateForm = () => {
   templateForm.value = { category: "", submit_message: "" };

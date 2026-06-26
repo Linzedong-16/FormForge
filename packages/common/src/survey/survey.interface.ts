@@ -296,6 +296,10 @@ export interface SubmitResponseRequest {
   answers: AnswerItem[];
   /** 匿名用户标识（responses.anonymous_id，登录用户可不传） */
   anonymous_id?: string;
+  /** 浏览器指纹 SHA-256 哈希（防重复提交） */
+  fingerprint?: string;
+  /** 临时提交凭证（从 GET /api/surveys/:surveyId/token 获取） */
+  token?: string;
 }
 
 /**
@@ -386,6 +390,7 @@ export interface SurveyApi {
   getResponseList: { request: ResponseListQuery; response: ResponseListResponse };
   getResponseById: { request: void; response: SurveyResponseDetail };
   deleteResponse: { request: void; response: null };
+  generateLink: { request: GenerateLinkRequest; response: GenerateLinkResponse };
 }
 
 // ============================================================
@@ -431,7 +436,33 @@ export interface TemplateDetail extends TemplateListItem {
 }
 
 // ============================================================
-//  11. 模板 API 请求/响应类型
+//  11. 生成问卷链接 API 请求/响应类型
+// ============================================================
+
+/**
+ * POST /api/surveys/:id/generate-link — 生成定时问卷链接
+ */
+export interface GenerateLinkRequest {
+  /** 问卷截止时间（ISO 8601 格式） */
+  deadline: string;
+}
+
+/**
+ * POST /api/surveys/:id/generate-link — 响应
+ */
+export interface GenerateLinkResponse {
+  /** 问卷唯一标识（BigInt → string） */
+  survey_id: string;
+  /** 问卷填写链接 URL */
+  link_url: string;
+  /** 截止时间（ISO 8601） */
+  deadline: string;
+  /** 链接状态 */
+  status: "active";
+}
+
+// ============================================================
+//  12. 模板 API 请求/响应类型
 // ============================================================
 
 /**
