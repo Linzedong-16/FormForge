@@ -110,9 +110,10 @@ const serialNum = computed(() => (surveyData.value ? useSurveyNo(surveyData.valu
 
 // ─── 答案收集 ────────────────────────────────────────────────
 
-const answers: Ref<Record<number, string | number | Date | string[]>> = ref({});
+/** 支持矩阵题 emit 的 Record<number, number> 对象类型 */
+const answers: Ref<Record<number, string | number | Date | string[] | Record<number, number>>> = ref({});
 
-const updateAnswer = (index: number, answer: string | number | string[]) => {
+const updateAnswer = (index: number, answer: string | number | string[] | Record<number, number>) => {
   // 使用全局下标作为 key（组件数组已是 order_index 升序）
   answers.value[index] = answer;
 };
