@@ -48,7 +48,6 @@ const routes: FastifyPluginAsync = async fastify => {
     if (fastify.amqp) {
       try {
         const t0 = Date.now();
-        // 尝试声明一个临时独占队列来验证 channel 连通性
         const q = await fastify.amqp.channel.assertQueue("", { exclusive: true });
         await fastify.amqp.channel.deleteQueue(q.queue);
         checks.rabbitmq = { ok: true, latency_ms: Date.now() - t0 };
@@ -58,6 +57,54 @@ const routes: FastifyPluginAsync = async fastify => {
       }
     } else {
       checks.rabbitmq = { ok: false, error: "RabbitMQ 插件未注册" };
+    }
+
+    // ── MinIO 检查 ──────────────────────────────────────────
+    if (fastify.minio) {
+      try {
+        const t0 = Date.now();
+        await fastify.minio.listBuckets();
+        checks.minio = { ok: true, latency_ms: Date.now() - t0 };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        checks.minio = { ok: false, error: message };
+      }
+    } else {
+      checks.minio = { ok: false, error: "MinIO 插件未注册" };
+    }
+
+    // ── MongoDB 检查 ─────────────────────────────────────────
+    if (fastify.mongo && fastify.mongo.connection.readyState === 1) {
+      try {
+        const t0 = Date.now();
+        // verify mongodb connectivity via admin ping
+        const admin = fastify.mongo.connection.db?.admin();
+        if (admin) {
+          await admin.ping();
+          checks.mongodb = { ok: true, latency_ms: Date.now() - t0 };
+        } else {
+          checks.mongodb = { ok: false, error: "MongoDB db 实例不可用" };
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        checks.mongodb = { ok: false, error: message };
+      }
+    } else {
+      checks.mongodb = { ok: false, error: "MongoDB 插件未注册或未连接" };
+    }
+
+    // ── ClickHouse 检查 ─────────────────────────────────────
+    if (fastify.clickhouse) {
+      try {
+        const t0 = Date.now();
+        await fastify.clickhouse.ping();
+        checks.clickhouse = { ok: true, latency_ms: Date.now() - t0 };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        checks.clickhouse = { ok: false, error: message };
+      }
+    } else {
+      checks.clickhouse = { ok: false, error: "ClickHouse 插件未注册" };
     }
 
     // ── 汇总 ──────────────────────────────────────────────────

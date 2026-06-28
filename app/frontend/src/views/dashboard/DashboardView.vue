@@ -329,7 +329,10 @@ function formatServiceName(name: string): string {
   const map: Record<string, string> = {
     postgres: "PostgreSQL",
     redis: "Redis",
-    rabbitmq: "RabbitMQ"
+    rabbitmq: "RabbitMQ",
+    minio: "MinIO",
+    mongodb: "MongoDB",
+    clickhouse: "ClickHouse"
   };
   return map[name] || name;
 }

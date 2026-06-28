@@ -9,6 +9,7 @@ import redisPlugin from "./plugins/redis.js";
 import rabbitmqPlugin from "./plugins/rabbitmq.js";
 import mongoPlugin from "./plugins/mongo.js";
 import minioPlugin from "./plugins/minio.js";
+import clickhousePlugin from "./plugins/clickhouse.js";
 import logTransportPlugin from "./plugins/log-transport.js";
 import rateLimitPlugin from "./plugins/rate-limit.js";
 import loggerPlugin from "./utils/logger.js";
@@ -70,6 +71,8 @@ export const buildApp = () => {
     .register(redisPlugin)
     .register(rabbitmqPlugin)
     .register(minioPlugin)
+    // ClickHouse（埋点存储，非阻塞业务）
+    .register(clickhousePlugin)
     // MongoDB（日志存储，非阻塞业务）
     .register(mongoPlugin)
     // 日志传输（依赖 rabbitmq 先注册，仅生产环境推 RabbitMQ）
