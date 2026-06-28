@@ -24,6 +24,45 @@ export default defineConfig(({ command }) => ({
       "@": resolve(__dirname, "src")
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalizedId = id.replace(/\\/g, "/");
+
+          if (!normalizedId.includes("/node_modules/")) {
+            return;
+          }
+
+          if (
+            normalizedId.includes("/node_modules/vue/") ||
+            normalizedId.includes("/node_modules/vue-router/") ||
+            normalizedId.includes("/node_modules/pinia/") ||
+            normalizedId.includes("/node_modules/vue-i18n/")
+          ) {
+            return "vue-core";
+          }
+
+          if (normalizedId.includes("/node_modules/@arco-design/")) {
+            return "ui-arco";
+          }
+
+          if (
+            normalizedId.includes("/node_modules/element-plus/") ||
+            normalizedId.includes("/node_modules/@element-plus/")
+          ) {
+            return "ui-element";
+          }
+
+          if (normalizedId.includes("/node_modules/monorepo-survey-engine/")) {
+            return "survey-engine";
+          }
+
+          return "vendor";
+        }
+      }
+    }
+  },
   server: {
     port: 5174, // 固定端口，与主应用 entry: '//localhost:5174' 对应
     cors: true, // 允许主应用（localhost:8000）跨域加载此子应用

@@ -6,6 +6,14 @@
   box-sizing: border-box;
 }
 
+:root {
+  --ui-duration-fast: 120ms;
+  --ui-duration-normal: 200ms;
+  --ui-duration-slow: 280ms;
+  --ui-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ui-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+}
+
 html,
 body,
 #app {
@@ -24,11 +32,75 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-bg-1);
 }
 
 /* 去除默认 a 标签装饰，保持 Arco 链接样式 */
 a {
   text-decoration: none;
+}
+
+button,
+[role="button"],
+.arco-btn,
+.el-button,
+.arco-input,
+.el-input__inner,
+.arco-select-view,
+.arco-switch,
+.el-switch,
+.arco-checkbox,
+.el-checkbox {
+  touch-action: manipulation;
+}
+
+button,
+[role="button"],
+.arco-btn,
+.el-button,
+.arco-input,
+.el-input__inner,
+.arco-select-view,
+.arco-switch,
+.el-switch,
+.arco-checkbox,
+.el-checkbox,
+a {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: var(--ui-duration-normal);
+  transition-timing-function: var(--ui-easing-standard);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page-fade-slide-enter-active,
+.page-fade-slide-leave-active {
+  transition:
+    opacity var(--ui-duration-normal) var(--ui-easing-standard),
+    transform var(--ui-duration-normal) var(--ui-easing-standard);
+  will-change: opacity, transform;
+}
+
+.page-fade-slide-enter-from,
+.page-fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-fade-slide-enter-to,
+.page-fade-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* 滚动条美化（Webkit 浏览器） */
