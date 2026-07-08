@@ -56,6 +56,26 @@ module.exports = {
       autorestart: true,
       max_restarts: 10,
       restart_delay: 5000
+    },
+    {
+      // ── 埋点消费进程（独立，不集群） ──────────────────────
+      name: "tracking-consumer",
+      script: "dist/consumer/tracking-consumer.js",
+      instances: 1, // 仅 1 实例，保证消息顺序消费和去重
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        TRACKING_BATCH_SIZE: "200",
+        TRACKING_BATCH_INTERVAL_MS: "3000",
+        TRACKING_MAX_QUEUE_WARN: "50000",
+        TRACKING_MAX_QUEUE_CRITICAL: "100000"
+      },
+      max_memory_restart: "512M",
+      error_file: "./logs/tracking-consumer-error.log",
+      out_file: "./logs/tracking-consumer-out.log",
+      autorestart: true,
+      max_restarts: 10,
+      restart_delay: 5000
     }
   ]
 };

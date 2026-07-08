@@ -46,6 +46,9 @@ export * from "./ai/ai.interface.js";
 /// 导出 日志查询模块前后端通用接口
 export * from "./log/log.interface.js";
 
+/// 导出 埋点监控模块前后端通用接口
+export * from "./track/track.interface.js";
+
 /// 导出 审核模块前后端通用接口（ReviewStatus/SurveyType 已由 survey 模块导出，此处不重复）
 export type {
   ReviewListItem,

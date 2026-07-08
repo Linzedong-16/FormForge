@@ -14,6 +14,7 @@ import logRoutes from "../modules/log/log.routes.js";
 import reviewRoutes from "../modules/review/review.routes.js";
 import templateRoutes from "../modules/template/template.routes.js";
 import surveyStatsRoutes from "../modules/survey/survey-stats/survey-stats.routes.js";
+import { trackingIngestRoutes, trackingAnalyticsRoutes } from "../modules/tracking/index.js";
 
 const routes: FastifyPluginAsync = async fastify => {
   // 健康检查 — 探测 PostgreSQL、Redis、RabbitMQ 连通性
@@ -155,6 +156,10 @@ const routes: FastifyPluginAsync = async fastify => {
   fastify.register(surveyStatsRoutes, { prefix: "/admin" });
   // template.routes.ts 内部路径为 /templates（模板市场）
   fastify.register(templateRoutes);
+  // tracking-ingest: 埋点上报接口（公开，无需认证，前缀 /api/v1）
+  fastify.register(trackingIngestRoutes, { prefix: "/v1" });
+  // tracking-analytics: 数据分析接口（管理员权限，前缀 /api/admin）
+  fastify.register(trackingAnalyticsRoutes, { prefix: "/admin" });
 };
 
 export default routes;

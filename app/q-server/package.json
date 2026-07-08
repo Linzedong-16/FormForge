@@ -17,6 +17,8 @@
     "test:coverage": "vitest run --coverage",
     "consumer:dev": "tsx watch src/consumer/log-consumer.ts",
     "consumer:start": "node dist/consumer/log-consumer.js",
+    "tracking-consumer:dev": "tsx watch src/consumer/tracking-consumer.ts",
+    "tracking-consumer:start": "node dist/consumer/tracking-consumer.js",
     "start:all": "pm2 start ecosystem.config.js"
   },
   "keywords": [],
