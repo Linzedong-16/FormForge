@@ -1,3 +1,6 @@
+## 接入spec-kit
+> specify init . --here --integration claude --script ps --force
+
 ## 安装依赖 自动检查 engines是否符合要求
 
 > pnpm i -Dw typescript
