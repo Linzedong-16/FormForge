@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS tracking_events (
     -- 公共字段
     event_name      LowCardinality(String),        -- 事件名（基数低）
     app_id          LowCardinality(String),        -- 应用标识
+    environment     LowCardinality(String) DEFAULT 'production', -- 部署环境：production/staging/development
     user_id         UInt64 DEFAULT 0,              -- 用户 ID（0=未登录）
     anonymous_id    String DEFAULT '',             -- 匿名用户 ID
     session_id      String DEFAULT '',             -- 会话 ID
@@ -78,6 +79,9 @@ SETTINGS
 ALTER TABLE tracking_events ADD INDEX IF NOT EXISTS idx_user_id user_id TYPE bloom_filter GRANULARITY 4;
 -- 二级索引：加速 session_id 精确查询
 ALTER TABLE tracking_events ADD INDEX IF NOT EXISTS idx_session_id session_id TYPE bloom_filter GRANULARITY 4;
+
+-- 已部署环境的幂等迁移：为存量表补充 environment 列（新建表已通过上方 CREATE TABLE 包含此列）
+ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS environment LowCardinality(String) DEFAULT 'production' AFTER app_id;
 
 -- ============================================================
 -- 2. 错误聚合物化视图（tracking_errors_hourly_mv）

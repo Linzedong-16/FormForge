@@ -9,6 +9,9 @@ import { createAppRouter } from "./router";
 // 自定义指令
 import { registerDirectives } from "@/directives";
 
+// 埋点监控接入
+import { installTracking, flushTracking } from "@/plugins/tracking";
+
 // elementplus 组件库
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
@@ -54,6 +57,10 @@ function render(container?: Element | null, routerBase = "/") {
   // 注册自定义指令（v-permiss 等）
   registerDirectives(instance);
 
+  // 接入埋点监控：错误采集 + 按路由自动上报 PV + 自定义性能计时
+  // standalone 与 qiankun 场景走同一逻辑，保证埋点行为一致（对齐 FR-004）
+  installTracking(instance, router);
+
   // qiankun 场景：挂载到子容器内的 #app；独立运行：直接挂载 '#app'
   const mountTarget = container ? container.querySelector("#app") : "#app";
   instance.mount(mountTarget as string | Element);
@@ -72,8 +79,11 @@ renderWithQiankun({
   },
   unmount() {
     console.log("[q-editor] unmount");
-    instance?.unmount();
-    instance = null;
+    // 卸载前尽力冲刷埋点缓冲队列，避免子应用被卸载后事件丢失
+    flushTracking().finally(() => {
+      instance?.unmount();
+      instance = null;
+    });
   },
   update() {}
 });

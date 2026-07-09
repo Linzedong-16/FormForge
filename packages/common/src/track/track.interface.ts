@@ -8,6 +8,17 @@
 export const TRACKING_APP_IDS = ["q-editor", "frontend", "main-app", "q-server", "ai-service"] as const;
 export type TrackingAppId = (typeof TRACKING_APP_IDS)[number];
 
+// ─── 部署环境标识 ───────────────────────────────────────────────
+
+/**
+ * 允许上报的部署环境标识列表。
+ *
+ * 用于区分生产 / 预发 / 开发环境产生的埋点数据，使生产看板默认只看到
+ * production 数据，同时保留 staging/development 数据用于预发验证。
+ */
+export const TRACKING_ENVIRONMENTS = ["production", "staging", "development"] as const;
+export type TrackingEnvironment = (typeof TRACKING_ENVIRONMENTS)[number];
+
 // ─── 事件名称常量 ───────────────────────────────────────────────
 
 /** A 类：错误事件 */
@@ -69,6 +80,8 @@ export interface TrackEventPayload {
   event_name: string;
   /** 应用标识 */
   app_id: TrackingAppId;
+  /** 部署环境（production / staging / development），全链路必填 */
+  environment: TrackingEnvironment;
   /** 登录用户 ID（未登录为 null） */
   user_id?: number | null;
   /** 匿名用户 ID（localStorage 持久化） */
@@ -167,6 +180,8 @@ export interface AnalyticsTrendQuery {
   range: AnalyticsTimeRange;
   /** 应用标识（可选，不传则查全部） */
   app_id?: TrackingAppId;
+  /** 部署环境筛选（可选，默认 production，避免预发/开发数据污染生产看板） */
+  environment?: TrackingEnvironment;
 }
 
 /** 趋势查询响应 */
@@ -202,6 +217,8 @@ export interface AnalyticsErrorItem {
 export interface AnalyticsErrorsQuery {
   /** 应用标识 */
   app_id?: TrackingAppId;
+  /** 部署环境筛选（可选，默认 production） */
+  environment?: TrackingEnvironment;
   /** 时间范围 */
   range: AnalyticsTimeRange;
   /** Top N */
@@ -230,6 +247,8 @@ export interface AnalyticsPerformanceMetrics {
 export interface AnalyticsPerformanceQuery {
   /** 应用标识 */
   app_id?: TrackingAppId;
+  /** 部署环境筛选（可选，默认 production） */
+  environment?: TrackingEnvironment;
   /** 性能指标 */
   metric: "fcp" | "lcp" | "cls" | "inp" | "api_duration";
   /** 时间范围 */

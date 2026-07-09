@@ -23,7 +23,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "files": [
     "dist",
@@ -59,6 +61,8 @@
     "typescript": "~5.9.0",
     "vue": "^3.5.25",
     "vue-router": "^4.6.0",
-    "axios": "^1.13.0"
+    "axios": "^1.13.0",
+    "vitest": "^4.1.9",
+    "happy-dom": "^20.10.6"
   }
 }

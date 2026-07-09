@@ -38,6 +38,8 @@ export interface BaseTrackingEvent {
   event_name: string;
   /** 应用标识 */
   app_id: string;
+  /** 部署环境（production / staging / development） */
+  environment: Environment;
   /** 登录用户 ID（未登录为 null） */
   user_id: string | null;
   /** 匿名用户 ID（localStorage 持久化） */
@@ -82,4 +84,4 @@ export interface BatchPayload {
   batch_id: string;
 }
 
-import type { EventPriority } from "./config.js";
+import type { EventPriority, Environment } from "./config.js";

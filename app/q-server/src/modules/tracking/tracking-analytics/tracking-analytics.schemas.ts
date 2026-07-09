@@ -5,13 +5,15 @@
  */
 
 import { z } from "zod";
-import { TRACKING_APP_IDS } from "monorepo-code-common";
+import { TRACKING_APP_IDS, TRACKING_ENVIRONMENTS } from "monorepo-code-common";
 
 // ─── 公共校验类型 ────────────────────────────────────────────────
 
 const timeRangeSchema = z.enum(["1h", "6h", "24h", "7d", "30d", "90d"]);
 const granularitySchema = z.enum(["minute", "hour", "day", "week", "month"]);
 const appIdSchema = z.enum(TRACKING_APP_IDS).optional();
+/** 部署环境筛选：可选，默认 production，避免预发/开发数据污染生产看板 */
+const environmentSchema = z.enum(TRACKING_ENVIRONMENTS).optional().default("production");
 
 // ─── 趋势查询 ───────────────────────────────────────────────────
 
@@ -19,7 +21,8 @@ export const analyticsTrendQuerySchema = z.object({
   metric: z.enum(["pv", "uv", "errors", "api_requests", "surveys_created", "responses", "ai_usage"]),
   granularity: granularitySchema,
   range: timeRangeSchema,
-  app_id: appIdSchema
+  app_id: appIdSchema,
+  environment: environmentSchema
 });
 export type AnalyticsTrendQueryInput = z.infer<typeof analyticsTrendQuerySchema>;
 
@@ -27,6 +30,7 @@ export type AnalyticsTrendQueryInput = z.infer<typeof analyticsTrendQuerySchema>
 
 export const analyticsErrorsQuerySchema = z.object({
   app_id: appIdSchema,
+  environment: environmentSchema,
   range: timeRangeSchema,
   top_n: z.coerce.number().int().min(1).max(100).optional().default(10),
   error_type: z.string().max(64).optional()
@@ -37,6 +41,7 @@ export type AnalyticsErrorsQueryInput = z.infer<typeof analyticsErrorsQuerySchem
 
 export const analyticsPerformanceQuerySchema = z.object({
   app_id: appIdSchema,
+  environment: environmentSchema,
   metric: z.enum(["fcp", "lcp", "cls", "inp", "api_duration"]),
   range: timeRangeSchema,
   page_url: z.string().max(2048).optional()

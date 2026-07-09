@@ -4,6 +4,7 @@
  * 校验规则（对齐设计文档 §4.3）：
  *   • event_name 必填，长度 1-64
  *   • app_id 必填，必须在白名单内
+ *   • environment 必填，必须为 production/staging/development 之一
  *   • timestamp 必填，不能超过未来 5 分钟
  *   • properties 大小 < 8KB
  *   • 单条 body < 10KB
@@ -11,7 +12,7 @@
  */
 
 import { z } from "zod";
-import { TRACKING_APP_IDS } from "monorepo-code-common";
+import { TRACKING_APP_IDS, TRACKING_ENVIRONMENTS } from "monorepo-code-common";
 
 // ─── 事件名称规范：1-64位 snake_case ────────────────────────────
 
@@ -66,6 +67,8 @@ export const trackEventSchema = z.object({
   event_id: z.string().min(1).max(128),
   event_name: eventNameSchema,
   app_id: z.enum(TRACKING_APP_IDS),
+  // 部署环境标识：必填，全链路追踪生产/预发/开发数据来源
+  environment: z.enum(TRACKING_ENVIRONMENTS),
   user_id: z.number().int().nullable().optional(),
   anonymous_id: z.string().max(128).optional(),
   session_id: z.string().max(128).optional(),

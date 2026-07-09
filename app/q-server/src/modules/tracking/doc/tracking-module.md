@@ -139,22 +139,23 @@ tracking/
 
 ### 4.1 主表：tracking_events
 
-| 字段                       | 类型                   | 说明                 |
-| -------------------------- | ---------------------- | -------------------- |
-| event_id                   | String                 | UUID v7，全局去重    |
-| timestamp                  | DateTime64(3)          | 毫秒精度，排序键核心 |
-| date                       | Date                   | 分区键（按天分区）   |
-| event_name                 | LowCardinality(String) | 事件名称             |
-| app_id                     | LowCardinality(String) | 应用标识             |
-| user_id                    | UInt64                 | 用户 ID（0=未登录）  |
-| anonymous_id               | String                 | 匿名用户 ID          |
-| session_id                 | String                 | 会话 ID              |
-| device_id                  | String                 | 设备 ID              |
-| client_os / client_browser | LowCardinality(String) | 客户端环境           |
-| geo_region / geo_city      | LowCardinality(String) | 地理位置             |
-| page_url / page_title      | String                 | 页面上下文           |
-| properties                 | String                 | 事件属性（JSON）     |
-| client_ip_hash             | String                 | IP 哈希              |
+| 字段                       | 类型                   | 说明                                                        |
+| -------------------------- | ---------------------- | ----------------------------------------------------------- |
+| event_id                   | String                 | UUID v7，全局去重                                           |
+| timestamp                  | DateTime64(3)          | 毫秒精度，排序键核心                                        |
+| date                       | Date                   | 分区键（按天分区）                                          |
+| event_name                 | LowCardinality(String) | 事件名称                                                    |
+| app_id                     | LowCardinality(String) | 应用标识                                                    |
+| environment                | LowCardinality(String) | 部署环境（production/staging/development），默认 production |
+| user_id                    | UInt64                 | 用户 ID（0=未登录）                                         |
+| anonymous_id               | String                 | 匿名用户 ID                                                 |
+| session_id                 | String                 | 会话 ID                                                     |
+| device_id                  | String                 | 设备 ID                                                     |
+| client_os / client_browser | LowCardinality(String) | 客户端环境                                                  |
+| geo_region / geo_city      | LowCardinality(String) | 地理位置                                                    |
+| page_url / page_title      | String                 | 页面上下文                                                  |
+| properties                 | String                 | 事件属性（JSON）                                            |
+| client_ip_hash             | String                 | IP 哈希                                                     |
 
 - **引擎**：MergeTree（生产可用 ReplicatedMergeTree）
 - **分区**：按天 `toYYYYMMDD(date)`
@@ -176,17 +177,26 @@ tracking/
 
 ### 5.1 事件类别
 
-| 类别     | routing_key 前缀 | 说明                         | 事件列表                                                                                            |
-| -------- | ---------------- | ---------------------------- | --------------------------------------------------------------------------------------------------- |
-| 错误事件 | `error`          | JS/Vue/API/SSE/资源加载错误  | js_error, vue_error, api_error, sse_error, resource_error                                           |
-| 性能事件 | `perf`           | 页面性能、API 耗时、资源加载 | page_perf, api_perf, resource_perf, editor_perf                                                     |
-| 行为事件 | `behavior`       | 用户操作行为                 | page*view, survey_view, survey_submit*\_, editor\_\_, admin\_\*, user_login/logout, component_click |
-| 指标事件 | `metric`         | 业务聚合指标                 | ai_usage_daily, survey_response_aggregated, template_apply                                          |
+| 类别     | routing_key 前缀 | 说明                         | 事件列表                                                                                                            |
+| -------- | ---------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| 错误事件 | `error`          | JS/Vue/API/SSE/资源加载错误  | `js_error`, `vue_error`, `api_error`, `sse_error`, `resource_error`                                                 |
+| 性能事件 | `perf`           | 页面性能、API 耗时、资源加载 | `page_perf`, `api_perf`, `resource_perf`, `editor_perf`                                                             |
+| 行为事件 | `behavior`       | 用户操作行为                 | `page_view`, `survey_view`, `survey_submit_*`, `editor_*`, `admin_*`, `user_login`/`user_logout`, `component_click` |
+| 指标事件 | `metric`         | 业务聚合指标                 | `ai_usage_daily`, `survey_response_aggregated`, `template_apply`                                                    |
 
 ### 5.2 应用标识白名单
 
 ```typescript
 ["q-editor", "frontend", "main-app", "q-server", "ai-service"];
+```
+
+### 5.3 部署环境标识
+
+用于区分生产 / 预发 / 开发环境产生的埋点数据，使生产看板默认只看到 production 数据，
+同时保留 staging/development 数据用于预发验证（详见 §6.1 上报必填、§6.2 分析接口默认过滤）。
+
+```typescript
+["production", "staging", "development"];
 ```
 
 ---
@@ -195,24 +205,26 @@ tracking/
 
 ### 6.1 上报接口校验
 
-| 字段       | 规则                                |
-| ---------- | ----------------------------------- |
-| event_id   | 必填，1-128 字符                    |
-| event_name | 必填，1-64 字符，snake_case 格式    |
-| app_id     | 必填，必须在白名单内                |
-| timestamp  | 必填，ISO 8601，不能超过未来 5 分钟 |
-| properties | 可选，JSON 大小 ≤ 8KB               |
-| 批量上报   | 1-200 条/次                         |
+| 字段        | 规则                                             |
+| ----------- | ------------------------------------------------ |
+| event_id    | 必填，1-128 字符                                 |
+| event_name  | 必填，1-64 字符，snake_case 格式                 |
+| app_id      | 必填，必须在白名单内                             |
+| environment | 必填，必须为 production/staging/development 之一 |
+| timestamp   | 必填，ISO 8601，不能超过未来 5 分钟              |
+| properties  | 可选，JSON 大小 ≤ 8KB                            |
+| 批量上报    | 1-200 条/次                                      |
 
 ### 6.2 分析接口查询参数
 
-| 参数           | 类型     | 可选值                                                             |
-| -------------- | -------- | ------------------------------------------------------------------ |
-| range          | 时间范围 | 1h, 6h, 24h, 7d, 30d, 90d                                          |
-| granularity    | 时间粒度 | minute, hour, day, week, month                                     |
-| metric（趋势） | 指标     | pv, uv, errors, api_requests, surveys_created, responses, ai_usage |
-| metric（性能） | 指标     | fcp, lcp, cls, inp, api_duration                                   |
-| funnel_name    | 漏斗类型 | survey_response, survey_creation, ai_usage                         |
+| 参数                                    | 类型         | 可选值                                                             |
+| --------------------------------------- | ------------ | ------------------------------------------------------------------ |
+| range                                   | 时间范围     | 1h, 6h, 24h, 7d, 30d, 90d                                          |
+| granularity                             | 时间粒度     | minute, hour, day, week, month                                     |
+| metric（趋势）                          | 指标         | pv, uv, errors, api_requests, surveys_created, responses, ai_usage |
+| metric（性能）                          | 指标         | fcp, lcp, cls, inp, api_duration                                   |
+| funnel_name                             | 漏斗类型     | survey_response, survey_creation, ai_usage                         |
+| environment（trend/errors/performance） | 部署环境筛选 | production（默认）, staging, development                           |
 
 ---
 
@@ -313,6 +325,7 @@ clickhouse-client < sql/clickhouse-tracking-schema.sql
 前后端共用的类型定义导出自 `packages/common/src/track/track.interface.ts`：
 
 - **事件分类常量**：`ERROR_EVENTS`、`PERF_EVENTS`、`BEHAVIOR_EVENTS`、`METRIC_EVENTS`
-- **上报结构**：`TrackEventPayload`（客户端） → `TrackEventFull`（补充服务端字段）
-- **分析类型**：`AnalyticsOverview`、`AnalyticsTrendQuery/Response`、`AnalyticsErrorsQuery/Response`、`AnalyticsPerformanceQuery/Response`、`AnalyticsFunnelQuery/Response`、`AnalyticsAIUsageQuery/Response`、`AnalyticsEventDetailQuery/Response`、`AnalyticsRealtimeStats`
+- **应用/环境白名单**：`TRACKING_APP_IDS`、`TrackingAppId`；`TRACKING_ENVIRONMENTS`、`TrackingEnvironment`（production/staging/development）
+- **上报结构**：`TrackEventPayload`（客户端，含必填 `environment` 字段） → `TrackEventFull`（补充服务端字段）
+- **分析类型**：`AnalyticsOverview`、`AnalyticsTrendQuery/Response`、`AnalyticsErrorsQuery/Response`、`AnalyticsPerformanceQuery/Response`（后三者均支持可选 `environment` 筛选，默认 production）、`AnalyticsFunnelQuery/Response`、`AnalyticsAIUsageQuery/Response`、`AnalyticsEventDetailQuery/Response`、`AnalyticsRealtimeStats`
 - **API 映射**：`TrackingApi`（上报）、`AnalyticsApi`（分析）

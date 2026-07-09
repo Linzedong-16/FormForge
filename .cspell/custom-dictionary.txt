@@ -10,3 +10,10 @@ acro
 elementplus
 coms
 uuidv4
+qiankun
+clickhouse
+persistedstate
+fontawesome
+permiss
+deduplicator
+uuidv

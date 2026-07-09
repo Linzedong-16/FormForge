@@ -28,7 +28,9 @@ const DEFAULTS = {
   flushInterval: 10_000,
   maxRetries: 3,
   retryBaseMs: 1000,
-  sampleRate: 1
+  sampleRate: 1,
+  // 未显式声明部署环境时，安全默认为 development，避免未知构建被误标为生产数据
+  environment: "development"
 } as const;
 
 /**
@@ -55,7 +57,7 @@ export class Tracker {
    */
   constructor(config: TrackingConfig) {
     this.config = this.resolveConfig(config);
-    this.context = new ContextBuilder(this.config.appId, this.config.sampleRate);
+    this.context = new ContextBuilder(this.config.appId, this.config.sampleRate, this.config.environment);
     this.initialized = false;
 
     // 绑定队列冲刷回调
@@ -241,6 +243,7 @@ export class Tracker {
     const batchEndpoint = input.batchEndpoint ?? `${input.endpoint}/batch`;
     return {
       appId: input.appId,
+      environment: input.environment ?? DEFAULTS.environment,
       endpoint: input.endpoint,
       batchEndpoint,
       enabled: input.enabled ?? DEFAULTS.enabled,

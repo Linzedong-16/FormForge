@@ -17,6 +17,15 @@ import type { TrackingEvent } from "./events.js";
 export type EventPriority = "error" | "perf" | "behavior" | "metric";
 
 /**
+ * 部署环境标识。
+ *
+ * - `production`: 生产环境，看板默认只展示此环境数据
+ * - `staging`: 预发环境
+ * - `development`: 开发环境
+ */
+export type Environment = "production" | "staging" | "development";
+
+/**
  * 传输方式。
  *
  * - `fetch`: 批量 POST 请求（默认）
@@ -31,6 +40,9 @@ export type TransportMethod = "fetch" | "beacon" | "image";
 export interface TrackingConfig {
   /** 应用标识，必填，用于区分不同子应用 */
   appId: string;
+
+  /** 部署环境，用于区分生产/预发/开发数据，默认 'development'（避免未显式声明的构建被误标为生产） */
+  environment?: Environment;
 
   /** 埋点上报端点地址，如 '/api/v1/track' */
   endpoint: string;

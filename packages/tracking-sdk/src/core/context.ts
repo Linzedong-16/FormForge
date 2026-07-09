@@ -9,7 +9,7 @@
  * @module core/context
  */
 
-import type { TrackingEvent, EventPriority } from "../types/index.js";
+import type { TrackingEvent, EventPriority, Environment } from "../types/index.js";
 import { detectEnv, sanitizeUrl } from "../utils/index.js";
 import { getSessionManager } from "./session.js";
 
@@ -32,12 +32,13 @@ const PRIORITY_SAMPLE_RATES: Record<EventPriority, number> = {
  */
 export class ContextBuilder {
   private appId: string;
+  private environment: Environment;
   private userId: string | null;
   private sessionManager: ReturnType<typeof getSessionManager>;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  constructor(appId: string, _sampleRate: number) {
+  constructor(appId: string, _sampleRate: number, environment: Environment) {
     this.appId = appId;
+    this.environment = environment;
     this.userId = null;
     this.sessionManager = getSessionManager();
   }
@@ -64,6 +65,7 @@ export class ContextBuilder {
       event_id: "", // 由 tracker 层填充
       event_name: eventName,
       app_id: this.appId,
+      environment: this.environment,
       user_id: this.userId,
       anonymous_id: this.sessionManager.anonymousId,
       session_id: this.sessionManager.sessionId,

@@ -137,7 +137,7 @@ export class TrackingAnalyticsService {
   // ════════════════════════════════════════════════════════════════
 
   async getTrend(query: AnalyticsTrendQueryInput): Promise<AnalyticsTrendResponse> {
-    const cacheKey = `analytics:trend:${query.metric}:${query.granularity}:${query.range}:${query.app_id || "all"}`;
+    const cacheKey = `analytics:trend:${query.metric}:${query.granularity}:${query.range}:${query.app_id || "all"}:${query.environment}`;
 
     return this.cache.getOrSet(
       cacheKey,
@@ -146,33 +146,34 @@ export class TrackingAnalyticsService {
         const dateCondition = rangeToDateCondition(query.range);
         const partitionCondition = rangeToPartitionCondition(query.range);
         const appFilter = query.app_id ? `AND app_id = '${query.app_id}'` : "";
+        const environmentFilter = `AND environment = '${query.environment}'`;
 
         let sql: string;
 
         switch (query.metric) {
           case "pv":
-            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name = 'page_view' ${appFilter} GROUP BY time ORDER BY time`;
+            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name = 'page_view' ${appFilter} ${environmentFilter} GROUP BY time ORDER BY time`;
             break;
           case "uv":
-            sql = `SELECT ${timeFunc} AS time, uniq(user_id) AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name = 'page_view' AND user_id != 0 ${appFilter} GROUP BY time ORDER BY time`;
+            sql = `SELECT ${timeFunc} AS time, uniq(user_id) AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name = 'page_view' AND user_id != 0 ${appFilter} ${environmentFilter} GROUP BY time ORDER BY time`;
             break;
           case "errors":
-            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name IN ('js_error', 'vue_error', 'api_error', 'sse_error', 'resource_error') ${appFilter} GROUP BY time ORDER BY time`;
+            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name IN ('js_error', 'vue_error', 'api_error', 'sse_error', 'resource_error') ${appFilter} ${environmentFilter} GROUP BY time ORDER BY time`;
             break;
           case "api_requests":
-            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name = 'api_perf' ${appFilter} GROUP BY time ORDER BY time`;
+            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name = 'api_perf' ${appFilter} ${environmentFilter} GROUP BY time ORDER BY time`;
             break;
           case "surveys_created":
-            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name = 'editor_create_survey' ${appFilter} GROUP BY time ORDER BY time`;
+            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name = 'editor_create_survey' ${appFilter} ${environmentFilter} GROUP BY time ORDER BY time`;
             break;
           case "responses":
-            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name = 'survey_submit_success' ${appFilter} GROUP BY time ORDER BY time`;
+            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name = 'survey_submit_success' ${appFilter} ${environmentFilter} GROUP BY time ORDER BY time`;
             break;
           case "ai_usage":
-            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name IN ('editor_use_ai_generate', 'editor_use_ai_polish') ${appFilter} GROUP BY time ORDER BY time`;
+            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} AND event_name IN ('editor_use_ai_generate', 'editor_use_ai_polish') ${appFilter} ${environmentFilter} GROUP BY time ORDER BY time`;
             break;
           default:
-            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} ${appFilter} GROUP BY time ORDER BY time`;
+            sql = `SELECT ${timeFunc} AS time, count() AS value FROM tracking_events WHERE ${partitionCondition} AND ${dateCondition} ${appFilter} ${environmentFilter} GROUP BY time ORDER BY time`;
         }
 
         const rows = await safeQuery(this.ch, { query: sql });
@@ -195,7 +196,7 @@ export class TrackingAnalyticsService {
   // ════════════════════════════════════════════════════════════════
 
   async getErrors(query: AnalyticsErrorsQueryInput): Promise<AnalyticsErrorsResponse> {
-    const cacheKey = `analytics:errors:${query.app_id || "all"}:${query.range}:${query.top_n}:${query.error_type || "all"}`;
+    const cacheKey = `analytics:errors:${query.app_id || "all"}:${query.environment}:${query.range}:${query.top_n}:${query.error_type || "all"}`;
 
     return this.cache.getOrSet(
       cacheKey,
@@ -203,6 +204,7 @@ export class TrackingAnalyticsService {
         const partitionCondition = rangeToPartitionCondition(query.range);
         const dateCondition = rangeToDateCondition(query.range);
         const appFilter = query.app_id ? `AND app_id = '${query.app_id}'` : "";
+        const environmentFilter = `AND environment = '${query.environment}'`;
         const typeFilter = query.error_type
           ? `AND JSONExtractString(properties, 'error_type') = '${query.error_type}'`
           : "";
@@ -226,6 +228,7 @@ export class TrackingAnalyticsService {
             AND ${dateCondition}
             AND event_name IN ('js_error', 'vue_error', 'api_error', 'sse_error', 'resource_error')
             ${appFilter}
+            ${environmentFilter}
             ${typeFilter}
           GROUP BY error_group_key, error_type, error_message
           ORDER BY count DESC
@@ -240,6 +243,7 @@ export class TrackingAnalyticsService {
           WHERE ${partitionCondition} AND ${dateCondition}
             AND event_name IN ('js_error', 'vue_error', 'api_error', 'sse_error', 'resource_error')
             ${appFilter}
+            ${environmentFilter}
         `;
         const totalRows = await safeQuery(this.ch, { query: totalSql });
         const totalCount = Number(totalRows[0]?.total ?? 0);
@@ -267,7 +271,7 @@ export class TrackingAnalyticsService {
   // ════════════════════════════════════════════════════════════════
 
   async getPerformance(query: AnalyticsPerformanceQueryInput): Promise<AnalyticsPerformanceResponse> {
-    const cacheKey = `analytics:perf:${query.app_id || "all"}:${query.metric}:${query.range}:${query.page_url || "all"}`;
+    const cacheKey = `analytics:perf:${query.app_id || "all"}:${query.environment}:${query.metric}:${query.range}:${query.page_url || "all"}`;
 
     return this.cache.getOrSet(
       cacheKey,
@@ -275,6 +279,7 @@ export class TrackingAnalyticsService {
         const partitionCondition = rangeToPartitionCondition(query.range);
         const dateCondition = rangeToDateCondition(query.range);
         const appFilter = query.app_id ? `AND app_id = '${query.app_id}'` : "";
+        const environmentFilter = `AND environment = '${query.environment}'`;
         const pageFilter = query.page_url ? `AND page_url LIKE '%${query.page_url}%'` : "";
 
         // 根据 metric 确定事件名和字段
@@ -321,6 +326,7 @@ export class TrackingAnalyticsService {
             AND ${eventFilter}
             AND ${metricField} > 0
             ${appFilter}
+            ${environmentFilter}
             ${pageFilter}
         `;
 
@@ -334,6 +340,7 @@ export class TrackingAnalyticsService {
             AND ${eventFilter}
             AND ${metricField} > 0
             ${appFilter}
+            ${environmentFilter}
             ${pageFilter}
           GROUP BY time
           ORDER BY time

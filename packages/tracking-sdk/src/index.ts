@@ -77,6 +77,7 @@ export type {
   ResolvedConfig,
   EventPriority,
   TransportMethod,
+  Environment,
   ClientEnv,
   BaseTrackingEvent,
   TrackingEvent,

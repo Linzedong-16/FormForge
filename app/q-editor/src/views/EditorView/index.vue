@@ -29,6 +29,8 @@ import { useI18n } from "vue-i18n";
 import type { SurveyDBData, TextProps } from "@/types";
 // 远程 API
 import { createSurvey, updateSurvey, serializeComponents, extractSurveyMetadata } from "@/api/modules/survey";
+// 埋点监控：编辑器加载/保存耗时上报 + 加载失败错误上报（对齐 FR-001 / FR-002）
+import { getPerformanceCollector, getErrorCollector } from "@/plugins/tracking";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -132,6 +134,10 @@ async function doSave(): Promise<ReturnType<typeof serializeComponents>> {
   if (saving.value) return [];
   saving.value = true;
 
+  // 埋点：保存耗时计时（对齐 FR-002），success 默认 false，仅在真正完成保存时置 true
+  const saveStart = performance.now();
+  let saveSucceeded = false;
+
   try {
     const surveyId = store.savedSurveyId || (id.value ? Number(id.value) : null);
 
@@ -152,6 +158,7 @@ async function doSave(): Promise<ReturnType<typeof serializeComponents>> {
       // 同步到远程
       const components = await syncToRemote(surveyId);
       ElMessage.success(t("editor.updateSuccess"));
+      saveSucceeded = true;
       return components;
     } else {
       // 新建问卷：第一次保存需输入标题
@@ -184,9 +191,11 @@ async function doSave(): Promise<ReturnType<typeof serializeComponents>> {
       // 同步到远程
       const components = await syncToRemote(newId);
       ElMessage.success(t("editor.saveSuccess"));
+      saveSucceeded = true;
       return components;
     }
   } finally {
+    getPerformanceCollector().trackTiming("editor_save", performance.now() - saveStart, { success: saveSucceeded });
     saving.value = false;
   }
 }
@@ -254,13 +263,24 @@ onBeforeRouteLeave(async (_to, _from, next) => {
 
 onMounted(() => {
   if (id.value) {
+    // 埋点：加载耗时计时（对齐 FR-002）
+    const loadStart = performance.now();
     // 根据 id 获取存储的问卷题目
-    getSurveyById(Number(id.value)).then(res => {
-      if (res) {
-        restoreComponentStatus(res.coms);
-        store.setStore(res, Number(id.value));
-      }
-    });
+    getSurveyById(Number(id.value))
+      .then(res => {
+        if (res) {
+          restoreComponentStatus(res.coms);
+          store.setStore(res, Number(id.value));
+        }
+        getPerformanceCollector().trackTiming("editor_load", performance.now() - loadStart, { success: true });
+      })
+      .catch(err => {
+        getPerformanceCollector().trackTiming("editor_load", performance.now() - loadStart, { success: false });
+        // 手动上报加载失败错误，同时不重新抛出，避免产生未处理的 Promise 拒绝
+        getErrorCollector().reportError(err instanceof Error ? err : new Error(String(err)), {
+          action: "editor_load"
+        });
+      });
   } else {
     // 新建问卷，初始化组件列表
     store.initComs();

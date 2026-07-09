@@ -50,6 +50,7 @@ interface TrackingEvent {
   event_id: string;
   event_name: string;
   app_id: string;
+  environment?: string;
   user_id?: number | null;
   anonymous_id?: string;
   session_id?: string;
@@ -162,9 +163,15 @@ async function connectRabbitMQ(): Promise<{ conn: ChannelModel; channel: AmqpCha
 /** app_id 白名单 */
 const APP_ID_WHITELIST = new Set(["q-editor", "frontend", "main-app", "q-server", "ai-service"]);
 
+/** 部署环境白名单 */
+const ENVIRONMENT_WHITELIST = new Set(["production", "staging", "development"]);
+
 function cleanEvent(raw: TrackingEvent): Record<string, unknown> {
   // app_id 校验
   const appId = APP_ID_WHITELIST.has(raw.app_id) ? raw.app_id : "unknown";
+
+  // environment 校验：非法或缺失时兜底为 production（与 ClickHouse 列默认值保持一致）
+  const environment = ENVIRONMENT_WHITELIST.has(raw.environment ?? "") ? (raw.environment as string) : "production";
 
   // event_name 规范化：全小写，非法字符替换为下划线
   const eventName = (raw.event_name || "unknown")
@@ -193,6 +200,7 @@ function cleanEvent(raw: TrackingEvent): Record<string, unknown> {
     date: clientTimestamp.slice(0, 10),
     event_name: eventName,
     app_id: appId,
+    environment,
     user_id: raw.user_id ?? 0,
     anonymous_id: raw.anonymous_id || "",
     session_id: raw.session_id || "",
