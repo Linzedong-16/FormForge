@@ -307,6 +307,18 @@ export class TrackingAnalyticsService {
             eventFilter = "event_name = 'api_perf'";
             metricField = "JSONExtractFloat(properties, 'duration_ms')";
             break;
+          case "editor_load":
+            // q-editor 通过 getPerformanceCollector().trackTiming("editor_load", ...) 上报，
+            // SDK 内部统一以 event_name = "custom_timing" + properties.timing_name 区分计时项
+            eventFilter =
+              "event_name = 'custom_timing' AND JSONExtractString(properties, 'timing_name') = 'editor_load'";
+            metricField = "JSONExtractFloat(properties, 'duration_ms')";
+            break;
+          case "editor_save":
+            eventFilter =
+              "event_name = 'custom_timing' AND JSONExtractString(properties, 'timing_name') = 'editor_save'";
+            metricField = "JSONExtractFloat(properties, 'duration_ms')";
+            break;
           default:
             eventFilter = "event_name = 'page_perf'";
             metricField = "JSONExtractFloat(properties, 'lcp_ms')";

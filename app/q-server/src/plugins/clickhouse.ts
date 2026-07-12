@@ -180,17 +180,17 @@ export async function safeQuery(
     format: "JSONEachRow"
   });
 
-  // JSONEachRow 格式的流式结果：每行是一个 JSON 对象
-  // @clickhouse/client v1.x 中，stream() 返回一个 AsyncIterable，
-  // 每个元素是 Row<T> 类型，调用 .json<T>() 获取解析后的对象
+  // JSONEachRow 格式的流式结果：@clickhouse/client v1.x 的 stream() 每次迭代
+  // 返回的是一批 Row<T> 组成的数组（而非单个 Row），每个 Row 提供 .json<T>() 方法
   const rows: Record<string, unknown>[] = [];
   const stream = resultSet.stream();
 
-  for await (const chunk of stream) {
-    // Row<T> 类型在 JSONEachRow 格式下提供 .json() 方法
+  for await (const rowsChunk of stream) {
     // 通过 unknown 中间转换处理 @clickhouse/client 的类型推断差异
-    const row = chunk as unknown as { json: <T = Record<string, unknown>>() => T };
-    rows.push(row.json());
+    const rowBatch = rowsChunk as unknown as Array<{ json: <T = Record<string, unknown>>() => T }>;
+    for (const row of rowBatch) {
+      rows.push(row.json());
+    }
   }
 
   return rows;
@@ -235,6 +235,9 @@ export async function insertTrackingEvents(client: ClickHouseClient, events: Rec
   await client.insert({
     table: "tracking_events",
     values: rows,
-    format: "JSONEachRow"
+    format: "JSONEachRow",
+    // best_effort 支持解析 ISO 8601 格式（含 T/Z），否则 DateTime64 列默认只接受
+    // "YYYY-MM-DD HH:MM:SS.fff" 空格分隔格式，会导致 timestamp 字段解析失败
+    clickhouse_settings: { date_time_input_format: "best_effort" }
   });
 }

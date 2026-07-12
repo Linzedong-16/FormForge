@@ -234,7 +234,10 @@ async function bulkInsertClickHouse(client: ClickHouseClient, events: Record<str
   await client.insert({
     table: "tracking_events",
     values: events,
-    format: "JSONEachRow"
+    format: "JSONEachRow",
+    // best_effort 支持解析 ISO 8601 格式（含 T/Z），否则 DateTime64 列默认只接受
+    // "YYYY-MM-DD HH:MM:SS.fff" 空格分隔格式，会导致 timestamp 字段解析失败
+    clickhouse_settings: { date_time_input_format: "best_effort" }
   });
 
   log("info", `ClickHouse 批量写入完成 → ${events.length} 条`);

@@ -249,8 +249,8 @@ export interface AnalyticsPerformanceQuery {
   app_id?: TrackingAppId;
   /** 部署环境筛选（可选，默认 production） */
   environment?: TrackingEnvironment;
-  /** 性能指标 */
-  metric: "fcp" | "lcp" | "cls" | "inp" | "api_duration";
+  /** 性能指标（editor_load / editor_save 为编辑器加载/保存耗时自定义计时项） */
+  metric: "fcp" | "lcp" | "cls" | "inp" | "api_duration" | "editor_load" | "editor_save";
   /** 时间范围 */
   range: AnalyticsTimeRange;
   /** 页面 URL 筛选 */

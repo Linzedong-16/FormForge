@@ -222,9 +222,13 @@ tracking/
 | range                                   | 时间范围     | 1h, 6h, 24h, 7d, 30d, 90d                                          |
 | granularity                             | 时间粒度     | minute, hour, day, week, month                                     |
 | metric（趋势）                          | 指标         | pv, uv, errors, api_requests, surveys_created, responses, ai_usage |
-| metric（性能）                          | 指标         | fcp, lcp, cls, inp, api_duration                                   |
+| metric（性能）                          | 指标         | fcp, lcp, cls, inp, api_duration, editor_load, editor_save         |
 | funnel_name                             | 漏斗类型     | survey_response, survey_creation, ai_usage                         |
 | environment（trend/errors/performance） | 部署环境筛选 | production（默认）, staging, development                           |
+
+> `editor_load` / `editor_save` 对应 q-editor 通过 `trackTiming()` 上报的编辑器加载/保存耗时
+> （SDK 内部以 `event_name = "custom_timing"` + `properties.timing_name` 区分，详见
+> `specs/002-tracking-analytics-dashboard/research.md` §8）。
 
 ---
 

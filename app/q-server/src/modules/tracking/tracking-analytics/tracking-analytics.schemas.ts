@@ -42,7 +42,9 @@ export type AnalyticsErrorsQueryInput = z.infer<typeof analyticsErrorsQuerySchem
 export const analyticsPerformanceQuerySchema = z.object({
   app_id: appIdSchema,
   environment: environmentSchema,
-  metric: z.enum(["fcp", "lcp", "cls", "inp", "api_duration"]),
+  // editor_load / editor_save 为新增取值：对应 q-editor 通过 trackTiming() 上报的
+  // event_name = "custom_timing" 事件，按 properties.timing_name 区分具体计时项
+  metric: z.enum(["fcp", "lcp", "cls", "inp", "api_duration", "editor_load", "editor_save"]),
   range: timeRangeSchema,
   page_url: z.string().max(2048).optional()
 });

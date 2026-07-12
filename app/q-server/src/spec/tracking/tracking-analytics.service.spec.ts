@@ -83,3 +83,51 @@ describe("TrackingAnalyticsService — environment 过滤", () => {
     expect(errorQueries.length).toBe(2);
   });
 });
+
+describe("TrackingAnalyticsService — getPerformance 新增 metric 分支（editor_load / editor_save）", () => {
+  let fastify: ReturnType<typeof createFastifyMock>;
+  let clickhouse: ReturnType<typeof createClickHouseQueryCapture>;
+  let service: TrackingAnalyticsService;
+
+  beforeEach(() => {
+    fastify = createFastifyMock();
+    clickhouse = createClickHouseQueryCapture();
+    fastify.clickhouse = clickhouse;
+    fastify.redis.get.mockResolvedValue(null);
+    fastify.redis.set.mockResolvedValue("OK");
+    fastify.redis.del.mockResolvedValue(1);
+
+    service = new TrackingAnalyticsService(fastify);
+  });
+
+  it("metric=editor_load 时按 custom_timing 事件 + timing_name=editor_load 过滤", async () => {
+    await service.getPerformance({ range: "24h", metric: "editor_load", environment: "production" });
+
+    const matched = clickhouse.queries.find(
+      q =>
+        q.includes("event_name = 'custom_timing'") &&
+        q.includes("JSONExtractString(properties, 'timing_name') = 'editor_load'")
+    );
+    expect(matched).toBeDefined();
+    expect(matched).toContain("JSONExtractFloat(properties, 'duration_ms')");
+  });
+
+  it("metric=editor_save 时按 custom_timing 事件 + timing_name=editor_save 过滤", async () => {
+    await service.getPerformance({ range: "24h", metric: "editor_save", environment: "production" });
+
+    const matched = clickhouse.queries.find(
+      q =>
+        q.includes("event_name = 'custom_timing'") &&
+        q.includes("JSONExtractString(properties, 'timing_name') = 'editor_save'")
+    );
+    expect(matched).toBeDefined();
+  });
+
+  it("新增分支不影响既有 metric（lcp）的查询行为", async () => {
+    await service.getPerformance({ range: "24h", metric: "lcp", environment: "production" });
+
+    const matched = clickhouse.queries.find(q => q.includes("event_name = 'page_perf'") && q.includes("lcp_ms"));
+    expect(matched).toBeDefined();
+    expect(clickhouse.queries.some(q => q.includes("custom_timing"))).toBe(false);
+  });
+});

@@ -3,6 +3,8 @@ import type { RouteRecordRaw } from "vue-router";
 export interface RouteMeta {
   title: string; // 路由标题
   icon: string; // 路由图标（对应 acro-icons 中的 key）
+  /** 是否仅 super_admin 角色可访问（前端路由守卫层的 UX 提前拦截，后端接口鉴权仍是权威判定） */
+  requiresSuperAdmin?: boolean;
 }
 
 // 问卷低代码平台后台管理系统业务路由
@@ -24,6 +26,42 @@ export const childrenRoutes: RouteRecordRaw[] = [
       title: "并发监控",
       icon: "barChart"
     }
+  },
+  {
+    path: "/analytics-dashboard",
+    name: "analyticsDashboard",
+    component: () => import("../views/analytics-dashboard/AnalyticsDashboardLayout.vue"),
+    meta: {
+      title: "埋点监控",
+      icon: "barChart",
+      requiresSuperAdmin: true
+    },
+    children: [
+      {
+        path: "",
+        name: "analyticsOverview",
+        component: () => import("../views/analytics-dashboard/OverviewView.vue"),
+        meta: { title: "概览", icon: "dashboard" }
+      },
+      {
+        path: "pipeline-health",
+        name: "analyticsPipelineHealth",
+        component: () => import("../views/analytics-dashboard/PipelineHealthView.vue"),
+        meta: { title: "管道健康", icon: "thunderbolt" }
+      },
+      {
+        path: "errors-performance",
+        name: "analyticsErrorsPerformance",
+        component: () => import("../views/analytics-dashboard/ErrorsPerformanceView.vue"),
+        meta: { title: "错误性能", icon: "bug" }
+      },
+      {
+        path: "usage-funnel",
+        name: "analyticsUsageFunnel",
+        component: () => import("../views/analytics-dashboard/UsageFunnelView.vue"),
+        meta: { title: "用量与漏斗", icon: "barChart" }
+      }
+    ]
   },
   {
     path: "/survey-resources",
