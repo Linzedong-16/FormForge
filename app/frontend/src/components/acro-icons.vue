@@ -30,7 +30,8 @@ import {
   IconSafe,
   IconSend,
   IconThunderbolt,
-  IconBug
+  IconBug,
+  IconNotification
 } from "@arco-design/web-vue/es/icon";
 import { computed } from "vue";
 
@@ -60,7 +61,8 @@ const iconMap = {
   safe: IconSafe,
   send: IconSend,
   thunderbolt: IconThunderbolt,
-  bug: IconBug
+  bug: IconBug,
+  notification: IconNotification
 };
 
 type IconProps = {

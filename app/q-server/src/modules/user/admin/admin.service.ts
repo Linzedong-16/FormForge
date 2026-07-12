@@ -18,6 +18,7 @@ import type { CacheClient } from "../../../utils/cache.js";
 import { createAuditLog } from "../../../utils/audit-log.js";
 import { buildPagination, paginatedResult } from "../../../utils/pagination.js";
 import { encrypt, decrypt, isEncrypted } from "../../../utils/crypto.js";
+import { MessageHookService } from "../../message/message-hooks.service.js";
 
 // ─── 常量 ────────────────────────────────────────────────────
 
@@ -389,6 +390,11 @@ export class AdminService {
       bannedUntil: bannedUntil.toISOString()
     }).catch(() => {});
 
+    // 触发封禁通知（消息系统，失败不影响封禁主流程）
+    new MessageHookService(this.fastify)
+      .onUserBanned(targetId, input.reason ?? "违反平台规定", bannedUntil)
+      .catch(() => {});
+
     return {
       id: targetIdStr,
       username: target.username,
@@ -432,6 +438,9 @@ export class AdminService {
 
     // 记录审计日志
     createAuditLog(this.fastify, adminId, "unban_user", "user", targetId, {}).catch(() => {});
+
+    // 触发解封通知（消息系统，失败不影响解封主流程）
+    new MessageHookService(this.fastify).onUserUnbanned(targetId).catch(() => {});
 
     return {
       id: targetIdStr,

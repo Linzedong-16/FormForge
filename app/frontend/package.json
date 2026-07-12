@@ -15,6 +15,7 @@
     "axios": "^1.13.2",
     "echarts": "^5.6.0",
     "element-plus": "^2.13.2",
+    "monorepo-code-common": "workspace:*",
     "monorepo-survey-engine": "workspace:*",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",

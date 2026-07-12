@@ -44,6 +44,9 @@ model User {
   template_ratings  TemplateRating[] // 自己对模板的评分
   profile           UserProfile? // 用户资料（1:1）
   survey_files      SurveyFile[] // 上传的问卷文件
+  sent_messages     Message[]               @relation("MessageSender") // 自己发出的消息
+  received_messages Message[]               @relation("MessageRecipient") // 自己收到的消息
+  message_broadcast_states MessageBroadcastState[] // 自己对各条广播的已读/隐藏状态
 
   @@index([email])
   @@index([status])
@@ -71,6 +74,11 @@ model Survey {
   published_at    DateTime?
   closed_at       DateTime?
   deleted_at      DateTime? // 软删除标记
+
+  deadline                  DateTime? // 问卷截止时间（此前只存在于 Redis TTL，供消息系统的
+                                       // "即将过期提醒"定时扫描使用，见消息系统 data-model.md §4）
+  expiring_reminder_sent_at DateTime? // "即将过期"提醒已发送时间，避免重复提醒
+  last_milestone_notified   Int       @default(0) // 已通知过的最高答卷里程碑阈值（0/50/100/500）
 
   review_status  ReviewStatus @default(none) // 审核状态：none / pending / approved / rejected
 
@@ -459,4 +467,80 @@ model SurveyFile {
   @@index([created_at])
   @@index([survey_id, file_type]) // 高频：按问卷查询特定类型文件
   @@map("survey_files")
+}
+
+// ============================================================
+// 15. 消息表 (messages)
+//
+// 设计目的：
+//   - 承载 5 类消息（操作通知/模板互动/问卷生命周期/用户-管理员通信/管理员广播）
+//   - is_read/read_at/deleted_at 三个独立字段分别表达已读与（软）删除两个维度，
+//     互不冲突（详见消息系统 research.md §12）
+//   - 广播消息 recipient_id = NULL，配合 target_role 限定可见范围；
+//     广播的已读/隐藏状态不写在本表，见 MessageBroadcastState（§16）
+// ============================================================
+enum MessageType {
+  operation_notify // 操作通知（审核结果、用户封禁/解封）
+  template_like // 模板互动（评分、被应用于创建问卷）
+  survey_lifecycle // 问卷生命周期（发布成功、即将过期、答卷里程碑）
+  user_admin_comm // 用户-管理员通信
+  admin_broadcast // 管理员广播
+}
+
+model Message {
+  id                  BigInt      @id @default(autoincrement())
+  type                MessageType
+  title               String      @db.VarChar(200)
+  content             String      @db.Text
+  sender_id           BigInt? // 发送者；null = 系统自动发出
+  recipient_id        BigInt? // 接收者；null = 面向群体的广播（配合 target_role）
+  target_role         String?     @db.VarChar(20) // 仅广播使用："all" / "user" / "super_admin"
+  related_resource    String?     @db.VarChar(50) // "survey" / "template" / "review"
+  related_resource_id BigInt?
+
+  is_read    Boolean   @default(false)
+  read_at    DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime? // 软删除时间（仅影响接收者自己的可见性）
+
+  // 关联关系
+  sender          User?                   @relation("MessageSender", fields: [sender_id], references: [id])
+  recipient       User?                   @relation("MessageRecipient", fields: [recipient_id], references: [id])
+  broadcastStates MessageBroadcastState[]
+
+  @@index([recipient_id, is_read, created_at]) // 用户收件箱（核心查询）
+  @@index([type, created_at]) // 按类型统计
+  @@index([sender_id, created_at]) // 管理员查看已发送
+  @@index([deleted_at]) // 清理任务扫描
+  @@index([created_at]) // 时间范围查询
+  @@map("messages")
+}
+
+// ============================================================
+// 16. 广播已读/隐藏状态表 (message_broadcast_states)
+//
+// 设计目的：
+//   - 广播消息只有一条 recipient_id=NULL 的物理记录，无法直接在共享记录上记
+//     "用户 A 已读"；本表按"用户 × 广播消息"维度惰性记录每个用户的已读/隐藏状态
+//   - 只有当用户真正读/删过某条广播时才会写一行，不会在广播发出时批量写入
+//     （消息系统 research.md §13，修复"状态只存在 Redis"的架构问题）
+// ============================================================
+model MessageBroadcastState {
+  id         BigInt    @id @default(autoincrement())
+  message_id BigInt
+  user_id    BigInt
+  is_read    Boolean   @default(false)
+  read_at    DateTime?
+  is_hidden  Boolean   @default(false)
+  hidden_at  DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  message Message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([message_id, user_id])
+  @@index([user_id, is_hidden])
+  @@map("message_broadcast_states")
 }

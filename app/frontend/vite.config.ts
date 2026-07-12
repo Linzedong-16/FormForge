@@ -21,7 +21,9 @@ export default defineConfig(({ command }) => ({
   ],
   resolve: {
     alias: {
-      "@": resolve(__dirname, "src")
+      "@": resolve(__dirname, "src"),
+      // 引用 monorepo 共享类型包（与 q-editor 保持一致的别名配置）
+      "@common": resolve(__dirname, "../../packages/common/src")
     }
   },
   build: {

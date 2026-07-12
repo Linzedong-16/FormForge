@@ -60,3 +60,6 @@ export type {
   RejectReviewRequest,
   ReviewActionResponse
 } from "./review/review.interface.js";
+
+/// 导出 消息互动模块前后端通用接口
+export * from "./message/message.interface.js";

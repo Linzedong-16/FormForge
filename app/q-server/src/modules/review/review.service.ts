@@ -18,6 +18,7 @@ import { createAuditLog } from "../../utils/audit-log.js";
 import { createCache, CacheKeys } from "../../utils/cache.js";
 import type { CacheClient } from "../../utils/cache.js";
 import { AppError } from "../../utils/errors.js";
+import { MessageHookService } from "../message/message-hooks.service.js";
 import type { ReviewListQueryInput, ApproveReviewInput, RejectReviewInput } from "./review.schemas.js";
 import type {
   ReviewListItem,
@@ -306,10 +307,10 @@ export class ReviewService {
   async approveReview(adminId: bigint, reviewId: bigint, input: ApproveReviewInput): Promise<ReviewActionResponse> {
     this.fastify.log.info({ adminId: bigIntToStr(adminId), reviewId: bigIntToStr(reviewId) }, "[review] 审核通过请求");
 
-    // 提前读取 survey_id + submitter_id，用于审核后清除缓存
+    // 提前读取 survey_id + submitter_id（+ 问卷标题，供审核结果通知使用），用于审核后清除缓存
     const preRead = await this.fastify.prisma.review.findUnique({
       where: { id: reviewId },
-      select: { survey_id: true, submitter_id: true }
+      select: { survey_id: true, submitter_id: true, survey: { select: { title: true } } }
     });
 
     const review = await this.fastify.prisma.$transaction(async tx => {
@@ -408,6 +409,13 @@ export class ReviewService {
       this.invalidateSurveyCache(preRead.survey_id, preRead.submitter_id).catch(() => {});
     }
 
+    // 触发审核通过的系统通知（消息系统，失败不影响审核主流程）
+    if (preRead?.submitter_id && preRead?.survey_id) {
+      new MessageHookService(this.fastify)
+        .onReviewApproved(preRead.submitter_id, preRead.survey_id, preRead.survey?.title ?? "")
+        .catch(() => {});
+    }
+
     this.fastify.log.info({ reviewId: bigIntToStr(reviewId), status: "approved" }, "[review] 审核通过完成");
 
     return {
@@ -434,7 +442,7 @@ export class ReviewService {
 
     const preRead = await this.fastify.prisma.review.findUnique({
       where: { id: reviewId },
-      select: { survey_id: true, submitter_id: true }
+      select: { survey_id: true, submitter_id: true, survey: { select: { title: true } } }
     });
 
     const review = await this.fastify.prisma.$transaction(async tx => {
@@ -482,6 +490,13 @@ export class ReviewService {
     // 清除问卷缓存
     if (preRead?.survey_id && preRead?.submitter_id) {
       this.invalidateSurveyCache(preRead.survey_id, preRead.submitter_id).catch(() => {});
+    }
+
+    // 触发审核驳回的系统通知（消息系统，失败不影响审核主流程）
+    if (preRead?.submitter_id && preRead?.survey_id) {
+      new MessageHookService(this.fastify)
+        .onReviewRejected(preRead.submitter_id, preRead.survey_id, preRead.survey?.title ?? "", input.review_comment)
+        .catch(() => {});
     }
 
     this.fastify.log.info({ reviewId: bigIntToStr(reviewId), status: "rejected" }, "[review] 审核驳回完成");

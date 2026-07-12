@@ -27,6 +27,9 @@
         </template>
       </a-button>
 
+      <!-- 消息铃铛 -->
+      <MessageBell v-if="userStore.isLoggedIn" @click="messageDrawerVisible = true" />
+
       <!-- 用户下拉菜单 -->
       <a-dropdown v-if="userStore.isLoggedIn" trigger="hover">
         <a-space class="user-info" :size="8">
@@ -60,6 +63,9 @@
       <!-- 登录弹窗 -->
       <LoginModal v-model:visible="loginModalVisible" @success="onLoginSuccess" />
     </div>
+
+    <!-- 消息收件箱抽屉 -->
+    <MessageDrawer v-model:visible="messageDrawerVisible" />
   </div>
 </template>
 
@@ -68,9 +74,14 @@ import { ref, computed } from "vue";
 import { useUserStore } from "@/store/modules/user";
 import { useTheme } from "@/composables/useTheme";
 import LoginModal from "@/components/LoginModal.vue";
+import MessageBell from "@/components/message/MessageBell.vue";
+import MessageDrawer from "@/components/message/MessageDrawer.vue";
 
 const userStore = useUserStore();
 const { isDark, toggleTheme } = useTheme();
+
+// 消息收件箱抽屉可见性
+const messageDrawerVisible = ref(false);
 
 // 侧边栏折叠状态
 const isCollapsed = ref(false);

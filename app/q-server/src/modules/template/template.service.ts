@@ -15,6 +15,7 @@ import type { CacheClient } from "../../utils/cache.js";
 import { createAuditLog } from "../../utils/audit-log.js";
 import { buildPagination } from "../../utils/pagination.js";
 import { AppError } from "../../utils/errors.js";
+import { MessageHookService } from "../message/message-hooks.service.js";
 import type { TemplateListQueryInput, UseTemplateInput, RateTemplateInput } from "./template.schemas.js";
 import type {
   TemplateListItem,
@@ -263,6 +264,13 @@ export class TemplateService {
       template_title: template.title
     }).catch(() => {});
 
+    // 触发模板被应用的通知（消息系统；应用自己的模板不通知自己）
+    if (template.user_id !== userId) {
+      new MessageHookService(this.fastify)
+        .onTemplateApplied(template.user_id, templateId, template.title)
+        .catch(() => {});
+    }
+
     return {
       survey_id: bigIntToStr(survey.id),
       title: survey.title,
@@ -341,6 +349,11 @@ export class TemplateService {
     createAuditLog(this.fastify, userId, "rate_template", "template", templateId, {
       score: input.score
     }).catch(() => {});
+
+    // 触发模板收到评分的通知（消息系统，评分自己的模板已在上方被拒绝，不会自我通知）
+    new MessageHookService(this.fastify)
+      .onTemplateRated(template.user_id, templateId, template.title, input.score)
+      .catch(() => {});
 
     return {
       rating: String(newRating)

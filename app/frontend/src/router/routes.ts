@@ -120,6 +120,24 @@ export const childrenRoutes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: "/message-center",
+    name: "messageCenter",
+    component: () => import("../views/message-center/MessageCenterLayout.vue"),
+    meta: {
+      title: "消息中心",
+      icon: "notification",
+      requiresSuperAdmin: true
+    },
+    children: [
+      {
+        path: "broadcast",
+        name: "broadcastSent",
+        component: () => import("../views/message-center/BroadcastSentView.vue"),
+        meta: { title: "已发送广播", icon: "send" }
+      }
+    ]
+  },
+  {
     path: "/system-settings",
     name: "systemSettings",
     component: () => import("../views/settings/SystemSettingsView.vue"),

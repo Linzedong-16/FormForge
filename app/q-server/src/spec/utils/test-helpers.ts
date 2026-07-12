@@ -22,6 +22,18 @@ interface PrismaMock {
   templateComponent: { findMany: MockFn; createMany: MockFn };
   templateRating: { findFirst: MockFn; upsert: MockFn; aggregate: MockFn };
   review: { findFirst: MockFn; findUnique: MockFn; findMany: MockFn; update: MockFn; create: MockFn; count: MockFn };
+  message: {
+    findFirst: MockFn;
+    findUnique: MockFn;
+    findMany: MockFn;
+    create: MockFn;
+    update: MockFn;
+    updateMany: MockFn;
+    deleteMany: MockFn;
+    count: MockFn;
+    groupBy: MockFn;
+  };
+  messageBroadcastState: { upsert: MockFn; findMany: MockFn; findUnique: MockFn };
   $transaction: MockFn;
 }
 
@@ -135,6 +147,22 @@ export function createPrismaMock(): PrismaMock {
       update: vi.fn(),
       create: vi.fn(),
       count: vi.fn()
+    },
+    message: {
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+      deleteMany: vi.fn(),
+      count: vi.fn(),
+      groupBy: vi.fn(),
+    },
+    messageBroadcastState: {
+      upsert: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
     },
     $transaction,
   };
@@ -385,4 +413,45 @@ export const MOCK_REJECTED_REVIEW = {
   reviewer_id: BigInt(1),
   review_comment: "问卷第3题包含敏感词汇，请修改后重新提交",
   reviewed_at: new Date("2026-06-16T11:00:00.000Z"),
+};
+
+// ─── 消息模块测试用固定数据 ───────────────────────────────────
+
+/** 模拟一条系统通知消息（未读，接收者为普通用户） */
+export const MOCK_MESSAGE = {
+  id: BigInt(9001),
+  type: "operation_notify",
+  title: "问卷审核通过",
+  content: "您的问卷《测试问卷》已通过审核。",
+  sender_id: null,
+  recipient_id: BigInt(2),
+  target_role: null,
+  related_resource: "survey",
+  related_resource_id: BigInt(100),
+  is_read: false,
+  read_at: null,
+  created_at: new Date("2026-07-01T10:00:00.000Z"),
+  updated_at: new Date("2026-07-01T10:00:00.000Z"),
+  deleted_at: null,
+  sender: null,
+};
+
+/** 模拟一条广播消息（recipient_id 为 null，面向全体用户） */
+export const MOCK_BROADCAST = {
+  id: BigInt(9100),
+  type: "admin_broadcast",
+  title: "系统维护通知",
+  content: "平台将于今晚进行维护升级。",
+  sender_id: BigInt(1),
+  recipient_id: null,
+  target_role: "all",
+  related_resource: null,
+  related_resource_id: null,
+  is_read: false,
+  read_at: null,
+  created_at: new Date("2026-07-05T10:00:00.000Z"),
+  updated_at: new Date("2026-07-05T10:00:00.000Z"),
+  deleted_at: null,
+  sender: { username: "系统管理员", role: "super_admin" },
+  broadcastStates: [] as { user_id: bigint; is_read: boolean; is_hidden: boolean; read_at: Date | null }[],
 };
