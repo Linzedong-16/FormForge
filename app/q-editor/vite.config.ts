@@ -86,6 +86,19 @@ export default defineConfig(({ command, mode }) => {
         allow: ["../..", "../../packages"]
       },
       proxy: {
+        // AI 问卷生成/润色 SSE 端点 — 需要长连接，超时 90s
+        "/api/surveys/generate": {
+          target: "http://localhost:8080",
+          changeOrigin: true,
+          secure: false,
+          timeout: 90_000
+        },
+        "/api/surveys/polish": {
+          target: "http://localhost:8080",
+          changeOrigin: true,
+          secure: false,
+          timeout: 90_000
+        },
         "/api": {
           target: "http://localhost:8080",
           changeOrigin: true,

@@ -7,8 +7,19 @@ export interface RouteMeta {
   requiresSuperAdmin?: boolean;
 }
 
-// 问卷低代码平台后台管理系统业务路由
+/**
+ * 问卷低代码平台后台管理系统业务路由
+ *
+ * 导航结构设计原则：
+ *   平台概览 → 并发监控 → 核心业务（问卷管理）→ 数据洞察（埋点监控）
+ *   → 系统管理（用户 → 消息 → 日志 → Token → 设置）
+ *
+ * 已移除的无真实接口页面：配置资源管理（纯 mock）、角色管理（纯 mock）、权限设置（纯 mock）
+ */
 export const childrenRoutes: RouteRecordRaw[] = [
+  // ═══════════════════════════════════════════════════════════
+  // 1. 平台概览 — 入口仪表盘，展示关键指标与系统状态
+  // ═══════════════════════════════════════════════════════════
   {
     path: "",
     name: "dashboard",
@@ -18,6 +29,10 @@ export const childrenRoutes: RouteRecordRaw[] = [
       icon: "dashboard"
     }
   },
+
+  // ═══════════════════════════════════════════════════════════
+  // 2. 并发监控 — 实时答卷并发与系统负载状态
+  // ═══════════════════════════════════════════════════════════
   {
     path: "/monitor",
     name: "monitor",
@@ -27,6 +42,43 @@ export const childrenRoutes: RouteRecordRaw[] = [
       icon: "barChart"
     }
   },
+
+  // ═══════════════════════════════════════════════════════════
+  // 3. 问卷管理 — 核心业务：审核、发布、统计
+  // ═══════════════════════════════════════════════════════════
+  {
+    path: "/survey-management",
+    name: "surveyManagement",
+    component: () => import("../views/survey-management/SurveyManagementLayout.vue"),
+    meta: {
+      title: "问卷管理",
+      icon: "file"
+    },
+    children: [
+      {
+        path: "audit",
+        name: "surveyAudit",
+        component: () => import("../views/survey-preview/SurveyPreviewView.vue"),
+        meta: { title: "审核管理", icon: "safe" }
+      },
+      {
+        path: "publish",
+        name: "surveyPublish",
+        component: () => import("../views/survey-publish/SurveyPublishView.vue"),
+        meta: { title: "问卷发布", icon: "send" }
+      },
+      {
+        path: "statistics",
+        name: "surveyStatistics",
+        component: () => import("../views/statistics/SurveyStatisticsView.vue"),
+        meta: { title: "答卷统计", icon: "cloud" }
+      }
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════════════
+  // 4. 埋点监控 — 全链路数据洞察（仅超级管理员）
+  // ═══════════════════════════════════════════════════════════
   {
     path: "/analytics-dashboard",
     name: "analyticsDashboard",
@@ -63,62 +115,23 @@ export const childrenRoutes: RouteRecordRaw[] = [
       }
     ]
   },
+
+  // ═══════════════════════════════════════════════════════════
+  // 5. 用户管理 — 用户列表 CRUD（角色/权限 mock 页面已移除）
+  // ═══════════════════════════════════════════════════════════
   {
-    path: "/survey-resources",
-    name: "surveyResources",
-    component: () => import("../views/survey-resources/SurveyResourcesView.vue"),
+    path: "/user-management",
+    name: "userManagement",
+    component: () => import("../views/user-management/UserListView.vue"),
     meta: {
-      title: "配置资源管理",
-      icon: "folderOpen"
+      title: "用户管理",
+      icon: "userGroup"
     }
   },
-  {
-    path: "/audit-logs",
-    name: "auditLogs",
-    component: () => import("../views/audit-logs/AuditLogsView.vue"),
-    meta: {
-      title: "日志审计",
-      icon: "history"
-    }
-  },
-  {
-    path: "/api-tokens",
-    name: "apiTokens",
-    component: () => import("../views/api-tokens/ApiTokensView.vue"),
-    meta: {
-      title: "API Token 管理",
-      icon: "lock"
-    }
-  },
-  {
-    path: "/survey-management",
-    name: "surveyManagement",
-    component: () => import("../views/survey-management/SurveyManagementLayout.vue"),
-    meta: {
-      title: "问卷管理",
-      icon: "file"
-    },
-    children: [
-      {
-        path: "audit",
-        name: "surveyAudit",
-        component: () => import("../views/survey-preview/SurveyPreviewView.vue"),
-        meta: { title: "审核管理", icon: "safe" }
-      },
-      {
-        path: "publish",
-        name: "surveyPublish",
-        component: () => import("../views/survey-publish/SurveyPublishView.vue"),
-        meta: { title: "问卷发布", icon: "send" }
-      },
-      {
-        path: "statistics",
-        name: "surveyStatistics",
-        component: () => import("../views/statistics/SurveyStatisticsView.vue"),
-        meta: { title: "答卷统计", icon: "cloud" }
-      }
-    ]
-  },
+
+  // ═══════════════════════════════════════════════════════════
+  // 6. 消息中心 — 广播发布与历史（仅超级管理员）
+  // ═══════════════════════════════════════════════════════════
   {
     path: "/message-center",
     name: "messageCenter",
@@ -137,6 +150,36 @@ export const childrenRoutes: RouteRecordRaw[] = [
       }
     ]
   },
+
+  // ═══════════════════════════════════════════════════════════
+  // 7. 日志审计 — 系统操作日志与审计追溯
+  // ═══════════════════════════════════════════════════════════
+  {
+    path: "/audit-logs",
+    name: "auditLogs",
+    component: () => import("../views/audit-logs/AuditLogsView.vue"),
+    meta: {
+      title: "日志审计",
+      icon: "history"
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════
+  // 8. API Token 管理 — 第三方接入凭证管理
+  // ═══════════════════════════════════════════════════════════
+  {
+    path: "/api-tokens",
+    name: "apiTokens",
+    component: () => import("../views/api-tokens/ApiTokensView.vue"),
+    meta: {
+      title: "API Token 管理",
+      icon: "lock"
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════
+  // 9. 系统设置 — SMTP、AI 服务等全局配置
+  // ═══════════════════════════════════════════════════════════
   {
     path: "/system-settings",
     name: "systemSettings",
@@ -145,34 +188,5 @@ export const childrenRoutes: RouteRecordRaw[] = [
       title: "系统设置",
       icon: "settings"
     }
-  },
-  {
-    path: "/user-management",
-    name: "userManagement",
-    component: () => import("../views/user-management/UserManagementLayout.vue"),
-    meta: {
-      title: "用户管理",
-      icon: "userGroup"
-    },
-    children: [
-      {
-        path: "",
-        name: "userList",
-        component: () => import("../views/user-management/UserListView.vue"),
-        meta: { title: "用户列表", icon: "list" }
-      },
-      {
-        path: "roles",
-        name: "roleMgmt",
-        component: () => import("../views/user-management/RoleManagementView.vue"),
-        meta: { title: "角色管理", icon: "user" }
-      },
-      {
-        path: "permissions",
-        name: "permissions",
-        component: () => import("../views/user-management/PermissionView.vue"),
-        meta: { title: "权限设置", icon: "safe" }
-      }
-    ]
   }
 ];

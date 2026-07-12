@@ -56,7 +56,11 @@
           <span v-else class="text-muted">—</span>
         </template>
       </el-table-column>
-      <el-table-column prop="title" :label="t('layout.columnTitle')" />
+      <el-table-column prop="title" :label="t('layout.columnTitle')">
+        <template #default="scope">
+          <span class="survey-title-link" @click="viewSurvey(scope.row)">{{ scope.row.title }}</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="surveyCount" :label="t('layout.columnQuestionCount')" width="150" align="center" />
       <el-table-column
         prop="updateDate"
@@ -66,7 +70,7 @@
         sortable="custom"
         :formatter="formatDate"
       />
-      <el-table-column fixed="right" :label="t('layout.columnAction')" width="380" align="center">
+      <el-table-column fixed="right" :label="t('layout.columnAction')" width="310" align="center">
         <template #default="scope">
           <el-button
             link
@@ -107,9 +111,6 @@
             @click="handleGenerateLink(scope.row)"
             >{{ t("layout.generateLink") }}</el-button
           >
-          <el-button link type="primary" size="small" @click="viewSurvey(scope.row)">{{
-            t("layout.viewSurvey")
-          }}</el-button>
           <el-button link type="primary" size="small" @click="editSurvey(scope.row)">{{ t("layout.edit") }}</el-button>
           <el-button link type="primary" size="small" @click="handleDeleteSurvey(scope.row)">{{
             t("layout.delete")
@@ -694,6 +695,43 @@ const syncSurvey = async (surveyInfo: SurveyDBReturnData) => {
 
   &--error {
     color: var(--el-color-warning);
+  }
+}
+
+// ── 问卷标题链接 ──────────────────────────────────────
+
+.survey-title-link {
+  color: var(--font-color-primary, var(--el-text-color-primary));
+  cursor: pointer;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 2px;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    background-color: var(--fill-color, var(--el-fill-color-light));
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+/* 暗色主题 */
+html.dark .survey-title-link {
+  color: var(--el-text-color-primary);
+
+  &:hover {
+    color: var(--el-color-primary-light-3);
+    background-color: var(--el-fill-color-light);
   }
 }
 </style>
