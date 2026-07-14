@@ -6,6 +6,7 @@ import vueJsx from "@vitejs/plugin-vue-jsx";
 import viteCompression from "vite-plugin-compression";
 import { viteMockServe } from "vite-plugin-mock";
 import qiankun from "vite-plugin-qiankun";
+import istanbul from "vite-plugin-istanbul";
 
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
@@ -69,7 +70,33 @@ export default defineConfig(({ command, mode }) => {
         enable: command === "serve" && mockEnabled,
         watchFiles: mockEnabled,
         logger: true
-      })
+      }),
+
+      // Istanbul 覆盖率插桩 — 仅在 E2E 测试模式（mock）下启用
+      ...(mockEnabled
+        ? [
+            istanbul({
+              include: "src/**/*",
+              exclude: [
+                "node_modules",
+                "e2e/**",
+                "src/mock/**",
+                "src/**/__tests__/**",
+                "src/i18n/**",
+                "src/types/**",
+                "src/configs/defaultStatus/**",
+                "src/configs/regionData.ts",
+                "src/utils/eventBus.ts",
+                "src/vite-env.d.ts",
+                "src/public-path.ts"
+              ],
+              extension: [".js", ".ts", ".vue"],
+              requireEnv: false,
+              forceBuildInstrument: false,
+              cypress: false
+            })
+          ]
+        : [])
     ],
     resolve: {
       alias: {

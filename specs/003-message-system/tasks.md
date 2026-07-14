@@ -61,7 +61,7 @@ US2 = P2 与管理员双向沟通，US3 = P3 管理员发布全体公告），�
 - [x] T003 在 `app/q-server/prisma/schema.prisma` 中新增 `MessageType` 枚举、`Message` 模型、
       **`MessageBroadcastState` 模型**（字段/索引/关系见 `data-model.md` §1/§2/§3——后者是
       广播已读/隐藏状态的持久化来源，`@@unique([message_id, user_id])` + `onDelete:
-  Cascade`，修复 `/speckit-analyze` 发现的 C2 问题）；`User` 模型追加
+Cascade`，修复 `/speckit-analyze` 发现的 C2 问题）；`User` 模型追加
       `sent_messages`/`received_messages`/`message_broadcast_states` 关联；`Survey` 模型
       新增 `deadline`、`expiring_reminder_sent_at`、`last_milestone_notified` 三个字段
       （见 `data-model.md` §4）
@@ -72,10 +72,10 @@ US2 = P2 与管理员双向沟通，US3 = P3 管理员发布全体公告），�
       `BROADCAST_RATE_LIMITED = 5003`、`SYSTEM_MESSAGE_TYPE_FORBIDDEN = 5004`
 - [x] T006 [P] 在 `app/q-server/src/utils/cache.ts` 的 `CacheKeys` 中新增
       `messageUnreadCount: (userId: string) => \`msg:unread:${userId}\``（HASH 结构，
-  字段为 `total`与各`MessageType`，缓存的是未读计数这一**派生计算结果**，不是状态本身
-  ——状态的持久化来源是 `Message`/`MessageBroadcastState` 表，见 T003），`CacheTTL`中
-  新增`MESSAGE_UNREAD_COUNT: 60`；**不需要**新增任何"广播版本号"相关的缓存键（原方案
-  已废弃，见 `research.md` §13）
+字段为 `total`与各`MessageType`，缓存的是未读计数这一**派生计算结果**，不是状态本身
+——状态的持久化来源是 `Message`/`MessageBroadcastState` 表，见 T003），`CacheTTL`中
+新增`MESSAGE_UNREAD_COUNT: 60`；**不需要**新增任何"广播版本号"相关的缓存键（原方案
+已废弃，见 `research.md` §13）
 
 **检查点**：数据库模型就位，三个包共用的类型与后端扩展点均已就位，可以开始 Foundational 阶段。
 
@@ -182,7 +182,7 @@ US2 = P2 与管理员双向沟通，US3 = P3 管理员发布全体公告），�
       "消息清理"（按 `data-model.md` §7 的保留期限分批删除，每批 500 条 + 100ms 间隔；广播
       消息物理删除时依赖 `onDelete: Cascade` 级联清理对应的 `MessageBroadcastState` 行，
       无需额外代码）与"问卷即将过期提醒扫描"（`WHERE deadline BETWEEN now() AND now()+7d
-  AND expiring_reminder_sent_at IS NULL AND status=1 AND deleted_at IS NULL`，逐条触发
+AND expiring_reminder_sent_at IS NULL AND status=1 AND deleted_at IS NULL`，逐条触发
       `onSurveyExpiringSoon` 并回写 `expiring_reminder_sent_at`）两个任务，执行结果按
       参考文档 §7.3 的字段结构输出结构化日志（依赖 T004、T009）
 - [x] T024 [US1] 在 `app/q-server/src/index.ts` 的启动流程中新增对
@@ -253,7 +253,7 @@ US2 = P2 与管理员双向沟通，US3 = P3 管理员发布全体公告），�
       `super_admin` 时，`recipient_id` 设为原消息的 `sender_id`；调用前经
       `checkRateLimit(fastify, senderId, {prefix: "rate:msg_send:", max: 10, ttl: 60})`
       校验；**写入成功后调用 `createAuditLog(fastify, senderId, "send_message", "message",
-  messageId, {...})`**（修复 H1，对齐 `research.md` §14）；**对每个接收者调用
+messageId, {...})`**（修复 H1，对齐 `research.md` §14）；**对每个接收者调用
       `cache.del(CacheKeys.messageUnreadCount(...))`**（修复 H2，若 T008 已把此逻辑封装进
       `create()` 内部则此处无需重复）（依赖 T008、T037）
 - [x] T039 [US2] 在 `message.routes.ts` 新增 `POST /messages/send`（依赖 T038）
@@ -299,19 +299,19 @@ US2 = P2 与管理员双向沟通，US3 = P3 管理员发布全体公告），�
       `type` 字段**，见 T037 的防御设计）（依赖 T007）
 - [x] T048 [US3] 在 `message.service.ts` 新增 `broadcast(adminId, input)`（写入单条
       `recipient_id = NULL` 记录；调用前经 `checkRateLimit(fastify, adminId, {prefix:
-  "rate:msg_broadcast:", max: 3, ttl: 86400})` 校验；**写入成功后调用
+"rate:msg_broadcast:", max: 3, ttl: 86400})` 校验；**写入成功后调用
       `createAuditLog(fastify, adminId, "broadcast_message", "message", messageId,
-  {target_role, estimated_recipients})`**，修复 H1）与 `listSent(adminId, query)`
+{target_role, estimated_recipients})`**，修复 H1）与 `listSent(adminId, query)`
       （`WHERE sender_id = adminId AND type = 'admin_broadcast'`）方法；**不再实现任何
       "广播版本号"相关逻辑**（原方案已废弃，见 `research.md` §13）（依赖 T008、T047）
 - [x] T049 [US3] 扩展 `message.service.ts` 的 `list`/`getUnreadCount`/`markRead`/
       `softDelete`（T008 产出），全部改为通过 `MessageBroadcastState` 表处理广播分支
       （**修复 C2**，取代原计划中基于 Redis 版本号/隐藏集合的方案，见 `data-model.md` §3、
       `research.md` §13）：- `list()`：查询条件新增 `OR (recipient_id IS NULL AND (target_role = 'all' OR
-    target_role = $myRole))` 分支，对广播消息 `LEFT JOIN MessageBroadcastState`
+target_role = $myRole))` 分支，对广播消息 `LEFT JOIN MessageBroadcastState`
       计算 `is_read`（无记录视为未读）并排除 `is_hidden = true` 的记录 - `markRead()`：若目标是广播消息，`upsert` 一行 `MessageBroadcastState`
       （`message_id`+`user_id` 为 `@@unique` 锚点）设置 `is_read = true, read_at = now()` - `softDelete()`：若目标是广播消息，`upsert` `MessageBroadcastState.is_hidden = true,
-    hidden_at = now()` - `getUnreadCount()`：未读总数 = 非广播未读数 + （匹配 `target_role` 且
+hidden_at = now()` - `getUnreadCount()`：未读总数 = 非广播未读数 + （匹配 `target_role` 且
       `is_hidden` 不为 `true` 且（无 `MessageBroadcastState` 记录或 `is_read = false`））
       的广播数；整体计算结果走 T008 已建立的 Cache-Aside（Redis 只是这个计算结果的缓存层，
       清空 Redis 后重新计算即可得到正确结果）

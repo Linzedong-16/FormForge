@@ -7,10 +7,16 @@
  *   3. dirty 状态管理
  *   4. 数据安全性：追加不修改原有内容
  */
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 import { useEditorStore } from "../useEditor";
-import type { Status } from "@/types";
+import type { Status, SurveyDBData } from "@/types";
+
+// Mock db operations
+vi.mock("@/db/operation", () => ({
+  saveSurvey: vi.fn().mockResolvedValue(1),
+  updateSurveyById: vi.fn().mockResolvedValue(undefined)
+}));
 
 /** 创建模拟 Status 对象的工厂函数 */
 function createMockStatus(name: string, title: string, id?: string): Status {
@@ -178,6 +184,228 @@ describe("useEditorStore — 覆盖与追加", () => {
       expect(allTitles).not.toContain("旧题");
       expect(allTitles).not.toContain("旧题2");
       expect(allTitles).toContain("新题");
+    });
+  });
+
+  // ─── 撤销/重做 ──────────────────────────────────────────────
+  describe("撤销/重做", () => {
+    it("初始状态应不可撤销和重做", () => {
+      expect(store.canUndo).toBe(false);
+      expect(store.canRedo).toBe(false);
+    });
+
+    it("addCom 后应可撤销", () => {
+      store.addCom(createMockStatus("single-select", "测试"));
+      expect(store.canUndo).toBe(true);
+    });
+
+    it("undo 应恢复上一个状态", () => {
+      const beforeLength = store.coms.length;
+      store.addCom(createMockStatus("single-select", "新增"));
+      store.undo();
+      expect(store.coms.length).toBe(beforeLength);
+    });
+
+    it("undo 后应可重做", () => {
+      store.addCom(createMockStatus("single-select", "新增"));
+      store.undo();
+      expect(store.canRedo).toBe(true);
+    });
+
+    it("redo 应恢复被撤销的操作", () => {
+      store.addCom(createMockStatus("single-select", "新增"));
+      const afterAddLength = store.coms.length;
+      store.undo();
+      store.redo();
+      expect(store.coms.length).toBe(afterAddLength);
+    });
+
+    it("markClean 后应不可撤销", () => {
+      store.addCom(createMockStatus("single-select", "测试"));
+      store.markClean();
+      expect(store.canUndo).toBe(false);
+    });
+  });
+
+  // ─── 组件操作 ──────────────────────────────────────────────
+  describe("组件增删", () => {
+    it("removeCom 应删除指定索引的组件", () => {
+      const beforeLength = store.coms.length;
+      store.removeCom(0);
+      expect(store.coms.length).toBe(beforeLength - 1);
+    });
+
+    it("setCurrentComponentIndex 应更新当前选中索引", () => {
+      store.setCurrentComponentIndex(2);
+      expect(store.currentComponentIndex).toBe(2);
+    });
+
+    it("addCom 应递增 surveyCount", () => {
+      const before = store.surveyCount;
+      store.addCom(createMockStatus("single-select", "测试"));
+      expect(store.surveyCount).toBe(before + 1);
+    });
+
+    it("addCom 添加 text-note 不应递增 surveyCount", () => {
+      const before = store.surveyCount;
+      store.addCom(createMockStatus("text-note", "备注"));
+      expect(store.surveyCount).toBe(before);
+    });
+  });
+
+  // ─── 属性编辑 ──────────────────────────────────────────────
+  describe("属性编辑", () => {
+    it("setTextStatus 应修改文本状态", () => {
+      store.addCom(createMockStatus("single-select", "原标题"));
+      const idx = store.coms.length - 1;
+      const textProps = (store.coms[idx]!.status as Record<string, unknown>).title as { status: string };
+      store.setTextStatus(textProps as any, "新标题");
+      expect(textProps.status).toBe("新标题");
+    });
+
+    it("setPosition 应修改位置", () => {
+      const optionProps = { currentStatus: 0, status: ["left", "center", "right"], isShow: true } as any;
+      store.setPosition(optionProps, 2);
+      expect(optionProps.currentStatus).toBe(2);
+    });
+
+    it("setSize 应修改大小", () => {
+      const optionProps = { currentStatus: 0, status: ["small", "medium", "large"], isShow: true } as any;
+      store.setSize(optionProps, 1);
+      expect(optionProps.currentStatus).toBe(1);
+    });
+
+    it("setWeight 应修改权重", () => {
+      const optionProps = { currentStatus: 0, status: ["normal", "bold"], isShow: true } as any;
+      store.setWeight(optionProps, 1);
+      expect(optionProps.currentStatus).toBe(1);
+    });
+
+    it("setItalic 应修改斜体", () => {
+      const optionProps = { currentStatus: 0, status: ["normal", "italic"], isShow: true } as any;
+      store.setItalic(optionProps, 1);
+      expect(optionProps.currentStatus).toBe(1);
+    });
+
+    it("setColor 应修改颜色", () => {
+      const textProps = { status: "#000", isShow: true } as any;
+      store.setColor(textProps, "#ff0000");
+      expect(textProps.status).toBe("#ff0000");
+    });
+
+    it("setCurrentStatus 应修改当前状态", () => {
+      const optionProps = { currentStatus: 0, status: ["a", "b", "c"], isShow: true } as any;
+      store.setCurrentStatus(optionProps, 2);
+      expect(optionProps.currentStatus).toBe(2);
+    });
+  });
+
+  // ─── 分页 ──────────────────────────────────────────────────
+  describe("分页", () => {
+    it("setPageSize 应更新分页大小", () => {
+      store.setPageSize(20);
+      expect(store.pageSize).toBe(20);
+    });
+
+    it("setCurrentPage 应更新当前页", () => {
+      store.setCurrentPage(3);
+      expect(store.currentPage).toBe(3);
+    });
+  });
+
+  // ─── 持久化 ────────────────────────────────────────────────
+  describe("持久化", () => {
+    it("saveComs 应保存并返回 id", async () => {
+      const surveyData: SurveyDBData = {
+        surveyCount: 1,
+        coms: [],
+        pageSize: 10,
+        remote_survey_id: null
+      } as SurveyDBData;
+      const id = await store.saveComs(surveyData);
+      expect(id).toBe(1);
+      expect(store.savedSurveyId).toBe(1);
+      expect(store.dirty).toBe(false);
+    });
+
+    it("updateComs 应更新问卷", async () => {
+      const surveyData: SurveyDBData = {
+        surveyCount: 1,
+        coms: [],
+        pageSize: 10,
+        remote_survey_id: null
+      } as SurveyDBData;
+      await store.updateComs(1, surveyData);
+      expect(store.dirty).toBe(false);
+    });
+  });
+
+  // ─── 远程同步状态 ──────────────────────────────────────────
+  describe("远程同步状态", () => {
+    it("setRemoteSynced 应设置远程 ID", () => {
+      store.setRemoteSynced("123456789");
+      expect(store.remoteSurveyId).toBe("123456789");
+    });
+
+    it("setRemoteUnsynced 应清除远程 ID", () => {
+      store.setRemoteSynced("123456789");
+      store.setRemoteUnsynced();
+      expect(store.remoteSurveyId).toBeNull();
+    });
+  });
+
+  // ─── setStore 加载已有问卷 ─────────────────────────────────
+  describe("setStore 加载已有问卷", () => {
+    it("应正确加载问卷数据", () => {
+      const data: SurveyDBData = {
+        surveyCount: 3,
+        coms: [
+          createMockStatus("single-select", "题目1"),
+          createMockStatus("multi-select", "题目2"),
+          createMockStatus("text-input", "题目3")
+        ],
+        pageSize: 20,
+        remote_survey_id: "remote-123"
+      } as SurveyDBData;
+      store.setStore(data, 42);
+      expect(store.surveyCount).toBe(3);
+      expect(store.coms.length).toBe(3);
+      expect(store.pageSize).toBe(20);
+      expect(store.savedSurveyId).toBe(42);
+      expect(store.remoteSurveyId).toBe("remote-123");
+      expect(store.currentComponentIndex).toBe(-1);
+      expect(store.dirty).toBe(false);
+    });
+  });
+
+  // ─── _pushSnapshot ─────────────────────────────────────────
+  describe("_pushSnapshot", () => {
+    it("应允许外部推入快照", () => {
+      const snapshot = {
+        coms: [createMockStatus("single-select", "外部快照")],
+        surveyCount: 1,
+        currentComponentIndex: 0
+      };
+      store._pushSnapshot(snapshot);
+      expect(store.canUndo).toBe(true);
+    });
+  });
+
+  // ─── editorVersion ─────────────────────────────────────────
+  describe("editorVersion", () => {
+    it("undo 后 editorVersion 应递增", () => {
+      store.addCom(createMockStatus("single-select", "测试"));
+      const before = store.editorVersion;
+      store.undo();
+      expect(store.editorVersion).toBe(before + 1);
+    });
+
+    it("redo 后 editorVersion 应递增", () => {
+      store.addCom(createMockStatus("single-select", "测试"));
+      store.undo();
+      const before = store.editorVersion;
+      store.redo();
+      expect(store.editorVersion).toBe(before + 1);
     });
   });
 });

@@ -19,7 +19,12 @@ const ignores = [
   "scripts/**",
   "**/*.d.ts",
   "docs/**/*.md",
+  // 单元测试与 Playwright E2E 测试相关代码，不参与 ESLint 校验
   "**/spec/**",
+  "**/__tests__/**",
+  "**/__mocks__/**",
+  "**/e2e/**",
+  "**/test-setup.ts",
   "**/*.spec.ts",
   "**/*.spec.tsx",
   "**/*.spec.js",
@@ -27,7 +32,12 @@ const ignores = [
   "**/*.test.ts",
   "**/*.test.tsx",
   "**/*.test.js",
-  "**/*.test.jsx"
+  "**/*.test.jsx",
+  // 测试/构建产物报告目录，不参与 ESLint 校验
+  "**/coverage/**",
+  "**/test-results/**",
+  "**/playwright-report/**",
+  "**/monocart-report/**"
 ];
 
 export default defineConfig(

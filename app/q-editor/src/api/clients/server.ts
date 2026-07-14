@@ -77,7 +77,8 @@ serverClient.interceptors.response.use(
           return serverClient(originalRequest);
         }
       } catch {
-        userStore.handleLogout();
+        // catch 块中重新获取 userStore，因为 try 块内的 const 不在本作用域
+        useUserStore().handleLogout();
       }
 
       window.location.href = "/login";

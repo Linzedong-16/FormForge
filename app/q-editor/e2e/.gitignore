@@ -1,0 +1,9 @@
+# Playwright E2E 测试产物
+playwright-report/
+test-results/
+coverage-report/
+.coverage/
+e2e/test-results/
+e2e/playwright-report/
+e2e/coverage-report/
+e2e/.coverage/

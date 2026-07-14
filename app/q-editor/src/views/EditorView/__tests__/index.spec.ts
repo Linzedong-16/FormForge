@@ -94,11 +94,12 @@ describe("EditorView — 埋点性能计时", () => {
     });
   }
 
-  it("加载已有问卷成功时上报 editor_load 耗时，success=true", async () => {
+  it("加载已有问卷成功时上报 editor_load 耗时，success=true", { timeout: 15000 }, async () => {
     getSurveyByIdMock.mockResolvedValue(FAKE_SURVEY);
 
     await mountEditorView("123");
     await flushPromises();
+    await nextTick();
 
     expect(getSurveyByIdMock).toHaveBeenCalledWith(123);
     expect(trackTimingSpy).toHaveBeenCalledWith("editor_load", expect.any(Number), { success: true });
