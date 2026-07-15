@@ -61,7 +61,9 @@
     </div>
 
     <!-- AI 一键生成面板（Drawer，通过 ref 控制） 占位 -->
-    <el-dialog v-model="templateDialogVisible" :title="t('editor.templateDialogTitle')" width="500px">
+    <!-- append-to-body：挂载到 body，避免嵌套在带 backdrop-filter 的 .header 内时，
+         其 fixed 定位被 backdrop-filter 创建的新 containing block 影响而错位 -->
+    <el-dialog v-model="templateDialogVisible" :title="t('editor.templateDialogTitle')" width="500px" append-to-body>
       <el-form :model="templateForm" label-width="100px">
         <el-form-item :label="t('editor.templateCategory')" required>
           <el-select

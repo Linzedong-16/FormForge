@@ -299,10 +299,20 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .header {
   width: 100%;
-  background-color: var(--white);
   position: fixed;
   top: 0;
   z-index: 10;
+  // 磨砂玻璃导航栏：半透明底 + 背景模糊，营造悬浮层次感
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+
+  // 不支持 backdrop-filter 的浏览器降级为高不透明度纯色，保证可读性
+  @supports not (backdrop-filter: blur(1px)) {
+    background: var(--glass-fallback-bg);
+  }
 }
 .container {
   width: calc(100vw - 40px);

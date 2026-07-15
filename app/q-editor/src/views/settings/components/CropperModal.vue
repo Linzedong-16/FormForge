@@ -218,6 +218,7 @@ $clr-primary: var(--primary-color, #18181b);
 $clr-fill-light: var(--el-fill-color-light, #f4f4f5);
 $radius-lg: var(--border-radius-lg, 8px);
 $radius-md: var(--border-radius-md, 6px);
+$shadow-sm: var(--shadow-sm, 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1));
 
 // ── 遮罩层 ─────────────────────────────────────────────
 .cropper-modal-overlay {
@@ -272,7 +273,7 @@ $radius-md: var(--border-radius-md, 6px);
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 6px;
+  border-radius: $radius-md;
   background: transparent;
   color: $clr-text-secondary;
   cursor: pointer;
@@ -327,7 +328,7 @@ $radius-md: var(--border-radius-md, 6px);
   width: 32px;
   height: 32px;
   border: 1px solid $clr-border;
-  border-radius: 6px;
+  border-radius: $radius-md;
   background: $clr-card;
   color: $clr-text-secondary;
   cursor: pointer;
@@ -408,7 +409,7 @@ $radius-md: var(--border-radius-md, 6px);
   overflow: hidden;
   position: relative;
   border: 3px solid $clr-border;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: $shadow-sm;
   // 棋盘格背景，透明区域可见
   background-color: #f0f0f0;
   background-image:

@@ -8,7 +8,7 @@
  *
  * 使用方式：
  *   pnpm start:all              # 启动全部
- *   pm2 start ecosystem.config.js --only q-server  # 仅业务服务
+ *   pm2 start ecosystem.config.cjs --only q-server  # 仅业务服务
  *   pm2 scale q-server 8        # 动态扩容到 8 实例
  *   pm2 logs                    # 查看日志
  */
@@ -18,7 +18,7 @@ module.exports = {
     {
       // ── 业务 API 服务（Fastify） ──────────────────────────
       name: "q-server",
-      script: "dist/index.js",
+      script: "dist/app/q-server/src/index.js",
       instances: "max", // 集群模式：自动取 CPU 核数
       exec_mode: "cluster",
       env: {
@@ -42,7 +42,7 @@ module.exports = {
     {
       // ── 日志消费进程（独立，不集群） ──────────────────────
       name: "log-consumer",
-      script: "dist/consumer/log-consumer.js",
+      script: "dist/app/q-server/src/consumer/log-consumer.js",
       instances: 1, // 仅 1 实例，避免并发 ACK 冲突
       exec_mode: "fork",
       env: {
@@ -60,7 +60,7 @@ module.exports = {
     {
       // ── 埋点消费进程（独立，不集群） ──────────────────────
       name: "tracking-consumer",
-      script: "dist/consumer/tracking-consumer.js",
+      script: "dist/app/q-server/src/consumer/tracking-consumer.js",
       instances: 1, // 仅 1 实例，保证消息顺序消费和去重
       exec_mode: "fork",
       env: {

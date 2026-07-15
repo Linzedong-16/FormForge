@@ -2,7 +2,7 @@
   <a-card :bordered="false" class="panel-card">
     <template #title>用量与漏斗</template>
 
-    <a-spin v-if="trendStatus === 'loading'" :loading="true" style="width: 100%; padding: 32px 0" />
+    <a-spin v-if="trendStatus === 'loading'" :loading="true" class="state-loading" />
 
     <a-result v-else-if="trendStatus === 'error'" status="error" :subtitle="trendErrorMessage || '数据加载失败'">
       <template #extra>
@@ -25,7 +25,7 @@
       </a-select>
     </div>
 
-    <a-spin v-if="funnelStatus === 'loading'" :loading="true" style="width: 100%; padding: 32px 0" />
+    <a-spin v-if="funnelStatus === 'loading'" :loading="true" class="state-loading" />
 
     <a-result v-else-if="funnelStatus === 'error'" status="error" :subtitle="funnelErrorMessage || '数据加载失败'">
       <template #extra>
@@ -156,6 +156,8 @@ onMounted(loadFunnel);
 <style scoped>
 .panel-card {
   width: 100%;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .trend-chart {

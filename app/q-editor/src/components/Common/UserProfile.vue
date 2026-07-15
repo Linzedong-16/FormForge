@@ -242,7 +242,7 @@ const onLogout = async () => {
 .user-profile-panel {
   display: flex;
   flex-direction: column;
-  border-radius: 10px;
+  border-radius: var(--border-radius-lg);
 }
 
 // 用户信息区：头像左 + 昵称/职业/邮箱/介绍右

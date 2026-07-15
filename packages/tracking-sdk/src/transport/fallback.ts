@@ -46,12 +46,13 @@ export function imageBeacon(endpoint: string, data: Record<string, string>): boo
     const img = new Image(1, 1);
     img.src = `${endpoint}?${params.toString()}`;
 
-    // 加载完成后清理（不关心成功或失败）
+    // 加载完成后清理（不关心成功或失败）：清空事件处理器引用本身，
+    // 而非重新赋值 img 这个 const 局部变量（此前的写法非法且无实际效果）
     img.onload = (): void => {
-      (img as unknown as null) = null;
+      img.onload = null;
     };
     img.onerror = (): void => {
-      (img as unknown as null) = null;
+      img.onerror = null;
     };
 
     return true;

@@ -387,7 +387,7 @@ onMounted(() => {
 }
 
 .stat-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .stat-unit {
@@ -425,7 +425,7 @@ onMounted(() => {
   gap: 6px;
   padding: 8px 12px;
   background: var(--color-fill-1);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   margin-bottom: 8px;
 }
 
@@ -532,7 +532,7 @@ onMounted(() => {
   align-items: center;
   padding: 7px 10px;
   font-size: 13px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: background 0.15s;
 }
 

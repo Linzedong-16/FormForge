@@ -3,7 +3,7 @@
     <a-card :bordered="false" class="panel-card">
       <template #title>错误</template>
 
-      <a-spin v-if="errorsStatus === 'loading'" :loading="true" style="width: 100%; padding: 32px 0" />
+      <a-spin v-if="errorsStatus === 'loading'" :loading="true" class="state-loading" />
 
       <a-result v-else-if="errorsStatus === 'error'" status="error" :subtitle="errorsErrorMessage || '数据加载失败'">
         <template #extra>
@@ -45,7 +45,7 @@
         </div>
       </template>
 
-      <a-spin v-if="perfStatus === 'loading'" :loading="true" style="width: 100%; padding: 32px 0" />
+      <a-spin v-if="perfStatus === 'loading'" :loading="true" class="state-loading" />
 
       <a-result v-else-if="perfStatus === 'error'" status="error" :subtitle="perfErrorMessage || '数据加载失败'">
         <template #extra>
@@ -186,6 +186,8 @@ onMounted(loadPerformance);
 
 .panel-card {
   width: 100%;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .panel-title-row {

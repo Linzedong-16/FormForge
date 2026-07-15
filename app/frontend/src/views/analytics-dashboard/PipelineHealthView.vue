@@ -8,7 +8,7 @@
     </template>
 
     <!-- 加载中 -->
-    <a-spin v-if="status === 'loading'" :loading="true" style="width: 100%; padding: 32px 0" />
+    <a-spin v-if="status === 'loading'" :loading="true" class="state-loading" />
 
     <!-- 加载失败：持久化错误块，而不是一闪而过的提示 -->
     <a-result v-else-if="status === 'error'" status="error" :subtitle="errorMessage || '数据加载失败'">
@@ -150,6 +150,8 @@ onUnmounted(() => {
 <style scoped>
 .panel-card {
   width: 100%;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .summary-item {

@@ -15,7 +15,7 @@
 
     <!-- 加载状态 -->
     <a-spin v-if="loading" :loading="loading" tip="正在加载问卷..." class="loading-wrap">
-      <div style="min-height: 300px" />
+      <div class="state-container-md" />
     </a-spin>
 
     <!-- 错误状态 -->
@@ -254,12 +254,12 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: #fff;
+  background: var(--color-bg-2);
   border-bottom: 1px solid var(--color-border-2);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 .header-divider {
@@ -287,10 +287,10 @@ onMounted(() => {
   width: 100%;
   margin: 20px auto 0;
   padding: 16px 24px;
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #e4e4e7;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.06);
+  background: var(--color-bg-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-2);
+  box-shadow: var(--shadow-sm);
 }
 
 .info-row {
@@ -307,11 +307,11 @@ onMounted(() => {
 }
 
 .info-label {
-  color: #71717a;
+  color: var(--color-text-3);
 }
 
 .info-value {
-  color: #3f3f46;
+  color: var(--color-text-2);
 }
 
 .review-comment {
@@ -325,16 +325,16 @@ onMounted(() => {
   width: 100%;
   margin: 16px auto 0;
   padding: 16px 24px;
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #e4e4e7;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.06);
+  background: var(--color-bg-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-2);
+  box-shadow: var(--shadow-sm);
 }
 
 .desc-text {
   margin: 0;
   font-size: 14px;
-  color: #3f3f46;
+  color: var(--color-text-2);
   line-height: 1.7;
 }
 
@@ -344,7 +344,7 @@ onMounted(() => {
   width: 100%;
   margin: 16px auto 0;
   font-size: 13px;
-  color: #71717a;
+  color: var(--color-text-3);
 }
 
 /* ── 问卷内容卡片 ──────────────────────────────────────── */
@@ -353,10 +353,10 @@ onMounted(() => {
   width: 100%;
   margin: 8px auto 0;
   padding: 24px 28px;
-  background: #fff;
-  border: 1px solid #e4e4e7;
-  border-radius: 8px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.08);
+  background: var(--color-bg-2);
+  border: 1px solid var(--color-border-2);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
 }
 
 .content-item {

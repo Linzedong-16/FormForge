@@ -143,7 +143,7 @@ async function handleLogout() {
   padding: 0 24px;
   background-color: var(--color-bg-1);
   border-bottom: 1px solid var(--color-border-1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-xs);
 }
 
 .header-left {
@@ -173,7 +173,7 @@ async function handleLogout() {
 .user-info {
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: background-color 0.2s;
 }
 

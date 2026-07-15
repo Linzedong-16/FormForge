@@ -10,6 +10,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { Prisma } from "../../../generated/prisma/client.js";
 import { createCache, CacheKeys, CacheTTL } from "../../../utils/cache.js";
 import type { CacheClient } from "../../../utils/cache.js";
 import { createAuditLog } from "../../../utils/audit-log.js";
@@ -1018,7 +1019,9 @@ export class SurveyService {
             response_id: created.id,
             component_id: BigInt(a.component_id),
             value: a.value ?? null,
-            values: a.values ?? null
+            // values 是 Json? 字段，Prisma 要求用 Prisma.DbNull 表示数据库 NULL，
+            // 裸 null 会被当作"未设置该字段"而产生类型错误
+            values: a.values ?? Prisma.DbNull
           }));
 
         if (answerRows.length > 0) {

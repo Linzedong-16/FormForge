@@ -5,6 +5,10 @@ import { createPinia } from "pinia";
 import { renderWithQiankun, qiankunWindow } from "vite-plugin-qiankun/es/helper";
 import "./style.css";
 import "@arco-design/web-vue/dist/arco.css";
+// 项目级设计令牌（阴影/圆角）与次要状态容器工具类 —— 必须在 arco.css 之后引入，
+// 否则会被 Arco 的默认样式覆盖回去
+import "./styles/tokens.css";
+import "./styles/state-containers.css";
 // Element Plus 全局导入 — 供问卷渲染引擎使用（引擎内 el-* 组件依赖此全局注册）
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";

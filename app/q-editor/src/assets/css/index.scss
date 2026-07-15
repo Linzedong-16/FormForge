@@ -4,6 +4,8 @@
 @import url("./coms.scss");
 // Element Plus 主题覆盖（shadcn 亮色风格）—— 放最后确保覆盖组件库默认样式
 @import url("./element-theme.scss");
+// 阴影层级与磨砂玻璃令牌 —— 供上面 element-theme.scss 及编辑器视图组件引用
+@import url("./elevation.scss");
 // 暗色主题（shadcn dark）—— 放最末，html.dark 下覆盖上述变量
 @import url("./theme-dark.scss");
 // 色弱模式 —— html[data-color-blind] 覆盖语义色，与亮暗主题正交叠加

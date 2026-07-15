@@ -105,6 +105,11 @@ export default defineConfig(({ command, mode }) => {
         "@common": fileURLToPath(new URL("../../packages/common/src", import.meta.url))
       }
     },
+    // 依赖预打包扫描仅以真正的应用入口为起点，避免 Vite 默认爬取项目内
+    // 所有 html 文件（如 monocart-report/、e2e/playwright-report/ 等测试报告产物）
+    optimizeDeps: {
+      entries: ["index.html"]
+    },
     server: {
       port: 5173, // 固定端口，与主应用 entry: '//localhost:5173' 对应
       cors: true, // 允许主应用（localhost:8000）跨域加载此子应用

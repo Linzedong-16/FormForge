@@ -60,8 +60,15 @@ const addSurveyCom = () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 .survey-com-item-container:hover {
   background-color: var(--font-color-lightest);
+  // 轻微上浮 + 阴影反馈，与卡片默认态形成层次区分
+  box-shadow: var(--shadow-xs);
+  transform: translateY(-1px);
 }
 </style>

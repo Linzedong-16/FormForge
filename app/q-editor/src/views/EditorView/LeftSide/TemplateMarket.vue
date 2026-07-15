@@ -96,11 +96,14 @@
     </div>
 
     <!-- 模板详情弹窗 -->
+    <!-- append-to-body：挂载到 body，避免嵌套在带 backdrop-filter 的 .left-side-container 内时，
+         其 fixed 定位被 backdrop-filter 创建的新 containing block 影响而错位 -->
     <el-dialog
       v-model="detailVisible"
       :title="selectedTemplate?.title || tm('detailTitle')"
       width="680px"
       destroy-on-close
+      append-to-body
     >
       <template v-if="selectedTemplate">
         <div class="detail-body">
@@ -439,7 +442,7 @@ onMounted(() => {
 
   &:hover {
     border-color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
     transform: translateY(-1px);
   }
 
