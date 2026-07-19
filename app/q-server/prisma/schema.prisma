@@ -43,7 +43,8 @@ model User {
   reviewed_reviews  Review[]           @relation("ReviewReviewer") // 自己审核的记录
   template_ratings  TemplateRating[] // 自己对模板的评分
   profile           UserProfile? // 用户资料（1:1）
-  survey_files      SurveyFile[] // 上传的问卷文件
+  media_assets      MediaAsset[]            @relation("MediaAssetUploader") // 自己上传的物料
+  reviewed_media_assets MediaAsset[]         @relation("MediaAssetReviewer") // 自己审核过的物料
   sent_messages     Message[]               @relation("MessageSender") // 自己发出的消息
   received_messages Message[]               @relation("MessageRecipient") // 自己收到的消息
   message_broadcast_states MessageBroadcastState[] // 自己对各条广播的已读/隐藏状态
@@ -88,7 +89,7 @@ model Survey {
   responses        Response[]
   permissions      SurveyPermission[]
   reviews          Review[] // 审核记录
-  files            SurveyFile[] // 关联的问卷文件
+  media_assets     MediaAsset[] // 关联的物料（图片资源）
 
   @@index([status])
   @@index([created_at])
@@ -346,6 +347,7 @@ enum FileType {
   survey_option_image // 图片选择组件封面图（PicItem 上传）
   survey_signature // 签名图片（Signature canvas 转 blob 后上传）
   survey_cover // 问卷封面图（survey.cover_url，预留）
+  user_avatar // 用户头像（profile/avatar.service.ts 上传）
 }
 
 // ============================================================
@@ -437,36 +439,52 @@ model UserProfile {
 }
 
 // ============================================================
-// 14. 问卷文件表 (survey_files)
+// 14. 物料表 (media_assets) —— 原 survey_files，重命名+扩展为
+//     覆盖全平台图片资源（问卷题目图片、签名图片、用户头像等）的统一管理实体
 //
 // 设计目的：
-//   - 追踪问卷编辑器上传的所有文件（图片选择组件封面、签名图片）
+//   - 追踪平台内全部图片资源（问卷题目图片、签名图片、用户头像）
 //   - 支撑问卷删除时级联清理 MinIO 文件
 //   - 提供文件溯源（上传者、上传时间、文件大小）
 //   - 识别孤儿文件（已从 survey_components.config 中移除但 MinIO 仍有残留）
+//   - 承载审核状态与审核操作人/时间，为后续接入自动化审核 Agent 预留
 // ============================================================
-model SurveyFile {
-  id         BigInt   @id @default(autoincrement())
-  survey_id  BigInt?  // 所属问卷（可为 null，签名文件关联 response 而非 survey）
-  user_id    BigInt   // 上传者
-  file_url   String   @db.VarChar(1024) // MinIO 完整访问 URL
-  file_key   String   @db.VarChar(512)  // MinIO 对象 key（如 "survey-images/uuid.png"），删除时需要
-  file_name  String   @db.VarChar(255)  // 原始文件名
-  mime_type  String   @db.VarChar(127)  // MIME 类型（如 "image/png"）
-  file_size  BigInt   // 文件大小（字节）
-  file_type  FileType @default(survey_option_image) // 文件来源类型
-  created_at DateTime @default(now())
+model MediaAsset {
+  id            BigInt   @id @default(autoincrement())
+  survey_id     BigInt?  // 所属问卷（可为 null，如用户头像不关联任何问卷）
+  user_id       BigInt   // 上传者
+  resource_type String   @default("image") // 底层资源类型，当前恒为 "image"，为未来非图片类型预留扩展空间
+  file_url      String   @db.VarChar(1024) // MinIO 完整访问 URL
+  file_key      String   @db.VarChar(512)  // MinIO 对象 key（如 "survey-images/uuid.png"），删除时需要
+  file_name     String   @db.VarChar(255)  // 原始文件名
+  mime_type     String   @db.VarChar(127)  // MIME 类型（如 "image/png"）
+  file_size     BigInt   // 文件大小（字节）
+  file_type     FileType @default(survey_option_image) // 文件来源类型（细分类别）
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // ── 审核状态（复用 Review 模块已定义的 ReviewStatus 枚举，不新建重复枚举）──
+  // 允许 pending/approved/rejected 之间自由互转，不同于 Review 模型严格的
+  // "仅能从 pending 转出"一次性提交-裁决流程；变更历史通过 AuditLog 追溯，
+  // 本表只保存"最近一次"变更的三个字段
+  review_status  ReviewStatus @default(pending)
+  reviewed_by    BigInt? // 最近一次审核状态变更的操作者（人工管理员或未来自动化审核流程使用的账号）
+  reviewed_at    DateTime?
+  review_comment String?      @db.Text
 
   // 关联关系
-  survey Survey? @relation(fields: [survey_id], references: [id], onDelete: SetNull)
-  user   User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  survey   Survey? @relation(fields: [survey_id], references: [id], onDelete: SetNull)
+  user     User    @relation("MediaAssetUploader", fields: [user_id], references: [id], onDelete: Cascade)
+  reviewer User?   @relation("MediaAssetReviewer", fields: [reviewed_by], references: [id])
 
   @@index([survey_id])
   @@index([user_id])
   @@index([file_type])
   @@index([created_at])
   @@index([survey_id, file_type]) // 高频：按问卷查询特定类型文件
-  @@map("survey_files")
+  @@index([review_status]) // 管理端按审核状态筛选
+  @@index([user_id, review_status]) // 高频：某用户的待审核物料
+  @@map("media_assets")
 }
 
 // ============================================================

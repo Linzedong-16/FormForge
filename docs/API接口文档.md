@@ -506,3 +506,105 @@
 ```
 - **说明**：`estimated_recipients` 为发布时刻的目标角色用户数快照对应的"当前"统计口径（每次查询按 `target_role` 实时统计用户数），并非发布瞬间的历史快照。
 
+## 6. 物料管理接口
+
+> 全部接口挂载于 `/api/admin/media-assets` 前缀下，均要求 `authenticate` + `requireSuperAdmin`（仅超级管理员）。
+> `media_assets` 表由既有 `survey_files` 表演进而来，统一管理全平台问卷题目图片、签名图片、用户头像等图片资源，并为后续接入自动化审核 Agent 预留了审核状态读写能力。详见 `specs/004-material-management/`。
+
+### 6.1 获取物料列表
+
+- **请求方法**：GET
+- **请求路径**：/admin/media-assets
+- **权限**：仅 `super_admin`
+- **请求参数**（Query，均可选）：
+  - page：页码，默认 1
+  - page_size：每页条数，默认 20，最大 100
+  - user_id / survey_id：按所属用户/问卷筛选
+  - review_status：`pending` \| `approved` \| `rejected`
+  - resource_type：按资源类型筛选（当前仅 `image`）
+  - keyword：按文件名模糊搜索
+- **响应示例**：
+```json
+{
+  "code": 0,
+  "msg": "ok",
+  "data": {
+    "list": [
+      {
+        "id": "5001",
+        "resource_type": "image",
+        "file_url": "http://localhost:9000/questionnaire/media-assets/uuid.png",
+        "file_name": "cover.png",
+        "mime_type": "image/png",
+        "file_size": 2048,
+        "file_type": "survey_option_image",
+        "review_status": "pending",
+        "reviewed_by": null,
+        "reviewed_at": null,
+        "review_comment": null,
+        "user_id": "2",
+        "survey_id": "100",
+        "created_at": "2026-07-01T08:00:00.000Z",
+        "updated_at": "2026-07-01T08:00:00.000Z"
+      }
+    ],
+    "pagination": { "page": 1, "page_size": 20, "total": 1, "total_pages": 1 }
+  }
+}
+```
+
+### 6.2 获取物料详情
+
+- **请求方法**：GET
+- **请求路径**：/admin/media-assets/:id
+- **说明**：响应在列表条目字段基础上附加 `references`（当前有效引用来源，供判断是否可删除）。
+
+### 6.3 更新物料元信息
+
+- **请求方法**：PUT
+- **请求路径**：/admin/media-assets/:id
+- **请求参数**（Body，仅描述性字段，严格模式拒绝 `file_url`/`file_key` 等未声明字段）：
+  - resource_type（可选）
+  - survey_id（可选，传 `null` 表示解除问卷关联）
+
+### 6.4 删除物料
+
+- **请求方法**：DELETE
+- **请求路径**：/admin/media-assets/:id
+- **说明**：若物料仍被已发布/草稿问卷的题目配置或某用户当前头像引用，删除会被阻止——**HTTP 状态仍为 200**（前端全局响应拦截器只在 2xx 状态下保留完整响应体），真正的失败信号是非零 `code`（`BizCode.MEDIA_ASSET_REFERENCED`），响应 `data.references` 给出具体引用来源，调用方须按 `code === 0` 而非 HTTP 状态判断是否成功。
+
+### 6.5 批量删除物料
+
+- **请求方法**：POST
+- **请求路径**：/admin/media-assets/batch-delete
+- **请求参数**（Body）：`{ "ids": string[] }`（1~200 条）
+- **响应示例**：
+```json
+{
+  "code": 0,
+  "msg": "ok",
+  "data": {
+    "succeeded": ["1001", "1003"],
+    "failed": [{ "id": "1002", "reason": "referenced", "references": [{ "type": "survey_component", "survey_id": "2001" }] }]
+  }
+}
+```
+- **说明**：即使部分失败，HTTP 层仍返回 200，失败详情在 `data.failed` 中体现，不整体报错。
+
+### 6.6 直接上传新物料
+
+- **请求方法**：POST
+- **请求路径**：/admin/media-assets/upload
+- **请求参数**：multipart/form-data，字段 `file`（图片），可选 `survey_id`
+- **说明**：复用问卷文件上传既有的 MIME 白名单与 10MB 大小限制；当前阶段仅接受图片类型，非图片文件返回 `415`。新建物料 `review_status` 默认为 `pending`。
+
+### 6.7 变更审核状态
+
+- **请求方法**：PUT
+- **请求路径**：/admin/media-assets/:id/review-status
+- **请求参数**（Body）：
+  - review_status：`pending` \| `approved` \| `rejected`（三者间自由互转，无前置状态要求，区别于 `Review` 模块严格的 pending-only 提交审核流程）
+  - review_comment（可选，最多 500 字符）
+- **说明**：变更会写入 `reviewed_by`/`reviewed_at`/`review_comment`，并追加一条 `AuditLog`（`action: "media_asset.review_status_change"`）留存完整历史。**该状态变更仅为管理侧标记，不影响物料在其原有引用位置（如已发布问卷）的实际展示**。鉴权与其它接口相同，不因调用方可能是未来的自动化审核 Agent 而放宽。
+
+

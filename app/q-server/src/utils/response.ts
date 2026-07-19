@@ -101,6 +101,8 @@ export enum BizCode {
   FILE_NOT_FOUND = 3003,
   /** 文件服务暂不可用 */
   FILE_STORAGE_ERROR = 3004,
+  /** 物料仍被其他业务对象引用，无法删除 */
+  MEDIA_ASSET_REFERENCED = 3005,
 
   // ─── AI 生成模块 ──────────────────────────────────────────
   /** AI 服务未配置 */

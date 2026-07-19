@@ -188,5 +188,19 @@ export const childrenRoutes: RouteRecordRaw[] = [
       title: "系统设置",
       icon: "settings"
     }
+  },
+
+  // ═══════════════════════════════════════════════════════════
+  // 10. 物料管理 — 全平台图片资源统一管理（仅超级管理员）
+  // ═══════════════════════════════════════════════════════════
+  {
+    path: "/media-assets",
+    name: "mediaAssetManagement",
+    component: () => import("../views/media-asset-management/MediaAssetManagementView.vue"),
+    meta: {
+      title: "物料管理",
+      icon: "image",
+      requiresSuperAdmin: true
+    }
   }
 ];

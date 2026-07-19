@@ -34,6 +34,16 @@ interface PrismaMock {
     groupBy: MockFn;
   };
   messageBroadcastState: { upsert: MockFn; findMany: MockFn; findUnique: MockFn };
+  mediaAsset: {
+    findFirst: MockFn;
+    findUnique: MockFn;
+    findMany: MockFn;
+    create: MockFn;
+    update: MockFn;
+    delete: MockFn;
+    count: MockFn;
+  };
+  userProfile: { findFirst: MockFn; findUnique: MockFn };
   $transaction: MockFn;
 }
 
@@ -162,6 +172,19 @@ export function createPrismaMock(): PrismaMock {
     messageBroadcastState: {
       upsert: vi.fn(),
       findMany: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    mediaAsset: {
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      count: vi.fn(),
+    },
+    userProfile: {
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
     },
     $transaction,
@@ -455,3 +478,26 @@ export const MOCK_BROADCAST = {
   sender: { username: "系统管理员", role: "super_admin" },
   broadcastStates: [] as { user_id: bigint; is_read: boolean; is_hidden: boolean; read_at: Date | null }[],
 };
+
+// ─── 物料管理模块测试用固定数据 ─────────────────────────────────
+
+/** 模拟一条物料（图片资源）记录 */
+export const MOCK_MEDIA_ASSET = {
+  id: BigInt(5001),
+  survey_id: BigInt(100),
+  user_id: BigInt(2),
+  resource_type: "image",
+  file_url: "http://localhost:9000/questionnaire/media-assets/uuid.png",
+  file_key: "media-assets/uuid.png",
+  file_name: "cover.png",
+  mime_type: "image/png",
+  file_size: BigInt(2048),
+  file_type: "survey_option_image",
+  review_status: "pending",
+  reviewed_by: null,
+  reviewed_at: null,
+  review_comment: null,
+  created_at: new Date("2026-07-01T08:00:00.000Z"),
+  updated_at: new Date("2026-07-01T08:00:00.000Z"),
+};
+

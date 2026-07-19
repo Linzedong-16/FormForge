@@ -9,7 +9,8 @@
  *
  * 设计原则：
  *   - 与 AvatarService 完全解耦（独立表、独立 MinIO prefix、独立路由）
- *   - 所有文件操作均写入 survey_files 表，支持溯源和级联清理
+ *   - 所有文件操作均写入 media_assets 表（原 survey_files，已扩展为覆盖全平台图片资源
+ *     的物料表，本模块只使用其中问卷维度的字段），支持溯源和级联清理
  *   - 使用项目已有的 uploadToMinio / deleteFromMinio 工具函数
  */
 import { randomUUID } from "node:crypto";
@@ -110,7 +111,7 @@ export class SurveyFileService {
     }
 
     // 6. 写入 survey_files 记录
-    const record = await this.fastify.prisma.surveyFile.create({
+    const record = await this.fastify.prisma.mediaAsset.create({
       data: {
         survey_id: surveyId,
         user_id: userId,
@@ -191,7 +192,7 @@ export class SurveyFileService {
     }
 
     // 6. 写入 survey_files 记录
-    const record = await this.fastify.prisma.surveyFile.create({
+    const record = await this.fastify.prisma.mediaAsset.create({
       data: {
         survey_id: surveyId,
         user_id: userId,
@@ -246,7 +247,7 @@ export class SurveyFileService {
     }
 
     const [files, total] = await Promise.all([
-      this.fastify.prisma.surveyFile.findMany({
+      this.fastify.prisma.mediaAsset.findMany({
         where,
         orderBy: { created_at: "desc" },
         select: {
@@ -259,7 +260,7 @@ export class SurveyFileService {
           created_at: true
         }
       }),
-      this.fastify.prisma.surveyFile.count({ where })
+      this.fastify.prisma.mediaAsset.count({ where })
     ]);
 
     return {
@@ -288,7 +289,7 @@ export class SurveyFileService {
    */
   async deleteFile(userId: bigint, fileId: bigint): Promise<void> {
     // 1. 查询文件记录（含关联问卷信息，用于权限校验）
-    const record = await this.fastify.prisma.surveyFile.findUnique({
+    const record = await this.fastify.prisma.mediaAsset.findUnique({
       where: { id: fileId },
       include: {
         survey: { select: { user_id: true } }
@@ -314,7 +315,7 @@ export class SurveyFileService {
     }
 
     // 4. 删除数据库记录
-    await this.fastify.prisma.surveyFile.delete({ where: { id: fileId } });
+    await this.fastify.prisma.mediaAsset.delete({ where: { id: fileId } });
 
     // 5. 审计日志（异步）
     createAuditLog(this.fastify, userId, "survey_file_delete", "survey_file", fileId, {
@@ -338,7 +339,7 @@ export class SurveyFileService {
    * @returns 删除的文件数量
    */
   async cleanupBySurvey(surveyId: bigint): Promise<number> {
-    const files = await this.fastify.prisma.surveyFile.findMany({
+    const files = await this.fastify.prisma.mediaAsset.findMany({
       where: { survey_id: surveyId },
       select: { id: true, file_key: true }
     });
@@ -355,7 +356,7 @@ export class SurveyFileService {
     );
 
     // 删除所有数据库记录
-    const result = await this.fastify.prisma.surveyFile.deleteMany({
+    const result = await this.fastify.prisma.mediaAsset.deleteMany({
       where: { survey_id: surveyId }
     });
 

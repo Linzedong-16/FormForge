@@ -16,6 +16,7 @@ import templateRoutes from "../modules/template/template.routes.js";
 import surveyStatsRoutes from "../modules/survey/survey-stats/survey-stats.routes.js";
 import { trackingIngestRoutes, trackingAnalyticsRoutes } from "../modules/tracking/index.js";
 import { messageRoutes, adminMessageRoutes } from "../modules/message/index.js";
+import mediaAssetRoutes from "../modules/media-asset/media-asset.routes.js";
 
 const routes: FastifyPluginAsync = async fastify => {
   // 健康检查 — 探测 PostgreSQL、Redis、RabbitMQ 连通性
@@ -165,6 +166,8 @@ const routes: FastifyPluginAsync = async fastify => {
   fastify.register(messageRoutes);
   // admin-message.routes.ts 内部路径为 /messages/broadcast、/messages/sent（管理员广播）
   fastify.register(adminMessageRoutes, { prefix: "/admin" });
+  // media-asset.routes.ts 内部路径为 /media-assets（管理员物料/图片资源管理）
+  fastify.register(mediaAssetRoutes, { prefix: "/admin" });
 };
 
 export default routes;

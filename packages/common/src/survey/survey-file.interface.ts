@@ -21,7 +21,7 @@
  *
  * 对应 Prisma FileType 枚举，区分文件来源以支持级联清理与分类查询
  */
-export type FileType = "survey_option_image" | "survey_signature" | "survey_cover";
+export type FileType = "survey_option_image" | "survey_signature" | "survey_cover" | "user_avatar";
 
 // ============================================================
 //  2. 上传常量
