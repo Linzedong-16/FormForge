@@ -108,6 +108,8 @@ const generatePDF = () => {
 .preview-container {
   width: 100vw;
   min-height: 100vh;
+  // 渐变色暂不使用
+  // background: linear-gradient(to right top, #22b0c9 0%, #3a78e8 55%, #7a42d8 100%);
 }
 .center {
   width: 800px;

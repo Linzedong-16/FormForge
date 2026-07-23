@@ -1,5 +1,5 @@
 <template>
-  <div class="pt-20 pb-20 pl-20 pr-20">
+  <div class="layout-page pt-20 pb-20 pl-20 pr-20">
     <headerNav>
       <template #left>
         <el-button :icon="ArrowLeft" circle size="small" @click="goLand" />
@@ -694,6 +694,12 @@ const syncSurvey = async (surveyInfo: SurveyDBReturnData) => {
 </script>
 
 <style scoped lang="scss">
+// 渐变色暂不使用
+// .layout-page {
+//   min-height: 100vh;
+//   background: linear-gradient(to right, #22b0c9 0%, #3a78e8 60%, #7a42d8 100%);
+// }
+
 // 操作列圆形图标按钮容器：横向紧凑排列，不换行、不撑开表格行高
 .action-icons {
   display: flex;

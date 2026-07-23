@@ -175,8 +175,9 @@ $land-accent-color: #18181b; // zinc-900
   width: 100%;
   overflow: hidden;
   position: relative;
-  // 青湖蓝 → 宝蓝 → 香芋紫罗兰，水平线性渐变，清爽现代商务向
-  background: linear-gradient(to right, #22b0c9 0%, #3a78e8 50%, #7a42d8 100%);
+  // 渐变色暂不使用
+  // background: linear-gradient(to right, #22b0c9 0%, #3a78e8 50%, #7a42d8 100%);
+  background-color: $land-bg-primary;
 }
 
 // ───────────────────────────────────────────────────────────────────────────
