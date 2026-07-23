@@ -90,5 +90,7 @@ renderWithQiankun({
 
 // 独立运行（非 qiankun 环境）
 if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
-  render();
+  // 路由 base 跟随构建时的 base（由 --base 决定），
+  // 保证子路径部署（如 GitHub Pages）场景下路由与静态资源路径一致
+  render(undefined, import.meta.env.BASE_URL);
 }

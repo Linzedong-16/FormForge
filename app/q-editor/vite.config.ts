@@ -17,6 +17,8 @@ import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 export default defineConfig(({ command, mode }) => {
   // Mock 开关：使用 --mode mock 时自动启用，无需依赖 .env 文件
   const mockEnabled = mode === "mock";
+  // 独立部署模式：使用 --mode standalone 时启用，跳过 qiankun 子应用适配插件
+  const standalone = mode === "standalone";
 
   return {
     plugins: [
@@ -26,10 +28,11 @@ export default defineConfig(({ command, mode }) => {
       //   - useDevMode: 开发模式下注入生命周期桥接脚本（IIFE），
       //     解决 qiankun eval() 无法处理 Vite ES Module 的根本兼容问题
       //   - 同时标记 @vite/client 等内部脚本为 ignore，避免 eval 报错
-      qiankun("q-editor", { useDevMode: command === "serve" }),
+      //   - standalone 模式（独立部署演示）暂不接入 qiankun，跳过该插件注册
+      ...(standalone ? [] : [qiankun("q-editor", { useDevMode: command === "serve" })]),
       visualizer({
         filename: "./dist/stats.html", // 生成可视化报告
-        open: true, // 自动打开浏览器
+        open: !process.env.CI, // 自动打开浏览器（CI 环境无 GUI，跳过以避免挂起/报错）
         gzipSize: true, // 显示gzip后的体积
         brotliSize: true, // 显示brotli压缩后的体积
         template: "treemap", // 使用树图模板（更适合分析大文件）

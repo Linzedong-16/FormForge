@@ -10,6 +10,7 @@
     "dev": "vite",
     "dev:mock": "vite --mode mock",
     "build": "run-p type-check \"build-only {@}\" --",
+    "build:standalone": "run-p type-check \"build-only {@}\" -- --mode standalone",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
