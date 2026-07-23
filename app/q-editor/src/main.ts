@@ -25,12 +25,22 @@ import { setupI18n } from "@/i18n";
 // scss 样式
 import "@/assets/css/index.scss";
 
-// Font Awesome 配置
+// Font Awesome 配置：按需具名导入实际用到的图标（仅 8 个），
+// 避免 `import { fas } from "..."` 全量引入 2000+ 图标导致产物体积暴涨
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { fas } from "@fortawesome/free-solid-svg-icons";
+import {
+  faItalic,
+  faBold,
+  faFont,
+  faHeading,
+  faParagraph,
+  faAlignLeft,
+  faAlignCenter,
+  faGlobe
+} from "@fortawesome/free-solid-svg-icons";
 
-library.add(fas);
+library.add(faItalic, faBold, faFont, faHeading, faParagraph, faAlignLeft, faAlignCenter, faGlobe);
 
 // qiankun 环境下的当前 Vue 应用实例（支持重复挂载/卸载）
 let instance: ReturnType<typeof createApp> | null = null;
