@@ -13,6 +13,14 @@ import type { FileType } from "../survey/survey-file.interface.js";
 
 export type { ReviewStatus, FileType };
 
+/** 物料文件类型中文标签映射（供管理端筛选器使用） */
+export const MEDIA_ASSET_FILE_TYPE_LABELS: Record<FileType, string> = {
+  survey_option_image: "问卷图片",
+  survey_signature: "签名图片",
+  survey_cover: "问卷封面",
+  user_avatar: "用户头像"
+};
+
 // ============================================================
 //  1. 物料条目
 // ============================================================
@@ -63,6 +71,7 @@ export interface MediaAssetListQuery {
   user_id?: string;
   survey_id?: string;
   review_status?: ReviewStatus;
+  file_type?: FileType;
   resource_type?: string;
   keyword?: string;
 }

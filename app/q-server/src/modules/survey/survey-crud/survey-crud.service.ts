@@ -181,6 +181,16 @@ export class SurveyService {
     // 清除列表缓存
     await this.cache.delByPattern(CacheKeys.surveyListPattern(bigIntToStr(userId)));
 
+    // 回填草稿阶段通过 PicItem 上传的临时物料的 survey_id
+    const { SurveyFileService } = await import("../file/file.service.js");
+    const fileService = new SurveyFileService(this.fastify);
+    fileService.backfillSurveyId(userId, survey.id).catch(err => {
+      this.fastify.log.warn(
+        { err, userId: String(userId), surveyId: String(survey.id) },
+        "[survey-crud] 回填 survey_id 失败"
+      );
+    });
+
     return {
       survey_id: bigIntToStr(survey.id),
       title: survey.title,

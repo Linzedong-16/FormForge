@@ -46,6 +46,15 @@ describe("mediaAssetListQuerySchema", () => {
   it("user_id 非数字字符串 — 校验失败", () => {
     expect(mediaAssetListQuerySchema.safeParse({ user_id: "abc" }).success).toBe(false);
   });
+
+  it("file_type=user_avatar — 通过", () => {
+    const result = mediaAssetListQuerySchema.safeParse({ file_type: "user_avatar" });
+    expect(result.success).toBe(true);
+  });
+
+  it("file_type=invalid_value — 校验失败", () => {
+    expect(mediaAssetListQuerySchema.safeParse({ file_type: "none" }).success).toBe(false);
+  });
 });
 
 describe("updateMediaAssetSchema", () => {

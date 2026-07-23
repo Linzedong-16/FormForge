@@ -521,6 +521,7 @@
   - page_size：每页条数，默认 20，最大 100
   - user_id / survey_id：按所属用户/问卷筛选
   - review_status：`pending` \| `approved` \| `rejected`
+  - file_type：`survey_option_image` \| `survey_signature` \| `survey_cover` \| `user_avatar`（单选，按文件来源类型筛选）
   - resource_type：按资源类型筛选（当前仅 `image`）
   - keyword：按文件名模糊搜索
 - **响应示例**：
@@ -571,7 +572,10 @@
 
 - **请求方法**：DELETE
 - **请求路径**：/admin/media-assets/:id
-- **说明**：若物料仍被已发布/草稿问卷的题目配置或某用户当前头像引用，删除会被阻止——**HTTP 状态仍为 200**（前端全局响应拦截器只在 2xx 状态下保留完整响应体），真正的失败信号是非零 `code`（`BizCode.MEDIA_ASSET_REFERENCED`），响应 `data.references` 给出具体引用来源，调用方须按 `code === 0` 而非 HTTP 状态判断是否成功。
+- **说明**：
+  - **问卷引用**（`type: survey_component`）：删除被阻止，HTTP 200 + 非零 code（`MEDIA_ASSET_REFERENCED`），`data.references` 给出引用来源。
+  - **头像引用**（`type: user_avatar`，且无问卷引用）：**强制删除**，系统自动将关联 `UserProfile.avatar_url` 置 `null`，前端应据此刷新头像展示为兜底组件。响应 `data.force_deleted=true` + `data.affected_user_ids` 告知受影响用户。
+  - **混合引用**（同时存在问卷和头像引用）：以问卷引用优先，阻止删除。
 
 ### 6.5 批量删除物料
 

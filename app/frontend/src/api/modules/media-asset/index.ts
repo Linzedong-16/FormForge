@@ -13,9 +13,14 @@
  * 所有接口需认证 + super_admin 权限，使用 serverClient
  */
 import serverClient from "../../clients/server";
-import type { ReviewStatus, FileType } from "@common/media-asset/media-asset.interface";
+import {
+  MEDIA_ASSET_FILE_TYPE_LABELS,
+  type ReviewStatus,
+  type FileType
+} from "@common/media-asset/media-asset.interface";
 
 export type { ReviewStatus, FileType };
+export { MEDIA_ASSET_FILE_TYPE_LABELS };
 
 // ══════════════════════════════════════════════════════════════
 //  类型
@@ -84,6 +89,7 @@ export interface MediaAssetListQuery {
   user_id?: string;
   survey_id?: string;
   review_status?: ReviewStatus;
+  file_type?: FileType;
   resource_type?: string;
   keyword?: string;
 }

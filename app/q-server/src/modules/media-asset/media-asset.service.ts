@@ -108,6 +108,18 @@ function toMediaAssetItem(row: {
 
 // ─── MediaAssetService 类 ──────────────────────────────────────
 
+/** 物料删除操作结果 */
+export interface MediaAssetDeleteResult {
+  /** 是否被引用阻止 */
+  blocked: boolean;
+  /** 引用来源列表（被阻止时返回，告知调用方具体引用） */
+  references: MediaAssetReference[];
+  /** 是否执行了强制删除（头像物料在用户使用中时） */
+  forceDeleted: boolean;
+  /** 强制删除时受影响的用户 ID 列表 */
+  affectedUserIds: string[];
+}
+
 export class MediaAssetService {
   constructor(private readonly fastify: FastifyInstance) {}
 
@@ -168,6 +180,7 @@ export class MediaAssetService {
     if (query.user_id) where.user_id = BigInt(query.user_id);
     if (query.survey_id) where.survey_id = BigInt(query.survey_id);
     if (query.review_status) where.review_status = query.review_status;
+    if (query.file_type) where.file_type = query.file_type;
     if (query.resource_type) where.resource_type = query.resource_type;
     if (query.keyword) where.file_name = { contains: query.keyword, mode: "insensitive" };
 
@@ -263,38 +276,79 @@ export class MediaAssetService {
   }
 
   // ============================================================
-  //  删除（User Story 2，存在有效引用时阻止）
+  //  删除（User Story 2，存在有效引用时阻止；头像引用时强制删除）
   // ============================================================
 
   /**
    * 删除单条物料。
-   * @returns 成功时返回 null；因存在有效引用被阻止时返回引用列表（供路由层转换为 409 响应）
+   *
+   * 引用检测结果处理策略：
+   *   - 含 survey_component 引用 → 阻止删除，返回引用列表
+   *   - 仅含 user_avatar 引用 → 强制删除：MinIO + DB + UserProfile.avatar_url = null
+   *   - 无引用 → 正常删除
    */
-  async deleteMediaAsset(id: bigint, operatorId: bigint): Promise<MediaAssetReference[] | null> {
+  async deleteMediaAsset(id: bigint, operatorId: bigint): Promise<MediaAssetDeleteResult> {
     const record = await this.fastify.prisma.mediaAsset.findUnique({ where: { id } });
     if (!record) {
       throw new AppError("物料不存在", 404, BizCode.FILE_NOT_FOUND);
     }
 
     const references = await this.detectReferences(record.file_url);
-    if (references.length > 0) {
-      return references;
+
+    // 是否存在问卷题目引用（阻止删除的原由）
+    const hasSurveyRef = references.some(r => r.type === "survey_component");
+    // 是否存在头像引用
+    const avatarRefs = references.filter(r => r.type === "user_avatar");
+
+    if (hasSurveyRef) {
+      // 含问卷引用 → 无论如何都阻止删除
+      return { blocked: true, references, forceDeleted: false, affectedUserIds: [] };
     }
 
+    // 尝试删除 MinIO 文件（best-effort）
     try {
       await deleteFromMinio(this.fastify, record.file_key);
     } catch (err) {
       this.fastify.log.warn({ err, fileKey: record.file_key }, "[media-asset] MinIO 文件删除失败，继续删除数据库记录");
     }
 
+    // 删除数据库记录
     await this.fastify.prisma.mediaAsset.delete({ where: { id } });
+
+    // 如果有头像引用 → 将关联用户的 avatar_url 置 null
+    const affectedUserIds: string[] = [];
+    if (avatarRefs.length > 0) {
+      for (const ref of avatarRefs) {
+        if (ref.user_id) {
+          try {
+            await this.fastify.prisma.userProfile.update({
+              where: { user_id: BigInt(ref.user_id) },
+              data: { avatar_url: null }
+            });
+            affectedUserIds.push(ref.user_id);
+          } catch (err) {
+            this.fastify.log.error(
+              { err, userId: ref.user_id },
+              "[media-asset] 强制删除头像时更新 UserProfile.avatar_url 失败"
+            );
+          }
+        }
+      }
+    }
 
     createAuditLog(this.fastify, operatorId, "media_asset.delete", "MediaAsset", id, {
       file_key: record.file_key,
-      file_url: record.file_url
+      file_url: record.file_url,
+      force_deleted: avatarRefs.length > 0,
+      affected_user_ids: affectedUserIds
     }).catch(() => {});
 
-    return null;
+    return {
+      blocked: false,
+      references: avatarRefs,
+      forceDeleted: avatarRefs.length > 0,
+      affectedUserIds
+    };
   }
 
   // ============================================================
@@ -307,11 +361,13 @@ export class MediaAssetService {
 
     for (const id of ids) {
       try {
-        const references = await this.deleteMediaAsset(id, operatorId);
-        if (references === null) {
-          succeeded.push(bigIntToStr(id));
+        const result = await this.deleteMediaAsset(id, operatorId);
+        if (result.blocked) {
+          // 存在问卷引用阻止删除
+          failed.push({ id: bigIntToStr(id), reason: "referenced", references: result.references });
         } else {
-          failed.push({ id: bigIntToStr(id), reason: "referenced", references });
+          // 正常删除或头像强制删除均视为成功
+          succeeded.push(bigIntToStr(id));
         }
       } catch (err) {
         if (err instanceof AppError && err.code === BizCode.FILE_NOT_FOUND) {

@@ -122,11 +122,11 @@ export class AvatarService {
     // 8. 更新数据库中的头像 URL
     await this.profileService.updateAvatarUrl(userId, originalUrl);
 
-    // 8.5. 登记为物料（MediaAsset），纳入物料管理模块的统一管理范围
-    //      （此前头像上传从未写入任何文件登记表，是物料管理功能落地前的既有缺口，
-    //      本次起头像上传也统一登记，历史头像不做回溯回填，见 research.md 决策 3）
-    this.fastify.prisma.mediaAsset
-      .create({
+    // 8.5 登记为物料（MediaAsset），纳入物料管理模块的统一管理范围
+    //      改为 await 同步等待，确保登记完成后再返回响应；
+    //      失败时记录 warn 日志但不抛异常——头像功能价值高于物料登记。
+    try {
+      await this.fastify.prisma.mediaAsset.create({
         data: {
           survey_id: null,
           user_id: userId,
@@ -139,10 +139,13 @@ export class AvatarService {
           file_type: "user_avatar",
           review_status: "pending"
         }
-      })
-      .catch(err => {
-        this.fastify.log.warn({ err }, "[avatar] 物料登记失败，不影响头像上传本身");
       });
+    } catch (err) {
+      this.fastify.log.warn(
+        { err, userId: String(userId), fileUrl: originalUrl },
+        "[avatar] 物料登记失败，不影响头像上传本身"
+      );
+    }
 
     // 9. 异步删除旧头像文件（不阻塞响应）
     this.cleanupOldAvatar(oldAvatarUrl).catch(err => {

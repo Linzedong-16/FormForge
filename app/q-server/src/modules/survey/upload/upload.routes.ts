@@ -12,7 +12,7 @@ import { createAuditLog } from "../../../utils/audit-log.js";
 import { AppError } from "../../../utils/errors.js";
 import { BizCode } from "../../../utils/response.js";
 import { SurveyFileService } from "../file/file.service.js";
-import { surveyIdSchema } from "../file/file.schemas.js";
+import { surveyIdSchema, optionalSurveyIdSchema } from "../file/file.schemas.js";
 import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE, MAX_SIGNATURE_SIZE } from "@common/survey/survey-file.interface.js";
 
 /** multipart 字段值：Fastify 将 form-data 字段包装为 { value: T } */
@@ -85,13 +85,9 @@ const uploadRoutes: FastifyPluginAsync = async fastify => {
         throw new AppError("请选择要上传的文件", 400);
       }
 
-      // 获取 survey_id（multipart 字段）
+      // 获取 survey_id（multipart 字段，可选 — 支持草稿阶段未保存问卷的上传）
       const surveyIdRaw = (data.fields?.survey_id as MultipartFieldValue | undefined)?.value;
-      if (!surveyIdRaw) {
-        throw new AppError("缺少问卷 ID 参数", 400);
-      }
-
-      const surveyResult = surveyIdSchema.safeParse(surveyIdRaw);
+      const surveyResult = optionalSurveyIdSchema.safeParse(surveyIdRaw);
       if (!surveyResult.success) {
         throw new AppError("问卷 ID 格式错误", 400);
       }
@@ -113,7 +109,7 @@ const uploadRoutes: FastifyPluginAsync = async fastify => {
       const fileTypeRaw = (data.fields?.file_type as MultipartFieldValue | undefined)?.value;
       const result = await fileService.upload(
         request.user!.userId,
-        surveyResult.data,
+        surveyResult.data ?? null,
         buffer,
         data.mimetype,
         data.filename,

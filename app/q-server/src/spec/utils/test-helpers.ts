@@ -43,7 +43,7 @@ interface PrismaMock {
     delete: MockFn;
     count: MockFn;
   };
-  userProfile: { findFirst: MockFn; findUnique: MockFn };
+  userProfile: { findFirst: MockFn; findUnique: MockFn; update: MockFn; upsert: MockFn };
   $transaction: MockFn;
 }
 
@@ -186,6 +186,8 @@ export function createPrismaMock(): PrismaMock {
     userProfile: {
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+      update: vi.fn(),
+      upsert: vi.fn(),
     },
     $transaction,
   };

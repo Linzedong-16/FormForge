@@ -24,6 +24,7 @@ export const mediaAssetListQuerySchema = z.object({
   user_id: z.string().regex(/^\d+$/, "user_id 必须为数字").optional(),
   survey_id: z.string().regex(/^\d+$/, "survey_id 必须为数字").optional(),
   review_status: z.enum(["pending", "approved", "rejected"]).optional(),
+  file_type: z.enum(["survey_option_image", "survey_signature", "survey_cover", "user_avatar"]).optional(),
   resource_type: z.string().optional(),
   keyword: z.string().max(255).optional()
 });

@@ -118,7 +118,7 @@ const mediaAssetRoutes: FastifyPluginAsync = async fastify => {
   );
 
   // ════════════════════════════════════════════════════════════
-  // DELETE /media-assets/:id — 删除（存在有效引用时阻止）
+  // DELETE /media-assets/:id — 删除（含头像强制删除）
   // ════════════════════════════════════════════════════════════
   fastify.delete(
     "/media-assets/:id",
@@ -128,19 +128,28 @@ const mediaAssetRoutes: FastifyPluginAsync = async fastify => {
       const assetId = parseMediaAssetId(id, reply);
       if (assetId === null) return;
 
-      const references = await mediaAssetService.deleteMediaAsset(assetId, request.user!.userId);
-      if (references !== null) {
-        // 前端全局响应拦截器只在 2xx 状态下保留完整的 {code,msg,data} 信封，
-        // 非 2xx 会被统一转换为丢失 data 的通用 Error——本场景需要把 references
-        // 传给前端渲染引用来源，因此故意用 200 + 非零 code 承载这个"业务软失败"，
-        // 而不是 HTTP 409，调用方按 code 而非 HTTP 状态判断是否真正成功
+      const result = await mediaAssetService.deleteMediaAsset(assetId, request.user!.userId);
+      if (result.blocked) {
+        // 存在问卷引用阻止删除 → 200 + 非零 code 传递引用详情给前端
         return reply.status(200).send({
-          data: { references },
+          data: { references: result.references },
           code: BizCode.MEDIA_ASSET_REFERENCED,
           msg: "该物料仍被引用，请先解除引用后再删除"
         });
       }
-      return reply.sendSuccess(null, "删除成功");
+      if (result.forceDeleted) {
+        // 头像强制删除 → 通知前端哪些用户需要刷新头像
+        return reply.sendSuccess(
+          {
+            deleted: true,
+            force_deleted: true,
+            affected_user_ids: result.affectedUserIds,
+            references: result.references
+          },
+          "头像物料已删除，相关用户头像已重置"
+        );
+      }
+      return reply.sendSuccess({ deleted: true }, "删除成功");
     }
   );
 

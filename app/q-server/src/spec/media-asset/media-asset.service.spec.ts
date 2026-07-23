@@ -227,11 +227,11 @@ describe("MediaAssetService", () => {
   });
 
   // ============================================================
-  //  deleteMediaAsset（User Story 2 — 存在有效引用时阻止）
+  //  deleteMediaAsset（User Story 2 — 引用阻止 / 头像强制删除）
   // ============================================================
 
   describe("deleteMediaAsset", () => {
-    it("存在有效引用时返回引用列表，不执行删除", async () => {
+    it("存在问卷引用时返回 blocked=true，不执行删除", async () => {
       fastify.prisma.mediaAsset.findUnique.mockResolvedValue(MOCK_MEDIA_ASSET);
       fastify.prisma.survey.findMany.mockResolvedValue([
         {
@@ -241,9 +241,11 @@ describe("MediaAssetService", () => {
       ]);
       fastify.prisma.userProfile.findFirst.mockResolvedValue(null);
 
-      const references = await service.deleteMediaAsset(ASSET_ID, OPERATOR_ID);
+      const result = await service.deleteMediaAsset(ASSET_ID, OPERATOR_ID);
 
-      expect(references).toHaveLength(1);
+      expect(result.blocked).toBe(true);
+      expect(result.references).toHaveLength(1);
+      expect(result.forceDeleted).toBe(false);
       expect(fastify.prisma.mediaAsset.delete).not.toHaveBeenCalled();
     });
 
@@ -254,9 +256,11 @@ describe("MediaAssetService", () => {
       fastify.prisma.mediaAsset.delete.mockResolvedValue(MOCK_MEDIA_ASSET);
       fastify.prisma.auditLog.create.mockResolvedValue({});
 
-      const references = await service.deleteMediaAsset(ASSET_ID, OPERATOR_ID);
+      const result = await service.deleteMediaAsset(ASSET_ID, OPERATOR_ID);
 
-      expect(references).toBeNull();
+      expect(result.blocked).toBe(false);
+      expect(result.forceDeleted).toBe(false);
+      expect(result.affectedUserIds).toEqual([]);
       expect(fastify.prisma.mediaAsset.delete).toHaveBeenCalledWith({ where: { id: ASSET_ID } });
     });
 
@@ -266,6 +270,46 @@ describe("MediaAssetService", () => {
       await expect(service.deleteMediaAsset(ASSET_ID, OPERATOR_ID)).rejects.toMatchObject({
         statusCode: 404,
       });
+    });
+
+    it("仅含头像引用时强制删除 — 更新 UserProfile.avatar_url 为 null", async () => {
+      const USER_ID = "42";
+      fastify.prisma.mediaAsset.findUnique.mockResolvedValue(MOCK_MEDIA_ASSET);
+      fastify.prisma.survey.findMany.mockResolvedValue([]);
+      fastify.prisma.userProfile.findFirst.mockResolvedValue({ user_id: BigInt(USER_ID) });
+      fastify.prisma.userProfile.update.mockResolvedValue({});
+      fastify.prisma.mediaAsset.delete.mockResolvedValue(MOCK_MEDIA_ASSET);
+      fastify.prisma.auditLog.create.mockResolvedValue({});
+
+      const result = await service.deleteMediaAsset(ASSET_ID, OPERATOR_ID);
+
+      expect(result.blocked).toBe(false);
+      expect(result.forceDeleted).toBe(true);
+      expect(result.affectedUserIds).toEqual([USER_ID]);
+      expect(fastify.prisma.mediaAsset.delete).toHaveBeenCalled();
+      expect(fastify.prisma.userProfile.update).toHaveBeenCalledWith({
+        where: { user_id: BigInt(USER_ID) },
+        data: { avatar_url: null },
+      });
+    });
+
+    it("混合引用（问卷 + 头像）时仍阻止删除", async () => {
+      fastify.prisma.mediaAsset.findUnique.mockResolvedValue(MOCK_MEDIA_ASSET);
+      fastify.prisma.survey.findMany.mockResolvedValue([
+        {
+          ...MOCK_SURVEY,
+          components: [{ ...MOCK_COMPONENT, config: { pic: { url: MOCK_MEDIA_ASSET.file_url } } }],
+        },
+      ]);
+      fastify.prisma.userProfile.findFirst.mockResolvedValue({ user_id: BigInt(42) });
+
+      const result = await service.deleteMediaAsset(ASSET_ID, OPERATOR_ID);
+
+      // 含问卷引用时优先保护问卷完整性，阻止删除
+      expect(result.blocked).toBe(true);
+      expect(result.references.some(r => r.type === "survey_component")).toBe(true);
+      expect(fastify.prisma.mediaAsset.delete).not.toHaveBeenCalled();
+      expect(fastify.prisma.userProfile.update).not.toHaveBeenCalled();
     });
   });
 
@@ -289,13 +333,16 @@ describe("MediaAssetService", () => {
         return Promise.resolve([]);
       });
       fastify.prisma.userProfile.findFirst.mockResolvedValue(null);
+      fastify.prisma.userProfile.update.mockResolvedValue({});
       fastify.prisma.mediaAsset.delete.mockResolvedValue({});
       fastify.prisma.auditLog.create.mockResolvedValue({});
 
-      // 直接 spy detectReferences，避免在批量场景里重复搭建复杂的 JSON 扫描 mock
+      // 直接 spy detectReferences：ID_OK 无引用；ID_REFERENCED 问卷引用（阻止删除）
       const spy = vi.spyOn(service, "detectReferences").mockImplementation(async () => []);
       spy.mockImplementationOnce(async () => []); // ID_OK：无引用
-      spy.mockImplementationOnce(async () => [{ type: "user_avatar", user_id: "9" }]); // ID_REFERENCED：有引用
+      spy.mockImplementationOnce(async () => [
+        { type: "survey_component", survey_id: "100", survey_title: "测试", component_id: "200" },
+      ]); // ID_REFERENCED：问卷引用，应被阻止
 
       const result = await service.batchDeleteMediaAssets([ID_OK, ID_REFERENCED, ID_MISSING], OPERATOR_ID);
 

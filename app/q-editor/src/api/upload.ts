@@ -58,12 +58,15 @@ export async function uploadImage(file: File): Promise<ApiResponse<ImageUploadRe
  */
 export async function uploadSurveyFile(
   file: File,
-  surveyId: string,
+  surveyId?: string,
   fileType?: string
 ): Promise<ApiResponse<SurveyFileUploadResponse>> {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("survey_id", surveyId);
+  // survey_id 可选 — 支持草稿阶段未保存问卷的上传
+  if (surveyId) {
+    formData.append("survey_id", surveyId);
+  }
   if (fileType) {
     formData.append("file_type", fileType);
   }

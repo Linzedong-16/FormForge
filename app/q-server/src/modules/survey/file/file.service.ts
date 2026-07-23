@@ -67,7 +67,7 @@ export class SurveyFileService {
    */
   async upload(
     userId: bigint,
-    surveyId: bigint,
+    surveyId: bigint | null,
     file: Buffer,
     mimeType: string,
     fileName: string,
@@ -92,13 +92,15 @@ export class SurveyFileService {
       throw new AppError(`文件大小不能超过 ${MAX_FILE_SIZE / 1024 / 1024}MB`, 400, BizCode.FILE_TOO_LARGE);
     }
 
-    // 4. 校验问卷存在且属于当前用户
-    const survey = await this.fastify.prisma.survey.findFirst({
-      where: { id: surveyId, user_id: userId, deleted_at: null },
-      select: { id: true }
-    });
-    if (!survey) {
-      throw new AppError("问卷不存在", 404);
+    // 4. 校验问卷存在且属于当前用户（surveyId 可选 — 草稿阶段可以为 null）
+    if (surveyId !== null) {
+      const survey = await this.fastify.prisma.survey.findFirst({
+        where: { id: surveyId, user_id: userId, deleted_at: null },
+        select: { id: true }
+      });
+      if (!survey) {
+        throw new AppError("问卷不存在", 404);
+      }
     }
 
     // 5. 上传到 MinIO
@@ -323,6 +325,38 @@ export class SurveyFileService {
       file_url: record.file_url,
       survey_id: record.survey_id ? bigIntToStr(record.survey_id) : null
     }).catch(() => {});
+  }
+
+  // ============================================================
+  //  survey_id 回填（User Story 3）
+  // ============================================================
+
+  /**
+   * 问卷保存后回填草稿阶段上传的临时物料的 survey_id。
+   *
+   * 将用户 U 在问卷保存前通过 PicItem 上传但 survey_id 为 null 的
+   * survey_option_image 类型记录关联到新创建的问卷 ID。
+   *
+   * @param userId   上传者 ID
+   * @param surveyId 问卷保存后获得的远程 ID
+   * @returns 回填的记录数
+   */
+  async backfillSurveyId(userId: bigint, surveyId: bigint): Promise<number> {
+    const result = await this.fastify.prisma.mediaAsset.updateMany({
+      where: {
+        user_id: userId,
+        file_type: "survey_option_image",
+        survey_id: null
+      },
+      data: { survey_id: surveyId }
+    });
+    if (result.count > 0) {
+      this.fastify.log.info(
+        { userId: String(userId), surveyId: String(surveyId), count: result.count },
+        "[SurveyFileService] survey_id 回填完成"
+      );
+    }
+    return result.count;
   }
 
   // ============================================================

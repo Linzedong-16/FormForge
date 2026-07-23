@@ -40,6 +40,17 @@
           <a-option value="approved">已通过</a-option>
           <a-option value="rejected">已驳回</a-option>
         </a-select>
+        <a-select
+          v-model="filters.file_type"
+          placeholder="按文件类型筛选"
+          style="width: 150px"
+          allow-clear
+          @change="handleFilterChange"
+        >
+          <a-option v-for="(label, value) in MEDIA_ASSET_FILE_TYPE_LABELS" :key="value" :value="value">{{
+            label
+          }}</a-option>
+        </a-select>
         <a-button v-if="selectedIds.length > 0" status="danger" @click="handleBatchDelete">
           批量删除（{{ selectedIds.length }}）
         </a-button>
@@ -120,8 +131,10 @@ import {
   batchDeleteMediaAssets,
   MEDIA_ASSET_REVIEW_STATUS_LABELS,
   MEDIA_ASSET_REVIEW_STATUS_COLORS,
+  MEDIA_ASSET_FILE_TYPE_LABELS,
   type MediaAssetItem,
-  type MediaAssetReference
+  type MediaAssetReference,
+  type FileType
 } from "@/api/modules/media-asset";
 import MediaAssetEditDrawer from "./components/MediaAssetEditDrawer.vue";
 import MediaAssetUploadDialog from "./components/MediaAssetUploadDialog.vue";
@@ -137,7 +150,8 @@ const filters = reactive({
   keyword: "",
   user_id: "",
   survey_id: "",
-  review_status: undefined as string | undefined
+  review_status: undefined as string | undefined,
+  file_type: undefined as FileType | undefined
 });
 
 // ─── 分页 ──────────────────────────────────────────────────────
@@ -178,7 +192,8 @@ async function fetchMediaAssets() {
       keyword: filters.keyword || undefined,
       user_id: filters.user_id || undefined,
       survey_id: filters.survey_id || undefined,
-      review_status: filters.review_status as MediaAssetItem["review_status"] | undefined
+      review_status: filters.review_status as MediaAssetItem["review_status"] | undefined,
+      file_type: filters.file_type
     });
     if (res.data) {
       mediaAssetList.value = res.data.list;
