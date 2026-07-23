@@ -158,6 +158,8 @@ export default defineConfig(({ command, mode }) => {
       cssMinify: true, // CSS压缩
       rollupOptions: {
         output: {
+          // 压缩 Rollup 自身生成的包装/桥接代码（不影响业务代码的 terser 压缩）
+          compact: true,
           manualChunks: {
             // Vue核心
             "vue-vendor": ["vue", "vue-router", "pinia"],
@@ -167,6 +169,16 @@ export default defineConfig(({ command, mode }) => {
             draggable: ["vuedraggable"],
             // 图标库
             icons: ["@element-plus/icons-vue", "@fortawesome/fontawesome-svg-core"]
+          },
+          // 产物按类型分目录，便于 Nginx/CDN 针对不同资源类型设置差异化缓存策略
+          entryFileNames: "assets/js/[name]-[hash].js",
+          chunkFileNames: "assets/js/[name]-[hash].js",
+          assetFileNames: assetInfo => {
+            const fileName = assetInfo.names[0];
+            if (fileName?.endsWith(".css")) {
+              return "assets/css/[name]-[hash][extname]";
+            }
+            return `assets/${fileName?.split(".").pop()}/[name]-[hash][extname]`;
           }
         }
       },
