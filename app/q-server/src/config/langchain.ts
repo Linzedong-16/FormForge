@@ -89,8 +89,9 @@ export const createDeepSeekChat = async (fastify: FastifyInstance, options?: Cha
     throw new Error("AI 生成功能已被管理员关闭");
   }
 
-  return new ChatOpenAI({
-    model: options?.model ?? aiConfigCache.model,
+  const resolvedModel = options?.model ?? aiConfigCache.model;
+  const chatModel = new ChatOpenAI({
+    model: resolvedModel,
     temperature: options?.temperature ?? 0.7,
     maxTokens: options?.maxTokens ?? 4096,
     apiKey: aiConfigCache.apiKey,
@@ -98,4 +99,13 @@ export const createDeepSeekChat = async (fastify: FastifyInstance, options?: Cha
       baseURL: "https://api.deepseek.com/v1"
     }
   });
+
+  // deepseek-reasoner 系列模型不支持 response_format 等参数，跳过 JSON 模式绑定
+  if (resolvedModel.includes("reasoner")) {
+    return chatModel;
+  }
+
+  // 绑定 JSON 模式：由 DeepSeek 服务端保证输出是合法 JSON，
+  // 减少对"提示词约束 + 事后文本容错解析"的依赖
+  return chatModel.bind({ response_format: { type: "json_object" } });
 };

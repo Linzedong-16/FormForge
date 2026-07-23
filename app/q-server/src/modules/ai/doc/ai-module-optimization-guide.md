@@ -18,6 +18,7 @@
 - [八、优化六：精确 Token 计数](#八优化六精确-token-计数)
 - [九、优化前后对比](#九优化前后对比)
 - [十、验证清单](#十验证清单)
+- [十一、优化七：启用 DeepSeek JSON 模式（2026-07-23 追加）](#十一优化七启用-deepseek-json-模式2026-07-23-追加)
 
 ---
 
@@ -657,3 +658,59 @@ npx eslint app/q-server/src/modules/ai/ai-polish/ai-polish.service.ts
 ---
 
 > **总结**：本次优化在保持 100% 向后兼容的前提下，消除了约 70 行重复代码，新增了 55 行公共工具，修复了 1 个 Schema 未使用的问题，提升了润色输出质量和 Token 计数精度。所有变更已通过 TypeScript 编译和 ESLint 检查。
+
+---
+
+## 十一、优化七：启用 DeepSeek JSON 模式（2026-07-23 追加）
+
+### 11.1 问题描述
+
+生成/润色的可靠性此前完全依赖"提示词里约束输出格式" + `parseJSONFromRawText` 的三级文本容错解析（直接 parse → 提取 markdown 代码块 → 截取首尾大括号）。模型偶发夹带解释文字、用 ` ```json ` 代码块包裹输出、或把 JSON 整体当字符串输出时，只能靠事后修复，属于"补救"而非"从源头保证"。
+
+DeepSeek 的 Chat Completions API 兼容 OpenAI 的 JSON 模式（`response_format: { type: "json_object" }`），开启后由模型服务端保证输出是可解析的合法 JSON。
+
+### 11.2 设计决策
+
+**为什么在 `createDeepSeekChat` 里统一绑定，而不是在两个 Service 的 `.stream()` 调用处各加一次？**
+
+- `ai-generate.service.ts` 和 `ai-polish.service.ts` 都通过 `createDeepSeekChat` 拿到的模型实例调用 `.stream()`，在工厂函数里用 LangChain 的 `.bind({ response_format: ... })` 绑定一次，两个 Service 零改动，避免重复。
+
+**为什么要判断模型名里是否包含 `reasoner`？**
+
+- 后台 `ai_model` 配置是管理员可自由填写的字符串（`ai-config.schemas.ts`），一旦被设为 `deepseek-reasoner`，DeepSeek API 不支持该模型传 `response_format` 等参数。若无条件绑定，管理员切换到 reasoner 模型会导致生成请求直接失败，因此按解析出的模型名做判断，仅对非 reasoner 模型生效。
+
+**为什么不用改 Prompt？**
+
+- DeepSeek JSON 模式要求 prompt 中出现"json"关键词，`system-prompt.ts`/`polish-prompt.ts` 中已多次出现"JSON"字样，天然满足。
+
+### 11.3 代码变更
+
+**变更文件**：仅 `config/langchain.ts`
+
+```typescript
+const resolvedModel = options?.model ?? aiConfigCache.model;
+const chatModel = new ChatOpenAI({
+  model: resolvedModel,
+  temperature: options?.temperature ?? 0.7,
+  maxTokens: options?.maxTokens ?? 4096,
+  apiKey: aiConfigCache.apiKey,
+  configuration: { baseURL: "https://api.deepseek.com/v1" }
+});
+
+// deepseek-reasoner 系列模型不支持 response_format 等参数，跳过 JSON 模式绑定
+if (resolvedModel.includes("reasoner")) {
+  return chatModel;
+}
+
+// 绑定 JSON 模式：由 DeepSeek 服务端保证输出是合法 JSON
+return chatModel.bind({ response_format: { type: "json_object" } });
+```
+
+### 11.4 影响范围
+
+| 维度         | 影响                                                                     |
+| ------------ | ------------------------------------------------------------------------ |
+| **向后兼容** | 完全兼容，`ai-generate.service.ts` / `ai-polish.service.ts` 零改动       |
+| **可靠性**   | 减少对 markdown 包裹 / 字符串包裹类异常输出的依赖修复                    |
+| **兼容性**   | `deepseek-reasoner` 模型自动跳过绑定，避免参数不支持导致请求失败         |
+| **回归验证** | `tsc --noEmit` 无新增错误；vitest 全量结果与基线一致（90 失败/304 通过） |
