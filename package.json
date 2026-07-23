@@ -1,7 +1,8 @@
 {
-  "name": "monorepo-code",
+  "name": "formforge",
   "version": "1.0.0",
-  "description": "",
+  "description": "开源低代码问卷/表单构建平台 — FormForge",
+  "license": "MIT",
   "main": "index.js",
   "type": "module",
   "scripts": {
