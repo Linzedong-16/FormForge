@@ -1,5 +1,5 @@
 export default {
-  pageTitle: "Q问卷",
+  pageTitle: "FormForge",
   createSurvey: "创建问卷",
   componentMarket: "组件市场",
   columnCreateDate: "创建日期",

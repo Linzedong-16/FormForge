@@ -319,8 +319,8 @@ onUnmounted(() => {
   padding: 20px;
   // Header的高度50px，上下padding 20px
   height: calc(100vh - 50px - 40px);
-  background: url("@/assets/imgs/editor_background.jpg") no-repeat center center / cover;
-  background-color: var(--white);
+  // 同色系微对角渐变，与 Landing 水平渐变拉开差异，避免重复感
+  background: linear-gradient(160deg, #22b0c9 0%, #3a78e8 50%, #7a42d8 100%);
   position: fixed;
   top: 50px;
 }

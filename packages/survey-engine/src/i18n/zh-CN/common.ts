@@ -1,5 +1,5 @@
 export default {
-  title: "Q问卷",
+  title: "FormForge",
   create: "创建问卷",
   edit: "编辑",
   delete: "删除",

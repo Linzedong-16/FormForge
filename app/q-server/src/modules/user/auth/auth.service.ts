@@ -342,10 +342,10 @@ export class AuthService {
 
     // 5. 根据类型生成邮件主题
     const subjectMap: Record<string, string> = {
-      register: "Q问卷 - 注册验证码",
-      reset_password: "Q问卷 - 密码重置验证码",
-      bind_email: "Q问卷 - 邮箱绑定验证码",
-      change_password: "Q问卷 - 修改密码验证码"
+      register: "FormForge - 注册验证码",
+      reset_password: "FormForge - 密码重置验证码",
+      bind_email: "FormForge - 邮箱绑定验证码",
+      change_password: "FormForge - 修改密码验证码"
     };
 
     // 6. 异步发送邮件（通过 RabbitMQ 队列，不阻塞响应）
@@ -356,7 +356,7 @@ export class AuthService {
           Buffer.from(
             JSON.stringify({
               to: email,
-              subject: subjectMap[type] ?? "Q问卷 - 验证码",
+              subject: subjectMap[type] ?? "FormForge - 验证码",
               template: "verification-code",
               data: { code, expiresMinutes: 5 }
             })

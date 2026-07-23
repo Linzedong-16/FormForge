@@ -1,6 +1,6 @@
 export default {
   // Logo
-  logoName: "Q问卷",
+  logoName: "FormForge",
 
   // 导航栏
   navProduct: "产品",
@@ -43,5 +43,5 @@ export default {
   tagMarketSurvey: "市场调查",
 
   // 底部
-  techSupport: "Q问卷提供技术支持"
+  techSupport: "FormForge提供技术支持"
 };
