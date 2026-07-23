@@ -7,11 +7,26 @@ import viteCompression from "vite-plugin-compression";
 import { viteMockServe } from "vite-plugin-mock";
 import qiankun from "vite-plugin-qiankun";
 import istanbul from "vite-plugin-istanbul";
+import legacy from "@vitejs/plugin-legacy";
 
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
 import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
 import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
+
+/**
+ * 从 Rollup 模块 id 中提取真实的 npm 包名，用于 manualChunks 动态分组
+ *
+ * pnpm 的依赖结构是 node_modules/.pnpm/<pkg>@<version>/node_modules/<pkg>/...，
+ * 必须取"最后一个" node_modules 之后的路径段才是真实包名，否则会被 .pnpm 中间层污染
+ */
+function getPackageName(id: string): string | null {
+  const normalized = id.replace(/\\/g, "/");
+  const idx = normalized.lastIndexOf("/node_modules/");
+  if (idx === -1) return null;
+  const segments = normalized.slice(idx + "/node_modules/".length).split("/");
+  return segments[0].startsWith("@") ? `${segments[0]}/${segments[1]}` : segments[0];
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -30,6 +45,15 @@ export default defineConfig(({ command, mode }) => {
       //   - 同时标记 @vite/client 等内部脚本为 ignore，避免 eval 报错
       //   - standalone 模式（独立部署演示）暂不接入 qiankun，跳过该插件注册
       ...(standalone ? [] : [qiankun("q-editor", { useDevMode: command === "serve" })]),
+      // 传统浏览器兼容：仅覆盖 EdgeHTML 内核旧版 Edge（12-18），显式排除 IE11——
+      // Vue 3 响应式系统基于 ES6 Proxy 重写，Proxy 无法 polyfill，IE11 下 Vue 3 本身就无法运行，
+      // 该插件解决不了这个问题，故目标浏览器范围里必须不含 IE11
+      legacy({
+        targets: ["Edge 12-18", "not IE 11"],
+        // 仅在生产构建时生效，dev server 走原生 ESM 不受影响
+        renderLegacyChunks: true,
+        modernPolyfills: false
+      }),
       visualizer({
         filename: "./dist/stats.html", // 生成可视化报告
         open: !process.env.CI, // 自动打开浏览器（CI 环境无 GUI，跳过以避免挂起/报错）
@@ -160,15 +184,39 @@ export default defineConfig(({ command, mode }) => {
         output: {
           // 压缩 Rollup 自身生成的包装/桥接代码（不影响业务代码的 terser 压缩）
           compact: true,
-          manualChunks: {
-            // Vue核心
-            "vue-vendor": ["vue", "vue-router", "pinia"],
-            // Element Plus（最大贡献者）
-            "element-plus": ["element-plus"],
+          // 函数式动态分包：按真实包名兜底覆盖所有 node_modules 依赖，
+          // 避免像对象白名单那样，只命中列出的几个库、其余全部落入主入口 chunk
+          manualChunks(id) {
+            const pkgName = getPackageName(id);
+            // 非 node_modules 的业务代码交给 Rollup 默认策略——
+            // 路由已按需懒加载（见 router/index.ts 的 () => import(...)），
+            // 各页面/组件天然拆分为独立异步 chunk，无需手动干预
+            if (!pkgName) return undefined;
+
+            // Vue 核心生态：几乎不随业务迭代变化，适合长期缓存
+            if (["vue", "vue-router", "pinia", "pinia-plugin-persistedstate"].includes(pkgName)) {
+              return "vue-vendor";
+            }
+            // Element Plus 体积最大的单一依赖，单独成块
+            if (pkgName === "element-plus" || pkgName === "@element-plus/icons-vue") {
+              return "element-plus";
+            }
+            // Font Awesome 图标库
+            if (pkgName.startsWith("@fortawesome/")) {
+              return "icons";
+            }
             // 拖拽库
-            draggable: ["vuedraggable"],
-            // 图标库
-            icons: ["@element-plus/icons-vue", "@fortawesome/fontawesome-svg-core"]
+            if (pkgName === "vuedraggable") {
+              return "draggable";
+            }
+            // i18n 运行时
+            if (pkgName === "vue-i18n" || pkgName.startsWith("@intlify/")) {
+              return "i18n";
+            }
+
+            // 兜底：其余第三方依赖（axios/dexie/qrcode/uuid/mitt/web-vitals 等）
+            // 统一归入 vendor，避免漏网之鱼继续堆进主入口 chunk
+            return "vendor";
           },
           // 产物按类型分目录，便于 Nginx/CDN 针对不同资源类型设置差异化缓存策略
           entryFileNames: "assets/js/[name]-[hash].js",
