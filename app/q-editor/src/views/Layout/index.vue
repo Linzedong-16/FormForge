@@ -70,51 +70,70 @@
         sortable="custom"
         :formatter="formatDate"
       />
-      <el-table-column fixed="right" :label="t('layout.columnAction')" width="310" align="center">
+      <!-- 不满足条件的按钮直接不渲染（不留空位），列宽按最多同时出现的按钮数预留，避免右侧被裁切 -->
+      <el-table-column fixed="right" :label="t('layout.columnAction')" width="230" align="left" header-align="center">
         <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            size="small"
-            :icon="Refresh"
-            :loading="syncingId === scope.row.id"
-            @click="syncSurvey(scope.row)"
-            >{{ t("layout.syncSurvey") }}</el-button
-          >
-          <el-button
-            v-if="scope.row.remote_survey_id && scope.row.review_status !== 'approved'"
-            link
-            type="warning"
-            size="small"
-            :disabled="scope.row.review_status === 'pending'"
-            @click="handleSubmitForReview(scope.row)"
-            >{{ scope.row.review_status === "pending" ? t("layout.reviewing") : t("layout.submitReview") }}
-          </el-button>
-          <el-button
-            v-if="
-              scope.row.remote_survey_id && scope.row.review_status === 'approved' && scope.row.syncStatus === 'synced'
-            "
-            link
-            type="success"
-            size="small"
-            @click="handleShareTemplate(scope.row)"
-            >{{ t("layout.shareTemplate") }}</el-button
-          >
-          <!-- 生成问卷链接：仅在已同步且审核通过后可用 -->
-          <el-button
-            v-if="
-              scope.row.remote_survey_id && scope.row.review_status === 'approved' && scope.row.syncStatus === 'synced'
-            "
-            link
-            type="warning"
-            size="small"
-            @click="handleGenerateLink(scope.row)"
-            >{{ t("layout.generateLink") }}</el-button
-          >
-          <el-button link type="primary" size="small" @click="editSurvey(scope.row)">{{ t("layout.edit") }}</el-button>
-          <el-button link type="primary" size="small" @click="handleDeleteSurvey(scope.row)">{{
-            t("layout.delete")
-          }}</el-button>
+          <!-- 圆形图标按钮：hover 显示原文字含义的 tooltip，避免文字撑宽操作列 -->
+          <div class="action-icons">
+            <!-- 同步固定用蓝色强调，与下方编辑按钮的中性灰区分，且蓝色在亮暗/色弱主题下都不需要额外做对比度修正 -->
+            <el-tooltip :content="t('layout.syncSurvey')" placement="top">
+              <el-button
+                circle
+                class="btn-sync"
+                size="small"
+                :icon="Refresh"
+                :loading="syncingId === scope.row.id"
+                @click="syncSurvey(scope.row)"
+              />
+            </el-tooltip>
+            <!-- disabled 状态下原生按钮不响应 hover 事件，外面套一层 span 承接 tooltip 触发 -->
+            <el-tooltip
+              v-if="scope.row.remote_survey_id && scope.row.review_status !== 'approved'"
+              :content="scope.row.review_status === 'pending' ? t('layout.reviewing') : t('layout.submitReview')"
+              placement="top"
+            >
+              <span>
+                <el-button
+                  circle
+                  type="warning"
+                  size="small"
+                  :icon="Promotion"
+                  :disabled="scope.row.review_status === 'pending'"
+                  @click="handleSubmitForReview(scope.row)"
+                />
+              </span>
+            </el-tooltip>
+            <el-tooltip
+              v-if="
+                scope.row.remote_survey_id &&
+                scope.row.review_status === 'approved' &&
+                scope.row.syncStatus === 'synced'
+              "
+              :content="t('layout.shareTemplate')"
+              placement="top"
+            >
+              <el-button circle type="success" size="small" :icon="Share" @click="handleShareTemplate(scope.row)" />
+            </el-tooltip>
+            <!-- 生成问卷链接：仅在已同步且审核通过后可用 -->
+            <el-tooltip
+              v-if="
+                scope.row.remote_survey_id &&
+                scope.row.review_status === 'approved' &&
+                scope.row.syncStatus === 'synced'
+              "
+              :content="t('layout.generateLink')"
+              placement="top"
+            >
+              <el-button circle type="warning" size="small" :icon="Link" @click="handleGenerateLink(scope.row)" />
+            </el-tooltip>
+            <!-- 编辑为常规操作，用中性灰即可，突出的主色只留给醒目的删除/审核类操作 -->
+            <el-tooltip :content="t('layout.edit')" placement="top">
+              <el-button circle type="info" size="small" :icon="Edit" @click="editSurvey(scope.row)" />
+            </el-tooltip>
+            <el-tooltip :content="t('layout.delete')" placement="top">
+              <el-button circle type="danger" size="small" :icon="Delete" @click="handleDeleteSurvey(scope.row)" />
+            </el-tooltip>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -179,7 +198,7 @@
 import headerNav from "@/components/Common/header-nav.vue";
 import GenerateLinkDialog from "@/components/Common/GenerateLinkDialog.vue";
 
-import { Plus, Compass, ArrowLeft, Refresh } from "@element-plus/icons-vue";
+import { Plus, Compass, ArrowLeft, Refresh, Promotion, Share, Link, Edit, Delete } from "@element-plus/icons-vue";
 import { ref, watch, computed, onMounted } from "vue";
 // 路由
 import { useRouter } from "vue-router";
@@ -675,6 +694,29 @@ const syncSurvey = async (surveyInfo: SurveyDBReturnData) => {
 </script>
 
 <style scoped lang="scss">
+// 操作列圆形图标按钮容器：横向紧凑排列，不换行、不撑开表格行高
+.action-icons {
+  display: flex;
+  align-items: center;
+  // 按钮数量不同时自动均分整列宽度，间隔随之自适应，比固定 gap 更不容易出现左右挤在一起的观感
+  justify-content: space-around;
+  flex-wrap: nowrap;
+
+  // 同步按钮固定蓝色强调：不复用 primary/success/warning/danger 任一语义色，
+  // 避免和编辑（灰）、共享（绿）、提审&生成链接（橙）、删除（红）撞色；
+  // 直接覆盖 Element Plus 按钮的 CSS 变量，同一颜色在亮/暗/色弱主题下保持一致，无需额外做对比度修正
+  .btn-sync {
+    --el-button-bg-color: #3b82f6;
+    --el-button-border-color: #3b82f6;
+    --el-button-text-color: #fff;
+    --el-button-hover-bg-color: #2563eb;
+    --el-button-hover-border-color: #2563eb;
+    --el-button-hover-text-color: #fff;
+    --el-button-active-bg-color: #1d4ed8;
+    --el-button-active-border-color: #1d4ed8;
+  }
+}
+
 .table-pagination {
   display: flex;
   justify-content: flex-end;
