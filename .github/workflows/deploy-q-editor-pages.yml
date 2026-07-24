@@ -18,9 +18,9 @@ on:
     # 手动触发，支持输入 base 路径
     inputs:
       base-path:
-        description: "部署子路径（如 /q-editor/）"
+        description: "部署子路径（GitHub Pages 项目页面固定为 /仓库名/，当前仓库为 /FormForge/）"
         required: false
-        default: "/q-editor/"
+        default: "/FormForge/"
 
 # 设置 GITHUB_TOKEN 权限以部署到 GitHub Pages
 permissions:
@@ -66,8 +66,8 @@ jobs:
       - name: 构建 q-editor（Standalone 模式）
         run: pnpm --filter q-editor build:standalone
         env:
-          # 支持通过 workflow_dispatch 自定义 base 路径
-          VITE_BASE: ${{ github.event.inputs.base-path || '/q-editor/' }}
+          # push 触发时无 workflow_dispatch 输入，默认使用当前仓库名对应的 GitHub Pages 项目页面路径
+          VITE_BASE: ${{ github.event.inputs.base-path || '/FormForge/' }}
 
       - name: SPA 路由回退（GitHub Pages 无服务端 rewrite，需 404.html 兜底）
         # vue-router 使用 createWebHistory，直接访问/刷新子路径（如 /home）会命中
