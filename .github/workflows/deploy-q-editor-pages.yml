@@ -57,6 +57,12 @@ jobs:
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
+      - name: 构建 tracking-sdk
+        # monorepo-tracking-sdk 的 package.json 通过 dist/index.js 暴露产物（区别于
+        # components/sse-client 直接指向 src/*.ts），CI 环境不像本地那样已有历史构建
+        # 产物，需在此显式执行 tsc 构建，否则 q-editor 构建阶段 Rollup 解析该依赖会失败
+        run: pnpm --filter monorepo-tracking-sdk build
+
       - name: 构建 q-editor（Standalone 模式）
         run: pnpm --filter q-editor build:standalone
         env:
