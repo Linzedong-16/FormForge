@@ -1,5 +1,11 @@
 <template>
   <div class="login-form">
+    <!-- Standalone 演示模式提示 Banner -->
+    <div v-if="isStandalone" class="demo-banner">
+      <span class="demo-icon">🎯</span>
+      <span>演示模式 — 凭据已预填，点击下方按钮一键登录</span>
+    </div>
+
     <h2 class="form-title" style="text-align: center">{{ t("login.loginTitle") }}</h2>
 
     <!--
@@ -43,9 +49,28 @@
       </el-form-item>
 
       <el-form-item>
-        <div style="width: 100%; display: flex; justify-content: center; align-items: center">
+        <div
+          style="
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+          "
+        >
           <el-button native-type="submit" type="primary" class="submit-btn" :loading="isLoading">
             {{ t("login.loginButton") }}
+          </el-button>
+          <!-- Standalone 演示模式：一键登录按钮 -->
+          <el-button
+            v-if="isStandalone"
+            type="success"
+            class="submit-btn demo-login-btn"
+            :loading="isLoading"
+            @click="quickDemoLogin"
+          >
+            🚀 一键演示登录
           </el-button>
         </div>
       </el-form-item>
@@ -108,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Message, Lock } from "@element-plus/icons-vue";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
@@ -140,6 +165,24 @@ const loginRules: FormRules = {
     { type: "email", message: t("login.emailInvalid"), trigger: "blur" }
   ],
   password: [{ required: true, message: t("login.passwordRequired"), trigger: "blur" }]
+};
+
+// ─── Standalone 演示模式：自动预填管理员凭据 ──────────────────
+
+const isStandalone = import.meta.env.MODE === "standalone";
+
+onMounted(() => {
+  if (isStandalone) {
+    loginForm.email = "admin@example.com";
+    loginForm.password = "Admin@123";
+  }
+});
+
+/** 一键演示登录 — 直接填充凭据并提交 */
+const quickDemoLogin = () => {
+  loginForm.email = "admin@example.com";
+  loginForm.password = "Admin@123";
+  handleLogin();
 };
 
 /** 登录业务错误码 → 用户提示 */
@@ -277,6 +320,36 @@ const handleResetPassword = async () => {
 .login-form {
   display: flex;
   flex-direction: column;
+}
+
+// ─── 演示模式 Banner ──────────────────────────────────
+.demo-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.5;
+
+  .demo-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+}
+
+// ─── 一键演示登录按钮 ────────────────────────────────
+.demo-login-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border-color: #059669 !important;
+
+  &:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  }
 }
 
 .switch-link {

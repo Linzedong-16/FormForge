@@ -20,3 +20,14 @@ uuidv
 autoresize
 arcoblue
 unban
+intlify
+treemap
+monocart
+birpc
+hookable
+vueuse
+vuedraggable
+demi
+dexie
+qrcode
+VITE

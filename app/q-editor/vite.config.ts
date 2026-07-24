@@ -1,5 +1,6 @@
 import { fileURLToPath, URL } from "node:url";
-import { visualizer } from "rollup-plugin-visualizer";
+// 打包体积分析插件：默认注释掉，避免每次构建都自动打开 stats.html 分析页面
+// import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import vueJsx from "@vitejs/plugin-vue-jsx";
@@ -36,6 +37,9 @@ export default defineConfig(({ command, mode }) => {
   const standalone = mode === "standalone";
 
   return {
+    // 独立部署模式：设置 base 为 GitHub Pages 子路径
+    // 支持通过 VITE_BASE 环境变量覆盖（workflow_dispatch 手动触发时可自定义子路径），未设置时使用默认值
+    base: process.env.VITE_BASE ?? (standalone ? "/q-editor/" : "/"),
     plugins: [
       vue(),
       vueJsx(),
@@ -54,14 +58,16 @@ export default defineConfig(({ command, mode }) => {
         renderLegacyChunks: true,
         modernPolyfills: false
       }),
-      visualizer({
-        filename: "./dist/stats.html", // 生成可视化报告
-        open: !process.env.CI, // 自动打开浏览器（CI 环境无 GUI，跳过以避免挂起/报错）
-        gzipSize: true, // 显示gzip后的体积
-        brotliSize: true, // 显示brotli压缩后的体积
-        template: "treemap", // 使用树图模板（更适合分析大文件）
-        projectRoot: process.cwd()
-      }),
+      // 打包体积分析：默认注释掉，避免每次构建自动打开 stats.html 分析页面；
+      // 需要分析体积时手动取消注释并同时打开上方 import
+      // visualizer({
+      //   filename: "./dist/stats.html", // 生成可视化报告
+      //   open: !process.env.CI, // 自动打开浏览器（CI 环境无 GUI，跳过以避免挂起/报错）
+      //   gzipSize: true, // 显示gzip后的体积
+      //   brotliSize: true, // 显示brotli压缩后的体积
+      //   template: "treemap", // 使用树图模板（更适合分析大文件）
+      //   projectRoot: process.cwd()
+      // }),
       // 自动导入Element Plus组件
       Components({
         resolvers: [ElementPlusResolver()]
@@ -91,7 +97,8 @@ export default defineConfig(({ command, mode }) => {
         verbose: true
       }),
 
-      // Mock 插件 — 开发/构建时均可使用，由 VITE_MOCK 环境变量控制
+      // Mock 插件 — 仅在 dev + mock 模式下启用
+      // standalone 模式使用独立的客户端 axios 适配器 Mock，不需要此插件
       viteMockServe({
         mockPath: "./src/mock",
         enable: command === "serve" && mockEnabled,
@@ -186,37 +193,64 @@ export default defineConfig(({ command, mode }) => {
           compact: true,
           // 函数式动态分包：按真实包名兜底覆盖所有 node_modules 依赖，
           // 避免像对象白名单那样，只命中列出的几个库、其余全部落入主入口 chunk
-          manualChunks(id) {
+          manualChunks(id, { getModuleInfo }) {
             const pkgName = getPackageName(id);
+            // pinia 通过 @vue/devtools-api -> @vue/devtools-kit 间接依赖 birpc/hookable/perfect-debounce，
+            // 且 vue 包装包本身依赖 @vue/runtime-dom、@vue/compiler-dom、@vue/shared 等 @vue/* 子包——
+            // 这条链路上的任何一环若落入 vendor 兜底，都会与 vendor 中直接引用 vue 的第三方包
+            // （@vueuse/*、vuedraggable、monorepo 内共享组件包等）形成 vendor <-> vue-vendor 循环 chunk
+            const isVueEcosystem = (p: string | null) =>
+              !!p &&
+              (p.startsWith("@vue/") ||
+                [
+                  "vue",
+                  "vue-router",
+                  "pinia",
+                  "pinia-plugin-persistedstate",
+                  "vue-demi",
+                  "birpc",
+                  "hookable",
+                  "perfect-debounce"
+                ].includes(p));
+            // 按包名将模块归类到具体分组，与下方分组规则保持一致；
+            // 仅接收"真实包名"，不处理 !pkgName 的虚拟模块（由调用方单独处理，避免递归）
+            const classify = (p: string | null): string | undefined => {
+              if (!p) return undefined;
+              if (isVueEcosystem(p)) return "vue-vendor";
+              if (p === "element-plus" || p === "@element-plus/icons-vue") return "element-plus";
+              if (p.startsWith("@fortawesome/")) return "icons";
+              if (p === "vue-i18n" || p.startsWith("@intlify/")) return "i18n";
+              return "vendor";
+            };
             // 非 node_modules 的业务代码交给 Rollup 默认策略——
             // 路由已按需懒加载（见 router/index.ts 的 () => import(...)），
             // 各页面/组件天然拆分为独立异步 chunk，无需手动干预
-            if (!pkgName) return undefined;
-
-            // Vue 核心生态：几乎不随业务迭代变化，适合长期缓存
-            if (["vue", "vue-router", "pinia", "pinia-plugin-persistedstate"].includes(pkgName)) {
-              return "vue-vendor";
+            if (!pkgName) {
+              // Rollup 为 CJS 互操作合成的共享辅助模块（如 getAugmentedNamespace）没有真实包名——
+              // 这类模块会被多个分组同时依赖（例如 vue 自身的 CJS 包装需要它包装 @vue/compiler-dom 等子包，
+              // vuedraggable 的 CJS 包装也需要它包装 sortablejs），Rollup 只会实例化一份，
+              // 若被兜底放进 vendor，就会与本就存在的 vendor -> vue-vendor 依赖边组成循环 chunk。
+              // 因此按其调用方所属分组就近归组：只要有调用方属于 vue-vendor，就归入 vue-vendor，
+              // 使 vendor 侧对该辅助模块的引用退化为单向的 vendor -> vue-vendor，消除循环
+              const importerGroups = new Set(
+                (getModuleInfo(id)?.importers ?? [])
+                  .map(importerId => classify(getPackageName(importerId)))
+                  .filter((g): g is string => !!g)
+              );
+              if (importerGroups.has("vue-vendor")) return "vue-vendor";
+              if (importerGroups.size === 1) return [...importerGroups][0];
+              return undefined;
             }
+
             // Element Plus 体积最大的单一依赖，单独成块
-            if (pkgName === "element-plus" || pkgName === "@element-plus/icons-vue") {
-              return "element-plus";
-            }
             // Font Awesome 图标库
-            if (pkgName.startsWith("@fortawesome/")) {
-              return "icons";
-            }
-            // 拖拽库
-            if (pkgName === "vuedraggable") {
-              return "draggable";
-            }
+            // 拖拽库：不单独成块——vuedraggable 的间接依赖会被兜底规则分进 vendor，
+            // 若继续单独分组会与 vendor/vue-vendor 形成循环 chunk（Rollup Circular chunk 警告），
+            // 循环 chunk 会导致浏览器执行顺序不确定，命中变量 TDZ 报 ReferenceError，直接归入 vendor 兜底
             // i18n 运行时
-            if (pkgName === "vue-i18n" || pkgName.startsWith("@intlify/")) {
-              return "i18n";
-            }
-
             // 兜底：其余第三方依赖（axios/dexie/qrcode/uuid/mitt/web-vitals 等）
             // 统一归入 vendor，避免漏网之鱼继续堆进主入口 chunk
-            return "vendor";
+            return classify(pkgName);
           },
           // 产物按类型分目录，便于 Nginx/CDN 针对不同资源类型设置差异化缓存策略
           entryFileNames: "assets/js/[name]-[hash].js",

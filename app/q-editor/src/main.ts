@@ -51,7 +51,14 @@ let instance: ReturnType<typeof createApp> | null = null;
  * @param container  qiankun 提供的挂载容器（独立运行时为 undefined）
  * @param routerBase 路由基路径（qiankun 场景 '/editor'，独立运行 '/'）
  */
-function render(container?: Element | null, routerBase = "/") {
+async function render(container?: Element | null, routerBase = "/") {
+  // ── Standalone 模式：初始化客户端 Mock API ──────────────────
+  // 在 Vue 应用初始化前注入 mock 适配器，确保所有 HTTP 请求被拦截
+  if (import.meta.env.MODE === "standalone") {
+    const { setupStandaloneMock } = await import("@/standalone/setup");
+    await setupStandaloneMock();
+  }
+
   const router = createAppRouter(routerBase);
   const pinia = createPinia().use(piniaPluginPersistedstate);
 
@@ -68,8 +75,13 @@ function render(container?: Element | null, routerBase = "/") {
   registerDirectives(instance);
 
   // 接入埋点监控：错误采集 + 按路由自动上报 PV + 自定义性能计时
-  // standalone 与 qiankun 场景走同一逻辑，保证埋点行为一致（对齐 FR-004）
-  installTracking(instance, router);
+  // standalone 与 qiankun 场景走同一逻辑，保证埋点行为一致（对齐 FR-004）——
+  // 但 tracking-sdk 底层通过 fetch/sendBeacon 直连后端，不经过被 Mock 拦截的 axios 实例，
+  // GitHub Pages 静态演示无真实后端可用，继续上报只会在控制台产生持续的网络错误噪音，
+  // 因此 standalone 模式下跳过埋点接入（不属于演示范围，也不影响核心功能验证）
+  if (import.meta.env.MODE !== "standalone") {
+    installTracking(instance, router);
+  }
 
   // qiankun 场景：挂载到子容器内的 #app；独立运行：直接挂载 '#app'
   const mountTarget = container ? container.querySelector("#app") : "#app";
@@ -102,5 +114,7 @@ renderWithQiankun({
 if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
   // 路由 base 跟随构建时的 base（由 --base 决定），
   // 保证子路径部署（如 GitHub Pages）场景下路由与静态资源路径一致
-  render(undefined, import.meta.env.BASE_URL);
+  render(undefined, import.meta.env.BASE_URL).catch(err => {
+    console.error("[q-editor] 应用启动失败:", err);
+  });
 }

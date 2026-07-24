@@ -1,0 +1,81 @@
+name: Deploy q-editor to GitHub Pages
+
+# 当 preview 分支下相关代码变更时自动触发部署
+# 也支持手动触发 (workflow_dispatch)
+on:
+  push:
+    branches: [preview]
+    paths:
+      - "app/q-editor/**"
+      - "packages/common/**"
+      - "packages/components/**"
+      - "packages/sse-client/**"
+      - "packages/tracking-sdk/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/deploy-q-editor-pages.yml"
+  workflow_dispatch:
+    # 手动触发，支持输入 base 路径
+    inputs:
+      base-path:
+        description: "部署子路径（如 /q-editor/）"
+        required: false
+        default: "/q-editor/"
+
+# 设置 GITHUB_TOKEN 权限以部署到 GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 仅允许一个并发部署，跳过排队的运行
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        # 不指定 version，自动读取根 package.json 的 packageManager 字段（pnpm@10.12.4），
+        # 与根 .npmrc 的 engine-strict=true 约束保持一致，避免版本不符导致 install 失败
+        uses: pnpm/action-setup@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建 q-editor（Standalone 模式）
+        run: pnpm --filter q-editor build:standalone
+        env:
+          # 支持通过 workflow_dispatch 自定义 base 路径
+          VITE_BASE: ${{ github.event.inputs.base-path || '/q-editor/' }}
+
+      - name: SPA 路由回退（GitHub Pages 无服务端 rewrite，需 404.html 兜底）
+        # vue-router 使用 createWebHistory，直接访问/刷新子路径（如 /home）会命中
+        # GitHub Pages 原生 404 而非 SPA 页面；复制 index.html 为 404.html 是官方推荐的 fallback 方案
+        run: cp app/q-editor/dist/index.html app/q-editor/dist/404.html
+
+      - name: 配置 GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: 上传 Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/q-editor/dist
+
+      - name: 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
