@@ -33,7 +33,11 @@
       "Bash(node _verify-standalone-login.mjs)",
       "Bash(taskkill //PID 3096 //F)",
       "Bash(node _verify-messages.mjs)",
-      "Bash(taskkill //PID 50236 //F)"
+      "Bash(taskkill //PID 50236 //F)",
+      "Bash(gh run *)",
+      "Bash(git remote *)",
+      "Bash(git check-ignore *)",
+      "Bash(git ls-tree *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\linze\\.claude\\projects\\D--coding-project-questionnaireSys\\2a9e2a12-0654-488d-9658-1c387340c917\\workflows\\scripts",
