@@ -1,6 +1,5 @@
 node_modules
 package-lock.json
-pnpm-lock.yaml
 # .gitignore
 # Node
 node_modules/
