@@ -69,7 +69,7 @@ const props = defineProps<{
 const emits = defineEmits(["updateAnswer"]);
 
 /** 函数式 surveyId 获取器：优先 from Center/SurveyView provide，回退到 store */
-const getSurveyId = inject<() => string | null>("getSurveyId", null) || (() => editorStore.remoteSurveyId);
+const getSurveyId = inject<() => string | null>("getSurveyId") ?? (() => editorStore.remoteSurveyId);
 
 // ── 从 Status 配置提取当前渲染参数 ─────────────────────────────────
 const computedState = computed(() => ({

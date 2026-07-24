@@ -166,6 +166,7 @@ import {
   deserializeSurveyDetail
 } from "@/api/modules/survey";
 import { restoreComponentStatus } from "@/utils";
+import type { Status } from "@/types";
 import type {
   TemplateListItem,
   TemplateDetail,
@@ -321,7 +322,9 @@ const useTemplateBtn = async () => {
       ...c,
       id: c._componentId
     }));
-    restoreComponentStatus(coms);
+    // deserializeSurveyDetail 返回值刻意省略 type 字段（Vue 组件引用无法序列化），
+    // restoreComponentStatus 会按 name 反向挂载 type，此处按其运行时契约做类型断言
+    restoreComponentStatus(coms as unknown as Status[]);
 
     // 将模板组件填充到当前编辑器（不创建远程记录、不同步、不持久化）
     // 定位是快速搭建定制问卷的起点，用户可在此基础上修缮后手动保存
@@ -351,7 +354,7 @@ const onRateTemplate = async (score: number) => {
 
   try {
     const res = await rateTemplateApi(selectedTemplate.value.id, { score });
-    if (res.code === 0) {
+    if (res.code === 0 && res.data) {
       selectedTemplate.value._ratingNum = parseFloat(res.data.rating);
       ElMessage.success(tm("rateSuccess"));
     } else {

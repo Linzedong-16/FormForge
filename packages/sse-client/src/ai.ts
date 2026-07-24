@@ -320,7 +320,8 @@ export function createAIPolishStream(options: AIPolishStreamOptions): SSEClientC
           onDone?.({
             title: result?.title ?? "",
             description: result?.description ?? "",
-            components: result?.components ?? [],
+            // 后端可能省略 title，与 AIPolishResult.components 要求的必填 title 对齐，缺省时兜底为空字符串
+            components: (result?.components ?? []).map(c => ({ type: c.type, title: c.title ?? "" })),
             changes: result?.changes ?? [],
             // 透传完整组件数据，供前端 aiComponentsToStatus 转换
             _rawComponents: result?._rawComponents,

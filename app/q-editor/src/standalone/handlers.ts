@@ -744,7 +744,9 @@ export function handleRequest(config: AxiosRequestConfig): Record<string, unknow
   if (url === "/api/messages/unread-count" && method === "get") {
     log("GET /api/messages/unread-count");
     const unread = messageStore.filter(m => !m.is_read);
-    const by_type: Record<string, number> = {
+    // 使用 MockMessage["type"] 字面量联合类型而非 Record<string, number>，
+    // 使 TS 能确认所有键均已覆盖，避免 noUncheckedIndexedAccess 下索引访问被判定为 possibly undefined
+    const by_type: Record<MockMessage["type"], number> = {
       operation_notify: 0,
       template_like: 0,
       survey_lifecycle: 0,
