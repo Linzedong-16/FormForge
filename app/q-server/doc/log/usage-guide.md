@@ -313,7 +313,7 @@ pnpm consumer:dev
 
 ```bash
 pnpm build
-pnpm start:all   # = pm2 start ecosystem.config.js
+pnpm start:all   # = pm2 start ecosystem.config.cjs
 pm2 logs         # 查看实时日志
 ```
 

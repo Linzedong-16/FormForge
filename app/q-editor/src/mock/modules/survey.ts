@@ -125,7 +125,7 @@ function countQuestions(components: MockComponent[]): number {
 
 // ─── 预填充 Demo 问卷（开发阶段跨页面刷新免丢失） ──────────────
 
-const DEMO_SURVEY_ID = "demo_survey_01";
+const DEMO_SURVEY_ID = "10001";
 const DEMO_NOW = new Date().toISOString();
 
 const demoComponents: MockComponent[] = [

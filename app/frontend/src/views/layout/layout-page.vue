@@ -45,7 +45,9 @@ const handleCollapse = (val: boolean) => {
   margin: 24px;
   padding: 24px;
   background-color: var(--color-bg-1);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 </style>

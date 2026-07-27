@@ -29,6 +29,8 @@ import { useI18n } from "vue-i18n";
 import type { SurveyDBData, TextProps } from "@/types";
 // 远程 API
 import { createSurvey, updateSurvey, serializeComponents, extractSurveyMetadata } from "@/api/modules/survey";
+// 埋点监控：编辑器加载/保存耗时上报 + 加载失败错误上报（对齐 FR-001 / FR-002）
+import { getPerformanceCollector, getErrorCollector } from "@/plugins/tracking";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -132,6 +134,10 @@ async function doSave(): Promise<ReturnType<typeof serializeComponents>> {
   if (saving.value) return [];
   saving.value = true;
 
+  // 埋点：保存耗时计时（对齐 FR-002），success 默认 false，仅在真正完成保存时置 true
+  const saveStart = performance.now();
+  let saveSucceeded = false;
+
   try {
     const surveyId = store.savedSurveyId || (id.value ? Number(id.value) : null);
 
@@ -152,6 +158,7 @@ async function doSave(): Promise<ReturnType<typeof serializeComponents>> {
       // 同步到远程
       const components = await syncToRemote(surveyId);
       ElMessage.success(t("editor.updateSuccess"));
+      saveSucceeded = true;
       return components;
     } else {
       // 新建问卷：第一次保存需输入标题
@@ -184,9 +191,11 @@ async function doSave(): Promise<ReturnType<typeof serializeComponents>> {
       // 同步到远程
       const components = await syncToRemote(newId);
       ElMessage.success(t("editor.saveSuccess"));
+      saveSucceeded = true;
       return components;
     }
   } finally {
+    getPerformanceCollector().trackTiming("editor_save", performance.now() - saveStart, { success: saveSucceeded });
     saving.value = false;
   }
 }
@@ -254,13 +263,24 @@ onBeforeRouteLeave(async (_to, _from, next) => {
 
 onMounted(() => {
   if (id.value) {
+    // 埋点：加载耗时计时（对齐 FR-002）
+    const loadStart = performance.now();
     // 根据 id 获取存储的问卷题目
-    getSurveyById(Number(id.value)).then(res => {
-      if (res) {
-        restoreComponentStatus(res.coms);
-        store.setStore(res, Number(id.value));
-      }
-    });
+    getSurveyById(Number(id.value))
+      .then(res => {
+        if (res) {
+          restoreComponentStatus(res.coms);
+          store.setStore(res, Number(id.value));
+        }
+        getPerformanceCollector().trackTiming("editor_load", performance.now() - loadStart, { success: true });
+      })
+      .catch(err => {
+        getPerformanceCollector().trackTiming("editor_load", performance.now() - loadStart, { success: false });
+        // 手动上报加载失败错误，同时不重新抛出，避免产生未处理的 Promise 拒绝
+        getErrorCollector().reportError(err instanceof Error ? err : new Error(String(err)), {
+          action: "editor_load"
+        });
+      });
   } else {
     // 新建问卷，初始化组件列表
     store.initComs();
@@ -279,17 +299,28 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .header {
   width: 100%;
-  background-color: var(--white);
   position: fixed;
   top: 0;
   z-index: 10;
+  // 磨砂玻璃导航栏：半透明底 + 背景模糊，营造悬浮层次感
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+
+  // 不支持 backdrop-filter 的浏览器降级为高不透明度纯色，保证可读性
+  @supports not (backdrop-filter: blur(1px)) {
+    background: var(--glass-fallback-bg);
+  }
 }
 .container {
   width: calc(100vw - 40px);
   padding: 20px;
   // Header的高度50px，上下padding 20px
   height: calc(100vh - 50px - 40px);
-  background: url("@/assets/imgs/editor_background.jpg") no-repeat center center / cover;
+  // 渐变色暂不使用
+  // background: linear-gradient(160deg, #22b0c9 0%, #3a78e8 50%, #7a42d8 100%);
   background-color: var(--white);
   position: fixed;
   top: 50px;

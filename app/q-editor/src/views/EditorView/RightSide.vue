@@ -166,9 +166,17 @@ provide("getLink", getLink);
   position: fixed;
   right: var(--editor-gap);
   top: 70px;
-  background-color: rgba(255, 255, 255, 0.9);
+  // 磨砂玻璃面板：半透明底 + 背景模糊，圆角单独升级为玻璃容器专用级别
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
+  border-radius: var(--radius-glass);
+  box-shadow: var(--shadow-glass);
+
+  @supports not (backdrop-filter: blur(1px)) {
+    background: var(--glass-fallback-bg);
+  }
   overflow-y: auto;
   /* 隐藏滚动条，保持滚动功能 */
   &::-webkit-scrollbar {

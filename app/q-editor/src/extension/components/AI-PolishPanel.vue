@@ -187,7 +187,7 @@ async function handleApply() {
 /* ── 流式文本预览 ───────────────────── */
 .polish-stream-box {
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: var(--border-radius-md);
   padding: 12px;
   min-height: 80px;
   max-height: 200px;

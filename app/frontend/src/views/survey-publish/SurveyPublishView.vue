@@ -419,7 +419,7 @@ async function handleArchive(record: SurveyDisplayItem) {
   justify-content: space-between;
   padding: 12px 16px;
   background: var(--color-fill-2);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .filter-label {

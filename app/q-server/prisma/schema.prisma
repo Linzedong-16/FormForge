@@ -43,7 +43,11 @@ model User {
   reviewed_reviews  Review[]           @relation("ReviewReviewer") // 自己审核的记录
   template_ratings  TemplateRating[] // 自己对模板的评分
   profile           UserProfile? // 用户资料（1:1）
-  survey_files      SurveyFile[] // 上传的问卷文件
+  media_assets      MediaAsset[]            @relation("MediaAssetUploader") // 自己上传的物料
+  reviewed_media_assets MediaAsset[]         @relation("MediaAssetReviewer") // 自己审核过的物料
+  sent_messages     Message[]               @relation("MessageSender") // 自己发出的消息
+  received_messages Message[]               @relation("MessageRecipient") // 自己收到的消息
+  message_broadcast_states MessageBroadcastState[] // 自己对各条广播的已读/隐藏状态
 
   @@index([email])
   @@index([status])
@@ -72,6 +76,11 @@ model Survey {
   closed_at       DateTime?
   deleted_at      DateTime? // 软删除标记
 
+  deadline                  DateTime? // 问卷截止时间（此前只存在于 Redis TTL，供消息系统的
+                                       // "即将过期提醒"定时扫描使用，见消息系统 data-model.md §4）
+  expiring_reminder_sent_at DateTime? // "即将过期"提醒已发送时间，避免重复提醒
+  last_milestone_notified   Int       @default(0) // 已通知过的最高答卷里程碑阈值（0/50/100/500）
+
   review_status  ReviewStatus @default(none) // 审核状态：none / pending / approved / rejected
 
   // 关联关系
@@ -80,7 +89,7 @@ model Survey {
   responses        Response[]
   permissions      SurveyPermission[]
   reviews          Review[] // 审核记录
-  files            SurveyFile[] // 关联的问卷文件
+  media_assets     MediaAsset[] // 关联的物料（图片资源）
 
   @@index([status])
   @@index([created_at])
@@ -338,6 +347,7 @@ enum FileType {
   survey_option_image // 图片选择组件封面图（PicItem 上传）
   survey_signature // 签名图片（Signature canvas 转 blob 后上传）
   survey_cover // 问卷封面图（survey.cover_url，预留）
+  user_avatar // 用户头像（profile/avatar.service.ts 上传）
 }
 
 // ============================================================
@@ -429,34 +439,126 @@ model UserProfile {
 }
 
 // ============================================================
-// 14. 问卷文件表 (survey_files)
+// 14. 物料表 (media_assets) —— 原 survey_files，重命名+扩展为
+//     覆盖全平台图片资源（问卷题目图片、签名图片、用户头像等）的统一管理实体
 //
 // 设计目的：
-//   - 追踪问卷编辑器上传的所有文件（图片选择组件封面、签名图片）
+//   - 追踪平台内全部图片资源（问卷题目图片、签名图片、用户头像）
 //   - 支撑问卷删除时级联清理 MinIO 文件
 //   - 提供文件溯源（上传者、上传时间、文件大小）
 //   - 识别孤儿文件（已从 survey_components.config 中移除但 MinIO 仍有残留）
+//   - 承载审核状态与审核操作人/时间，为后续接入自动化审核 Agent 预留
 // ============================================================
-model SurveyFile {
-  id         BigInt   @id @default(autoincrement())
-  survey_id  BigInt?  // 所属问卷（可为 null，签名文件关联 response 而非 survey）
-  user_id    BigInt   // 上传者
-  file_url   String   @db.VarChar(1024) // MinIO 完整访问 URL
-  file_key   String   @db.VarChar(512)  // MinIO 对象 key（如 "survey-images/uuid.png"），删除时需要
-  file_name  String   @db.VarChar(255)  // 原始文件名
-  mime_type  String   @db.VarChar(127)  // MIME 类型（如 "image/png"）
-  file_size  BigInt   // 文件大小（字节）
-  file_type  FileType @default(survey_option_image) // 文件来源类型
-  created_at DateTime @default(now())
+model MediaAsset {
+  id            BigInt   @id @default(autoincrement())
+  survey_id     BigInt?  // 所属问卷（可为 null，如用户头像不关联任何问卷）
+  user_id       BigInt   // 上传者
+  resource_type String   @default("image") // 底层资源类型，当前恒为 "image"，为未来非图片类型预留扩展空间
+  file_url      String   @db.VarChar(1024) // MinIO 完整访问 URL
+  file_key      String   @db.VarChar(512)  // MinIO 对象 key（如 "survey-images/uuid.png"），删除时需要
+  file_name     String   @db.VarChar(255)  // 原始文件名
+  mime_type     String   @db.VarChar(127)  // MIME 类型（如 "image/png"）
+  file_size     BigInt   // 文件大小（字节）
+  file_type     FileType @default(survey_option_image) // 文件来源类型（细分类别）
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // ── 审核状态（复用 Review 模块已定义的 ReviewStatus 枚举，不新建重复枚举）──
+  // 允许 pending/approved/rejected 之间自由互转，不同于 Review 模型严格的
+  // "仅能从 pending 转出"一次性提交-裁决流程；变更历史通过 AuditLog 追溯，
+  // 本表只保存"最近一次"变更的三个字段
+  review_status  ReviewStatus @default(pending)
+  reviewed_by    BigInt? // 最近一次审核状态变更的操作者（人工管理员或未来自动化审核流程使用的账号）
+  reviewed_at    DateTime?
+  review_comment String?      @db.Text
 
   // 关联关系
-  survey Survey? @relation(fields: [survey_id], references: [id], onDelete: SetNull)
-  user   User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  survey   Survey? @relation(fields: [survey_id], references: [id], onDelete: SetNull)
+  user     User    @relation("MediaAssetUploader", fields: [user_id], references: [id], onDelete: Cascade)
+  reviewer User?   @relation("MediaAssetReviewer", fields: [reviewed_by], references: [id])
 
   @@index([survey_id])
   @@index([user_id])
   @@index([file_type])
   @@index([created_at])
   @@index([survey_id, file_type]) // 高频：按问卷查询特定类型文件
-  @@map("survey_files")
+  @@index([review_status]) // 管理端按审核状态筛选
+  @@index([user_id, review_status]) // 高频：某用户的待审核物料
+  @@map("media_assets")
+}
+
+// ============================================================
+// 15. 消息表 (messages)
+//
+// 设计目的：
+//   - 承载 5 类消息（操作通知/模板互动/问卷生命周期/用户-管理员通信/管理员广播）
+//   - is_read/read_at/deleted_at 三个独立字段分别表达已读与（软）删除两个维度，
+//     互不冲突（详见消息系统 research.md §12）
+//   - 广播消息 recipient_id = NULL，配合 target_role 限定可见范围；
+//     广播的已读/隐藏状态不写在本表，见 MessageBroadcastState（§16）
+// ============================================================
+enum MessageType {
+  operation_notify // 操作通知（审核结果、用户封禁/解封）
+  template_like // 模板互动（评分、被应用于创建问卷）
+  survey_lifecycle // 问卷生命周期（发布成功、即将过期、答卷里程碑）
+  user_admin_comm // 用户-管理员通信
+  admin_broadcast // 管理员广播
+}
+
+model Message {
+  id                  BigInt      @id @default(autoincrement())
+  type                MessageType
+  title               String      @db.VarChar(200)
+  content             String      @db.Text
+  sender_id           BigInt? // 发送者；null = 系统自动发出
+  recipient_id        BigInt? // 接收者；null = 面向群体的广播（配合 target_role）
+  target_role         String?     @db.VarChar(20) // 仅广播使用："all" / "user" / "super_admin"
+  related_resource    String?     @db.VarChar(50) // "survey" / "template" / "review"
+  related_resource_id BigInt?
+
+  is_read    Boolean   @default(false)
+  read_at    DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime? // 软删除时间（仅影响接收者自己的可见性）
+
+  // 关联关系
+  sender          User?                   @relation("MessageSender", fields: [sender_id], references: [id])
+  recipient       User?                   @relation("MessageRecipient", fields: [recipient_id], references: [id])
+  broadcastStates MessageBroadcastState[]
+
+  @@index([recipient_id, is_read, created_at]) // 用户收件箱（核心查询）
+  @@index([type, created_at]) // 按类型统计
+  @@index([sender_id, created_at]) // 管理员查看已发送
+  @@index([deleted_at]) // 清理任务扫描
+  @@index([created_at]) // 时间范围查询
+  @@map("messages")
+}
+
+// ============================================================
+// 16. 广播已读/隐藏状态表 (message_broadcast_states)
+//
+// 设计目的：
+//   - 广播消息只有一条 recipient_id=NULL 的物理记录，无法直接在共享记录上记
+//     "用户 A 已读"；本表按"用户 × 广播消息"维度惰性记录每个用户的已读/隐藏状态
+//   - 只有当用户真正读/删过某条广播时才会写一行，不会在广播发出时批量写入
+//     （消息系统 research.md §13，修复"状态只存在 Redis"的架构问题）
+// ============================================================
+model MessageBroadcastState {
+  id         BigInt    @id @default(autoincrement())
+  message_id BigInt
+  user_id    BigInt
+  is_read    Boolean   @default(false)
+  read_at    DateTime?
+  is_hidden  Boolean   @default(false)
+  hidden_at  DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  message Message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([message_id, user_id])
+  @@index([user_id, is_hidden])
+  @@map("message_broadcast_states")
 }

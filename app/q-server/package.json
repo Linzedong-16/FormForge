@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "description": "Questionnaire system API server — Fastify + Prisma + Redis + TypeScript",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/app/q-server/src/index.js",
   "scripts": {
     "dev": "chcp 65001 > nul && tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "tsc && tsc-alias -p tsconfig.json",
+    "start": "node dist/app/q-server/src/index.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
@@ -16,8 +16,11 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "consumer:dev": "tsx watch src/consumer/log-consumer.ts",
-    "consumer:start": "node dist/consumer/log-consumer.js",
-    "start:all": "pm2 start ecosystem.config.js"
+    "consumer:start": "node dist/app/q-server/src/consumer/log-consumer.js",
+    "tracking-consumer:dev": "tsx watch src/consumer/tracking-consumer.ts",
+    "tracking-consumer:start": "node dist/app/q-server/src/consumer/tracking-consumer.js",
+    "start:all": "pm2 start ecosystem.config.cjs",
+    "dev:all": "concurrently -n server,log-consumer,tracking-consumer -c blue,yellow,green \"pnpm run dev\" \"pnpm run consumer:dev\" \"pnpm run tracking-consumer:dev\""
   },
   "keywords": [],
   "author": "",
@@ -27,6 +30,7 @@
     "node": ">=22.17.0"
   },
   "dependencies": {
+    "@clickhouse/client": "^1.22.0",
     "@fastify/cors": "^10.0.1",
     "@fastify/helmet": "^13.0.0",
     "@fastify/multipart": "^10.0.0",
@@ -62,8 +66,10 @@
     "@types/node": "^24.0.0",
     "@types/nodemailer": "^8.0.0",
     "@vitest/coverage-v8": "^4.1.8",
+    "concurrently": "^9.2.1",
     "node-gyp": "^12.4.0",
     "prisma": "^7.8.0",
+    "tsc-alias": "^1.9.0",
     "tsx": "^4.19.4",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8"

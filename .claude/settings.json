@@ -17,7 +17,17 @@
       "Bash(where python *)",
       "Bash(conda env *)",
       "Bash(conda create *)",
-      "Bash(conda run *)"
+      "Bash(conda run *)",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"const pkg = require\\('@clickhouse/client/package.json'\\); console.log\\('@clickhouse/client:', pkg.version\\)\")",
+      "Bash(node -e \"console.log\\('@clickhouse/client:', require\\('@clickhouse/client/package.json'\\).version\\)\")",
+      "Bash(netstat -ano)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:9000)",
+      "Bash(docker compose *)",
+      "Bash(docker inspect *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\" http://localhost:9000)",
+      "Bash(git -C /d/coding/project/questionnaireSys log --oneline -20)",
+      "Bash(curl -sv -m 15 -X POST http://localhost:5173/api/q-editor/survey-file/upload -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -F 'file=@d:/coding/project/questionnaireSys/app/q-server/coverage/favicon.png;type=image/png' -F survey_id=undefined)"
     ],
     "additionalDirectories": [
       "C:\\Users\\linze\\.claude\\projects\\D--coding-project-questionnaireSys\\2a9e2a12-0654-488d-9658-1c387340c917\\workflows\\scripts"

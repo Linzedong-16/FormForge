@@ -14,6 +14,9 @@ import logRoutes from "../modules/log/log.routes.js";
 import reviewRoutes from "../modules/review/review.routes.js";
 import templateRoutes from "../modules/template/template.routes.js";
 import surveyStatsRoutes from "../modules/survey/survey-stats/survey-stats.routes.js";
+import { trackingIngestRoutes, trackingAnalyticsRoutes } from "../modules/tracking/index.js";
+import { messageRoutes, adminMessageRoutes } from "../modules/message/index.js";
+import mediaAssetRoutes from "../modules/media-asset/media-asset.routes.js";
 
 const routes: FastifyPluginAsync = async fastify => {
   // 健康检查 — 探测 PostgreSQL、Redis、RabbitMQ 连通性
@@ -48,7 +51,6 @@ const routes: FastifyPluginAsync = async fastify => {
     if (fastify.amqp) {
       try {
         const t0 = Date.now();
-        // 尝试声明一个临时独占队列来验证 channel 连通性
         const q = await fastify.amqp.channel.assertQueue("", { exclusive: true });
         await fastify.amqp.channel.deleteQueue(q.queue);
         checks.rabbitmq = { ok: true, latency_ms: Date.now() - t0 };
@@ -58,6 +60,54 @@ const routes: FastifyPluginAsync = async fastify => {
       }
     } else {
       checks.rabbitmq = { ok: false, error: "RabbitMQ 插件未注册" };
+    }
+
+    // ── MinIO 检查 ──────────────────────────────────────────
+    if (fastify.minio) {
+      try {
+        const t0 = Date.now();
+        await fastify.minio.listBuckets();
+        checks.minio = { ok: true, latency_ms: Date.now() - t0 };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        checks.minio = { ok: false, error: message };
+      }
+    } else {
+      checks.minio = { ok: false, error: "MinIO 插件未注册" };
+    }
+
+    // ── MongoDB 检查 ─────────────────────────────────────────
+    if (fastify.mongo && fastify.mongo.connection.readyState === 1) {
+      try {
+        const t0 = Date.now();
+        // verify mongodb connectivity via admin ping
+        const admin = fastify.mongo.connection.db?.admin();
+        if (admin) {
+          await admin.ping();
+          checks.mongodb = { ok: true, latency_ms: Date.now() - t0 };
+        } else {
+          checks.mongodb = { ok: false, error: "MongoDB db 实例不可用" };
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        checks.mongodb = { ok: false, error: message };
+      }
+    } else {
+      checks.mongodb = { ok: false, error: "MongoDB 插件未注册或未连接" };
+    }
+
+    // ── ClickHouse 检查 ─────────────────────────────────────
+    if (fastify.clickhouse) {
+      try {
+        const t0 = Date.now();
+        await fastify.clickhouse.ping();
+        checks.clickhouse = { ok: true, latency_ms: Date.now() - t0 };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        checks.clickhouse = { ok: false, error: message };
+      }
+    } else {
+      checks.clickhouse = { ok: false, error: "ClickHouse 插件未注册" };
     }
 
     // ── 汇总 ──────────────────────────────────────────────────
@@ -108,6 +158,16 @@ const routes: FastifyPluginAsync = async fastify => {
   fastify.register(surveyStatsRoutes, { prefix: "/admin" });
   // template.routes.ts 内部路径为 /templates（模板市场）
   fastify.register(templateRoutes);
+  // tracking-ingest: 埋点上报接口（公开，无需认证，前缀 /api/v1）
+  fastify.register(trackingIngestRoutes, { prefix: "/v1" });
+  // tracking-analytics: 数据分析接口（管理员权限，前缀 /api/admin）
+  fastify.register(trackingAnalyticsRoutes, { prefix: "/admin" });
+  // message.routes.ts 内部路径已为 /messages、/messages/unread-count 等完整路径，无需额外前缀
+  fastify.register(messageRoutes);
+  // admin-message.routes.ts 内部路径为 /messages/broadcast、/messages/sent（管理员广播）
+  fastify.register(adminMessageRoutes, { prefix: "/admin" });
+  // media-asset.routes.ts 内部路径为 /media-assets（管理员物料/图片资源管理）
+  fastify.register(mediaAssetRoutes, { prefix: "/admin" });
 };
 
 export default routes;

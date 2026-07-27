@@ -9,6 +9,9 @@ import { createAppRouter } from "./router";
 // 自定义指令
 import { registerDirectives } from "@/directives";
 
+// 埋点监控接入
+import { installTracking, flushTracking } from "@/plugins/tracking";
+
 // elementplus 组件库
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
@@ -22,12 +25,22 @@ import { setupI18n } from "@/i18n";
 // scss 样式
 import "@/assets/css/index.scss";
 
-// Font Awesome 配置
+// Font Awesome 配置：按需具名导入实际用到的图标（仅 8 个），
+// 避免 `import { fas } from "..."` 全量引入 2000+ 图标导致产物体积暴涨
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { fas } from "@fortawesome/free-solid-svg-icons";
+import {
+  faItalic,
+  faBold,
+  faFont,
+  faHeading,
+  faParagraph,
+  faAlignLeft,
+  faAlignCenter,
+  faGlobe
+} from "@fortawesome/free-solid-svg-icons";
 
-library.add(fas);
+library.add(faItalic, faBold, faFont, faHeading, faParagraph, faAlignLeft, faAlignCenter, faGlobe);
 
 // qiankun 环境下的当前 Vue 应用实例（支持重复挂载/卸载）
 let instance: ReturnType<typeof createApp> | null = null;
@@ -54,6 +67,10 @@ function render(container?: Element | null, routerBase = "/") {
   // 注册自定义指令（v-permiss 等）
   registerDirectives(instance);
 
+  // 接入埋点监控：错误采集 + 按路由自动上报 PV + 自定义性能计时
+  // standalone 与 qiankun 场景走同一逻辑，保证埋点行为一致（对齐 FR-004）
+  installTracking(instance, router);
+
   // qiankun 场景：挂载到子容器内的 #app；独立运行：直接挂载 '#app'
   const mountTarget = container ? container.querySelector("#app") : "#app";
   instance.mount(mountTarget as string | Element);
@@ -72,13 +89,18 @@ renderWithQiankun({
   },
   unmount() {
     console.log("[q-editor] unmount");
-    instance?.unmount();
-    instance = null;
+    // 卸载前尽力冲刷埋点缓冲队列，避免子应用被卸载后事件丢失
+    flushTracking().finally(() => {
+      instance?.unmount();
+      instance = null;
+    });
   },
   update() {}
 });
 
 // 独立运行（非 qiankun 环境）
 if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
-  render();
+  // 路由 base 跟随构建时的 base（由 --base 决定），
+  // 保证子路径部署（如 GitHub Pages）场景下路由与静态资源路径一致
+  render(undefined, import.meta.env.BASE_URL);
 }

@@ -166,7 +166,7 @@ $box-shadow:
   0 2px 4px -2px rgb(0 0 0 / 0.1);
 
 // —— 页面特有变量（shadcn UI 黑灰风格）——
-$land-bg-primary: #09090b; // zinc-950
+$land-bg-primary: #3a3d42; // 深灰金属银，替换原纯黑背景，同时保留白色文字的可读对比度
 $land-text-primary: #ffffff;
 $land-accent-color: #18181b; // zinc-900
 
@@ -175,10 +175,8 @@ $land-accent-color: #18181b; // zinc-900
   width: 100%;
   overflow: hidden;
   position: relative;
-  background-image: url("@/assets/imgs/editor_background.jpg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  // 渐变色暂不使用
+  // background: linear-gradient(to right, #22b0c9 0%, #3a78e8 50%, #7a42d8 100%);
   background-color: $land-bg-primary;
 }
 

@@ -5,11 +5,16 @@ import { createPinia } from "pinia";
 import { renderWithQiankun, qiankunWindow } from "vite-plugin-qiankun/es/helper";
 import "./style.css";
 import "@arco-design/web-vue/dist/arco.css";
+// 项目级设计令牌（阴影/圆角）与次要状态容器工具类 —— 必须在 arco.css 之后引入，
+// 否则会被 Arco 的默认样式覆盖回去
+import "./styles/tokens.css";
+import "./styles/state-containers.css";
 // Element Plus 全局导入 — 供问卷渲染引擎使用（引擎内 el-* 组件依赖此全局注册）
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 import ArcoVue from "@arco-design/web-vue";
 import ArcoVueIcon from "@arco-design/web-vue/es/icon";
+import { Message } from "@arco-design/web-vue";
 // vue-i18n — 问卷引擎组件（Cascader / DateTime / Transfer 等）内部使用 useI18n
 import { createI18n } from "vue-i18n";
 import App from "./App.vue";
@@ -17,6 +22,7 @@ import { createAppRouter } from "./router";
 import type { AppRouter } from "./router";
 import { initUserStore } from "./store";
 import { useUserStore } from "./store/modules/user";
+import { resolveNavigation } from "./router/guard";
 
 // 导入问卷引擎的 i18n 消息，确保引擎组件渲染时 useI18n() 能获取到文案
 import { engineMessages } from "monorepo-survey-engine";
@@ -64,21 +70,18 @@ function render(container?: Element | null, routerBase = "/") {
     await initUserStore();
     const userStore = useUserStore();
 
-    // 登录页直接放行
-    if (to.path === "/login") {
-      // 已登录时重定向到首页
-      if (userStore.isLoggedIn) {
-        return next("/");
-      }
+    const result = resolveNavigation(to, {
+      isLoggedIn: userStore.isLoggedIn,
+      isSuperAdmin: userStore.isSuperAdmin
+    });
+
+    if (result === true) {
       return next();
     }
-
-    // 未登录 → 跳转登录页
-    if (!userStore.isLoggedIn) {
-      return next("/login");
+    if (result === "/" && to.meta?.requiresSuperAdmin) {
+      Message.error("无权限访问该页面");
     }
-
-    next();
+    return next(result);
   });
 
   // qiankun 场景：挂载到子容器内的 #app；独立运行：直接挂载 '#app'

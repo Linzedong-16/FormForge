@@ -68,4 +68,25 @@ describe("error-handler plugin", () => {
     expect(res.statusCode).toBe(500);
     expect(JSON.parse(res.body).msg).toBe("服务器内部错误");
   });
+
+  it("@fastify/multipart 文件超限错误（FST_REQ_FILE_TOO_LARGE）→ 413 + 中文友好提示，而非兜底 500", async () => {
+    // 模拟 @fastify/multipart 抛出的 RequestFileTooLargeError：带 statusCode=413 与 code 属性
+    const err = Object.assign(new Error("request file too large"), {
+      code: "FST_REQ_FILE_TOO_LARGE",
+      statusCode: 413
+    });
+    const res = await injectError(err);
+    expect(res.statusCode).toBe(413);
+    expect(JSON.parse(res.body)).toEqual({ data: null, code: 413, msg: "文件大小超出限制" });
+  });
+
+  it("未预置中文提示的插件级 4xx 错误 → 保留原状态码，回退到原始 message", async () => {
+    const err = Object.assign(new Error("some plugin 4xx error"), {
+      code: "FST_SOME_UNMAPPED_ERROR",
+      statusCode: 422
+    });
+    const res = await injectError(err);
+    expect(res.statusCode).toBe(422);
+    expect(JSON.parse(res.body)).toEqual({ data: null, code: 422, msg: "some plugin 4xx error" });
+  });
 });

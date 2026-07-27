@@ -8,7 +8,7 @@
       <!-- 中间：预留插槽，默认空白 -->
       <div class="center flex align-items-center pl-15 pr-15">
         <slot name="center"></slot>
-        <ReviewNotice />
+        <MessageBell />
       </div>
       <!-- 右侧：与 Header 一致，保留用户头像组件 -->
       <div class="right flex justify-content-center align-items-center">
@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import UserProfile from "@/components/Common/UserProfile.vue";
-import ReviewNotice from "@/components/Common/ReviewNotice.vue";
+import MessageBell from "@/components/Common/MessageBell.vue";
 </script>
 
 <style scoped lang="scss">

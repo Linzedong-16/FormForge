@@ -1,0 +1,68 @@
+{
+  "name": "monorepo-tracking-sdk",
+  "version": "1.0.0",
+  "description": "问卷系统前端统一埋点监控 SDK — 事件追踪、错误上报、性能采集、用户行为分析",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./plugins/vue": {
+      "types": "./dist/plugins/vue.d.ts",
+      "import": "./dist/plugins/vue.js"
+    },
+    "./plugins/axios": {
+      "types": "./dist/plugins/axios.d.ts",
+      "import": "./dist/plugins/axios.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "keywords": [
+    "tracking",
+    "analytics",
+    "monitoring",
+    "telemetry",
+    "rum"
+  ],
+  "license": "MIT",
+  "packageManager": "pnpm@10.12.4",
+  "peerDependencies": {
+    "vue": "^3.5.0",
+    "vue-router": "^4.0.0",
+    "axios": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    },
+    "vue-router": {
+      "optional": true
+    },
+    "axios": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "typescript": "~5.9.0",
+    "vue": "^3.5.25",
+    "vue-router": "^4.6.0",
+    "axios": "^1.13.0",
+    "vitest": "^4.1.9",
+    "happy-dom": "^20.10.6"
+  }
+}

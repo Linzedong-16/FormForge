@@ -1,0 +1,23 @@
+/**
+ * 空/加载/错误态外层容器工具类
+ *
+ * 统一各页面此前不一致的内联写法（部分页面用 style="width:100%;padding:32px 0"，
+ * 部分用 style="min-height: 300px" 等），仅替换模板中的 class，不改变 v-if/v-else 逻辑分支。
+ */
+
+/* a-spin 加载态包装：与各 analytics-dashboard 页面原有内联写法等值 */
+.state-loading {
+  width: 100%;
+  padding: 32px 0;
+}
+
+/* 空/错误态占位容器：三档最小高度，供页面按内容密度选用 */
+.state-container-sm {
+  min-height: 200px;
+}
+.state-container-md {
+  min-height: 300px;
+}
+.state-container-lg {
+  min-height: 400px;
+}

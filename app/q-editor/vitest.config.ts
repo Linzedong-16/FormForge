@@ -9,7 +9,32 @@ export default defineConfig({
     environment: "happy-dom",
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     globals: true,
-    setupFiles: ["./src/test-setup.ts"]
+    setupFiles: ["./src/test-setup.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "text-summary", "json", "html"],
+      reportsDirectory: "./coverage",
+      include: ["src/**/*.{ts,vue}"],
+      exclude: [
+        "node_modules",
+        "e2e/**",
+        "src/mock/**",
+        "src/**/__tests__/**",
+        "src/i18n/**",
+        "src/types/**",
+        "src/configs/defaultStatus/**",
+        "src/configs/regionData.ts",
+        "src/utils/eventBus.ts",
+        "src/vite-env.d.ts",
+        "src/public-path.ts",
+        "src/test-setup.ts",
+        "src/main.ts",
+        "src/App.vue",
+        "src/router/index.ts",
+        "src/plugins/**",
+        "src/extension/**"
+      ]
+    }
   },
   resolve: {
     alias: {

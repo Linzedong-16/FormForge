@@ -210,7 +210,15 @@ export const CacheKeys = {
 
   // ─── 问卷链接模块 ──────────────────────────────────────────
   /** 问卷链接截止时间 */
-  surveyDeadline: (surveyId: string) => `survey:deadline:${surveyId}`
+  surveyDeadline: (surveyId: string) => `survey:deadline:${surveyId}`,
+
+  // ─── 消息互动模块 ──────────────────────────────────────────
+  /**
+   * 用户未读消息计数（HASH，字段为 total 与各 MessageType）。
+   * 缓存的是"未读计数"这一派生计算结果，不是状态本身的存储——状态的唯一持久化
+   * 来源是 Message / MessageBroadcastState 表，本键随时可安全清空重建。
+   */
+  messageUnreadCount: (userId: string) => `msg:unread:${userId}`
 } as const;
 
 /** 缓存 TTL（秒）常量 */
@@ -225,6 +233,8 @@ export const CacheTTL = {
   SURVEY: 300,
   /** 答卷数据：600s（10min，只读不变） */
   RESPONSE: 600,
+  /** 消息未读计数：60s（高频访问，短 TTL 保证及时感知新消息/已读变化） */
+  MESSAGE_UNREAD_COUNT: 60,
   /** 默认：300s */
   DEFAULT: 300
 } as const;

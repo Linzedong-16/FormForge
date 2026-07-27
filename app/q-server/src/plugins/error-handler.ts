@@ -21,6 +21,15 @@ const PRISMA_ERROR_MAP: Record<string, { code: number; status: number; msg: stri
   P2014: { code: 400, status: 400, msg: "数据关联冲突，请先删除关联项" } // Required relation
 };
 
+/** @fastify/multipart 等插件常见错误码 → 用户友好的中文提示 */
+const FASTIFY_ERROR_MSG_MAP: Record<string, string> = {
+  FST_REQ_FILE_TOO_LARGE: "文件大小超出限制",
+  FST_FILES_LIMIT: "上传文件数量超出限制",
+  FST_FIELDS_LIMIT: "表单字段数量超出限制",
+  FST_PARTS_LIMIT: "表单内容超出限制",
+  FST_INVALID_MULTIPART_CONTENT_TYPE: "请求格式错误，请使用 multipart/form-data 上传"
+};
+
 /**
  * 判断错误是否为 Prisma 已知错误（携带 code 字段）
  */
@@ -105,7 +114,29 @@ const errorHandlerPlugin: import("fastify").FastifyPluginAsync = async fastify =
     }
 
     // ════════════════════════════════════════════════════════════
-    // 4. 其他未预期错误 — 兜底 500
+    // 4. Fastify / 插件级 4xx 错误（如 @fastify/multipart 文件超限、字段超限等）
+    //    这类错误自带正确的 statusCode，此前被下方兜底分支强制覆盖为 500，
+    //    导致"文件过大"等客户端可修正的错误被误报为服务器内部错误。
+    // ════════════════════════════════════════════════════════════
+    if (
+      "statusCode" in error &&
+      typeof error.statusCode === "number" &&
+      error.statusCode >= 400 &&
+      error.statusCode < 500
+    ) {
+      const statusCode = error.statusCode;
+      const code = "code" in error ? String(error.code) : undefined;
+      request.log.warn({ err: { code, message: error.message } }, "请求被拒绝（插件级校验）");
+
+      return reply.status(statusCode).send({
+        data: null,
+        code: statusCode,
+        msg: FASTIFY_ERROR_MSG_MAP[code ?? ""] ?? error.message
+      } satisfies ApiResponse);
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // 5. 其他未预期错误 — 兜底 500
     // ════════════════════════════════════════════════════════════
     request.log.error(
       { err: sanitizeForLog({ name: error.name, message: error.message, stack: error.stack }) },

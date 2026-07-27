@@ -41,6 +41,8 @@
 // ───────────────────────────────────────────────────────────────────────────
 .login-page {
   min-height: 100vh;
+  // 渐变色暂不使用
+  // background: linear-gradient(190deg, #22b0c9 0%, #3a78e8 45%, #7a42d8 100%);
   background-color: var(--login-bg);
   display: flex;
   flex-direction: column;

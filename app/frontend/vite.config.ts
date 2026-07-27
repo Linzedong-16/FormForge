@@ -21,7 +21,48 @@ export default defineConfig(({ command }) => ({
   ],
   resolve: {
     alias: {
-      "@": resolve(__dirname, "src")
+      "@": resolve(__dirname, "src"),
+      // 引用 monorepo 共享类型包（与 q-editor 保持一致的别名配置）
+      "@common": resolve(__dirname, "../../packages/common/src")
+    }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalizedId = id.replace(/\\/g, "/");
+
+          if (!normalizedId.includes("/node_modules/")) {
+            return;
+          }
+
+          if (
+            normalizedId.includes("/node_modules/vue/") ||
+            normalizedId.includes("/node_modules/vue-router/") ||
+            normalizedId.includes("/node_modules/pinia/") ||
+            normalizedId.includes("/node_modules/vue-i18n/")
+          ) {
+            return "vue-core";
+          }
+
+          if (normalizedId.includes("/node_modules/@arco-design/")) {
+            return "ui-arco";
+          }
+
+          if (
+            normalizedId.includes("/node_modules/element-plus/") ||
+            normalizedId.includes("/node_modules/@element-plus/")
+          ) {
+            return "ui-element";
+          }
+
+          if (normalizedId.includes("/node_modules/monorepo-survey-engine/")) {
+            return "survey-engine";
+          }
+
+          return "vendor";
+        }
+      }
     }
   },
   server: {

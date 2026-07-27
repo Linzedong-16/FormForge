@@ -70,10 +70,11 @@
   --el-border-radius-lg: 10px;
 
   // —— 阴影（柔和的多层投影，贴近 shadcn 的 shadow-sm / shadow-md）——
-  --el-box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --el-box-shadow-light: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --el-box-shadow-lighter: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --el-box-shadow-dark: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  // 数值统一来源于 elevation.scss 的 --shadow-* 令牌（等价重构，像素值不变）
+  --el-box-shadow: var(--shadow-md);
+  --el-box-shadow-light: var(--shadow-xs);
+  --el-box-shadow-lighter: var(--shadow-sm);
+  --el-box-shadow-dark: var(--shadow-lg);
 
   // —— 自定义：focus ring 颜色（输入类组件聚焦光晕）——
   --shadcn-ring: rgb(24 24 27 / 0.12);
@@ -316,32 +317,75 @@
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// 11. Table —— 表头中性灰、行 hover、柔和分割线
+// 11. Table —— 磨砂玻璃表格：表头/行背景透明化，露出整体玻璃背景与模糊效果
+//     注意：问卷渲染区域（.survey-scope，如矩阵题表格）需保持统一亮色外观，
+//     不参与玻璃化，对应反向覆盖见 survey-scope.scss
 // ───────────────────────────────────────────────────────────────────────────
 .el-table {
   --el-table-border-color: var(--el-border-color);
-  --el-table-header-bg-color: var(--el-fill-color-lighter);
+  --el-table-header-bg-color: transparent;
   --el-table-header-text-color: var(--el-text-color-secondary);
   --el-table-row-hover-bg-color: var(--el-fill-color);
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius-glass);
+  box-shadow: var(--shadow-glass);
+
+  @supports not (backdrop-filter: blur(1px)) {
+    background: var(--glass-fallback-bg);
+  }
 
   th.el-table__cell {
     font-weight: 600;
     font-size: var(--el-font-size-base);
   }
+
+  // 纵向滚动 + 右侧固定列同时出现时，组件库内部写死了白色占位补丁，需同步玻璃化
+  .el-table__fixed-right-patch {
+    background: var(--glass-bg);
+  }
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// 12. Dialog / MessageBox —— 大圆角 + 柔和阴影
+// 12. Dialog / MessageBox / Drawer —— 大圆角 + 磨砂玻璃 + 最高层级阴影
 // ───────────────────────────────────────────────────────────────────────────
 .el-dialog {
   border-radius: var(--el-border-radius-lg);
-  box-shadow: var(--el-box-shadow-dark);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-modal));
+  -webkit-backdrop-filter: blur(var(--glass-blur-modal));
+  box-shadow: var(--shadow-xl);
+
+  @supports not (backdrop-filter: blur(1px)) {
+    background: var(--glass-fallback-bg);
+  }
 }
 .el-message-box {
   border-radius: var(--el-border-radius-lg);
-  box-shadow: var(--el-box-shadow-dark);
-}
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-modal));
+  -webkit-backdrop-filter: blur(var(--glass-blur-modal));
+  box-shadow: var(--shadow-xl);
 
+  @supports not (backdrop-filter: blur(1px)) {
+    background: var(--glass-fallback-bg);
+  }
+}
+// Drawer 原无自定义样式，仅新增玻璃背景，圆角保持组件库默认
+.el-drawer {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-modal));
+  -webkit-backdrop-filter: blur(var(--glass-blur-modal));
+  box-shadow: var(--shadow-xl);
+
+  @supports not (backdrop-filter: blur(1px)) {
+    background: var(--glass-fallback-bg);
+  }
+}
 // ───────────────────────────────────────────────────────────────────────────
 // 13. Message —— 顶部提示圆角 + 阴影
 // ───────────────────────────────────────────────────────────────────────────

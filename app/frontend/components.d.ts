@@ -36,6 +36,9 @@ declare module 'vue' {
     ElTransfer: typeof import('element-plus/es')['ElTransfer']
     ElUpload: typeof import('element-plus/es')['ElUpload']
     LoginModal: typeof import('./src/components/LoginModal.vue')['default']
+    MessageBell: typeof import('./src/components/message/MessageBell.vue')['default']
+    MessageDrawer: typeof import('./src/components/message/MessageDrawer.vue')['default']
+    MessageItem: typeof import('./src/components/message/MessageItem.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

@@ -425,7 +425,7 @@ if (this.fastify.amqp) {
       "mail:send",
       Buffer.from(JSON.stringify({
         to: email,
-        subject: "Q问卷 - 注册验证码",
+        subject: "FormForge - 注册验证码",
         template: "verification-code",
         data: { code, expiresMinutes: 5 }
       }))

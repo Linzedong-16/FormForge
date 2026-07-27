@@ -4,9 +4,22 @@ public
 node_modules
 pnpm-lock.yaml
 docs/**/*.md
+
+# 单元测试与 Playwright E2E 测试相关代码，不参与 Prettier 格式化
 spec
+__tests__
+__mocks__
+e2e
+test-setup.ts
 **/*.spec.*
 **/*.test.*
+
+# 测试/构建产物报告目录，不参与格式化
+coverage
+test-results
+playwright-report
+monocart-report
+
 # 自动生成文件，不参与格式化
 auto-imports.d.ts
 components.d.ts

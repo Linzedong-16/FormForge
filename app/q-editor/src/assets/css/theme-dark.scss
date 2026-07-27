@@ -102,13 +102,26 @@ html.dark .register-form .el-button--primary {
   color: #18181b;
 }
 
-// 编辑器三栏面板（原为硬编码半透明白）跟随暗色
+// 编辑器左右侧栏面板：原为硬编码半透明白 + 本文件单独覆盖的暗色写法，
+// 现两侧面板已改为引用 --glass-bg 等玻璃令牌（见 LeftSide/Index.vue、RightSide.vue），
+// 暗色取值随下方令牌覆盖自动生效，此处不再需要单独的选择器覆盖规则。
+// 中部编辑画布（.center-container）带 survey-scope，需始终保持亮色外观，
+// 不纳入本规则，避免暗色文字（--font-color 锁定为近黑）落在暗色背景上导致对比度问题。
+
+// 阴影/磨砂玻璃令牌暗色取值（elevation.scss 亮色令牌的对应覆盖）
+// 暗色下阴影单靠加深 alpha 不够，同时叠加顶部描边高光模拟层次，是暗色 UI 的常见处理方式
 html.dark {
-  .left-side-container,
-  .right-side-container,
-  .center-container {
-    background: rgba(24, 24, 27, 0.92);
-  }
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.55), 0 8px 10px -6px rgb(0 0 0 / 0.4);
+  --shadow-glass: 0 8px 24px -4px rgb(0 0 0 / 0.45);
+  --shadow-highlight-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.05);
+
+  --glass-bg: rgb(24 24 27 / 0.6);
+  --glass-border: rgb(255 255 255 / 0.08);
+  --glass-fallback-bg: rgb(24 24 27 / 0.92);
 }
 
 // 分页器当前页：暗色下为近白底，文字需深色（否则白底白字看不清）

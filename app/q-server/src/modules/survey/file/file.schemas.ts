@@ -8,11 +8,18 @@ import { z } from "zod";
 
 // ─── 通用 ──────────────────────────────────────────────────────
 
-/** 问卷 ID（BigInt 字符串校验） */
+/** 问卷 ID（BigInt 字符串校验，可选 — 支持草稿阶段未保存问卷的上传场景） */
 export const surveyIdSchema = z
   .string()
   .regex(/^\d+$/, "问卷 ID 必须为数字")
   .transform(val => BigInt(val));
+
+/** 问卷 ID（可选 — 允许空值，用于 PicItem 在草稿阶段的上传） */
+export const optionalSurveyIdSchema = z
+  .string()
+  .regex(/^\d+$/, "问卷 ID 必须为数字")
+  .transform(val => BigInt(val))
+  .optional();
 
 /** 文件 ID（BigInt 字符串校验） */
 export const fileIdSchema = z

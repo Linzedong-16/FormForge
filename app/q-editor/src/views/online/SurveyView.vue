@@ -1,5 +1,5 @@
 <template>
-  <div v-if="surveyData">
+  <div v-if="surveyData" class="survey-page">
     <div class="survey-container mc survey-scope">
       <!-- 问卷标题与状态信息 -->
       <div class="survey-header mt-30 mb-20">
@@ -294,6 +294,12 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+// 渐变色暂不使用
+// .survey-page {
+//   min-height: 100vh;
+//   background: linear-gradient(to right, #22b0c9 0%, #3a78e8 40%, #7a42d8 100%);
+// }
+
 .survey-container {
   width: 800px;
 }

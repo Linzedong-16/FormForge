@@ -91,6 +91,8 @@ $radius-md: var(--border-radius-md, 6px);
 
 .settings-page {
   min-height: 100vh;
+  // 渐变色暂不使用
+  // background: linear-gradient(170deg, #22b0c9 0%, #3a78e8 50%, #7a42d8 100%);
   background-color: $clr-bg;
   padding: 24px;
 }

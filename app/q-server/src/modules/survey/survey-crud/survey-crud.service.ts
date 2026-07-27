@@ -10,11 +10,13 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { Prisma } from "../../../generated/prisma/client.js";
 import { createCache, CacheKeys, CacheTTL } from "../../../utils/cache.js";
 import type { CacheClient } from "../../../utils/cache.js";
 import { createAuditLog } from "../../../utils/audit-log.js";
 import { buildPagination } from "../../../utils/pagination.js";
 import { AppError } from "../../../utils/errors.js";
+import { MessageHookService } from "../../message/message-hooks.service.js";
 import type {
   CreateSurveyInput,
   UpdateSurveyInput,
@@ -179,6 +181,16 @@ export class SurveyService {
     // 清除列表缓存
     await this.cache.delByPattern(CacheKeys.surveyListPattern(bigIntToStr(userId)));
 
+    // 回填草稿阶段通过 PicItem 上传的临时物料的 survey_id
+    const { SurveyFileService } = await import("../file/file.service.js");
+    const fileService = new SurveyFileService(this.fastify);
+    fileService.backfillSurveyId(userId, survey.id).catch(err => {
+      this.fastify.log.warn(
+        { err, userId: String(userId), surveyId: String(survey.id) },
+        "[survey-crud] 回填 survey_id 失败"
+      );
+    });
+
     return {
       survey_id: bigIntToStr(survey.id),
       title: survey.title,
@@ -324,6 +336,9 @@ export class SurveyService {
           });
           // 清除缓存和 Redis 截止时间标记
           await this.cache.del(cacheKey);
+          // 自动关闭后同步清除统计缓存，避免概览页 published_surveys 计数包含已关闭问卷
+          await this.cache.del(CacheKeys.statsOverview).catch(() => {});
+          await this.cache.del(CacheKeys.statsBySurvey(surveyIdStr)).catch(() => {});
           await this.fastify.redis.del(deadlineKey).catch(() => {});
           throw new AppError("问卷已截止，不再接受填写", 404);
         }
@@ -520,6 +535,9 @@ export class SurveyService {
     });
 
     createAuditLog(this.fastify, userId, "publish_survey", "survey", surveyId).catch(() => {});
+
+    // 触发问卷发布成功的通知（消息系统，失败不影响发布主流程）
+    new MessageHookService(this.fastify).onSurveyPublished(userId, surveyId, result.title).catch(() => {});
 
     await this.invalidateCache(surveyId, userId);
 
@@ -784,6 +802,13 @@ export class SurveyService {
       // Redis 不可用时仍返回成功（截止时间校验降级放行）
     }
 
+    // 同步把截止时间写入数据库列（消息系统"问卷即将过期提醒"定时扫描依赖此列作为
+    // 持久化依据，而不是易失的 Redis TTL，见消息系统 research.md §3）
+    await this.fastify.prisma.survey.update({
+      where: { id: surveyId },
+      data: { deadline: deadlineDate }
+    });
+
     // 写审计日志
     createAuditLog(this.fastify, userId, "generate_survey_link", "survey", surveyId, {
       deadline: input.deadline,
@@ -952,6 +977,9 @@ export class SurveyService {
               data: { status: 2, closed_at: new Date() }
             })
             .catch(() => {});
+          // 同步清除统计缓存
+          await this.cache.del(CacheKeys.statsOverview).catch(() => {});
+          await this.cache.del(CacheKeys.statsBySurvey(surveyIdStr)).catch(() => {});
           await this.fastify.redis.del(CacheKeys.surveyDeadline(surveyIdStr)).catch(() => {});
           throw new AppError("问卷已截止，不再接受填写", 400);
         }
@@ -989,7 +1017,7 @@ export class SurveyService {
     }
 
     // 5. 事务写入答卷 + 答案
-    const response = await this.fastify.prisma.$transaction(async tx => {
+    const { response, updatedSurvey } = await this.fastify.prisma.$transaction(async tx => {
       const created = await tx.response.create({
         data: {
           survey_id: surveyId,
@@ -1007,7 +1035,9 @@ export class SurveyService {
             response_id: created.id,
             component_id: BigInt(a.component_id),
             value: a.value ?? null,
-            values: a.values ?? null
+            // values 是 Json? 字段，Prisma 要求用 Prisma.DbNull 表示数据库 NULL，
+            // 裸 null 会被当作"未设置该字段"而产生类型错误
+            values: a.values ?? Prisma.DbNull
           }));
 
         if (answerRows.length > 0) {
@@ -1016,13 +1046,32 @@ export class SurveyService {
       }
 
       // 更新答卷数缓存
-      await tx.survey.update({
+      const updatedSurvey = await tx.survey.update({
         where: { id: surveyId },
         data: { responses_count: { increment: 1 } }
       });
 
-      return created;
+      return { response: created, updatedSurvey };
     });
+
+    // 5.5. 答卷里程碑判断（消息系统，事件驱动、幂等去重，见消息系统 research.md §4）
+    const milestones = [50, 100, 500];
+    const crossedMilestone = milestones
+      .filter(m => m > updatedSurvey.last_milestone_notified && updatedSurvey.responses_count >= m)
+      .at(-1);
+    if (crossedMilestone !== undefined) {
+      this.fastify.prisma.survey
+        .update({ where: { id: surveyId }, data: { last_milestone_notified: crossedMilestone } })
+        .then(() =>
+          new MessageHookService(this.fastify).onSurveyResponseMilestone(
+            updatedSurvey.user_id,
+            surveyId,
+            updatedSurvey.title,
+            crossedMilestone
+          )
+        )
+        .catch(err => this.fastify.log.warn({ err, surveyId: surveyIdStr }, "[submitResponse] 里程碑通知处理失败"));
+    }
 
     // 6. 消费 token（删除，防止复用）
     await consumeToken(this.fastify, surveyIdStr, input.token);

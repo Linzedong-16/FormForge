@@ -212,8 +212,9 @@ const removeCom = (index: number) => {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
   padding: 20px;
-  background: var(--white);
-  opacity: 0.9;
+  // 原为 background: var(--white); opacity: 0.9，整体透明会连内部文字一起拉淡；
+  // 改为只对背景本身取一个接近白的半透明值，画布内容保持 100% 清晰可读
+  background: rgba(255, 255, 255, 0.94);
   position: relative;
   overflow: auto;
   max-height: calc(100vh - 140px); /* 70px margin top + 70px margin bottom */
@@ -235,7 +236,7 @@ const removeCom = (index: number) => {
     &:hover {
       transform: scale(1.01);
       transition: 0.5s;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-md);
     }
   }
 }
@@ -243,7 +244,7 @@ const removeCom = (index: number) => {
 .active {
   transform: scale(1.01);
   transition: 0.5s;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 .delete-btn {
   right: -5px;

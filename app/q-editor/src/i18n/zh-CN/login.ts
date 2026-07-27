@@ -1,6 +1,6 @@
 export default {
   // Logo
-  logoName: "Q问卷",
+  logoName: "FormForge",
 
   // 登录表单
   loginTitle: "邮箱登录",

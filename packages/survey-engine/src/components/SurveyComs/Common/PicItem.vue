@@ -32,7 +32,7 @@ import { useI18n } from "vue-i18n";
 import { Upload } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import type { UploadProps, UploadRequestOptions } from "element-plus";
-import { uploadImage } from "../../../api/upload";
+import { uploadSurveyFile } from "../../../api/upload";
 
 const { t } = useI18n();
 
@@ -58,11 +58,21 @@ interface GetLinkFn {
   (data: { index: number; link: string }): void;
 }
 const getLink = inject<GetLinkFn | null>("getLink", null);
-// 自定义上传：使用 api 层提取出的 uploadImage 接口替代 el-upload 的默认上传逻辑
-// 上传成功后，通过 options.onSuccess 触发组件的 on-success 回调（handleAvatarSuccess），复用原有处理链路
+
+/** 函数式 surveyId 获取器，上传时实时获取当前问卷 ID */
+const getSurveyId = inject<() => string | null>("getSurveyId", () => null);
+
+/**
+ * 自定义上传 — 使用带追踪的新上传接口（写入 media_assets 表）
+ *
+ * 优先调用 uploadSurveyFile（带 media_asset 追踪），surveyId 为空时仍使用
+ * 该接口（传空 survey_id），确保所有图片从上传第一刻起即被物料管理追踪。
+ */
 const customUpload = async (options: UploadRequestOptions) => {
   try {
-    const data = await uploadImage(options.file);
+    const sid = getSurveyId();
+    // 始终使用追踪接口，survey_id 可选（草稿阶段为空）
+    const data = await uploadSurveyFile(options.file, sid ?? undefined);
     options.onSuccess?.(data);
     return data;
   } catch (error) {
@@ -71,15 +81,23 @@ const customUpload = async (options: UploadRequestOptions) => {
     throw error;
   }
 };
-// 上传成功的回调
-const handleAvatarSuccess: UploadProps["onSuccess"] = async response => {
+
+/**
+ * 上传成功回调 — 适配新接口响应格式
+ *
+ * 新接口（uploadSurveyFile）返回的数据结构直接包含 file_url，
+ * 旧接口（uploadImage）返回 imageUrl，此处兼容处理。
+ */
+const handleAvatarSuccess: UploadProps["onSuccess"] = async (response: Record<string, unknown>) => {
   console.log("图片上传响应:", response);
-  if (getLink && response.imageUrl) {
+  // 新接口返回 data 内嵌 file_url 格式，或旧接口的 imageUrl
+  const url = (response.file_url as string) || (response.imageUrl as string) || "";
+  if (getLink && url) {
     getLink({
       index: props.index,
-      link: response.imageUrl
+      link: url
     });
-    imageUrl.value = response.imageUrl;
+    imageUrl.value = url;
     ElMessage.success(t("components.picItem.uploadSuccess"));
   } else {
     ElMessage.error(t("components.picItem.saveFailed"));

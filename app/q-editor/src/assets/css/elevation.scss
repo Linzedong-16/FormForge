@@ -1,0 +1,36 @@
+/**
+ * 阴影/层级(elevation)与磨砂玻璃(glassmorphism)设计令牌
+ *
+ * 与 variables.scss（色彩/圆角/间距）平级的独立令牌文件，作为阴影数值的唯一事实来源。
+ * element-theme.scss 中原有的四个 --el-box-shadow* 改为引用本文件对应级别（数值保持一致，
+ * 属于等价重构，不产生可见变化）；新增 --shadow-xl 供模态框等更高层级使用。
+ * 暗色下的取值覆盖见 theme-dark.scss，色弱模式下阴影为中性属性，无需在 color-blind.scss 覆盖。
+ */
+:root {
+  // —— 阴影层级：五级由浅到深 ——
+  // xs：对应原 --el-box-shadow-light，最小反馈用（列表项/小控件 hover）
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  // sm：对应原 --el-box-shadow-lighter，卡片默认态
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  // md：对应原 --el-box-shadow（本体值），一般悬浮/选中反馈
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  // lg：对应原 --el-box-shadow-dark，弹层/下拉面板
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  // xl：新增最高层级，专供模态框（Dialog/MessageBox/Drawer）
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+  // 玻璃面板专用弥散阴影：扩散更大、强度更低，避免叠加 backdrop-filter 后显得过重
+  --shadow-glass: 0 8px 24px -4px rgb(0 0 0 / 0.1);
+  // 暗色玻璃/卡片顶部描边高光，营造层次感（亮色下不生效，暗色覆盖见 theme-dark.scss）
+  --shadow-highlight-inset: none;
+
+  // —— 磨砂玻璃(glassmorphism)令牌：中性黑白 alpha，不含语义色相，色弱模式天然兼容 ——
+  --glass-bg: rgb(255 255 255 / 0.72);
+  --glass-border: rgb(255 255 255 / 0.5);
+  --glass-blur: 10px;
+  --glass-blur-modal: 14px;
+  // 不支持 backdrop-filter 时的降级底色：更高不透明度的纯色，保证内容可读
+  --glass-fallback-bg: rgb(255 255 255 / 0.96);
+
+  // 玻璃容器专用圆角，不改动现有四级 --border-radius-*，避免波及面过大
+  --radius-glass: 12px;
+}

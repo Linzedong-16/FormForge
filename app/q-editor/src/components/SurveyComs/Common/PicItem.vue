@@ -32,7 +32,7 @@ import { useI18n } from "vue-i18n";
 import { Upload } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import type { UploadProps, UploadRequestOptions } from "element-plus";
-import { uploadSurveyFile, uploadImage } from "@/api/upload";
+import { uploadSurveyFile } from "@/api/upload";
 
 const { t } = useI18n();
 
@@ -69,15 +69,8 @@ const getSurveyId = inject<() => string | null>("getSurveyId", () => null);
  */
 const customUpload = async (options: UploadRequestOptions) => {
   try {
-    let result: { code: number; msg: string; data: { file_url?: string; imageUrl?: string } | null };
-
-    const sid = getSurveyId();
-    if (sid) {
-      result = await uploadSurveyFile(options.file, sid);
-    } else {
-      // 未同步到远程时降级使用旧接口
-      result = await uploadImage(options.file);
-    }
+    const sid = getSurveyId() ?? undefined;
+    const result = await uploadSurveyFile(options.file, sid);
 
     options.onSuccess?.(result);
     return result;

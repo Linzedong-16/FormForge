@@ -187,12 +187,15 @@ const resolvedError = computed(() => {
 </script>
 
 <template>
+  <!-- append-to-body：挂载到 body，避免嵌套在带 backdrop-filter 的 .header 内时，
+       其 fixed 定位被 backdrop-filter 创建的新 containing block 影响而错位 -->
   <el-drawer
     v-model="visible"
     :title="t('editor.aiPanelTitle')"
     direction="rtl"
     size="480px"
     :close-on-click-modal="false"
+    append-to-body
     @close="closePanel"
   >
     <div class="ai-gen-panel">
@@ -413,7 +416,7 @@ const resolvedError = computed(() => {
 
 .stream-content {
   background: var(--el-fill-color-light);
-  border-radius: 6px;
+  border-radius: var(--border-radius-md);
   padding: 12px;
   font-size: 13px;
   line-height: 1.8;
@@ -466,7 +469,7 @@ const resolvedError = computed(() => {
   gap: 10px;
   padding: 8px 10px;
   background: var(--el-fill-color-lighter);
-  border-radius: 6px;
+  border-radius: var(--border-radius-md);
   font-size: 13px;
   transition: background 0.2s;
 
@@ -548,7 +551,7 @@ const resolvedError = computed(() => {
 .result-overview {
   padding: 16px;
   background: var(--el-fill-color-light);
-  border-radius: 8px;
+  border-radius: var(--border-radius-lg);
   margin-bottom: 16px;
 }
 
@@ -569,7 +572,7 @@ const resolvedError = computed(() => {
   margin-top: 12px;
   padding: 12px;
   background: var(--el-color-warning-light-9);
-  border-radius: 6px;
+  border-radius: var(--border-radius-md);
 }
 
 .warn-title {
@@ -629,7 +632,7 @@ const resolvedError = computed(() => {
   align-items: center;
   padding: 10px 12px;
   background: var(--el-fill-color-lighter);
-  border-radius: 6px;
+  border-radius: var(--border-radius-md);
   margin-bottom: 6px;
   cursor: pointer;
   transition: background 0.2s;
