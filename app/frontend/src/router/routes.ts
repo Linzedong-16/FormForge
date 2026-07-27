@@ -72,6 +72,12 @@ export const childrenRoutes: RouteRecordRaw[] = [
         name: "surveyStatistics",
         component: () => import("../views/statistics/SurveyStatisticsView.vue"),
         meta: { title: "答卷统计", icon: "cloud" }
+      },
+      {
+        path: "statistics/:id",
+        name: "surveyStatsDetail",
+        component: () => import("../views/statistics/SurveyStatsDetailView.vue"),
+        meta: { title: "答卷详情统计", icon: "cloud" }
       }
     ]
   },
