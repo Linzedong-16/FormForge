@@ -1,0 +1,2230 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>E2E 测试覆盖率报告</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #f5f5f5;
+        color: #333;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px 40px;
+      }
+      .header h1 {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+      .header .meta {
+        font-size: 14px;
+        opacity: 0.85;
+      }
+      .summary {
+        display: flex;
+        gap: 20px;
+        padding: 20px 40px;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .summary-card {
+        flex: 1;
+        text-align: center;
+        padding: 16px;
+        border-radius: 8px;
+        background: #f8f9fa;
+      }
+      .summary-card .pct {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .summary-card .label {
+        font-size: 13px;
+        color: #666;
+      }
+      .summary-card .frac {
+        font-size: 12px;
+        color: #999;
+        margin-top: 4px;
+      }
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px 40px;
+      }
+      .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 24px 0 12px;
+        color: #444;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      th {
+        background: #f8f9fa;
+        padding: 10px 12px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+        border-bottom: 2px solid #e9ecef;
+      }
+      td {
+        padding: 8px 12px;
+        font-size: 13px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .file-name {
+        font-family: "Consolas", "Monaco", monospace;
+        font-size: 12px;
+        max-width: 400px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        min-width: 60px;
+      }
+      .bar-bg {
+        width: 80px;
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s;
+      }
+      .footer {
+        text-align: center;
+        padding: 20px;
+        color: #999;
+        font-size: 12px;
+      }
+      .passed {
+        color: #22c55e;
+      }
+      .warning {
+        color: #eab308;
+      }
+      .failed {
+        color: #ef4444;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>E2E 测试覆盖率报告</h1>
+      <div class="meta">生成时间: 2026/7/15 22:39:54 | q-editor 前端 E2E 测试</div>
+    </div>
+
+    <div class="summary">
+      <div class="summary-card">
+        <div class="pct" style="color: #ef4444">33.89%</div>
+        <div class="label">语句覆盖率 (Statements)</div>
+        <div class="frac">1307 / 3857</div>
+      </div>
+      <div class="summary-card">
+        <div class="pct" style="color: #ef4444">19.36%</div>
+        <div class="label">分支覆盖率 (Branches)</div>
+        <div class="frac">327 / 1689</div>
+      </div>
+      <div class="summary-card">
+        <div class="pct" style="color: #ef4444">21.93%</div>
+        <div class="label">函数覆盖率 (Functions)</div>
+        <div class="frac">232 / 1058</div>
+      </div>
+      <div class="summary-card">
+        <div class="pct" style="color: #ef4444">33.89%</div>
+        <div class="label">行覆盖率 (Lines)</div>
+        <div class="frac">1307 / 3857</div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="section-title">文件覆盖率详情 (85 个文件)</div>
+      <table>
+        <thead>
+          <tr>
+            <th>文件</th>
+            <th class="num">语句%</th>
+            <th></th>
+            <th class="num">语句</th>
+            <th class="num">分支%</th>
+            <th></th>
+            <th class="num">分支</th>
+            <th class="num">函数%</th>
+            <th></th>
+            <th class="num">函数</th>
+            <th class="num">行%</th>
+            <th></th>
+            <th class="num">行</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="file-name">src/stores/actions.ts</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/51</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/34</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/14</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/51</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/utils/aiToStatus.ts</td>
+            <td class="num">2.22%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 2.22%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">1/45</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/31</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/4</td>
+            <td class="num">2.22%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 2.22%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">1/45</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/AdvancedComs/Signature.vue</td>
+            <td class="num">3.89%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 3.89%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/180</td>
+            <td class="num">2.63%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 2.63%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/76</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/27</td>
+            <td class="num">3.89%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 3.89%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/180</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/directives/permiss.ts</td>
+            <td class="num">6.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 6.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/30</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/26</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/9</td>
+            <td class="num">6.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 6.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/30</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue</td>
+            <td class="num">14.29%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 14.29%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/35</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/10</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/14</td>
+            <td class="num">14.29%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 14.29%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/35</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/SizeEditor.vue</td>
+            <td class="num">15.15%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 15.15%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/33</td>
+            <td class="num">14.29%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 14.29%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/14</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/13</td>
+            <td class="num">15.15%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 15.15%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/33</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/TextTypeEditor.vue</td>
+            <td class="num">15.63%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 15.63%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/32</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/12</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/11</td>
+            <td class="num">15.63%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 15.63%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/32</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/WeightEditor.vue</td>
+            <td class="num">15.63%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 15.63%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/32</td>
+            <td class="num">14.29%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 14.29%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/14</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/11</td>
+            <td class="num">15.63%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 15.63%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/32</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/ItalicEditor.vue</td>
+            <td class="num">15.63%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 15.63%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/32</td>
+            <td class="num">14.29%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 14.29%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/14</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/11</td>
+            <td class="num">15.63%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 15.63%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/32</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/PositionEditor.vue</td>
+            <td class="num">16.13%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.13%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/31</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/10</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/11</td>
+            <td class="num">16.13%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.13%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/31</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/DateTimeTypeEditor.vue</td>
+            <td class="num">16.13%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.13%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/31</td>
+            <td class="num">25%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 25%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/8</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/9</td>
+            <td class="num">16.13%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.13%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/31</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/TextInputTypeEditor.vue</td>
+            <td class="num">16.13%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.13%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/31</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/12</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/11</td>
+            <td class="num">16.13%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.13%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/31</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/utils/index.ts</td>
+            <td class="num">16.41%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.41%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">21/128</td>
+            <td class="num">8.06%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 8.06%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">10/124</td>
+            <td class="num">46.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 46.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/15</td>
+            <td class="num">16.41%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.41%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">21/128</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/SelectComs/OptionSelect.vue</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/30</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/10</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/10</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/30</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/AdvancedComs/Cascader.vue</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/30</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/12</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/9</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/30</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/AdvancedComs/Transfer.vue</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/30</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/10</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/10</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/30</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/api/clients/auth.ts</td>
+            <td class="num">18.18%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 18.18%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/11</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/5</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/2</td>
+            <td class="num">18.18%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 18.18%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/11</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/AdvancedComs/DateTime.vue</td>
+            <td class="num">18.52%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 18.52%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/27</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/10</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/8</td>
+            <td class="num">18.52%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 18.52%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/27</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/AdvancedComs/Slider.vue</td>
+            <td class="num">18.52%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 18.52%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/27</td>
+            <td class="num">12.5%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 12.5%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/16</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/8</td>
+            <td class="num">18.52%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 18.52%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/27</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/ColorEditor.vue</td>
+            <td class="num">18.52%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 18.52%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/27</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/12</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/7</td>
+            <td class="num">18.52%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 18.52%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/27</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/AdvancedComs/RateScore.vue</td>
+            <td class="num">19.23%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 19.23%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/26</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/10</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/8</td>
+            <td class="num">19.23%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 19.23%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/26</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/SelectComs/SinglePicSelect.vue</td>
+            <td class="num">19.35%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 19.35%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">6/31</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/10</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/11</td>
+            <td class="num">19.35%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 19.35%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">6/31</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/SelectComs/MultiPicSelect.vue</td>
+            <td class="num">19.35%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 19.35%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">6/31</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/10</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/11</td>
+            <td class="num">19.35%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 19.35%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">6/31</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Common/PicItem.vue</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">12/60</td>
+            <td class="num">10%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 10%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/20</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/14</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">12/60</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/composables/useAIGenerate.ts</td>
+            <td class="num">20.43%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20.43%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">19/93</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/34</td>
+            <td class="num">5.26%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 5.26%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">1/19</td>
+            <td class="num">20.43%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20.43%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">19/93</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/views/EditorView/RightSide.vue</td>
+            <td class="num">20.62%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20.62%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">20/97</td>
+            <td class="num">4.11%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 4.11%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">3/73</td>
+            <td class="num">28.57%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 28.57%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/7</td>
+            <td class="num">20.62%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20.62%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">20/97</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/MatrixOptionsEditor.vue</td>
+            <td class="num">21.62%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 21.62%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">8/37</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/10</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/12</td>
+            <td class="num">21.62%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 21.62%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">8/37</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/SignatureConfigEditor.vue</td>
+            <td class="num">21.62%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 21.62%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">8/37</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/12</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/10</td>
+            <td class="num">21.62%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 21.62%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">8/37</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/api/clients/server.ts</td>
+            <td class="num">22.22%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 22.22%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">8/36</td>
+            <td class="num">11.54%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 11.54%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">3/26</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">2/3</td>
+            <td class="num">22.22%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 22.22%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">8/36</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/router/index.ts</td>
+            <td class="num">22.73%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 22.73%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">15/66</td>
+            <td class="num">40%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 40%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">6/15</td>
+            <td class="num">10.42%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 10.42%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/48</td>
+            <td class="num">22.73%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 22.73%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">15/66</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/views/EditorView/index.vue</td>
+            <td class="num">22.73%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 22.73%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">30/132</td>
+            <td class="num">5.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 5.33%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">4/75</td>
+            <td class="num">29.41%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 29.41%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/17</td>
+            <td class="num">22.73%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 22.73%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">30/132</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/OptionsEditor.vue</td>
+            <td class="num">22.86%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 22.86%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">8/35</td>
+            <td class="num">33.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 33.33%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/6</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/11</td>
+            <td class="num">22.86%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 22.86%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">8/35</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/Common/GenerateLinkDialog.vue</td>
+            <td class="num">23.08%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 23.08%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">33/143</td>
+            <td class="num">7.27%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 7.27%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">4/55</td>
+            <td class="num">7.89%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 7.89%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">3/38</td>
+            <td class="num">23.08%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 23.08%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">33/143</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/PicOptionsEditor.vue</td>
+            <td class="num">23.08%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 23.08%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">12/52</td>
+            <td class="num">14.29%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 14.29%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/14</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/18</td>
+            <td class="num">23.08%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 23.08%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">12/52</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/api/upload.ts</td>
+            <td class="num">23.53%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 23.53%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">4/17</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/2</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/3</td>
+            <td class="num">23.53%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 23.53%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">4/17</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/CascaderOptionNode.vue</td>
+            <td class="num">23.53%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 23.53%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">8/34</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/12</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/10</td>
+            <td class="num">23.53%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 23.53%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">8/34</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/stores/useEditor.ts</td>
+            <td class="num">25%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 25%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">26/104</td>
+            <td class="num">33.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 33.33%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">6/18</td>
+            <td class="num">15.63%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 15.63%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/32</td>
+            <td class="num">25%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 25%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">26/104</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/RateTextEditor.vue</td>
+            <td class="num">26.47%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 26.47%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">9/34</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/12</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/9</td>
+            <td class="num">26.47%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 26.47%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">9/34</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/stores/useUser.ts</td>
+            <td class="num">26.61%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 26.61%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">29/109</td>
+            <td class="num">18%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 18%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">9/50</td>
+            <td class="num">28.57%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 28.57%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">6/21</td>
+            <td class="num">26.61%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 26.61%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">29/109</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/TitleEditor.vue</td>
+            <td class="num">26.92%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 26.92%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/26</td>
+            <td class="num">25%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 25%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/8</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/6</td>
+            <td class="num">26.92%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 26.92%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/26</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/DescEditor.vue</td>
+            <td class="num">26.92%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 26.92%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/26</td>
+            <td class="num">25%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 25%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/8</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/6</td>
+            <td class="num">26.92%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 26.92%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/26</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/api/modules/survey/index.ts</td>
+            <td class="num">29.09%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 29.09%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">32/110</td>
+            <td class="num">1.47%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 1.47%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">1/68</td>
+            <td class="num">14.29%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 14.29%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/35</td>
+            <td class="num">29.09%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 29.09%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">32/110</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/db/operation.ts</td>
+            <td class="num">31.37%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 31.37%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">16/51</td>
+            <td class="num">11.54%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 11.54%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">3/26</td>
+            <td class="num">40.91%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 40.91%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">9/22</td>
+            <td class="num">31.37%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 31.37%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">16/51</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/EditPannel.vue</td>
+            <td class="num">31.58%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 31.58%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">6/19</td>
+            <td class="num">25%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 25%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/8</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/5</td>
+            <td class="num">31.58%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 31.58%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">6/19</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/CascaderOptionsEditor.vue</td>
+            <td class="num">32.43%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 32.43%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">12/37</td>
+            <td class="num">25%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 25%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/8</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/9</td>
+            <td class="num">32.43%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 32.43%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">12/37</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/utils/undoManager.ts</td>
+            <td class="num">35%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 35%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/20</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/6</td>
+            <td class="num">42.86%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 42.86%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">3/7</td>
+            <td class="num">35%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 35%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/20</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/SliderConfigEditor.vue</td>
+            <td class="num">36.11%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 36.11%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">13/36</td>
+            <td class="num">14.29%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 14.29%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/14</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/9</td>
+            <td class="num">36.11%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 36.11%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">13/36</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/EditItems/ButtonGroup.vue</td>
+            <td class="num">40%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 40%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">10/25</td>
+            <td class="num">33.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 33.33%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/6</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/6</td>
+            <td class="num">40%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 40%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">10/25</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/Common/MessageBell.vue</td>
+            <td class="num">41.45%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 41.45%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">63/152</td>
+            <td class="num">32.22%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 32.22%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">29/90</td>
+            <td class="num">26.53%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 26.53%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">13/49</td>
+            <td class="num">41.45%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 41.45%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">63/152</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/extension/components/AI-GenPanel.vue</td>
+            <td class="num">43.54%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 43.54%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">64/147</td>
+            <td class="num">4.88%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 4.88%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">4/82</td>
+            <td class="num">5.56%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 5.56%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/36</td>
+            <td class="num">43.54%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 43.54%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">64/147</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/Common/Header.vue</td>
+            <td class="num">46.6%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 46.6%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">48/103</td>
+            <td class="num">40.91%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 40.91%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">18/44</td>
+            <td class="num">25%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 25%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">10/40</td>
+            <td class="num">46.6%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 46.6%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">48/103</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/api/modules/settings/index.ts</td>
+            <td class="num">46.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 46.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/15</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">1/6</td>
+            <td class="num">46.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 46.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/15</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/views/EditorView/Center.vue</td>
+            <td class="num">48.48%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 48.48%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">48/99</td>
+            <td class="num">17.86%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 17.86%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">5/28</td>
+            <td class="num">34.38%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 34.38%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">11/32</td>
+            <td class="num">48.48%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 48.48%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">48/99</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/api/modules/auth/index.ts</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">8/16</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/8</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">8/16</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/api/modules/user/index.ts</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">6/12</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/6</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">6/12</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/Editor/SurveyComItem.vue</td>
+            <td class="num">51.61%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 51.61%; background: #eab308"></div></div>
+            </td>
+            <td class="num">16/31</td>
+            <td class="num">25%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 25%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/8</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">3/6</td>
+            <td class="num">51.61%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 51.61%; background: #eab308"></div></div>
+            </td>
+            <td class="num">16/31</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/Editor/ComItemProvider.vue</td>
+            <td class="num">51.85%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 51.85%; background: #eab308"></div></div>
+            </td>
+            <td class="num">14/27</td>
+            <td class="num">20%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/10</td>
+            <td class="num">40%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 40%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/5</td>
+            <td class="num">51.85%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 51.85%; background: #eab308"></div></div>
+            </td>
+            <td class="num">14/27</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/views/Layout/index.vue</td>
+            <td class="num">56.12%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 56.12%; background: #eab308"></div></div>
+            </td>
+            <td class="num">156/278</td>
+            <td class="num">41.94%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 41.94%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">65/155</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">39/78</td>
+            <td class="num">56.12%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 56.12%; background: #eab308"></div></div>
+            </td>
+            <td class="num">156/278</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/utils/useColorBlind.ts</td>
+            <td class="num">57.14%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 57.14%; background: #eab308"></div></div>
+            </td>
+            <td class="num">8/14</td>
+            <td class="num">33.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 33.33%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/6</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">2/3</td>
+            <td class="num">57.14%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 57.14%; background: #eab308"></div></div>
+            </td>
+            <td class="num">8/14</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/api/modules/message/index.ts</td>
+            <td class="num">58.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 58.33%; background: #eab308"></div></div>
+            </td>
+            <td class="num">7/12</td>
+            <td class="num">0%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 0%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">0/2</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">1/6</td>
+            <td class="num">58.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 58.33%; background: #eab308"></div></div>
+            </td>
+            <td class="num">7/12</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/Common/SurveyPagination.vue</td>
+            <td class="num">59.09%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 59.09%; background: #eab308"></div></div>
+            </td>
+            <td class="num">13/22</td>
+            <td class="num">60%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 60%; background: #eab308"></div></div>
+            </td>
+            <td class="num">6/10</td>
+            <td class="num">33.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 33.33%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/6</td>
+            <td class="num">59.09%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 59.09%; background: #eab308"></div></div>
+            </td>
+            <td class="num">13/22</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/InputComs/TextInput.vue</td>
+            <td class="num">62.96%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 62.96%; background: #eab308"></div></div>
+            </td>
+            <td class="num">17/27</td>
+            <td class="num">43.75%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 43.75%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">7/16</td>
+            <td class="num">30%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 30%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">3/10</td>
+            <td class="num">62.96%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 62.96%; background: #eab308"></div></div>
+            </td>
+            <td class="num">17/27</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Common/MaterialsHeader.vue</td>
+            <td class="num">63.16%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 63.16%; background: #eab308"></div></div>
+            </td>
+            <td class="num">12/19</td>
+            <td class="num">33.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 33.33%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/6</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">2/4</td>
+            <td class="num">63.16%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 63.16%; background: #eab308"></div></div>
+            </td>
+            <td class="num">12/19</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/NoteComs/TextNote.vue</td>
+            <td class="num">65%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 65%; background: #eab308"></div></div>
+            </td>
+            <td class="num">13/20</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">4/8</td>
+            <td class="num">60%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 60%; background: #eab308"></div></div>
+            </td>
+            <td class="num">3/5</td>
+            <td class="num">65%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 65%; background: #eab308"></div></div>
+            </td>
+            <td class="num">13/20</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/Common/UserProfile.vue</td>
+            <td class="num">65.45%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 65.45%; background: #eab308"></div></div>
+            </td>
+            <td class="num">72/110</td>
+            <td class="num">51.28%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 51.28%; background: #eab308"></div></div>
+            </td>
+            <td class="num">20/39</td>
+            <td class="num">68.75%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 68.75%; background: #eab308"></div></div>
+            </td>
+            <td class="num">22/32</td>
+            <td class="num">65.45%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 65.45%; background: #eab308"></div></div>
+            </td>
+            <td class="num">72/110</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/Common/header-nav.vue</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">14/21</td>
+            <td class="num">33.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 33.33%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/6</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">2/4</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">14/21</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/views/EditorView/LeftSide/SurveyType.vue</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">14/21</td>
+            <td class="num">33.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 33.33%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/6</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">4/6</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">14/21</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/views/preview/index.vue</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">42/63</td>
+            <td class="num">55%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 55%; background: #eab308"></div></div>
+            </td>
+            <td class="num">11/20</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">9/18</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">42/63</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/SelectComs/MultiSelect.vue</td>
+            <td class="num">68.97%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 68.97%; background: #eab308"></div></div>
+            </td>
+            <td class="num">20/29</td>
+            <td class="num">60%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 60%; background: #eab308"></div></div>
+            </td>
+            <td class="num">6/10</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">5/10</td>
+            <td class="num">68.97%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 68.97%; background: #eab308"></div></div>
+            </td>
+            <td class="num">20/29</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/utils/useTheme.ts</td>
+            <td class="num">69.23%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 69.23%; background: #eab308"></div></div>
+            </td>
+            <td class="num">9/13</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">1/6</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">2/3</td>
+            <td class="num">69.23%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 69.23%; background: #eab308"></div></div>
+            </td>
+            <td class="num">9/13</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/App.vue</td>
+            <td class="num">70.83%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 70.83%; background: #eab308"></div></div>
+            </td>
+            <td class="num">17/24</td>
+            <td class="num">37.5%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 37.5%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">3/8</td>
+            <td class="num">71.43%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 71.43%; background: #eab308"></div></div>
+            </td>
+            <td class="num">5/7</td>
+            <td class="num">70.83%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 70.83%; background: #eab308"></div></div>
+            </td>
+            <td class="num">17/24</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/main.ts</td>
+            <td class="num">70.83%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 70.83%; background: #eab308"></div></div>
+            </td>
+            <td class="num">17/24</td>
+            <td class="num">42.86%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 42.86%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">3/7</td>
+            <td class="num">16.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 16.67%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">1/6</td>
+            <td class="num">70.83%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 70.83%; background: #eab308"></div></div>
+            </td>
+            <td class="num">17/24</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/SurveyComs/Materials/SelectComs/SingleSelect.vue</td>
+            <td class="num">70.97%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 70.97%; background: #eab308"></div></div>
+            </td>
+            <td class="num">22/31</td>
+            <td class="num">60%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 60%; background: #eab308"></div></div>
+            </td>
+            <td class="num">6/10</td>
+            <td class="num">54.55%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 54.55%; background: #eab308"></div></div>
+            </td>
+            <td class="num">6/11</td>
+            <td class="num">70.97%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 70.97%; background: #eab308"></div></div>
+            </td>
+            <td class="num">22/31</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/components/Editor/SurveyComGroup.vue</td>
+            <td class="num">72%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 72%; background: #eab308"></div></div>
+            </td>
+            <td class="num">18/25</td>
+            <td class="num">33.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 33.33%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/6</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">4/6</td>
+            <td class="num">72%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 72%; background: #eab308"></div></div>
+            </td>
+            <td class="num">18/25</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/views/EditorView/LeftSide/Index.vue</td>
+            <td class="num">75.61%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 75.61%; background: #eab308"></div></div>
+            </td>
+            <td class="num">31/41</td>
+            <td class="num">33.33%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 33.33%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">2/6</td>
+            <td class="num">64.29%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 64.29%; background: #eab308"></div></div>
+            </td>
+            <td class="num">9/14</td>
+            <td class="num">75.61%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 75.61%; background: #eab308"></div></div>
+            </td>
+            <td class="num">31/41</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/plugins/tracking.ts</td>
+            <td class="num">75.86%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 75.86%; background: #eab308"></div></div>
+            </td>
+            <td class="num">22/29</td>
+            <td class="num">50%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 50%; background: #eab308"></div></div>
+            </td>
+            <td class="num">6/12</td>
+            <td class="num">71.43%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 71.43%; background: #eab308"></div></div>
+            </td>
+            <td class="num">5/7</td>
+            <td class="num">75.86%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 75.86%; background: #eab308"></div></div>
+            </td>
+            <td class="num">22/29</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/stores/useMessage.ts</td>
+            <td class="num">76.19%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 76.19%; background: #eab308"></div></div>
+            </td>
+            <td class="num">16/21</td>
+            <td class="num">40%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 40%; background: #ef4444"></div></div>
+            </td>
+            <td class="num">4/10</td>
+            <td class="num">66.67%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 66.67%; background: #eab308"></div></div>
+            </td>
+            <td class="num">4/6</td>
+            <td class="num">76.19%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 76.19%; background: #eab308"></div></div>
+            </td>
+            <td class="num">16/21</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/api/modules/index.ts</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/api/index.ts</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/db/db.ts</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">3/3</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">1/1</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">3/3</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/utils/i18n.ts</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">2/2</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">1/1</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">2/2</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/configs/componentMap.ts</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">1/1</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">1/1</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/directives/index.ts</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">1/1</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">1/1</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">1/1</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/utils/hooks.ts</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">6/6</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">2/2</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">3/3</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">6/6</td>
+          </tr>
+
+          <tr>
+            <td class="file-name">src/configs/SurveyGroupConfig.ts</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">1/1</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">0/0</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">1/1</td>
+            <td class="num">100%</td>
+            <td>
+              <div class="bar-bg"><div class="bar-fill" style="width: 100%; background: #22c55e"></div></div>
+            </td>
+            <td class="num">1/1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">Generated by Playwright E2E Coverage Reporter | q-editor</div>
+  </body>
+</html>

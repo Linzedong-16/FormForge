@@ -1,0 +1,2408 @@
+{
+  "lines": {
+    "total": 3857,
+    "covered": 1307,
+    "skipped": 0,
+    "pct": 33.89
+  },
+  "statements": {
+    "total": 3857,
+    "covered": 1307,
+    "skipped": 0,
+    "pct": 33.89
+  },
+  "functions": {
+    "total": 1058,
+    "covered": 232,
+    "skipped": 0,
+    "pct": 21.93
+  },
+  "branches": {
+    "total": 1689,
+    "covered": 327,
+    "skipped": 0,
+    "pct": 19.36
+  },
+  "files": [
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/stores/actions.ts",
+      "relativePath": "src/stores/actions.ts",
+      "lines": {
+        "total": 51,
+        "covered": 0,
+        "skipped": 51,
+        "pct": 0
+      },
+      "statements": {
+        "total": 51,
+        "covered": 0,
+        "skipped": 51,
+        "pct": 0
+      },
+      "functions": {
+        "total": 14,
+        "covered": 0,
+        "skipped": 14,
+        "pct": 0
+      },
+      "branches": {
+        "total": 34,
+        "covered": 0,
+        "skipped": 34,
+        "pct": 0
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/utils/aiToStatus.ts",
+      "relativePath": "src/utils/aiToStatus.ts",
+      "lines": {
+        "total": 45,
+        "covered": 1,
+        "skipped": 44,
+        "pct": 2.22
+      },
+      "statements": {
+        "total": 45,
+        "covered": 1,
+        "skipped": 44,
+        "pct": 2.22
+      },
+      "functions": {
+        "total": 4,
+        "covered": 0,
+        "skipped": 4,
+        "pct": 0
+      },
+      "branches": {
+        "total": 31,
+        "covered": 0,
+        "skipped": 31,
+        "pct": 0
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/AdvancedComs/Signature.vue",
+      "relativePath": "src/components/SurveyComs/Materials/AdvancedComs/Signature.vue",
+      "lines": {
+        "total": 180,
+        "covered": 7,
+        "skipped": 173,
+        "pct": 3.89
+      },
+      "statements": {
+        "total": 180,
+        "covered": 7,
+        "skipped": 173,
+        "pct": 3.89
+      },
+      "functions": {
+        "total": 27,
+        "covered": 0,
+        "skipped": 27,
+        "pct": 0
+      },
+      "branches": {
+        "total": 76,
+        "covered": 2,
+        "skipped": 74,
+        "pct": 2.63
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/directives/permiss.ts",
+      "relativePath": "src/directives/permiss.ts",
+      "lines": {
+        "total": 30,
+        "covered": 2,
+        "skipped": 28,
+        "pct": 6.67
+      },
+      "statements": {
+        "total": 30,
+        "covered": 2,
+        "skipped": 28,
+        "pct": 6.67
+      },
+      "functions": {
+        "total": 9,
+        "covered": 0,
+        "skipped": 9,
+        "pct": 0
+      },
+      "branches": {
+        "total": 26,
+        "covered": 0,
+        "skipped": 26,
+        "pct": 0
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue",
+      "relativePath": "src/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue",
+      "lines": {
+        "total": 35,
+        "covered": 5,
+        "skipped": 30,
+        "pct": 14.29
+      },
+      "statements": {
+        "total": 35,
+        "covered": 5,
+        "skipped": 30,
+        "pct": 14.29
+      },
+      "functions": {
+        "total": 14,
+        "covered": 0,
+        "skipped": 14,
+        "pct": 0
+      },
+      "branches": {
+        "total": 10,
+        "covered": 2,
+        "skipped": 8,
+        "pct": 20
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/SizeEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/SizeEditor.vue",
+      "lines": {
+        "total": 33,
+        "covered": 5,
+        "skipped": 28,
+        "pct": 15.15
+      },
+      "statements": {
+        "total": 33,
+        "covered": 5,
+        "skipped": 28,
+        "pct": 15.15
+      },
+      "functions": {
+        "total": 13,
+        "covered": 0,
+        "skipped": 13,
+        "pct": 0
+      },
+      "branches": {
+        "total": 14,
+        "covered": 2,
+        "skipped": 12,
+        "pct": 14.29
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/TextTypeEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/TextTypeEditor.vue",
+      "lines": {
+        "total": 32,
+        "covered": 5,
+        "skipped": 27,
+        "pct": 15.63
+      },
+      "statements": {
+        "total": 32,
+        "covered": 5,
+        "skipped": 27,
+        "pct": 15.63
+      },
+      "functions": {
+        "total": 11,
+        "covered": 0,
+        "skipped": 11,
+        "pct": 0
+      },
+      "branches": {
+        "total": 12,
+        "covered": 2,
+        "skipped": 10,
+        "pct": 16.67
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/WeightEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/WeightEditor.vue",
+      "lines": {
+        "total": 32,
+        "covered": 5,
+        "skipped": 27,
+        "pct": 15.63
+      },
+      "statements": {
+        "total": 32,
+        "covered": 5,
+        "skipped": 27,
+        "pct": 15.63
+      },
+      "functions": {
+        "total": 11,
+        "covered": 0,
+        "skipped": 11,
+        "pct": 0
+      },
+      "branches": {
+        "total": 14,
+        "covered": 2,
+        "skipped": 12,
+        "pct": 14.29
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/ItalicEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/ItalicEditor.vue",
+      "lines": {
+        "total": 32,
+        "covered": 5,
+        "skipped": 27,
+        "pct": 15.63
+      },
+      "statements": {
+        "total": 32,
+        "covered": 5,
+        "skipped": 27,
+        "pct": 15.63
+      },
+      "functions": {
+        "total": 11,
+        "covered": 0,
+        "skipped": 11,
+        "pct": 0
+      },
+      "branches": {
+        "total": 14,
+        "covered": 2,
+        "skipped": 12,
+        "pct": 14.29
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/PositionEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/PositionEditor.vue",
+      "lines": {
+        "total": 31,
+        "covered": 5,
+        "skipped": 26,
+        "pct": 16.13
+      },
+      "statements": {
+        "total": 31,
+        "covered": 5,
+        "skipped": 26,
+        "pct": 16.13
+      },
+      "functions": {
+        "total": 11,
+        "covered": 0,
+        "skipped": 11,
+        "pct": 0
+      },
+      "branches": {
+        "total": 10,
+        "covered": 2,
+        "skipped": 8,
+        "pct": 20
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/DateTimeTypeEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/DateTimeTypeEditor.vue",
+      "lines": {
+        "total": 31,
+        "covered": 5,
+        "skipped": 26,
+        "pct": 16.13
+      },
+      "statements": {
+        "total": 31,
+        "covered": 5,
+        "skipped": 26,
+        "pct": 16.13
+      },
+      "functions": {
+        "total": 9,
+        "covered": 0,
+        "skipped": 9,
+        "pct": 0
+      },
+      "branches": {
+        "total": 8,
+        "covered": 2,
+        "skipped": 6,
+        "pct": 25
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/TextInputTypeEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/TextInputTypeEditor.vue",
+      "lines": {
+        "total": 31,
+        "covered": 5,
+        "skipped": 26,
+        "pct": 16.13
+      },
+      "statements": {
+        "total": 31,
+        "covered": 5,
+        "skipped": 26,
+        "pct": 16.13
+      },
+      "functions": {
+        "total": 11,
+        "covered": 0,
+        "skipped": 11,
+        "pct": 0
+      },
+      "branches": {
+        "total": 12,
+        "covered": 2,
+        "skipped": 10,
+        "pct": 16.67
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/utils/index.ts",
+      "relativePath": "src/utils/index.ts",
+      "lines": {
+        "total": 128,
+        "covered": 21,
+        "skipped": 107,
+        "pct": 16.41
+      },
+      "statements": {
+        "total": 128,
+        "covered": 21,
+        "skipped": 107,
+        "pct": 16.41
+      },
+      "functions": {
+        "total": 15,
+        "covered": 7,
+        "skipped": 8,
+        "pct": 46.67
+      },
+      "branches": {
+        "total": 124,
+        "covered": 10,
+        "skipped": 114,
+        "pct": 8.06
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/SelectComs/OptionSelect.vue",
+      "relativePath": "src/components/SurveyComs/Materials/SelectComs/OptionSelect.vue",
+      "lines": {
+        "total": 30,
+        "covered": 5,
+        "skipped": 25,
+        "pct": 16.67
+      },
+      "statements": {
+        "total": 30,
+        "covered": 5,
+        "skipped": 25,
+        "pct": 16.67
+      },
+      "functions": {
+        "total": 10,
+        "covered": 0,
+        "skipped": 10,
+        "pct": 0
+      },
+      "branches": {
+        "total": 10,
+        "covered": 2,
+        "skipped": 8,
+        "pct": 20
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/AdvancedComs/Cascader.vue",
+      "relativePath": "src/components/SurveyComs/Materials/AdvancedComs/Cascader.vue",
+      "lines": {
+        "total": 30,
+        "covered": 5,
+        "skipped": 25,
+        "pct": 16.67
+      },
+      "statements": {
+        "total": 30,
+        "covered": 5,
+        "skipped": 25,
+        "pct": 16.67
+      },
+      "functions": {
+        "total": 9,
+        "covered": 0,
+        "skipped": 9,
+        "pct": 0
+      },
+      "branches": {
+        "total": 12,
+        "covered": 2,
+        "skipped": 10,
+        "pct": 16.67
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/AdvancedComs/Transfer.vue",
+      "relativePath": "src/components/SurveyComs/Materials/AdvancedComs/Transfer.vue",
+      "lines": {
+        "total": 30,
+        "covered": 5,
+        "skipped": 25,
+        "pct": 16.67
+      },
+      "statements": {
+        "total": 30,
+        "covered": 5,
+        "skipped": 25,
+        "pct": 16.67
+      },
+      "functions": {
+        "total": 10,
+        "covered": 0,
+        "skipped": 10,
+        "pct": 0
+      },
+      "branches": {
+        "total": 10,
+        "covered": 2,
+        "skipped": 8,
+        "pct": 20
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/api/clients/auth.ts",
+      "relativePath": "src/api/clients/auth.ts",
+      "lines": {
+        "total": 11,
+        "covered": 2,
+        "skipped": 9,
+        "pct": 18.18
+      },
+      "statements": {
+        "total": 11,
+        "covered": 2,
+        "skipped": 9,
+        "pct": 18.18
+      },
+      "functions": {
+        "total": 2,
+        "covered": 0,
+        "skipped": 2,
+        "pct": 0
+      },
+      "branches": {
+        "total": 5,
+        "covered": 0,
+        "skipped": 5,
+        "pct": 0
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/AdvancedComs/DateTime.vue",
+      "relativePath": "src/components/SurveyComs/Materials/AdvancedComs/DateTime.vue",
+      "lines": {
+        "total": 27,
+        "covered": 5,
+        "skipped": 22,
+        "pct": 18.52
+      },
+      "statements": {
+        "total": 27,
+        "covered": 5,
+        "skipped": 22,
+        "pct": 18.52
+      },
+      "functions": {
+        "total": 8,
+        "covered": 0,
+        "skipped": 8,
+        "pct": 0
+      },
+      "branches": {
+        "total": 10,
+        "covered": 2,
+        "skipped": 8,
+        "pct": 20
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/AdvancedComs/Slider.vue",
+      "relativePath": "src/components/SurveyComs/Materials/AdvancedComs/Slider.vue",
+      "lines": {
+        "total": 27,
+        "covered": 5,
+        "skipped": 22,
+        "pct": 18.52
+      },
+      "statements": {
+        "total": 27,
+        "covered": 5,
+        "skipped": 22,
+        "pct": 18.52
+      },
+      "functions": {
+        "total": 8,
+        "covered": 0,
+        "skipped": 8,
+        "pct": 0
+      },
+      "branches": {
+        "total": 16,
+        "covered": 2,
+        "skipped": 14,
+        "pct": 12.5
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/ColorEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/ColorEditor.vue",
+      "lines": {
+        "total": 27,
+        "covered": 5,
+        "skipped": 22,
+        "pct": 18.52
+      },
+      "statements": {
+        "total": 27,
+        "covered": 5,
+        "skipped": 22,
+        "pct": 18.52
+      },
+      "functions": {
+        "total": 7,
+        "covered": 0,
+        "skipped": 7,
+        "pct": 0
+      },
+      "branches": {
+        "total": 12,
+        "covered": 2,
+        "skipped": 10,
+        "pct": 16.67
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/AdvancedComs/RateScore.vue",
+      "relativePath": "src/components/SurveyComs/Materials/AdvancedComs/RateScore.vue",
+      "lines": {
+        "total": 26,
+        "covered": 5,
+        "skipped": 21,
+        "pct": 19.23
+      },
+      "statements": {
+        "total": 26,
+        "covered": 5,
+        "skipped": 21,
+        "pct": 19.23
+      },
+      "functions": {
+        "total": 8,
+        "covered": 0,
+        "skipped": 8,
+        "pct": 0
+      },
+      "branches": {
+        "total": 10,
+        "covered": 2,
+        "skipped": 8,
+        "pct": 20
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/SelectComs/SinglePicSelect.vue",
+      "relativePath": "src/components/SurveyComs/Materials/SelectComs/SinglePicSelect.vue",
+      "lines": {
+        "total": 31,
+        "covered": 6,
+        "skipped": 25,
+        "pct": 19.35
+      },
+      "statements": {
+        "total": 31,
+        "covered": 6,
+        "skipped": 25,
+        "pct": 19.35
+      },
+      "functions": {
+        "total": 11,
+        "covered": 0,
+        "skipped": 11,
+        "pct": 0
+      },
+      "branches": {
+        "total": 10,
+        "covered": 2,
+        "skipped": 8,
+        "pct": 20
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/SelectComs/MultiPicSelect.vue",
+      "relativePath": "src/components/SurveyComs/Materials/SelectComs/MultiPicSelect.vue",
+      "lines": {
+        "total": 31,
+        "covered": 6,
+        "skipped": 25,
+        "pct": 19.35
+      },
+      "statements": {
+        "total": 31,
+        "covered": 6,
+        "skipped": 25,
+        "pct": 19.35
+      },
+      "functions": {
+        "total": 11,
+        "covered": 0,
+        "skipped": 11,
+        "pct": 0
+      },
+      "branches": {
+        "total": 10,
+        "covered": 2,
+        "skipped": 8,
+        "pct": 20
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Common/PicItem.vue",
+      "relativePath": "src/components/SurveyComs/Common/PicItem.vue",
+      "lines": {
+        "total": 60,
+        "covered": 12,
+        "skipped": 48,
+        "pct": 20
+      },
+      "statements": {
+        "total": 60,
+        "covered": 12,
+        "skipped": 48,
+        "pct": 20
+      },
+      "functions": {
+        "total": 14,
+        "covered": 0,
+        "skipped": 14,
+        "pct": 0
+      },
+      "branches": {
+        "total": 20,
+        "covered": 2,
+        "skipped": 18,
+        "pct": 10
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/composables/useAIGenerate.ts",
+      "relativePath": "src/composables/useAIGenerate.ts",
+      "lines": {
+        "total": 93,
+        "covered": 19,
+        "skipped": 74,
+        "pct": 20.43
+      },
+      "statements": {
+        "total": 93,
+        "covered": 19,
+        "skipped": 74,
+        "pct": 20.43
+      },
+      "functions": {
+        "total": 19,
+        "covered": 1,
+        "skipped": 18,
+        "pct": 5.26
+      },
+      "branches": {
+        "total": 34,
+        "covered": 0,
+        "skipped": 34,
+        "pct": 0
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/views/EditorView/RightSide.vue",
+      "relativePath": "src/views/EditorView/RightSide.vue",
+      "lines": {
+        "total": 97,
+        "covered": 20,
+        "skipped": 77,
+        "pct": 20.62
+      },
+      "statements": {
+        "total": 97,
+        "covered": 20,
+        "skipped": 77,
+        "pct": 20.62
+      },
+      "functions": {
+        "total": 7,
+        "covered": 2,
+        "skipped": 5,
+        "pct": 28.57
+      },
+      "branches": {
+        "total": 73,
+        "covered": 3,
+        "skipped": 70,
+        "pct": 4.11
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/MatrixOptionsEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/MatrixOptionsEditor.vue",
+      "lines": {
+        "total": 37,
+        "covered": 8,
+        "skipped": 29,
+        "pct": 21.62
+      },
+      "statements": {
+        "total": 37,
+        "covered": 8,
+        "skipped": 29,
+        "pct": 21.62
+      },
+      "functions": {
+        "total": 12,
+        "covered": 0,
+        "skipped": 12,
+        "pct": 0
+      },
+      "branches": {
+        "total": 10,
+        "covered": 2,
+        "skipped": 8,
+        "pct": 20
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/SignatureConfigEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/SignatureConfigEditor.vue",
+      "lines": {
+        "total": 37,
+        "covered": 8,
+        "skipped": 29,
+        "pct": 21.62
+      },
+      "statements": {
+        "total": 37,
+        "covered": 8,
+        "skipped": 29,
+        "pct": 21.62
+      },
+      "functions": {
+        "total": 10,
+        "covered": 0,
+        "skipped": 10,
+        "pct": 0
+      },
+      "branches": {
+        "total": 12,
+        "covered": 2,
+        "skipped": 10,
+        "pct": 16.67
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/api/clients/server.ts",
+      "relativePath": "src/api/clients/server.ts",
+      "lines": {
+        "total": 36,
+        "covered": 8,
+        "skipped": 28,
+        "pct": 22.22
+      },
+      "statements": {
+        "total": 36,
+        "covered": 8,
+        "skipped": 28,
+        "pct": 22.22
+      },
+      "functions": {
+        "total": 3,
+        "covered": 2,
+        "skipped": 1,
+        "pct": 66.67
+      },
+      "branches": {
+        "total": 26,
+        "covered": 3,
+        "skipped": 23,
+        "pct": 11.54
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/router/index.ts",
+      "relativePath": "src/router/index.ts",
+      "lines": {
+        "total": 66,
+        "covered": 15,
+        "skipped": 51,
+        "pct": 22.73
+      },
+      "statements": {
+        "total": 66,
+        "covered": 15,
+        "skipped": 51,
+        "pct": 22.73
+      },
+      "functions": {
+        "total": 48,
+        "covered": 5,
+        "skipped": 43,
+        "pct": 10.42
+      },
+      "branches": {
+        "total": 15,
+        "covered": 6,
+        "skipped": 9,
+        "pct": 40
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/views/EditorView/index.vue",
+      "relativePath": "src/views/EditorView/index.vue",
+      "lines": {
+        "total": 132,
+        "covered": 30,
+        "skipped": 102,
+        "pct": 22.73
+      },
+      "statements": {
+        "total": 132,
+        "covered": 30,
+        "skipped": 102,
+        "pct": 22.73
+      },
+      "functions": {
+        "total": 17,
+        "covered": 5,
+        "skipped": 12,
+        "pct": 29.41
+      },
+      "branches": {
+        "total": 75,
+        "covered": 4,
+        "skipped": 71,
+        "pct": 5.33
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/OptionsEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/OptionsEditor.vue",
+      "lines": {
+        "total": 35,
+        "covered": 8,
+        "skipped": 27,
+        "pct": 22.86
+      },
+      "statements": {
+        "total": 35,
+        "covered": 8,
+        "skipped": 27,
+        "pct": 22.86
+      },
+      "functions": {
+        "total": 11,
+        "covered": 0,
+        "skipped": 11,
+        "pct": 0
+      },
+      "branches": {
+        "total": 6,
+        "covered": 2,
+        "skipped": 4,
+        "pct": 33.33
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/Common/GenerateLinkDialog.vue",
+      "relativePath": "src/components/Common/GenerateLinkDialog.vue",
+      "lines": {
+        "total": 143,
+        "covered": 33,
+        "skipped": 110,
+        "pct": 23.08
+      },
+      "statements": {
+        "total": 143,
+        "covered": 33,
+        "skipped": 110,
+        "pct": 23.08
+      },
+      "functions": {
+        "total": 38,
+        "covered": 3,
+        "skipped": 35,
+        "pct": 7.89
+      },
+      "branches": {
+        "total": 55,
+        "covered": 4,
+        "skipped": 51,
+        "pct": 7.27
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/PicOptionsEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/PicOptionsEditor.vue",
+      "lines": {
+        "total": 52,
+        "covered": 12,
+        "skipped": 40,
+        "pct": 23.08
+      },
+      "statements": {
+        "total": 52,
+        "covered": 12,
+        "skipped": 40,
+        "pct": 23.08
+      },
+      "functions": {
+        "total": 18,
+        "covered": 0,
+        "skipped": 18,
+        "pct": 0
+      },
+      "branches": {
+        "total": 14,
+        "covered": 2,
+        "skipped": 12,
+        "pct": 14.29
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/api/upload.ts",
+      "relativePath": "src/api/upload.ts",
+      "lines": {
+        "total": 17,
+        "covered": 4,
+        "skipped": 13,
+        "pct": 23.53
+      },
+      "statements": {
+        "total": 17,
+        "covered": 4,
+        "skipped": 13,
+        "pct": 23.53
+      },
+      "functions": {
+        "total": 3,
+        "covered": 0,
+        "skipped": 3,
+        "pct": 0
+      },
+      "branches": {
+        "total": 2,
+        "covered": 0,
+        "skipped": 2,
+        "pct": 0
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/CascaderOptionNode.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/CascaderOptionNode.vue",
+      "lines": {
+        "total": 34,
+        "covered": 8,
+        "skipped": 26,
+        "pct": 23.53
+      },
+      "statements": {
+        "total": 34,
+        "covered": 8,
+        "skipped": 26,
+        "pct": 23.53
+      },
+      "functions": {
+        "total": 10,
+        "covered": 0,
+        "skipped": 10,
+        "pct": 0
+      },
+      "branches": {
+        "total": 12,
+        "covered": 2,
+        "skipped": 10,
+        "pct": 16.67
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/stores/useEditor.ts",
+      "relativePath": "src/stores/useEditor.ts",
+      "lines": {
+        "total": 104,
+        "covered": 26,
+        "skipped": 78,
+        "pct": 25
+      },
+      "statements": {
+        "total": 104,
+        "covered": 26,
+        "skipped": 78,
+        "pct": 25
+      },
+      "functions": {
+        "total": 32,
+        "covered": 5,
+        "skipped": 27,
+        "pct": 15.63
+      },
+      "branches": {
+        "total": 18,
+        "covered": 6,
+        "skipped": 12,
+        "pct": 33.33
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/RateTextEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/RateTextEditor.vue",
+      "lines": {
+        "total": 34,
+        "covered": 9,
+        "skipped": 25,
+        "pct": 26.47
+      },
+      "statements": {
+        "total": 34,
+        "covered": 9,
+        "skipped": 25,
+        "pct": 26.47
+      },
+      "functions": {
+        "total": 9,
+        "covered": 0,
+        "skipped": 9,
+        "pct": 0
+      },
+      "branches": {
+        "total": 12,
+        "covered": 2,
+        "skipped": 10,
+        "pct": 16.67
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/stores/useUser.ts",
+      "relativePath": "src/stores/useUser.ts",
+      "lines": {
+        "total": 109,
+        "covered": 29,
+        "skipped": 80,
+        "pct": 26.61
+      },
+      "statements": {
+        "total": 109,
+        "covered": 29,
+        "skipped": 80,
+        "pct": 26.61
+      },
+      "functions": {
+        "total": 21,
+        "covered": 6,
+        "skipped": 15,
+        "pct": 28.57
+      },
+      "branches": {
+        "total": 50,
+        "covered": 9,
+        "skipped": 41,
+        "pct": 18
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/TitleEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/TitleEditor.vue",
+      "lines": {
+        "total": 26,
+        "covered": 7,
+        "skipped": 19,
+        "pct": 26.92
+      },
+      "statements": {
+        "total": 26,
+        "covered": 7,
+        "skipped": 19,
+        "pct": 26.92
+      },
+      "functions": {
+        "total": 6,
+        "covered": 0,
+        "skipped": 6,
+        "pct": 0
+      },
+      "branches": {
+        "total": 8,
+        "covered": 2,
+        "skipped": 6,
+        "pct": 25
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/DescEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/DescEditor.vue",
+      "lines": {
+        "total": 26,
+        "covered": 7,
+        "skipped": 19,
+        "pct": 26.92
+      },
+      "statements": {
+        "total": 26,
+        "covered": 7,
+        "skipped": 19,
+        "pct": 26.92
+      },
+      "functions": {
+        "total": 6,
+        "covered": 0,
+        "skipped": 6,
+        "pct": 0
+      },
+      "branches": {
+        "total": 8,
+        "covered": 2,
+        "skipped": 6,
+        "pct": 25
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/api/modules/survey/index.ts",
+      "relativePath": "src/api/modules/survey/index.ts",
+      "lines": {
+        "total": 110,
+        "covered": 32,
+        "skipped": 78,
+        "pct": 29.09
+      },
+      "statements": {
+        "total": 110,
+        "covered": 32,
+        "skipped": 78,
+        "pct": 29.09
+      },
+      "functions": {
+        "total": 35,
+        "covered": 5,
+        "skipped": 30,
+        "pct": 14.29
+      },
+      "branches": {
+        "total": 68,
+        "covered": 1,
+        "skipped": 67,
+        "pct": 1.47
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/db/operation.ts",
+      "relativePath": "src/db/operation.ts",
+      "lines": {
+        "total": 51,
+        "covered": 16,
+        "skipped": 35,
+        "pct": 31.37
+      },
+      "statements": {
+        "total": 51,
+        "covered": 16,
+        "skipped": 35,
+        "pct": 31.37
+      },
+      "functions": {
+        "total": 22,
+        "covered": 9,
+        "skipped": 13,
+        "pct": 40.91
+      },
+      "branches": {
+        "total": 26,
+        "covered": 3,
+        "skipped": 23,
+        "pct": 11.54
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/EditPannel.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/EditPannel.vue",
+      "lines": {
+        "total": 19,
+        "covered": 6,
+        "skipped": 13,
+        "pct": 31.58
+      },
+      "statements": {
+        "total": 19,
+        "covered": 6,
+        "skipped": 13,
+        "pct": 31.58
+      },
+      "functions": {
+        "total": 5,
+        "covered": 0,
+        "skipped": 5,
+        "pct": 0
+      },
+      "branches": {
+        "total": 8,
+        "covered": 2,
+        "skipped": 6,
+        "pct": 25
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/CascaderOptionsEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/CascaderOptionsEditor.vue",
+      "lines": {
+        "total": 37,
+        "covered": 12,
+        "skipped": 25,
+        "pct": 32.43
+      },
+      "statements": {
+        "total": 37,
+        "covered": 12,
+        "skipped": 25,
+        "pct": 32.43
+      },
+      "functions": {
+        "total": 9,
+        "covered": 0,
+        "skipped": 9,
+        "pct": 0
+      },
+      "branches": {
+        "total": 8,
+        "covered": 2,
+        "skipped": 6,
+        "pct": 25
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/utils/undoManager.ts",
+      "relativePath": "src/utils/undoManager.ts",
+      "lines": {
+        "total": 20,
+        "covered": 7,
+        "skipped": 13,
+        "pct": 35
+      },
+      "statements": {
+        "total": 20,
+        "covered": 7,
+        "skipped": 13,
+        "pct": 35
+      },
+      "functions": {
+        "total": 7,
+        "covered": 3,
+        "skipped": 4,
+        "pct": 42.86
+      },
+      "branches": {
+        "total": 6,
+        "covered": 0,
+        "skipped": 6,
+        "pct": 0
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/SliderConfigEditor.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/SliderConfigEditor.vue",
+      "lines": {
+        "total": 36,
+        "covered": 13,
+        "skipped": 23,
+        "pct": 36.11
+      },
+      "statements": {
+        "total": 36,
+        "covered": 13,
+        "skipped": 23,
+        "pct": 36.11
+      },
+      "functions": {
+        "total": 9,
+        "covered": 0,
+        "skipped": 9,
+        "pct": 0
+      },
+      "branches": {
+        "total": 14,
+        "covered": 2,
+        "skipped": 12,
+        "pct": 14.29
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/EditItems/ButtonGroup.vue",
+      "relativePath": "src/components/SurveyComs/EditItems/ButtonGroup.vue",
+      "lines": {
+        "total": 25,
+        "covered": 10,
+        "skipped": 15,
+        "pct": 40
+      },
+      "statements": {
+        "total": 25,
+        "covered": 10,
+        "skipped": 15,
+        "pct": 40
+      },
+      "functions": {
+        "total": 6,
+        "covered": 0,
+        "skipped": 6,
+        "pct": 0
+      },
+      "branches": {
+        "total": 6,
+        "covered": 2,
+        "skipped": 4,
+        "pct": 33.33
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/Common/MessageBell.vue",
+      "relativePath": "src/components/Common/MessageBell.vue",
+      "lines": {
+        "total": 152,
+        "covered": 63,
+        "skipped": 89,
+        "pct": 41.45
+      },
+      "statements": {
+        "total": 152,
+        "covered": 63,
+        "skipped": 89,
+        "pct": 41.45
+      },
+      "functions": {
+        "total": 49,
+        "covered": 13,
+        "skipped": 36,
+        "pct": 26.53
+      },
+      "branches": {
+        "total": 90,
+        "covered": 29,
+        "skipped": 61,
+        "pct": 32.22
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/extension/components/AI-GenPanel.vue",
+      "relativePath": "src/extension/components/AI-GenPanel.vue",
+      "lines": {
+        "total": 147,
+        "covered": 64,
+        "skipped": 83,
+        "pct": 43.54
+      },
+      "statements": {
+        "total": 147,
+        "covered": 64,
+        "skipped": 83,
+        "pct": 43.54
+      },
+      "functions": {
+        "total": 36,
+        "covered": 2,
+        "skipped": 34,
+        "pct": 5.56
+      },
+      "branches": {
+        "total": 82,
+        "covered": 4,
+        "skipped": 78,
+        "pct": 4.88
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/Common/Header.vue",
+      "relativePath": "src/components/Common/Header.vue",
+      "lines": {
+        "total": 103,
+        "covered": 48,
+        "skipped": 55,
+        "pct": 46.6
+      },
+      "statements": {
+        "total": 103,
+        "covered": 48,
+        "skipped": 55,
+        "pct": 46.6
+      },
+      "functions": {
+        "total": 40,
+        "covered": 10,
+        "skipped": 30,
+        "pct": 25
+      },
+      "branches": {
+        "total": 44,
+        "covered": 18,
+        "skipped": 26,
+        "pct": 40.91
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/api/modules/settings/index.ts",
+      "relativePath": "src/api/modules/settings/index.ts",
+      "lines": {
+        "total": 15,
+        "covered": 7,
+        "skipped": 8,
+        "pct": 46.67
+      },
+      "statements": {
+        "total": 15,
+        "covered": 7,
+        "skipped": 8,
+        "pct": 46.67
+      },
+      "functions": {
+        "total": 6,
+        "covered": 1,
+        "skipped": 5,
+        "pct": 16.67
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/views/EditorView/Center.vue",
+      "relativePath": "src/views/EditorView/Center.vue",
+      "lines": {
+        "total": 99,
+        "covered": 48,
+        "skipped": 51,
+        "pct": 48.48
+      },
+      "statements": {
+        "total": 99,
+        "covered": 48,
+        "skipped": 51,
+        "pct": 48.48
+      },
+      "functions": {
+        "total": 32,
+        "covered": 11,
+        "skipped": 21,
+        "pct": 34.38
+      },
+      "branches": {
+        "total": 28,
+        "covered": 5,
+        "skipped": 23,
+        "pct": 17.86
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/api/modules/auth/index.ts",
+      "relativePath": "src/api/modules/auth/index.ts",
+      "lines": {
+        "total": 16,
+        "covered": 8,
+        "skipped": 8,
+        "pct": 50
+      },
+      "statements": {
+        "total": 16,
+        "covered": 8,
+        "skipped": 8,
+        "pct": 50
+      },
+      "functions": {
+        "total": 8,
+        "covered": 0,
+        "skipped": 8,
+        "pct": 0
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/api/modules/user/index.ts",
+      "relativePath": "src/api/modules/user/index.ts",
+      "lines": {
+        "total": 12,
+        "covered": 6,
+        "skipped": 6,
+        "pct": 50
+      },
+      "statements": {
+        "total": 12,
+        "covered": 6,
+        "skipped": 6,
+        "pct": 50
+      },
+      "functions": {
+        "total": 6,
+        "covered": 0,
+        "skipped": 6,
+        "pct": 0
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/Editor/SurveyComItem.vue",
+      "relativePath": "src/components/Editor/SurveyComItem.vue",
+      "lines": {
+        "total": 31,
+        "covered": 16,
+        "skipped": 15,
+        "pct": 51.61
+      },
+      "statements": {
+        "total": 31,
+        "covered": 16,
+        "skipped": 15,
+        "pct": 51.61
+      },
+      "functions": {
+        "total": 6,
+        "covered": 3,
+        "skipped": 3,
+        "pct": 50
+      },
+      "branches": {
+        "total": 8,
+        "covered": 2,
+        "skipped": 6,
+        "pct": 25
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/Editor/ComItemProvider.vue",
+      "relativePath": "src/components/Editor/ComItemProvider.vue",
+      "lines": {
+        "total": 27,
+        "covered": 14,
+        "skipped": 13,
+        "pct": 51.85
+      },
+      "statements": {
+        "total": 27,
+        "covered": 14,
+        "skipped": 13,
+        "pct": 51.85
+      },
+      "functions": {
+        "total": 5,
+        "covered": 2,
+        "skipped": 3,
+        "pct": 40
+      },
+      "branches": {
+        "total": 10,
+        "covered": 2,
+        "skipped": 8,
+        "pct": 20
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/views/Layout/index.vue",
+      "relativePath": "src/views/Layout/index.vue",
+      "lines": {
+        "total": 278,
+        "covered": 156,
+        "skipped": 122,
+        "pct": 56.12
+      },
+      "statements": {
+        "total": 278,
+        "covered": 156,
+        "skipped": 122,
+        "pct": 56.12
+      },
+      "functions": {
+        "total": 78,
+        "covered": 39,
+        "skipped": 39,
+        "pct": 50
+      },
+      "branches": {
+        "total": 155,
+        "covered": 65,
+        "skipped": 90,
+        "pct": 41.94
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/utils/useColorBlind.ts",
+      "relativePath": "src/utils/useColorBlind.ts",
+      "lines": {
+        "total": 14,
+        "covered": 8,
+        "skipped": 6,
+        "pct": 57.14
+      },
+      "statements": {
+        "total": 14,
+        "covered": 8,
+        "skipped": 6,
+        "pct": 57.14
+      },
+      "functions": {
+        "total": 3,
+        "covered": 2,
+        "skipped": 1,
+        "pct": 66.67
+      },
+      "branches": {
+        "total": 6,
+        "covered": 2,
+        "skipped": 4,
+        "pct": 33.33
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/api/modules/message/index.ts",
+      "relativePath": "src/api/modules/message/index.ts",
+      "lines": {
+        "total": 12,
+        "covered": 7,
+        "skipped": 5,
+        "pct": 58.33
+      },
+      "statements": {
+        "total": 12,
+        "covered": 7,
+        "skipped": 5,
+        "pct": 58.33
+      },
+      "functions": {
+        "total": 6,
+        "covered": 1,
+        "skipped": 5,
+        "pct": 16.67
+      },
+      "branches": {
+        "total": 2,
+        "covered": 0,
+        "skipped": 2,
+        "pct": 0
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/Common/SurveyPagination.vue",
+      "relativePath": "src/components/Common/SurveyPagination.vue",
+      "lines": {
+        "total": 22,
+        "covered": 13,
+        "skipped": 9,
+        "pct": 59.09
+      },
+      "statements": {
+        "total": 22,
+        "covered": 13,
+        "skipped": 9,
+        "pct": 59.09
+      },
+      "functions": {
+        "total": 6,
+        "covered": 2,
+        "skipped": 4,
+        "pct": 33.33
+      },
+      "branches": {
+        "total": 10,
+        "covered": 6,
+        "skipped": 4,
+        "pct": 60
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/InputComs/TextInput.vue",
+      "relativePath": "src/components/SurveyComs/Materials/InputComs/TextInput.vue",
+      "lines": {
+        "total": 27,
+        "covered": 17,
+        "skipped": 10,
+        "pct": 62.96
+      },
+      "statements": {
+        "total": 27,
+        "covered": 17,
+        "skipped": 10,
+        "pct": 62.96
+      },
+      "functions": {
+        "total": 10,
+        "covered": 3,
+        "skipped": 7,
+        "pct": 30
+      },
+      "branches": {
+        "total": 16,
+        "covered": 7,
+        "skipped": 9,
+        "pct": 43.75
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Common/MaterialsHeader.vue",
+      "relativePath": "src/components/SurveyComs/Common/MaterialsHeader.vue",
+      "lines": {
+        "total": 19,
+        "covered": 12,
+        "skipped": 7,
+        "pct": 63.16
+      },
+      "statements": {
+        "total": 19,
+        "covered": 12,
+        "skipped": 7,
+        "pct": 63.16
+      },
+      "functions": {
+        "total": 4,
+        "covered": 2,
+        "skipped": 2,
+        "pct": 50
+      },
+      "branches": {
+        "total": 6,
+        "covered": 2,
+        "skipped": 4,
+        "pct": 33.33
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/NoteComs/TextNote.vue",
+      "relativePath": "src/components/SurveyComs/Materials/NoteComs/TextNote.vue",
+      "lines": {
+        "total": 20,
+        "covered": 13,
+        "skipped": 7,
+        "pct": 65
+      },
+      "statements": {
+        "total": 20,
+        "covered": 13,
+        "skipped": 7,
+        "pct": 65
+      },
+      "functions": {
+        "total": 5,
+        "covered": 3,
+        "skipped": 2,
+        "pct": 60
+      },
+      "branches": {
+        "total": 8,
+        "covered": 4,
+        "skipped": 4,
+        "pct": 50
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/Common/UserProfile.vue",
+      "relativePath": "src/components/Common/UserProfile.vue",
+      "lines": {
+        "total": 110,
+        "covered": 72,
+        "skipped": 38,
+        "pct": 65.45
+      },
+      "statements": {
+        "total": 110,
+        "covered": 72,
+        "skipped": 38,
+        "pct": 65.45
+      },
+      "functions": {
+        "total": 32,
+        "covered": 22,
+        "skipped": 10,
+        "pct": 68.75
+      },
+      "branches": {
+        "total": 39,
+        "covered": 20,
+        "skipped": 19,
+        "pct": 51.28
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/Common/header-nav.vue",
+      "relativePath": "src/components/Common/header-nav.vue",
+      "lines": {
+        "total": 21,
+        "covered": 14,
+        "skipped": 7,
+        "pct": 66.67
+      },
+      "statements": {
+        "total": 21,
+        "covered": 14,
+        "skipped": 7,
+        "pct": 66.67
+      },
+      "functions": {
+        "total": 4,
+        "covered": 2,
+        "skipped": 2,
+        "pct": 50
+      },
+      "branches": {
+        "total": 6,
+        "covered": 2,
+        "skipped": 4,
+        "pct": 33.33
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/views/EditorView/LeftSide/SurveyType.vue",
+      "relativePath": "src/views/EditorView/LeftSide/SurveyType.vue",
+      "lines": {
+        "total": 21,
+        "covered": 14,
+        "skipped": 7,
+        "pct": 66.67
+      },
+      "statements": {
+        "total": 21,
+        "covered": 14,
+        "skipped": 7,
+        "pct": 66.67
+      },
+      "functions": {
+        "total": 6,
+        "covered": 4,
+        "skipped": 2,
+        "pct": 66.67
+      },
+      "branches": {
+        "total": 6,
+        "covered": 2,
+        "skipped": 4,
+        "pct": 33.33
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/views/preview/index.vue",
+      "relativePath": "src/views/preview/index.vue",
+      "lines": {
+        "total": 63,
+        "covered": 42,
+        "skipped": 21,
+        "pct": 66.67
+      },
+      "statements": {
+        "total": 63,
+        "covered": 42,
+        "skipped": 21,
+        "pct": 66.67
+      },
+      "functions": {
+        "total": 18,
+        "covered": 9,
+        "skipped": 9,
+        "pct": 50
+      },
+      "branches": {
+        "total": 20,
+        "covered": 11,
+        "skipped": 9,
+        "pct": 55
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/SelectComs/MultiSelect.vue",
+      "relativePath": "src/components/SurveyComs/Materials/SelectComs/MultiSelect.vue",
+      "lines": {
+        "total": 29,
+        "covered": 20,
+        "skipped": 9,
+        "pct": 68.97
+      },
+      "statements": {
+        "total": 29,
+        "covered": 20,
+        "skipped": 9,
+        "pct": 68.97
+      },
+      "functions": {
+        "total": 10,
+        "covered": 5,
+        "skipped": 5,
+        "pct": 50
+      },
+      "branches": {
+        "total": 10,
+        "covered": 6,
+        "skipped": 4,
+        "pct": 60
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/utils/useTheme.ts",
+      "relativePath": "src/utils/useTheme.ts",
+      "lines": {
+        "total": 13,
+        "covered": 9,
+        "skipped": 4,
+        "pct": 69.23
+      },
+      "statements": {
+        "total": 13,
+        "covered": 9,
+        "skipped": 4,
+        "pct": 69.23
+      },
+      "functions": {
+        "total": 3,
+        "covered": 2,
+        "skipped": 1,
+        "pct": 66.67
+      },
+      "branches": {
+        "total": 6,
+        "covered": 1,
+        "skipped": 5,
+        "pct": 16.67
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/App.vue",
+      "relativePath": "src/App.vue",
+      "lines": {
+        "total": 24,
+        "covered": 17,
+        "skipped": 7,
+        "pct": 70.83
+      },
+      "statements": {
+        "total": 24,
+        "covered": 17,
+        "skipped": 7,
+        "pct": 70.83
+      },
+      "functions": {
+        "total": 7,
+        "covered": 5,
+        "skipped": 2,
+        "pct": 71.43
+      },
+      "branches": {
+        "total": 8,
+        "covered": 3,
+        "skipped": 5,
+        "pct": 37.5
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/main.ts",
+      "relativePath": "src/main.ts",
+      "lines": {
+        "total": 24,
+        "covered": 17,
+        "skipped": 7,
+        "pct": 70.83
+      },
+      "statements": {
+        "total": 24,
+        "covered": 17,
+        "skipped": 7,
+        "pct": 70.83
+      },
+      "functions": {
+        "total": 6,
+        "covered": 1,
+        "skipped": 5,
+        "pct": 16.67
+      },
+      "branches": {
+        "total": 7,
+        "covered": 3,
+        "skipped": 4,
+        "pct": 42.86
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/SurveyComs/Materials/SelectComs/SingleSelect.vue",
+      "relativePath": "src/components/SurveyComs/Materials/SelectComs/SingleSelect.vue",
+      "lines": {
+        "total": 31,
+        "covered": 22,
+        "skipped": 9,
+        "pct": 70.97
+      },
+      "statements": {
+        "total": 31,
+        "covered": 22,
+        "skipped": 9,
+        "pct": 70.97
+      },
+      "functions": {
+        "total": 11,
+        "covered": 6,
+        "skipped": 5,
+        "pct": 54.55
+      },
+      "branches": {
+        "total": 10,
+        "covered": 6,
+        "skipped": 4,
+        "pct": 60
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/components/Editor/SurveyComGroup.vue",
+      "relativePath": "src/components/Editor/SurveyComGroup.vue",
+      "lines": {
+        "total": 25,
+        "covered": 18,
+        "skipped": 7,
+        "pct": 72
+      },
+      "statements": {
+        "total": 25,
+        "covered": 18,
+        "skipped": 7,
+        "pct": 72
+      },
+      "functions": {
+        "total": 6,
+        "covered": 4,
+        "skipped": 2,
+        "pct": 66.67
+      },
+      "branches": {
+        "total": 6,
+        "covered": 2,
+        "skipped": 4,
+        "pct": 33.33
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/views/EditorView/LeftSide/Index.vue",
+      "relativePath": "src/views/EditorView/LeftSide/Index.vue",
+      "lines": {
+        "total": 41,
+        "covered": 31,
+        "skipped": 10,
+        "pct": 75.61
+      },
+      "statements": {
+        "total": 41,
+        "covered": 31,
+        "skipped": 10,
+        "pct": 75.61
+      },
+      "functions": {
+        "total": 14,
+        "covered": 9,
+        "skipped": 5,
+        "pct": 64.29
+      },
+      "branches": {
+        "total": 6,
+        "covered": 2,
+        "skipped": 4,
+        "pct": 33.33
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/plugins/tracking.ts",
+      "relativePath": "src/plugins/tracking.ts",
+      "lines": {
+        "total": 29,
+        "covered": 22,
+        "skipped": 7,
+        "pct": 75.86
+      },
+      "statements": {
+        "total": 29,
+        "covered": 22,
+        "skipped": 7,
+        "pct": 75.86
+      },
+      "functions": {
+        "total": 7,
+        "covered": 5,
+        "skipped": 2,
+        "pct": 71.43
+      },
+      "branches": {
+        "total": 12,
+        "covered": 6,
+        "skipped": 6,
+        "pct": 50
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/stores/useMessage.ts",
+      "relativePath": "src/stores/useMessage.ts",
+      "lines": {
+        "total": 21,
+        "covered": 16,
+        "skipped": 5,
+        "pct": 76.19
+      },
+      "statements": {
+        "total": 21,
+        "covered": 16,
+        "skipped": 5,
+        "pct": 76.19
+      },
+      "functions": {
+        "total": 6,
+        "covered": 4,
+        "skipped": 2,
+        "pct": 66.67
+      },
+      "branches": {
+        "total": 10,
+        "covered": 4,
+        "skipped": 6,
+        "pct": 40
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/api/modules/index.ts",
+      "relativePath": "src/api/modules/index.ts",
+      "lines": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      },
+      "statements": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      },
+      "functions": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/api/index.ts",
+      "relativePath": "src/api/index.ts",
+      "lines": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      },
+      "statements": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      },
+      "functions": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/db/db.ts",
+      "relativePath": "src/db/db.ts",
+      "lines": {
+        "total": 3,
+        "covered": 3,
+        "skipped": 0,
+        "pct": 100
+      },
+      "statements": {
+        "total": 3,
+        "covered": 3,
+        "skipped": 0,
+        "pct": 100
+      },
+      "functions": {
+        "total": 1,
+        "covered": 1,
+        "skipped": 0,
+        "pct": 100
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/utils/i18n.ts",
+      "relativePath": "src/utils/i18n.ts",
+      "lines": {
+        "total": 2,
+        "covered": 2,
+        "skipped": 0,
+        "pct": 100
+      },
+      "statements": {
+        "total": 2,
+        "covered": 2,
+        "skipped": 0,
+        "pct": 100
+      },
+      "functions": {
+        "total": 1,
+        "covered": 1,
+        "skipped": 0,
+        "pct": 100
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/configs/componentMap.ts",
+      "relativePath": "src/configs/componentMap.ts",
+      "lines": {
+        "total": 1,
+        "covered": 1,
+        "skipped": 0,
+        "pct": 100
+      },
+      "statements": {
+        "total": 1,
+        "covered": 1,
+        "skipped": 0,
+        "pct": 100
+      },
+      "functions": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/directives/index.ts",
+      "relativePath": "src/directives/index.ts",
+      "lines": {
+        "total": 1,
+        "covered": 1,
+        "skipped": 0,
+        "pct": 100
+      },
+      "statements": {
+        "total": 1,
+        "covered": 1,
+        "skipped": 0,
+        "pct": 100
+      },
+      "functions": {
+        "total": 1,
+        "covered": 1,
+        "skipped": 0,
+        "pct": 100
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/utils/hooks.ts",
+      "relativePath": "src/utils/hooks.ts",
+      "lines": {
+        "total": 6,
+        "covered": 6,
+        "skipped": 0,
+        "pct": 100
+      },
+      "statements": {
+        "total": 6,
+        "covered": 6,
+        "skipped": 0,
+        "pct": 100
+      },
+      "functions": {
+        "total": 3,
+        "covered": 3,
+        "skipped": 0,
+        "pct": 100
+      },
+      "branches": {
+        "total": 2,
+        "covered": 2,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    {
+      "file": "D:/coding/project/questionnaireSys/app/q-editor/src/configs/SurveyGroupConfig.ts",
+      "relativePath": "src/configs/SurveyGroupConfig.ts",
+      "lines": {
+        "total": 1,
+        "covered": 1,
+        "skipped": 0,
+        "pct": 100
+      },
+      "statements": {
+        "total": 1,
+        "covered": 1,
+        "skipped": 0,
+        "pct": 100
+      },
+      "functions": {
+        "total": 1,
+        "covered": 1,
+        "skipped": 0,
+        "pct": 100
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    }
+  ]
+}
