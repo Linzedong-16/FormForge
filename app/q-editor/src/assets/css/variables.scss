@@ -31,6 +31,13 @@
   --line-height-sm: 1.33;
   --line-height-lg: 1.67;
 
+  // 大留白页面背板色（亮色）：登录页/编辑器工作区/工作台首页等页面根容器统一使用，
+  // 作为背景图加载前/加载失败时的兜底色，不复用 --background-color
+  // （该变量还被下拉面板/侧边栏等小面板消费，语义不同，避免互相影响）
+  --page-backdrop: #f4f4f5;
+  // 大留白页面背景图（亮色）：登录页/编辑器工作区/工作台首页统一引用，暗色取值见 theme-dark.scss
+  --page-bg-image: url("@/assets/imgs/bg_w.png");
+
   // 注：Element Plus 组件库的变量覆盖与组件样式定制统一收敛到 element-theme.scss
 }
 

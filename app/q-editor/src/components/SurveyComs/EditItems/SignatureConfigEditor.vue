@@ -1,9 +1,8 @@
 <template>
   <!-- 通用 OptionsProps 选项按钮编辑器，用于签名题的 strokeWidth 和 showToolbar 配置 -->
   <div class="sig-config-editor flex align-items-center space-between">
-    <el-tooltip :content="label" placement="top">
-      <div class="label-text mr-10">{{ label }}</div>
-    </el-tooltip>
+    <!-- 文字过长时靠原生 title 兜底显示全名 -->
+    <div class="label-text mr-10" :title="label">{{ label }}</div>
     <div class="options-wrap">
       <el-button
         v-for="(opt, idx) in props.status"

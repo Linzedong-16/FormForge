@@ -43,9 +43,8 @@
           />
           <!-- AI 功能按钮组 -->
           <div class="ai-btn-group ml-15 flex align-items-center">
-            <el-tooltip content="该功能模块还在开发中" placement="bottom">
-              <el-button size="small" plain disabled>{{ t("editor.aiPolish") }}</el-button>
-            </el-tooltip>
+            <!-- 按钮已禁用，靠原生 title 说明禁用原因，无需自定义 tooltip -->
+            <el-button size="small" plain disabled title="该功能模块还在开发中">{{ t("editor.aiPolish") }}</el-button>
             <el-button size="small" type="primary" plain @click="aiGenPanelRef?.open()">
               {{ t("editor.aiGenerate") }}
             </el-button>

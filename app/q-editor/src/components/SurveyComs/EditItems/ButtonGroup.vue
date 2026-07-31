@@ -1,13 +1,9 @@
 <template>
   <div class="button-group-container flex align-items-center">
-    <!-- 标题以及当前状态 -->
+    <!-- 标题以及当前状态：文字过长时靠原生 title 兜底显示全名 -->
     <div class="title-container flex align-items-center">
-      <el-tooltip :content="title" placement="top">
-        <div class="title-text mr-10">{{ title }}</div>
-      </el-tooltip>
-      <el-tooltip :content="status" placement="top">
-        <div class="currentStatus">{{ status }}</div>
-      </el-tooltip>
+      <div class="title-text mr-10" :title="title">{{ title }}</div>
+      <div class="currentStatus" :title="status">{{ status }}</div>
     </div>
     <!-- 按钮组 -->
     <div class="button-wrapper">

@@ -64,7 +64,6 @@ const tabs = [
 <style scoped lang="scss">
 // ── 本地 fallback 映射：使用项目主题系统定义的 CSS 变量，确保亮/暗主题下均有足够对比度 ──
 // 变量来源：variables.scss（亮色） / theme-dark.scss（暗色），无自定义变量名，全部引用已有变量
-$clr-bg: var(--background-color, #f4f4f5); // 页面底色
 $clr-card: var(--white, #ffffff); // 面板/卡片背景（暗色下自动变为 #18181b）
 $clr-text: var(--font-color, #18181b); // 主文字色
 $clr-text-secondary: var(--font-color-lighter, #71717a); // 次要文字色
@@ -90,10 +89,10 @@ $radius-md: var(--border-radius-md, 6px);
 }
 
 .settings-page {
+  // 设置项可能较多，需要保留页面级滚动，因此用 min-height 而非精确 100vh
   min-height: 100vh;
-  // 渐变色暂不使用
-  // background: linear-gradient(170deg, #22b0c9 0%, #3a78e8 50%, #7a42d8 100%);
-  background-color: $clr-bg;
+  // 跟随全局亮暗主题的页面底色（亮/暗两套取值见 variables.scss / theme-dark.scss 的 --background-color）
+  background-color: var(--background-color);
   padding: 24px;
 }
 

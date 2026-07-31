@@ -1,13 +1,13 @@
 <template>
   <div class="survey-com-item-cell">
-    <el-tooltip :content="item.comName" placement="top">
-      <div
-        class="survey-com-item-container pointer flex justify-content-center align-items-center"
-        @click="addSurveyCom"
-      >
-        {{ item.comName }}
-      </div>
-    </el-tooltip>
+    <!-- 文字过长时靠原生 title 兜底显示全名，无需再套一层自定义 tooltip -->
+    <div
+      class="survey-com-item-container pointer flex justify-content-center align-items-center"
+      :title="item.comName"
+      @click="addSurveyCom"
+    >
+      {{ item.comName }}
+    </div>
   </div>
 </template>
 

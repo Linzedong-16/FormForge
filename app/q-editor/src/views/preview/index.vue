@@ -107,9 +107,10 @@ const generatePDF = () => {
 <style scoped lang="scss">
 .preview-container {
   width: 100vw;
+  // 预览内容可能很长（题目数量不定），需要保留页面级滚动，因此用 min-height 而非精确 100vh
   min-height: 100vh;
-  // 渐变色暂不使用
-  // background: linear-gradient(to right top, #22b0c9 0%, #3a78e8 55%, #7a42d8 100%);
+  // 跟随全局亮暗主题的页面底色（亮/暗两套取值见 variables.scss / theme-dark.scss 的 --background-color）
+  background-color: var(--background-color);
 }
 .center {
   width: 800px;
@@ -137,10 +138,11 @@ const generatePDF = () => {
     display: none !important;
   }
 
-  // 调整打印时的容器样式
+  // 调整打印时的容器样式：打印无需背景色，避免浪费墨水/纸张
   .preview-container {
     width: 100%;
     min-height: auto;
+    background-color: transparent;
   }
 
   .center {

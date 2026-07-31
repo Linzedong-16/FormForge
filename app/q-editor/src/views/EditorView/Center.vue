@@ -218,11 +218,22 @@ const removeCom = (index: number) => {
   position: relative;
   overflow: auto;
   max-height: calc(100vh - 140px); /* 70px margin top + 70px margin bottom */
-  /* 隐藏滚动条 */
+  /* 细而透明的灰色滚动条，参考千问侧边栏样式：常态若隐若现，hover 时略微加深 */
   &::-webkit-scrollbar {
-    display: none;
+    width: 6px;
   }
-  scrollbar-width: none; /* Firefox */
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--black) 18%, transparent);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--black) 32%, transparent);
+  }
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: color-mix(in srgb, var(--black) 18%, transparent) transparent;
   .content {
     cursor: pointer;
     padding: 10px;

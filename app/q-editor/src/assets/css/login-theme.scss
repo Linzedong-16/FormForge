@@ -28,7 +28,6 @@
   --login-text: #18181b; // zinc-900 - 主文字
   --login-text-light: #3f3f46; // zinc-700 - 次要文字
   --login-text-muted: #71717a; // zinc-500 - 提示文字
-  --login-bg: #f4f4f5; // zinc-100 - 页面背景
   --login-focus-ring: rgba(24, 24, 27, 0.12); // 聚焦光晕
 
   // 轮播图渐变背景 - shadcn 暗色风格
@@ -40,10 +39,12 @@
 // 登录页面全局样式
 // ───────────────────────────────────────────────────────────────────────────
 .login-page {
-  min-height: 100vh;
-  // 渐变色暂不使用
-  // background: linear-gradient(190deg, #22b0c9 0%, #3a78e8 45%, #7a42d8 100%);
-  background-color: var(--login-bg);
+  // 用精确的 100vh + overflow:hidden 代替 min-height:100vh：
+  // 页面盒子不再随内容被撑高，背景不会被重新放大，也不会出现页面级滚动条
+  height: 100vh;
+  overflow: hidden;
+  // 跟随全局亮暗主题的页面底色（亮/暗两套取值见 variables.scss / theme-dark.scss 的 --background-color）
+  background-color: var(--background-color);
   display: flex;
   flex-direction: column;
 }
