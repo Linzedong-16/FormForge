@@ -247,14 +247,24 @@ watch(
   width: 550px;
   // 多减去的60px是上下的padding，，最后20px是额外多减去一部分，避免贴底
   height: calc(100vh - 100px - 40px - 60px - 20px);
-  overflow-y: scroll;
+  overflow-y: auto;
   padding: 30px;
   border-left: 1px solid var(--border-color);
+  // 隐藏原生滚动条（暗色模式下浏览器默认滚动条是亮白色，很刺眼），保留滚动功能
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  scrollbar-width: none; /* Firefox */
 }
 .right {
   width: 350px;
   height: calc(100vh - 100px - 40px - 20px);
-  overflow-y: scroll;
+  overflow-y: auto;
   border-left: 1px solid var(--border-color);
+  // 同上，隐藏原生滚动条
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  scrollbar-width: none; /* Firefox */
 }
 </style>

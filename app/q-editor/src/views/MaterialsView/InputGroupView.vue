@@ -1,10 +1,8 @@
 <template>
   <Layout>
-    <el-tooltip :content="t('materials.textInput')" placement="right">
-      <Router-link to="/text-input" class="link-item mb-15" exact-active-class="link-item-active">{{
-        t("materials.textInput")
-      }}</Router-link>
-    </el-tooltip>
+    <Router-link to="/text-input" class="link-item mb-15" exact-active-class="link-item-active">{{
+      t("materials.textInput")
+    }}</Router-link>
   </Layout>
 </template>
 

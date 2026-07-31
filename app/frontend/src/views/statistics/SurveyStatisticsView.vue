@@ -8,12 +8,26 @@
       </div>
       <a-space>
         <a-range-picker v-model="dateRange" style="width: 260px" />
-        <a-button type="outline" @click="handleExport">
+        <a-button type="outline" @click="exportVisible = true">
           <template #icon><icon-download /></template>
           导出报表
         </a-button>
       </a-space>
     </div>
+
+    <!-- 导出报表弹窗 -->
+    <a-modal
+      v-model:visible="exportVisible"
+      title="选择要导出的问卷"
+      @ok="handleExportConfirm"
+      @cancel="exportVisible = false"
+    >
+      <a-select v-model="exportSurveyId" placeholder="请选择一份已发布的问卷" allow-search style="width: 100%">
+        <a-option v-for="s in publishedSurveys" :key="s.id" :value="s.id" :label="s.title">
+          {{ s.title }} <span style="color: var(--color-text-3)">({{ s.responses_count }} 份答卷)</span>
+        </a-option>
+      </a-select>
+    </a-modal>
 
     <!-- 汇总统计指标 -->
     <a-row :gutter="16">
@@ -82,7 +96,7 @@
 import { ref, onMounted, watch } from "vue";
 import { Message } from "@arco-design/web-vue";
 import { useRouter } from "vue-router";
-import { getStatsOverview, getSurveyList } from "@/api/modules/survey";
+import { getStatsOverview, getSurveyList, exportResponses } from "@/api/modules/survey";
 import type { StatsOverviewResponse } from "@common/survey/survey-stats.interface";
 import type { SurveyListItem } from "@common/survey/survey.interface";
 
@@ -184,10 +198,34 @@ function statusLabel(status: number): string {
   return status === 1 ? "已发布" : status === 0 ? "草稿" : "已关闭";
 }
 
-// ─── 操作 ──────────────────────────────────────────────────────
+// ─── 导出 ──────────────────────────────────────────────────────
 
-function handleExport() {
-  Message.info("CSV 导出功能开发中");
+const exportVisible = ref(false);
+const exportSurveyId = ref("");
+
+function handleExportConfirm() {
+  if (!exportSurveyId.value) {
+    Message.warning("请选择一份问卷");
+    return;
+  }
+  const survey = publishedSurveys.value.find(s => s.id === exportSurveyId.value);
+  const title = survey?.title ?? "responses";
+  exportResponses(exportSurveyId.value, { format: "csv" })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `survey_${exportSurveyId.value}_${title.replace(/[\\/:*?"<>|]/g, "_")}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      Message.success("导出成功");
+      exportVisible.value = false;
+    })
+    .catch(() => {
+      Message.error("导出失败，请检查网络");
+    });
 }
 
 function handleViewDetail(record: SurveyListItem) {

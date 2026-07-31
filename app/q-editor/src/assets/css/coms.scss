@@ -3,7 +3,7 @@
   min-width: 60px;
   max-width: 120px;
   height: 30px;
-  background-color: var(--background-color);
+  background-color: transparent;
   border-radius: var(--border-radius-md);
   font-size: var(--font-size-base);
   color: var(--font-color-light);
@@ -14,12 +14,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: center;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
+// hover / 选中态统一取用 --el-color-primary（随亮暗主题与色弱模式联动），
+// 用 color-mix 现算浅底色，避免依赖固定的 light-9 静态色值
 .link-item:hover {
-  background-color: var(--info-color);
-  color: var(--white);
+  background-color: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+  color: var(--el-color-primary);
 }
 .link-item-active {
-  background-color: var(--info-color);
-  color: var(--white);
+  background-color: color-mix(in srgb, var(--el-color-primary) 16%, transparent);
+  color: var(--el-color-primary);
+  font-weight: 600;
 }

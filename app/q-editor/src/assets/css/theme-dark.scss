@@ -24,6 +24,10 @@ html.dark {
   --font-color-light: #d4d4d8;
   --font-color-lighter: #a1a1aa;
   --font-color-lightest: #52525b;
+  // 大留白页面背板色（暗色）：与 land 页深灰金属银背景同值，见 variables.scss 的亮色取值说明
+  --page-backdrop: #3a3d42;
+  // 大留白页面背景图（暗色）：与亮色版同构图但配色更深，呼应暗色令牌体系
+  --page-bg-image: url("@/assets/imgs/bg_b.png");
 
   // ── Element Plus 颜色 ──
   --el-color-primary: #fafafa;
@@ -80,7 +84,6 @@ html.dark {
   --login-text: #fafafa;
   --login-text-light: #d4d4d8;
   --login-text-muted: #a1a1aa;
-  --login-bg: #09090b;
   --login-focus-ring: rgba(212, 212, 216, 0.18);
   --carousel-gradient-start: #27272a;
   --carousel-gradient-end: #3f3f46;

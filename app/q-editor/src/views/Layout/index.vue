@@ -28,125 +28,138 @@
         {{ t("layout.syncFailedHint") }}
       </span>
     </div>
-    <!-- 数据表格 -->
-    <el-table :data="pagedTableData" style="width: 100%" border height="500" @sort-change="handleSortChange">
-      <el-table-column
-        fixed
-        prop="createDate"
-        :label="t('layout.columnCreateDate')"
-        width="150"
-        sortable="custom"
-        :formatter="formatDate"
-      />
-      <el-table-column prop="syncStatus" :label="t('layout.columnSyncStatus')" width="100" align="center">
-        <template #default="scope">
-          <el-tag :type="scope.row.syncStatus === 'synced' ? 'success' : 'info'" size="small" effect="plain">
-            {{ scope.row.syncStatus === "synced" ? t("layout.statusSynced") : t("layout.statusUnsynced") }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <!-- 审核状态 -->
-      <el-table-column :label="t('layout.columnReviewStatus')" width="90" align="center">
-        <template #default="scope">
-          <template v-if="scope.row.review_status && scope.row.syncStatus === 'synced'">
-            <el-tag :type="reviewStatusType(scope.row.review_status)" size="small" effect="plain">
-              {{ t("layout.reviewStatus." + scope.row.review_status) }}
-            </el-tag>
-          </template>
-          <span v-else class="text-muted">—</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="title" :label="t('layout.columnTitle')">
-        <template #default="scope">
-          <span class="survey-title-link" @click="viewSurvey(scope.row)">{{ scope.row.title }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="surveyCount" :label="t('layout.columnQuestionCount')" width="150" align="center" />
-      <el-table-column
-        prop="updateDate"
-        :label="t('layout.columnUpdateDate')"
-        width="150"
-        align="center"
-        sortable="custom"
-        :formatter="formatDate"
-      />
-      <!-- 不满足条件的按钮直接不渲染（不留空位），列宽按最多同时出现的按钮数预留，避免右侧被裁切 -->
-      <el-table-column fixed="right" :label="t('layout.columnAction')" width="230" align="left" header-align="center">
-        <template #default="scope">
-          <!-- 圆形图标按钮：hover 显示原文字含义的 tooltip，避免文字撑宽操作列 -->
-          <div class="action-icons">
-            <!-- 同步固定用蓝色强调，与下方编辑按钮的中性灰区分，且蓝色在亮暗/色弱主题下都不需要额外做对比度修正 -->
-            <el-tooltip :content="t('layout.syncSurvey')" placement="top">
-              <el-button
-                circle
-                class="btn-sync"
-                size="small"
-                :icon="Refresh"
-                :loading="syncingId === scope.row.id"
-                @click="syncSurvey(scope.row)"
-              />
-            </el-tooltip>
-            <!-- disabled 状态下原生按钮不响应 hover 事件，外面套一层 span 承接 tooltip 触发 -->
-            <el-tooltip
-              v-if="scope.row.remote_survey_id && scope.row.review_status !== 'approved'"
-              :content="scope.row.review_status === 'pending' ? t('layout.reviewing') : t('layout.submitReview')"
-              placement="top"
-            >
-              <span>
-                <el-button
-                  circle
-                  type="warning"
-                  size="small"
-                  :icon="Promotion"
-                  :disabled="scope.row.review_status === 'pending'"
-                  @click="handleSubmitForReview(scope.row)"
-                />
-              </span>
-            </el-tooltip>
-            <el-tooltip
-              v-if="
-                scope.row.remote_survey_id &&
-                scope.row.review_status === 'approved' &&
-                scope.row.syncStatus === 'synced'
-              "
-              :content="t('layout.shareTemplate')"
-              placement="top"
-            >
-              <el-button circle type="success" size="small" :icon="Share" @click="handleShareTemplate(scope.row)" />
-            </el-tooltip>
-            <!-- 生成问卷链接：仅在已同步且审核通过后可用 -->
-            <el-tooltip
-              v-if="
-                scope.row.remote_survey_id &&
-                scope.row.review_status === 'approved' &&
-                scope.row.syncStatus === 'synced'
-              "
-              :content="t('layout.generateLink')"
-              placement="top"
-            >
-              <el-button circle type="warning" size="small" :icon="Link" @click="handleGenerateLink(scope.row)" />
-            </el-tooltip>
-            <!-- 编辑为常规操作，用中性灰即可，突出的主色只留给醒目的删除/审核类操作 -->
-            <el-tooltip :content="t('layout.edit')" placement="top">
-              <el-button circle type="info" size="small" :icon="Edit" @click="editSurvey(scope.row)" />
-            </el-tooltip>
-            <el-tooltip :content="t('layout.delete')" placement="top">
-              <el-button circle type="danger" size="small" :icon="Delete" @click="handleDeleteSurvey(scope.row)" />
-            </el-tooltip>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页器 -->
-    <div class="table-pagination">
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :page-sizes="[10, 20, 50]"
-        :total="tableData.length"
-        layout="total, sizes, prev, pager, next, jumper"
-        background
-      />
+    <!-- 数据表格 + 分页：包裹在 table-area 中作为唯一的弹性伸缩区域，
+         使其随视口高度自动伸缩，多出的行交由 el-table 自身内部滚动承担，
+         从而避免整页因内容超出一屏而出现浏览器级滚动条 -->
+    <div class="table-area">
+      <div class="table-wrap">
+        <el-table :data="pagedTableData" style="width: 100%" border height="100%" @sort-change="handleSortChange">
+          <el-table-column
+            fixed
+            prop="createDate"
+            :label="t('layout.columnCreateDate')"
+            width="150"
+            sortable="custom"
+            :formatter="formatDate"
+          />
+          <el-table-column prop="syncStatus" :label="t('layout.columnSyncStatus')" width="100" align="center">
+            <template #default="scope">
+              <el-tag :type="scope.row.syncStatus === 'synced' ? 'success' : 'info'" size="small" effect="plain">
+                {{ scope.row.syncStatus === "synced" ? t("layout.statusSynced") : t("layout.statusUnsynced") }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <!-- 审核状态 -->
+          <el-table-column :label="t('layout.columnReviewStatus')" width="90" align="center">
+            <template #default="scope">
+              <template v-if="scope.row.review_status && scope.row.syncStatus === 'synced'">
+                <el-tag :type="reviewStatusType(scope.row.review_status)" size="small" effect="plain">
+                  {{ t("layout.reviewStatus." + scope.row.review_status) }}
+                </el-tag>
+              </template>
+              <span v-else class="text-muted">—</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="title" :label="t('layout.columnTitle')">
+            <template #default="scope">
+              <span class="survey-title-link" @click="viewSurvey(scope.row)">{{ scope.row.title }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="surveyCount" :label="t('layout.columnQuestionCount')" width="150" align="center" />
+          <el-table-column
+            prop="updateDate"
+            :label="t('layout.columnUpdateDate')"
+            width="150"
+            align="center"
+            sortable="custom"
+            :formatter="formatDate"
+          />
+          <!-- 不满足条件的按钮直接不渲染（不留空位），列宽按最多同时出现的按钮数预留，避免右侧被裁切 -->
+          <el-table-column
+            fixed="right"
+            :label="t('layout.columnAction')"
+            width="230"
+            align="left"
+            header-align="center"
+          >
+            <template #default="scope">
+              <!-- 圆形图标按钮：hover 显示原文字含义的 tooltip，避免文字撑宽操作列 -->
+              <div class="action-icons">
+                <!-- 同步用主色（--el-color-primary）强调，与编辑按钮的中性灰区分；
+                 主色随亮暗主题与色弱模式自动切换到可辨色，无需再单独硬编码颜色 -->
+                <el-tooltip :content="t('layout.syncSurvey')" placement="top">
+                  <el-button
+                    circle
+                    type="primary"
+                    size="small"
+                    :icon="Refresh"
+                    :loading="syncingId === scope.row.id"
+                    @click="syncSurvey(scope.row)"
+                  />
+                </el-tooltip>
+                <!-- disabled 状态下原生按钮不响应 hover 事件，外面套一层 span 承接 tooltip 触发 -->
+                <el-tooltip
+                  v-if="scope.row.remote_survey_id && scope.row.review_status !== 'approved'"
+                  :content="scope.row.review_status === 'pending' ? t('layout.reviewing') : t('layout.submitReview')"
+                  placement="top"
+                >
+                  <span>
+                    <el-button
+                      circle
+                      type="warning"
+                      size="small"
+                      :icon="Promotion"
+                      :disabled="scope.row.review_status === 'pending'"
+                      @click="handleSubmitForReview(scope.row)"
+                    />
+                  </span>
+                </el-tooltip>
+                <el-tooltip
+                  v-if="
+                    scope.row.remote_survey_id &&
+                    scope.row.review_status === 'approved' &&
+                    scope.row.syncStatus === 'synced'
+                  "
+                  :content="t('layout.shareTemplate')"
+                  placement="top"
+                >
+                  <el-button circle type="success" size="small" :icon="Share" @click="handleShareTemplate(scope.row)" />
+                </el-tooltip>
+                <!-- 生成问卷链接：仅在已同步且审核通过后可用 -->
+                <el-tooltip
+                  v-if="
+                    scope.row.remote_survey_id &&
+                    scope.row.review_status === 'approved' &&
+                    scope.row.syncStatus === 'synced'
+                  "
+                  :content="t('layout.generateLink')"
+                  placement="top"
+                >
+                  <el-button circle type="warning" size="small" :icon="Link" @click="handleGenerateLink(scope.row)" />
+                </el-tooltip>
+                <!-- 编辑为常规操作，用中性灰即可，突出的主色只留给醒目的删除/审核类操作 -->
+                <el-tooltip :content="t('layout.edit')" placement="top">
+                  <el-button circle type="info" size="small" :icon="Edit" @click="editSurvey(scope.row)" />
+                </el-tooltip>
+                <el-tooltip :content="t('layout.delete')" placement="top">
+                  <el-button circle type="danger" size="small" :icon="Delete" @click="handleDeleteSurvey(scope.row)" />
+                </el-tooltip>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <!-- 分页器 -->
+      <div class="table-pagination">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50]"
+          :total="tableData.length"
+          layout="total, sizes, prev, pager, next, jumper"
+          background
+        />
+      </div>
     </div>
 
     <!-- 申请共享模板对话框 -->
@@ -694,11 +707,38 @@ const syncSurvey = async (surveyInfo: SurveyDBReturnData) => {
 </script>
 
 <style scoped lang="scss">
-// 渐变色暂不使用
-// .layout-page {
-//   min-height: 100vh;
-//   background: linear-gradient(to right, #22b0c9 0%, #3a78e8 60%, #7a42d8 100%);
-// }
+.layout-page {
+  // 用精确的 100vh 代替 min-height:100vh，配合 border-box 把工具类附加的 padding 也计入其中，
+  // 页面盒子不再随内容被撑高，从根本上避免出现浏览器级滚动条
+  height: 100vh;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  // 与登录页/land页/编辑器工作区统一的大留白背板色（亮/暗两套取值见 variables.scss / theme-dark.scss）
+  background-color: var(--page-backdrop);
+  background-image: var(--page-bg-image);
+  // 背景统一铺满整个视口：页面高度已被精确限定，背景不会因内容被撑高而被放大拉伸
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+// 表格 + 分页的弹性伸缩区域：撑满标题/按钮组之外的剩余空间，
+// 视口变矮时由它自行收缩（min-height:0 解除 flex 子项默认的内容最小高度限制），
+// 超出的行交由 el-table 自身内部滚动条承担，分页器始终保持完整可见、不被裁切
+.table-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+}
 
 // 操作列圆形图标按钮容器：横向紧凑排列，不换行、不撑开表格行高
 .action-icons {
@@ -708,25 +748,134 @@ const syncSurvey = async (surveyInfo: SurveyDBReturnData) => {
   justify-content: space-around;
   flex-wrap: nowrap;
 
-  // 同步按钮固定蓝色强调：不复用 primary/success/warning/danger 任一语义色，
-  // 避免和编辑（灰）、共享（绿）、提审&生成链接（橙）、删除（红）撞色；
-  // 直接覆盖 Element Plus 按钮的 CSS 变量，同一颜色在亮/暗/色弱主题下保持一致，无需额外做对比度修正
-  .btn-sync {
-    --el-button-bg-color: #3b82f6;
-    --el-button-border-color: #3b82f6;
-    --el-button-text-color: #fff;
-    --el-button-hover-bg-color: #2563eb;
-    --el-button-hover-border-color: #2563eb;
-    --el-button-hover-text-color: #fff;
-    --el-button-active-bg-color: #1d4ed8;
-    --el-button-active-border-color: #1d4ed8;
+  // shadcn 风格「outline」图标按钮：不用高饱和度实心圆底色，
+  // 但也不能完全透明——边框始终用 --el-color-primary（亮色下近黑、暗色下近白，
+  // 随亮暗主题与色弱模式自动联动）勾出圆形轮廓，保证不 hover 时也能看清是个圆按钮；
+  // 图标本身用各自的语义色区分操作类型，hover 时才浮现一层同色系浅底强调。
+  // 浅底用 color-mix 直接从当前生效的 --el-color-* 混出，而不是查 Element Plus
+  // 内置、不随色弱模式联动的 light-9 派生变量，避免图标已变色但底色还是旧色系
+  .el-button {
+    // 比默认 small 圆形按钮(24px)更大一档，图标也同步放大，避免显得过小
+    width: 30px;
+    height: 30px;
+    font-size: 15px;
+    border-width: 1px;
+    border-style: solid;
+    // 静止态用主色描边勾出圆形轮廓，但调暗到 30% 透明度，避免像主色实色描边那样刺眼；
+    // 亮/暗模式下分别是浅灰/深灰描边，仍能看清圆形但不抢眼，hover 时才用各自语义色加深
+    border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+    box-shadow: none;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
+
+    &:focus-visible {
+      outline: 2px solid var(--el-color-primary);
+      outline-offset: 1px;
+    }
+
+    // disabled 态（如「审核中」的提审按钮）：整体调淡，取消 hover 反馈
+    &.is-disabled {
+      opacity: 0.4;
+      &:hover {
+        background-color: transparent !important;
+        border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent) !important;
+      }
+    }
   }
+
+  // 同步
+  .el-button--primary {
+    --el-button-bg-color: transparent;
+    --el-button-border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+    --el-button-text-color: var(--el-color-primary);
+    --el-button-hover-border-color: var(--el-color-primary);
+    --el-button-hover-text-color: var(--el-color-primary);
+    --el-button-active-bg-color: transparent;
+    --el-button-active-border-color: var(--el-color-primary);
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--el-color-primary) 14%, transparent);
+    }
+  }
+  // 共享模板
+  .el-button--success {
+    --el-button-bg-color: transparent;
+    --el-button-border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+    --el-button-text-color: var(--el-color-success);
+    --el-button-hover-border-color: var(--el-color-success);
+    --el-button-hover-text-color: var(--el-color-success);
+    --el-button-active-bg-color: transparent;
+    --el-button-active-border-color: var(--el-color-success);
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--el-color-success) 14%, transparent);
+    }
+  }
+  // 提审 / 生成问卷链接（二者互斥展示，共用同一语义色）
+  .el-button--warning {
+    --el-button-bg-color: transparent;
+    --el-button-border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+    --el-button-text-color: var(--el-color-warning);
+    --el-button-hover-border-color: var(--el-color-warning);
+    --el-button-hover-text-color: var(--el-color-warning);
+    --el-button-active-bg-color: transparent;
+    --el-button-active-border-color: var(--el-color-warning);
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--el-color-warning) 14%, transparent);
+    }
+  }
+  // 编辑：常规操作，中性灰即可，避免与共享/提审/删除等强调色抢视觉
+  .el-button--info {
+    --el-button-bg-color: transparent;
+    --el-button-border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+    --el-button-text-color: var(--el-text-color-secondary);
+    --el-button-hover-border-color: var(--el-text-color-primary);
+    --el-button-hover-text-color: var(--el-text-color-primary);
+    --el-button-active-bg-color: transparent;
+    --el-button-active-border-color: var(--el-text-color-primary);
+
+    &:hover {
+      background-color: var(--el-fill-color);
+    }
+  }
+  // 删除：破坏性操作，静止态与其它按钮同样只是主色描边，仅 hover 时才浮现红色浅底强调，
+  // 避免一直用高饱和红色圆块抢镜
+  .el-button--danger {
+    --el-button-bg-color: transparent;
+    --el-button-border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+    --el-button-text-color: var(--el-text-color-secondary);
+    --el-button-hover-border-color: var(--el-color-danger);
+    --el-button-hover-text-color: var(--el-color-danger);
+    --el-button-active-bg-color: transparent;
+    --el-button-active-border-color: var(--el-color-danger);
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--el-color-danger) 16%, transparent);
+    }
+  }
+}
+
+// 暗色模式下同步按钮（primary 类型）的图标着色修正：
+// theme-dark.scss 里有一条全局规则 html.dark .el-button--primary:not(.is-link)
+// 把主色按钮文字/图标强制改成近黑色 #18181b，那是为「实心白底」的主色按钮设计的
+// （白底需要深色字才能看清）；但这里的同步按钮底色是透明的，被强制成近黑色图标后
+// 会直接融进暗色页面背景里、几乎看不见。用更高特异性的选择器覆盖回主色本身的取值
+// （暗色下 --el-color-primary 为近白色 #fafafa，与透明底形成正常对比）
+html.dark .action-icons .el-button--primary:not(.is-link) {
+  --el-button-text-color: var(--el-color-primary);
+  --el-button-hover-text-color: var(--el-color-primary);
+  color: var(--el-color-primary);
 }
 
 .table-pagination {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+  // 分页器不参与 table-area 的弹性收缩，始终保持完整可见
+  flex-shrink: 0;
 }
 
 .text-muted {

@@ -1,6 +1,7 @@
 <template>
-  <div v-if="surveyData" class="survey-page">
-    <div class="survey-container mc survey-scope">
+  <!-- 统一大留白背板：无论加载中/加载失败/加载成功都套用同一背景，避免状态切换时背景闪跳 -->
+  <div class="survey-page">
+    <div v-if="surveyData" class="survey-container mc survey-scope">
       <!-- 问卷标题与状态信息 -->
       <div class="survey-header mt-30 mb-20">
         <h2 class="survey-title">{{ surveyData.title || "问卷" }}</h2>
@@ -38,14 +39,14 @@
         </div>
       </div>
     </div>
-  </div>
-  <div v-else-if="loadError" class="text-center mt-40">
-    <p class="load-error-msg">{{ loadError }}</p>
-    <el-button type="primary" @click="loadSurvey">重试</el-button>
-  </div>
-  <div v-else class="text-center mt-40">
-    <el-icon class="is-loading" :size="24"><Loading /></el-icon>
-    <p style="color: var(--login-text-muted); margin-top: 12px">加载问卷中...</p>
+    <div v-else-if="loadError" class="text-center mt-40">
+      <p class="load-error-msg">{{ loadError }}</p>
+      <el-button type="primary" @click="loadSurvey">重试</el-button>
+    </div>
+    <div v-else class="text-center mt-40">
+      <el-icon class="is-loading" :size="24"><Loading /></el-icon>
+      <p style="color: var(--login-text-muted); margin-top: 12px">加载问卷中...</p>
+    </div>
   </div>
 </template>
 
@@ -294,11 +295,18 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-// 渐变色暂不使用
-// .survey-page {
-//   min-height: 100vh;
-//   background: linear-gradient(to right, #22b0c9 0%, #3a78e8 40%, #7a42d8 100%);
-// }
+.survey-page {
+  // 问卷题目数量不定，内容可能远超一屏，需要保留页面级滚动，因此用 min-height 而非精确 100vh
+  min-height: 100vh;
+  // 与登录页/编辑器工作区/工作台首页统一的大留白背板色（亮/暗两套取值见 variables.scss / theme-dark.scss）
+  background-color: var(--page-backdrop);
+  background-image: var(--page-bg-image);
+  background-size: cover;
+  background-position: center;
+  // fixed：背景固定于视口，避免内容撑高容器后 cover 被重新拉伸/裁切
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
 
 .survey-container {
   width: 800px;

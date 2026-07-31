@@ -319,9 +319,14 @@ onUnmounted(() => {
   padding: 20px;
   // Header的高度50px，上下padding 20px
   height: calc(100vh - 50px - 40px);
-  // 渐变色暂不使用
-  // background: linear-gradient(160deg, #22b0c9 0%, #3a78e8 50%, #7a42d8 100%);
-  background-color: var(--white);
+  // 与登录页/land页/工作台首页统一的大留白背板色（亮/暗两套取值见 variables.scss / theme-dark.scss）
+  background-color: var(--page-backdrop);
+  background-image: var(--page-bg-image);
+  // 背景统一铺满整个工作区：容器本身已用 position:fixed + 精确高度限定，
+  // 不会被内容撑高变形，因此直接 cover + center 铺满，与登录页/主工作台首页保持一致
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   position: fixed;
   top: 50px;
 }

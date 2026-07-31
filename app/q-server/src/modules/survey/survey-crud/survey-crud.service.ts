@@ -336,6 +336,9 @@ export class SurveyService {
           });
           // 清除缓存和 Redis 截止时间标记
           await this.cache.del(cacheKey);
+          // 自动关闭后同步清除统计缓存，避免概览页 published_surveys 计数包含已关闭问卷
+          await this.cache.del(CacheKeys.statsOverview).catch(() => {});
+          await this.cache.del(CacheKeys.statsBySurvey(surveyIdStr)).catch(() => {});
           await this.fastify.redis.del(deadlineKey).catch(() => {});
           throw new AppError("问卷已截止，不再接受填写", 404);
         }
@@ -974,6 +977,9 @@ export class SurveyService {
               data: { status: 2, closed_at: new Date() }
             })
             .catch(() => {});
+          // 同步清除统计缓存
+          await this.cache.del(CacheKeys.statsOverview).catch(() => {});
+          await this.cache.del(CacheKeys.statsBySurvey(surveyIdStr)).catch(() => {});
           await this.fastify.redis.del(CacheKeys.surveyDeadline(surveyIdStr)).catch(() => {});
           throw new AppError("问卷已截止，不再接受填写", 400);
         }
