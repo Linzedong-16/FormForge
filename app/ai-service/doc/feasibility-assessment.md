@@ -125,17 +125,21 @@ Answer (答案表)
 
 ### 3.2 已完成模块（✅）
 
-| 模块         | 文件                         | 说明                                             |
-| ------------ | ---------------------------- | ------------------------------------------------ |
-| FastAPI 入口 | `src/main.py`                | 应用创建、lifespan、CORS、路由注册               |
-| 配置中心     | `src/config.py`              | pydantic-settings，多 Provider 支持，.env 加载   |
-| 数据模型     | `src/models/schemas.py`      | Agent 对话、问卷生成/审核、健康检查 Schema       |
-| Agent 基类   | `src/agents/base.py`         | `BaseAgent` 抽象类 + `PlaceholderAgent` 占位实现 |
-| Agent 路由   | `src/api/routes/agent.py`    | `POST /api/v1/agent/chat` + SSE 流式             |
-| 健康检查     | `src/api/routes/health.py`   | 含 q-server 下游连通性探测                       |
-| API 客户端   | `src/tools/survey_client.py` | 封装 q-server HTTP 调用（问卷/答卷/日志）        |
-| 测试         | `tests/test_health.py`       | pytest + httpx ASGITransport                     |
-| 使用指南     | `doc/guide.md`               | 环境安装、启动命令、接口地址                     |
+| 模块         | 文件                          | 说明                                                 |
+| ------------ | ----------------------------- | ---------------------------------------------------- |
+| FastAPI 入口 | `src/main.py`                 | 应用创建、lifespan、CORS、路由注册、LLM 启动验证     |
+| 配置中心     | `src/config.py`               | pydantic-settings，多 Provider 支持，.env 加载       |
+| 数据模型     | `src/models/schemas.py`       | Agent 对话、问卷生成/审核、健康检查 Schema           |
+| Agent 基类   | `src/agents/base.py`          | `BaseAgent` 抽象基类                                 |
+| Agent 路由   | `src/api/routes/agent.py`     | `POST /api/v1/agent/chat` + SSE 流式 + `GET /types`  |
+| 健康检查     | `src/api/routes/health.py`    | 含 q-server 下游连通性探测                           |
+| API 客户端   | `src/tools/survey_client.py`  | 封装 q-server HTTP 调用（问卷/答卷/日志）            |
+| LLM 工厂     | `src/llm/factory.py`          | ChatModel 工厂，支持 deepseek/openai/anthropic，单例 |
+| 分析 Prompt  | `src/llm/prompts/analysis.py` | 问卷分析 System Prompt 模板 + 消息组装函数           |
+| Agent 注册表 | `src/agents/registry.py`      | agent_type → Agent 延迟实例化映射                    |
+| ChatAgent    | `src/agents/chat_agent.py`    | 基于 LanagChain v1 ChatModel 的通用对话 Agent        |
+| 测试         | `tests/test_health.py`        | pytest + httpx ASGITransport                         |
+| 使用指南     | `doc/guide.md`                | 环境安装、启动命令、接口地址                         |
 
 ### 3.3 依赖清单（pyproject.toml）
 
@@ -143,33 +147,32 @@ Answer (答案表)
 
 | 包名                | 版本    | 用途                                                           |
 | ------------------- | ------- | -------------------------------------------------------------- |
-| fastapi             | 0.138.0 | Web 框架                                                       |
-| uvicorn[standard]   | 0.49.0  | ASGI 服务器                                                    |
+| fastapi             | 0.135.1 | Web 框架                                                       |
+| uvicorn[standard]   | 0.46.0  | ASGI 服务器                                                    |
 | httpx               | 0.28.1  | 异步 HTTP 客户端（调用 q-server）                              |
 | pydantic            | 2.13.4  | 数据校验                                                       |
-| pydantic-settings   | 2.14.2  | 配置管理                                                       |
-| python-dotenv       | 1.2.2   | .env 加载                                                      |
-| langchain           | 1.3.x   | LLM 抽象层（v1 稳定版）                                        |
-| langchain-openai    | 1.4.x   | OpenAI 兼容 API 适配                                           |
-| langchain-community | 0.4.x   | 社区工具集（官方已宣布逐步淘汰，建议迁移至各 Provider 独立包） |
+| pydantic-settings   | 2.12.0  | 配置管理                                                       |
+| python-dotenv       | 1.2.1   | .env 加载                                                      |
+| langchain           | 1.3.14  | LLM 抽象层（v1 稳定版）                                        |
+| langchain-openai    | 1.4.1   | OpenAI 兼容 API 适配                                           |
+| langchain-community | 0.4.1   | 社区工具集（官方已宣布逐步淘汰，建议迁移至各 Provider 独立包） |
+| langgraph           | 1.2.10  | Agent 工作流编排                                               |
 
 **可选依赖（按需安装）**：
 
-| 分组     | 包名                            | 用途                | 安装命令                       |
-| -------- | ------------------------------- | ------------------- | ------------------------------ |
-| agent    | langgraph ≥ 1.2.0               | Agent 工作流编排    | `pip install -e ".[agent]"`    |
-| analysis | pandas, numpy, jieba, wordcloud | 数据分析 + 中文分词 | `pip install -e ".[analysis]"` |
-| rag      | chromadb, tiktoken              | 向量数据库 + 嵌入   | `pip install -e ".[rag]"`      |
-| report   | weasyprint, matplotlib          | PDF 报表导出        | `pip install -e ".[report]"`   |
+| 分组     | 包名                            | 用途                | 状态        |
+| -------- | ------------------------------- | ------------------- | ----------- |
+| analysis | pandas, numpy, jieba, wordcloud | 数据分析 + 中文分词 | ✅ 已安装   |
+| rag      | chromadb, tiktoken              | 向量数据库 + 嵌入   | ❌ 待阶段 6 |
+| report   | weasyprint, matplotlib          | PDF 报表导出        | ❌ 待阶段 7 |
 
 ### 3.4 待完成模块（❌）
 
-- **LLM 接入**：PlaceholderAgent 替换为真实的 ChatModel 驱动
-- **分析 Agent**：实现 `agent_type: "analysis"` 的分析逻辑
+- **分析 Agent**：实现 `agent_type: "analysis"` 的问卷答题结果分析 Agent
 - **LangGraph 编排**：多步推理工作流
 - **RAG 知识库**：问卷设计最佳实践的知识检索
 - **PDF 导出**：分析结果的结构化报表
-- **用户鉴权**：ai-service 自身的 API 认证
+- **q-server 代理路由**：在 q-server 添加 `/api/ai/*` → ai-service 转发
 
 ---
 
@@ -236,28 +239,26 @@ q-server 的统计接口已实现 Redis 缓存（Cache-Aside 模式，TTL 5 分�
 
 ### 5.1 Agent 架构
 
+采用**确定性数据注入**模式，而非 Agent Tool Calling。数据获取在 LLM 推理之前完成，统计摘要作为上下文直接注入 Prompt，避免 LLM 自主决策带来的额外推理开销和失败概率。
+
 ```
-POST /api/v1/agent/analysis
+POST /api/v1/agent/analysis  （前端经 q-server 代理: POST /api/ai/agent/analysis）
   │
-  ├── [1] 参数校验：survey_id + question + analysis_type
+  ├── [1] 参数校验：survey_id + user_question
   │
-  ├── [2] 数据获取
+  ├── [2] 数据获取（确定性，不依赖 LLM 决策）
   │   ├── SurveyAPIClient.get_survey_detail(survey_id)  → 问卷结构
-  │   ├── SurveyAPIClient.get_survey_stats(survey_id)   → 统计摘要
-  │   └── SurveyAPIClient.get_text_samples(survey_id)   → 文本抽样
+  │   └── SurveyAPIClient.get_survey_stats(survey_id)   → 统计摘要（含文本抽样）
   │
   ├── [3] Prompt 组装
-  │   ├── System: 分析角色 + 约束规则
-  │   ├── Context: 问卷结构 + 统计摘要 + 文本样本
+  │   ├── System: 分析角色 + 约束规则 + 问卷结构 JSON + 统计摘要 JSON
   │   └── User: 自然语言问题
   │
-  ├── [4] LLM 推理（LangChain ChatModel）
-  │   └── 支持 SSE 流式输出
+  ├── [4] LLM 推理（ChatModel.astream）
+  │   └── SSE 流式输出 token 事件
   │
   └── [5] 响应返回
-      ├── analysis: 分析文本
-      ├── citations: 引用的数据点
-      └── suggestions: 改进建议（可选）
+      └── { reply: "分析文本...", tokens_used: 4850 }
 ```
 
 ### 5.2 Agent 类型细化
@@ -271,26 +272,22 @@ POST /api/v1/agent/analysis
 | `analysis_report`  | 综合报告（含建议、改进方向、可视化建议） | deepseek-chat / claude-sonnet-5 |
 | `analysis_compare` | 多问卷/多时段对比分析                    | deepseek-chat / gpt-4o          |
 
-### 5.3 LangChain Tool 体系
+### 5.3 数据获取方式
 
-#### 已有 Tool（`SurveyAPIClient` 现有方法）
+分析 Agent 采用**确定性数据注入**而非 LangChain Tool Calling。原因：每次分析必定需要统计摘要，不存在"LLM 觉得不需要"的情况，用 Tool 反而增加推理延迟和失败概率。
 
-```python
-# 可直接注册为 LangChain Tool
-- get_survey_detail(survey_id: str) -> dict       # 获取问卷结构
-- get_survey_responses(survey_id: str) -> dict     # 获取答卷数据
-- list_surveys(page: int, page_size: int) -> dict  # 问卷列表
-```
-
-#### 需新增 Tool
+数据获取通过 `SurveyAPIClient` 在 LLM 推理前完成：
 
 ```python
-# 需在 SurveyAPIClient 和 q-server 中新增
-- get_survey_stats(survey_id: str) -> dict         # 调用统计 API
-- export_responses_csv(survey_id: str) -> str      # 获取 CSV 原始数据
-- get_text_samples(survey_id: str, component_id: str, limit: int) -> list[str]
-- get_platform_overview() -> dict                  # 平台级概览
+# SurveyAPIClient 已有方法
+- get_survey_detail(survey_id: str) -> dict       # 问卷结构（题目列表、类型、选项）
+
+# SurveyAPIClient 需新增方法（q-server 已有对应 API，直接调用即可）
+- get_survey_stats(survey_id: str) -> dict        # → GET /api/admin/surveys/:id/stats
+- get_platform_overview() -> dict                 # → GET /api/admin/stats/overview
 ```
+
+> 注：q-server 的 `SurveyStatsService`（800+ 行）已完成逐题聚合分析，ai-service 无需重复实现。
 
 ### 5.4 Prompt 工程策略
 

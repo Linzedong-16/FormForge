@@ -138,9 +138,9 @@
 
 ### 3.1 LangChain 生态升级评估
 
-> **当前版本**：langchain ≥ 0.3.0（pyproject.toml 中声明的旧版下限）
-> **建议目标**：langchain ≥ 1.3.0（v1 最新稳定版），langchain-openai ≥ 1.4.0
-> **重要说明**：LangChain 已于 2025 年 10 月发布 v1 稳定版，API 发生重大变更（`AgentExecutor` 废弃、`create_tool_calling_agent` 更新为 `create_agent`、Tool 定义方式统一为 `@tool` 装饰器）。必须从 0.3.x 迁移至 1.x。
+> **目标版本**：langchain ≥ 1.3.0（v1 最新稳定版），langchain-openai ≥ 1.4.0
+> **实际安装**：langchain 1.3.14 / langchain-openai 1.4.1 / langgraph 1.2.10（已完成升级）
+> **重要说明**：LangChain 已于 2025 年 10 月发布 v1 稳定版，API 发生重大变更（`AgentExecutor` 废弃、`create_tool_calling_agent` → `create_agent`、Tool 用 `@tool` 装饰器）。本项目从 0.3.x 已迁移至 1.x。
 
 - [ ] **3.1.1** 评估当前安装版本
 
@@ -1432,19 +1432,20 @@ app/ai-service/
 
 ## 13. 前端对接接口规范
 
+前端不直接调 ai-service，通过 q-server 代理转发。路径映射规则：`/api/ai/*` → `http://localhost:8090/api/v1/*`（前缀 `/api/ai` 替换为 `/api/v1`）。
+
 ### 13.1 接口汇总
 
-| 方法   | 路径                               | 说明                            | 优先级 |
-| ------ | ---------------------------------- | ------------------------------- | ------ |
-| `GET`  | `/health`                          | 健康检查                        | P0     |
-| `GET`  | `/docs`                            | Swagger API 文档                | P0     |
-| `POST` | `/api/v1/agent/chat`               | Agent 同步对话                  | P0     |
-| `POST` | `/api/v1/agent/chat/stream`        | Agent SSE 流式对话              | P0     |
-| `POST` | `/api/v1/agent/analysis`           | 问卷分析（新建）                | P0     |
-| `GET`  | `/api/v1/agent/types`              | 获取可用 Agent 类型列表（新建） | P1     |
-| `GET`  | `/api/v1/analysis/reports`         | 历史分析报告列表（新建）        | P1     |
-| `GET`  | `/api/v1/analysis/reports/:id`     | 分析报告详情（新建）            | P1     |
-| `GET`  | `/api/v1/analysis/reports/:id/pdf` | 下载 PDF 报告（新建）           | P2     |
+| 方法   | 前端请求路径                           | 代理转发到 (ai-service 内部)           | 说明                | 优先级 |
+| ------ | -------------------------------------- | -------------------------------------- | ------------------- | ------ |
+| `GET`  | `(开发调试直连 :8090/docs)`            | —                                      | Swagger API 文档    | P0     |
+| `POST` | `POST /api/ai/agent/chat`              | `POST /api/v1/agent/chat`              | Agent 同步对话      | P0     |
+| `POST` | `POST /api/ai/agent/chat/stream`       | `POST /api/v1/agent/chat/stream`       | Agent SSE 流式对话  | P0     |
+| `GET`  | `GET /api/ai/agent/types`              | `GET /api/v1/agent/types`              | 可用 Agent 类型列表 | P0     |
+| `POST` | `POST /api/ai/agent/analysis`          | `POST /api/v1/agent/analysis`          | 问卷分析（新建）    | P0     |
+| `GET`  | `GET /api/ai/analysis/reports`         | `GET /api/v1/analysis/reports`         | 历史分析报告列表    | P1     |
+| `GET`  | `GET /api/ai/analysis/reports/:id`     | `GET /api/v1/analysis/reports/:id`     | 分析报告详情        | P1     |
+| `GET`  | `GET /api/ai/analysis/reports/:id/pdf` | `GET /api/v1/analysis/reports/:id/pdf` | 下载 PDF 报告       | P2     |
 
 ### 13.2 请求/响应格式
 
