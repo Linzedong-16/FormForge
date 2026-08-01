@@ -28,6 +28,17 @@ async def lifespan(app: FastAPI):
     print(f"[{settings.app_name}] v{settings.app_version} 启动中...")
     print(f"  q-server: {settings.q_server_base_url}")
     print(f"  AI Provider: {settings.ai_provider} / {settings.ai_model}")
+
+    # 验证 LLM 连通性
+    try:
+        from .llm.factory import get_default_model
+
+        model = get_default_model()
+        response = await model.ainvoke("ping")
+        print(f"  LLM 连通: OK ({settings.ai_provider}/{settings.ai_model})")
+    except Exception as e:
+        print(f"  LLM 连通: 失败 ({e})")
+
     yield
     # 关闭
     print(f"[{settings.app_name}] 已关闭")

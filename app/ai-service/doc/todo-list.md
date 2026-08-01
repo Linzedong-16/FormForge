@@ -7,30 +7,30 @@
 
 ## P0 — 环境与 LLM 基础
 
-- [ ] 确认 Python ≥ 3.13，创建 Conda 环境 `form-agent`（`conda create -n form-agent python=3.13 -y`）
-- [ ] 安装核心依赖：`pip install -e .`
-- [ ] 复制 `.env.example` → `.env`，填入 `AI_API_KEY`、`Q_SERVER_BASE_URL` 等实际值
-- [ ] 启动服务验证：`uvicorn src.main:app --port 8090 --reload`，访问 `/health` 返回 200
-- [ ] 升级 LangChain 到 v1 最新稳定版（`langchain>=1.3.0`, `langchain-openai>=1.4.0`），并锁定版本
-- [ ] 运行 `pip check` 确认无依赖冲突
+- [✓] 确认 Python ≥ 3.13，创建 Conda 环境 `form-agent`（`conda create -n form-agent python=3.13 -y`）
+- [✓] 安装核心依赖：`pip install -e .`
+- [✓] 复制 `.env.example` → `.env`，填入 `AI_API_KEY`、`Q_SERVER_BASE_URL` 等实际值
+- [✓] 启动服务验证：`uvicorn src.main:app --port 8090 --reload`，访问 `/health` 返回 200
+- [✓] 升级 LangChain 到 v1 最新稳定版（`langchain>=1.3.0`, `langchain-openai>=1.4.0`），并锁定版本
+- [✓] 运行 `pip check` 确认无依赖冲突
 
 ## P0 — 目录与模块骨架
 
-- [ ] 创建所有新增目录（`src/llm/`, `src/analysis/`, `src/rag/`, `src/report/`, `src/storage/`, `src/utils/`, `tests/fixtures/`, `scripts/`）
-- [ ] 创建所有空 `__init__.py` 使目录成为 Python 包
+- [✓] 创建所有新增目录（`src/llm/`, `src/analysis/`, `src/rag/`, `src/report/`, `src/storage/`, `src/utils/`, `tests/fixtures/`, `scripts/`）
+- [✓] 创建所有空 `__init__.py` 使目录成为 Python 包
 
 ## P0 — LLM 层
 
-- [ ] 实现 `src/llm/factory.py`：根据 `AI_PROVIDER` 配置创建 ChatModel（deepseek/openai/anthropic）
-- [ ] 实现 `src/llm/prompts/analysis.py`：问卷分析 System Prompt 模板
-- [ ] 在 lifespan 启动时验证 LLM 连通性（发送 ping 并检查响应）
+- [✓] 实现 `src/llm/factory.py`：根据 `AI_PROVIDER` 配置创建 ChatModel（deepseek/openai/anthropic）
+- [✓] 实现 `src/llm/prompts/analysis.py`：问卷分析 System Prompt 模板
+- [✓] 在 lifespan 启动时验证 LLM 连通性（发送 ping 并检查响应）
 
 ## P0 — Agent 注册表与路由解耦
 
-- [ ] 实现 `src/agents/registry.py`（Agent 类型注册 + 延迟实例化）
-- [ ] 重构 `src/api/routes/agent.py`：用注册表替换硬编码的 PlaceholderAgent
-- [ ] 实现 `src/agents/chat_agent.py`：接入真实 LLM，替代 PlaceholderAgent
-- [ ] 在 `src/agents/__init__.py` 中注册所有 Agent 类型
+- [✓] 实现 `src/agents/registry.py`（Agent 类型注册 + 延迟实例化）
+- [✓] 重构 `src/api/routes/agent.py`：用注册表替换硬编码的 PlaceholderAgent
+- [✓] 实现 `src/agents/chat_agent.py`：接入真实 LLM，替代 PlaceholderAgent
+- [✓] 在 `src/agents/__init__.py` 中注册所有 Agent 类型
 
 ## P0 — SurveyAPIClient 扩展
 
@@ -57,7 +57,7 @@
 
 ## P0 — 环境变量
 
-- [ ] 更新 `.env.example` 覆盖全部配置项（JWT_SECRET、REDIS_URL 等）
+- [✓] 更新 `.env.example` 覆盖全部配置项（JWT_SECRET、REDIS_URL 等）
 
 ---
 

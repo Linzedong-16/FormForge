@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     agent_max_steps: int = 10  # 单次最大推理步数
     agent_session_ttl: int = 3600  # 会话过期时间（秒）
 
+    # ── JWT 鉴权（与 q-server 保持一致）────────────────────
+    jwt_secret: str = "dev-secret-change-in-production"
+
+    # ── Redis 缓存 ──────────────────────────────────────────
+    redis_url: str = "redis://localhost:6379/1"
+
     # ── 日志配置 ─────────────────────────────────────────────
     log_level: str = "INFO"
 
