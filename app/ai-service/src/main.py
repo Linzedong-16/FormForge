@@ -7,7 +7,7 @@ Q Survey AI Service — FastAPI 入口
 
   # 或使用 conda 环境：
   conda env create -f environment.yml
-  conda activate q-survey-ai
+  conda activate form-agent
   uvicorn src.main:app --host 0.0.0.0 --port 8090 --reload
 """
 from __future__ import annotations

@@ -2,9 +2,9 @@
 
 # Conda 环境
 
-conda env list | grep q-survey-ai
+conda env list | grep form-agent
 
-# q-survey-ai (python 3.13.14)
+# form-agent (python 3.13.14)
 
 # 核心依赖（已安装）
 
@@ -16,7 +16,7 @@ pydantic-settings 2.14.2
 python-dotenv 1.2.2
 启动命令
 
-conda activate q-survey-ai
+conda activate form-agent
 cd app/ai-service
 uvicorn src.main:app --host 0.0.0.0 --port 8090 --reload
 启动后访问：
