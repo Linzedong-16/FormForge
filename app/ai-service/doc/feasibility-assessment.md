@@ -385,38 +385,46 @@ POST /api/v1/agent/analysis
 
 ### 7.1 部署拓扑
 
+前端只与 q-server 通信，ai-service 作为内部微服务由 q-server 代理转发，对外不可见。
+
 ```
                        ┌──────────────┐
                        │   用户浏览器   │
                        └──────┬───────┘
-                              │ HTTPS
+                              │ HTTPS /api/*
                        ┌──────▼───────┐
-                       │  Nginx/Caddy │  ← 反向代理
-                       └──┬───────┬───┘
-                          │       │
-              ┌───────────▼─┐ ┌──▼────────────┐
-              │  前端静态资源 │ │  API 网关路由   │
-              │  (Vue SPA)  │ │               │
-              └─────────────┘ └──┬─────────┬──┘
-                                 │         │
-                    ┌────────────▼─┐  ┌───▼──────────┐
-                    │   q-server   │  │  ai-service   │
-                    │ (Fastify)    │  │  (FastAPI)    │
-                    │   :3000      │  │   :8090       │
-                    └──┬──┬──┬──┬─┘  └──┬────────────┘
-                       │  │  │  │      │
-                       ▼  ▼  ▼  ▼      │  HTTP (内网)
-                    ┌──────────────┐   │  调用 q-server
-                    │ PG/Redis/MQ/ │◄──┘  统计 API
-                    │ MinIO/CH/MG  │
-                    └──────────────┘
+                       │  Nginx/Caddy │
+                       └──────┬───────┘
                               │
-                    ┌──────────▼─────────┐
-                    │   LLM API (外网)    │
-                    │ DeepSeek / OpenAI  │
-                    │ / Anthropic        │
-                    └────────────────────┘
+                       ┌──────▼───────────────────────────────┐
+                       │  q-server (Fastify :3000)             │
+                       │  ├── /api/auth         认证           │
+                       │  ├── /api/surveys      问卷 CRUD      │
+                       │  ├── /api/admin/stats  统计分析        │
+                       │  └── /api/ai/*  ──代理转发──┐         │
+                       └──────┬───────────────────────│───────┘
+                              │                       │
+                       ┌──────▼───────┐     ┌────────▼───────┐
+                       │ PG/Redis/MQ/ │     │  ai-service     │
+                       │ MinIO/CH/MG  │     │  (FastAPI:8090) │
+                       └──────────────┘     └────────┬───────┘
+                                                     │
+                                           ┌─────────▼──────┐
+                                           │  LLM API (外网) │
+                                           │ DeepSeek/OpenAI │
+                                           └────────────────┘
 ```
+
+**代理转发规则**：
+
+| 前端请求                         | q-server 动作                                         |
+| -------------------------------- | ----------------------------------------------------- |
+| `GET /api/ai/health`             | → 转发 `GET http://localhost:8090/health`             |
+| `POST /api/ai/agent/chat`        | → 转发 `POST http://localhost:8090/api/v1/agent/chat` |
+| `POST /api/ai/agent/chat/stream` | → 转发（保留 SSE 流）                                 |
+| `GET /api/ai/agent/types`        | → 转发 `GET http://localhost:8090/api/v1/agent/types` |
+
+**优势**：前端单一入口、复用 q-server JWT 鉴权、ai-service 无需暴露公网端口。
 
 ### 7.2 环境要求
 
