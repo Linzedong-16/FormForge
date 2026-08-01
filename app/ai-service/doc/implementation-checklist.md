@@ -58,13 +58,16 @@
 ### 2.1 Python 运行时环境
 
 - [ ] **2.1.1** 确认 Python 版本 ≥ 3.11（推荐 3.13）
+
   ```bash
   python --version  # 应输出 Python 3.13.x
   ```
 
   - 优先级 P0
   - 若版本不符，使用 Conda 安装：`conda install python=3.13`
+
 - [ ] **2.1.2** 创建/确认 Conda 虚拟环境
+
   ```bash
   conda env list | grep form-agent
   # 若不存在则从头创建（不使用已有的 environment.yml，因为环境名已变更）：
@@ -74,7 +77,9 @@
 
   - 优先级 P0
   - 验证：`conda activate form-agent` 无报错
+
 - [ ] **2.1.3** 安装核心依赖（pyproject.toml 定义的基础依赖）
+
   ```bash
   conda activate form-agent
   pip install -e .
@@ -82,7 +87,9 @@
 
   - 优先级 P0
   - 验证：`python -c "import fastapi; print(fastapi.__version__)"` 输出版本号
+
 - [ ] **2.1.4** 配置 `.env` 文件
+
   ```bash
   # 基于模板创建
   cp .env.example .env
@@ -91,7 +98,9 @@
 
   - 优先级 P0
   - `.env` 已在 `.gitignore` 中，确保不会提交
+
 - [ ] **2.1.5** 验证基础服务启动
+
   ```bash
   uvicorn src.main:app --host 0.0.0.0 --port 8090 --reload
   # 访问 http://localhost:8090/health 返回 200
@@ -103,6 +112,7 @@
 ### 2.2 开发工具配置
 
 - [ ] **2.2.1** 配置 Ruff 代码检查（pyproject.toml 已有基础配置）
+
   ```bash
   pip install ruff
   # 检查
@@ -112,7 +122,9 @@
   ```
 
   - 优先级 P1
+
 - [ ] **2.2.2** 配置 pre-commit hook（可选，团队统一时启用）
+
   ```bash
   pip install pre-commit
   # 在 ai-service 根目录创建 .pre-commit-config.yaml
@@ -131,17 +143,20 @@
 > **重要说明**：LangChain 已于 2025 年 10 月发布 v1 稳定版，API 发生重大变更（`AgentExecutor` 废弃、`create_tool_calling_agent` 更新为 `create_agent`、Tool 定义方式统一为 `@tool` 装饰器）。必须从 0.3.x 迁移至 1.x。
 
 - [ ] **3.1.1** 评估当前安装版本
+
   ```bash
   pip show langchain langchain-openai langchain-community
   ```
 
   - 优先级 P0
   - 记录实际安装版本，用于兼容性分析
+
 - [ ] **3.1.2** 查阅 LangChain 版本变更日志（Breaking Changes）
   - 优先级 P0
   - 关注点：`ChatModel` API 变更、`Tool` 定义方式、`AgentExecutor` 废弃与替代
   - 参考：<https://github.com/langchain-ai/langchain/releases>
 - [ ] **3.1.3** 升级到目标版本并锁定
+
   ```bash
   # 升级到最新 v1 稳定版
   pip install --upgrade "langchain>=1.3.0" "langchain-openai>=1.4.0" "langchain-community>=0.4.0"
@@ -151,7 +166,9 @@
 
   - 优先级 P0
   - 验证：`python -c "from langchain_openai import ChatOpenAI; print('OK')"` 无报错
+
 - [ ] **3.1.4** 更新 `pyproject.toml` 版本约束
+
   ```toml
   # 更新为具体下限版本
   "langchain>=1.3.0",
@@ -164,11 +181,13 @@
 ### 3.2 可选依赖升级
 
 - [ ] **3.2.1** 安装 analysis 分组依赖（P0，分析 Agent 的核心依赖）
+
   ```bash
   pip install -e ".[analysis]"
   ```
 
   - 包含：pandas、numpy、jieba、wordcloud
+
 - [ ] **3.2.2** 安装 agent 分组依赖（P1，LangGraph 工作流）
   ```bash
   pip install -e ".[agent]"
@@ -185,6 +204,7 @@
 ### 3.3 依赖冲突检查
 
 - [ ] **3.3.1** 运行 pip check 确认无冲突
+
   ```bash
   pip check
   ```
@@ -215,13 +235,16 @@
 ### 4.2 Redis 连接配置（方案 A）
 
 - [ ] **4.2.1** 添加 Redis 客户端依赖
+
   ```bash
   pip install redis[hiredis]>=5.2.0
   ```
 
   - 优先级 P1（若阶段 1-2 无缓存需求则 P2）
   - 更新 `pyproject.toml` 的 dependencies
+
 - [ ] **4.2.2** 在 `src/config.py` 中添加 Redis 配置项
+
   ```python
   # Redis 配置
   redis_url: str = "redis://localhost:6379/1"   # 使用 db=1 与 q-server 隔离
@@ -230,7 +253,9 @@
   ```
 
   - 优先级 P1
+
 - [ ] **4.2.3** 创建 Redis 连接管理模块 `src/storage/redis.py`
+
   ```python
   # 核心功能：
   # - create_redis_pool() → 异步连接池
@@ -243,13 +268,16 @@
 ### 4.3 SQLAlchemy ORM 配置（方案 B，按需启用）
 
 - [ ] **4.3.1** 添加异步数据库依赖
+
   ```bash
   pip install sqlalchemy[asyncio]>=2.0.30 asyncpg>=0.29.0 alembic>=1.13.0
   ```
 
   - 优先级 P2
   - 更新 `pyproject.toml` 的 dependencies
+
 - [ ] **4.3.2** 在 `src/config.py` 中添加数据库配置项
+
   ```python
   database_url: str = "postgresql+asyncpg://user:pass@localhost:5433/formforge"
   database_pool_size: int = 5
@@ -257,7 +285,9 @@
   ```
 
   - 优先级 P2
+
 - [ ] **4.3.3** 创建数据库引擎模块 `src/storage/database.py`
+
   ```python
   # 核心功能：
   # - create_async_engine() → SQLAlchemy 异步引擎
@@ -266,7 +296,9 @@
   ```
 
   - 优先级 P2
+
 - [ ] **4.3.4** 创建 Alembic 迁移配置
+
   ```bash
   alembic init src/storage/migrations
   # 编辑 alembic.ini 指向正确的数据库 URL
@@ -274,6 +306,7 @@
   ```
 
   - 优先级 P2
+
 - [ ] **4.3.5** 定义 ORM Base 模型基类 `src/storage/models/base.py`
 
   ```python
@@ -408,6 +441,7 @@ app/ai-service/
 ### 5.2 目录创建命令（一次性执行）
 
 - [ ] **5.2.1** 创建新增目录结构（可并行）
+
   ```bash
   mkdir -p src/api
   mkdir -p src/llm/prompts
@@ -422,7 +456,9 @@ app/ai-service/
 
   - 优先级 P0
   - 已存在的目录不会报错
+
 - [ ] **5.2.2** 创建空 `__init__.py` 文件（使目录成为 Python 包，可并行）
+
   ```bash
   touch src/llm/__init__.py \
         src/llm/prompts/__init__.py \
@@ -482,6 +518,7 @@ app/ai-service/
   - 需处理 Anthropic 的特殊情况（消息格式差异），创建 `create_anthropic_model()` 分支
 
 - [ ] **6.1.2** 实现 Provider 自动检测
+
   ```python
   # 根据 ai_provider 配置自动选择适配器
   PROVIDER_MAP = {
@@ -492,7 +529,9 @@ app/ai-service/
   ```
 
   - 优先级 P0
+
 - [ ] **6.1.3** 验证 LLM 连通性
+
   ```python
   # 在 lifespan 启动时调用
   async def verify_llm_connection():
@@ -531,12 +570,15 @@ app/ai-service/
   - 优先级 P0
 
 - [ ] **6.2.2** 实现 `src/llm/prompts/review.py` — 审核 Prompt
+
   ```python
   # 问卷质量审核 System Prompt + 组装函数
   ```
 
   - 优先级 P1
+
 - [ ] **6.2.3** 实现 `src/llm/prompts/design.py` — 设计辅助 Prompt
+
   ```python
   # 问卷设计优化建议 System Prompt + 组装函数
   ```
@@ -577,6 +619,7 @@ app/ai-service/
   - 优先级 P1
 
 - [ ] **6.3.3** 添加响应缓存装饰器
+
   ```python
   # 对 get_survey_stats 等读多写少的接口做短期缓存（5 分钟）
   @cache_result(ttl=300)
@@ -733,6 +776,7 @@ app/ai-service/
   - 编译时配置（代码常量）：Prompt 模板、超时时间等 — 抽取到对应模块的常量定义
   - 优先级 P2
 - [ ] **7.3.2** 添加配置热重载（可选）
+
   ```python
   # 对于 system_configs 中的 AI 配置项，支持运行时动态读取
   async def get_dynamic_config(key: str) -> str:
@@ -755,6 +799,7 @@ app/ai-service/
   - SurveyAPIClient 每次请求携带该 Header
   - 优先级 P0（已有基础实现，需确认 q-server 端校验逻辑）
 - [ ] **8.1.2** q-server 端添加内部 API Key 校验中间件（若未实现）
+
   ```typescript
   // 在 q-server 的路由中校验 X-Internal-Api-Key
   fastify.addHook("preHandler", async (request, reply) => {
@@ -829,6 +874,7 @@ app/ai-service/
   - 优先级 P1
 
 - [ ] **8.2.3** 添加审计日志
+
   ```python
   # 每次 Agent 调用记录到 q-server 的 audit_logs
   async def log_agent_call(
@@ -949,6 +995,7 @@ app/ai-service/
   - 优先级 P0
 
 - [ ] **9.2.2** 实现分析 Agent 的子类型路由
+
   ```python
   # 在 routes/analysis.py 中
   ANALYSIS_AGENTS = {
@@ -982,13 +1029,16 @@ app/ai-service/
 ### 9.4 会话管理
 
 - [ ] **9.4.1** 实现会话存储（Redis 方案 A）
+
   ```python
   # 存储结构：session:{session_id} → JSON {history: [...], agent_type: "...", created_at: "..."}
   # TTL: settings.agent_session_ttl (默认 3600 秒)
   ```
 
   - 优先级 P0
+
 - [ ] **9.4.2** 添加会话历史压缩（防止对话过长）
+
   ```python
   # 当对话历史超过 N 轮时，对较早轮次做摘要压缩
   # 使用 LLM 生成对话摘要，替代原始消息
@@ -1125,6 +1175,7 @@ app/ai-service/
   - 优先级 P0
 
 - [ ] **11.1.2** 安装测试依赖
+
   ```bash
   pip install pytest>=8.0 pytest-asyncio>=0.24 pytest-httpx>=0.30 respx>=0.21
   ```
@@ -1138,27 +1189,34 @@ app/ai-service/
 ### 11.2 单元测试
 
 - [ ] **11.2.1** 配置模型测试 `tests/test_models.py`
+
   ```python
   """Pydantic 模型序列化/反序列化测试"""
   # 覆盖所有 Schema：APIResponse, AgentChatRequest, AgentChatResponse, etc.
   ```
 
   - 优先级 P1
+
 - [ ] **11.2.2** 工具函数测试 `tests/test_tools.py`
+
   ```python
   """SurveyAPIClient / stats_tools / text_tools 单元测试"""
   # 使用 mock_q_server fixture 模拟 HTTP 响应
   ```
 
   - 优先级 P1
+
 - [ ] **11.2.3** LLM 层测试 `tests/test_llm.py`
+
   ```python
   """LLM 模型工厂 / Prompt 模板测试"""
   # 使用 mock LLM 避免 API 调用
   ```
 
   - 优先级 P1
+
 - [ ] **11.2.4** 文本处理测试 `tests/test_text_processor.py`
+
   ```python
   """jieba 分词 / 关键词提取 / 情感分析测试"""
   # 使用标准中文文本样本验证准确性
@@ -1169,13 +1227,16 @@ app/ai-service/
 ### 11.3 集成测试
 
 - [ ] **11.3.1** Agent 接口测试 `tests/test_agent.py`
+
   ```python
   """端到端 Agent 对话集成测试"""
   # 覆盖：同步对话 / SSE 流式 / 不同 agent_type / 错误处理
   ```
 
   - 优先级 P0
+
 - [ ] **11.3.2** 分析接口测试 `tests/test_analysis.py`
+
   ```python
   """问卷分析全流程集成测试"""
   # 使用 sample_survey_data + mock_q_server + mock LLM
@@ -1186,6 +1247,7 @@ app/ai-service/
 ### 11.4 测试覆盖率
 
 - [ ] **11.4.1** 配置 pytest-cov 覆盖率
+
   ```bash
   pip install pytest-cov>=5.0
   pytest --cov=src --cov-report=html --cov-report=term
@@ -1210,6 +1272,7 @@ app/ai-service/
 ### 12.1 进程管理
 
 - [ ] **12.1.1** 创建 PM2 配置文件 `ecosystem.config.cjs`
+
   ```javascript
   module.exports = {
     apps: [
@@ -1230,7 +1293,9 @@ app/ai-service/
   ```
 
   - 优先级 P1
+
 - [ ] **12.1.2** 创建 Conda 环境激活脚本 `scripts/start.sh`
+
   ```bash
   #!/bin/bash
   source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -1267,7 +1332,8 @@ app/ai-service/
 
   - 优先级 P2
 
-- [ ] **12.2.2** 添加到 q-server 的 `docker-compose.yml`（可选扩展）
+- [ ] **12.2.2** 在 `deploy/docker-compose.yml` 中添加 ai-service 定义（可选扩展，已创建骨架）
+
   ```yaml
   ai-service:
     build: ../ai-service
@@ -1312,6 +1378,7 @@ app/ai-service/
   - 优先级 P1
 
 - [ ] **12.3.2** 添加关键指标监控端点 `GET /metrics`
+
   ```python
   # Prometheus 格式指标（可选，P3）
   # - 请求量、延迟、错误率
@@ -1382,6 +1449,7 @@ app/ai-service/
 ### 13.2 请求/响应格式
 
 - [ ] **13.2.1** 问卷分析请求格式
+
   ```json
   POST /api/v1/agent/analysis
   {
@@ -1393,7 +1461,9 @@ app/ai-service/
   ```
 
   - 优先级 P0
+
 - [ ] **13.2.2** 问卷分析响应格式
+
   ```json
   {
     "code": 0,

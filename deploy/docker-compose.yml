@@ -1,3 +1,14 @@
+# ============================================================
+# FormForge 统一部署编排
+#
+# 使用方式：
+#   docker compose up -d                # 启动全部基础设施
+#   docker compose --profile ai up -d   # 包含 AI 分析服务
+#   docker compose --profile full up -d # 全部服务
+#
+# 原位置：app/q-server/docker-compose.yml（已迁移至此）
+# ============================================================
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -72,9 +83,9 @@ services:
     image: clickhouse/clickhouse-server:24-alpine
     container_name: questionnaire-clickhouse
     ports:
-      - "8123:8123"     # HTTP 接口（@clickhouse/client 使用）
-      - "9010:9000"     # Native TCP 接口（避开 MinIO 的 9000）
-      - "9009:9009"     # 集群间通信（预留）
+      - "8123:8123" # HTTP 接口（@clickhouse/client 使用）
+      - "9010:9000" # Native TCP 接口（避开 MinIO 的 9000）
+      - "9009:9009" # 集群间通信（预留）
     environment:
       CLICKHOUSE_USER: questionnaire
       CLICKHOUSE_PASSWORD: questionnaire123
@@ -84,14 +95,15 @@ services:
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-logs:/var/log/clickhouse-server
       # 容器首次启动时自动执行建表脚本，避免手动执行导致的表缺失问题
-      - ./sql/clickhouse-tracking-schema.sql:/docker-entrypoint-initdb.d/01-tracking-schema.sql
+      - ../app/q-server/sql/clickhouse-tracking-schema.sql:/docker-entrypoint-initdb.d/01-tracking-schema.sql
     ulimits:
       nofile:
         soft: 262144
         hard: 262144
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "clickhouse-client", "--user", "questionnaire", "--password", "questionnaire123", "--query", "SELECT 1"]
+      test:
+        ["CMD", "clickhouse-client", "--user", "questionnaire", "--password", "questionnaire123", "--query", "SELECT 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -113,6 +125,29 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+  # ════════════════════════════════════════════════════════════
+  #  AI 分析微服务（可选扩展，需要时加上 --profile ai）
+  # ════════════════════════════════════════════════════════════
+  # ai-service:
+  #   build:
+  #     context: ../app/ai-service
+  #     dockerfile: Dockerfile
+  #   container_name: formforge-ai-service
+  #   ports:
+  #     - "8090:8090"
+  #   environment:
+  #     - Q_SERVER_BASE_URL=http://host.docker.internal:3000
+  #     - AI_PROVIDER=${AI_PROVIDER:-deepseek}
+  #     - AI_MODEL=${AI_MODEL:-deepseek-chat}
+  #     - AI_API_KEY=${AI_API_KEY}
+  #     - AI_BASE_URL=${AI_BASE_URL:-https://api.deepseek.com/v1}
+  #     - REDIS_URL=redis://redis:6379/1
+  #     - LOG_LEVEL=${LOG_LEVEL:-INFO}
+  #   restart: unless-stopped
+  #   profiles:
+  #     - ai
+  #     - full
 
 volumes:
   postgres-data:

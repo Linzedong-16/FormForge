@@ -42,7 +42,7 @@ app/ai-server/
 │       └── index.ts            # GET /api/health
 ├── prisma/
 │   └── schema.prisma           # PostgreSQL datasource（Model 待填充）
-├── docker-compose.yml          # PostgreSQL + Redis + RabbitMQ
+├── docker-compose.yml          # 已迁移至根目录 deploy/docker-compose.yml
 ├── package.json
 ├── tsconfig.json
 ├── .env

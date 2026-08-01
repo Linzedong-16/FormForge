@@ -146,7 +146,7 @@
 ## P2 — Docker
 
 - [ ] 创建 `Dockerfile`
-- [ ] 添加到 q-server 的 `docker-compose.yml`（可选扩展）
+- [ ] 添加到 `deploy/docker-compose.yml` 的 ai-service 定义（可选扩展）
 
 ## P2 — 会话历史压缩
 
