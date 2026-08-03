@@ -33,6 +33,7 @@ class Settings(BaseSettings):
 
     # ── Agent 配置 ───────────────────────────────────────────
     agent_max_steps: int = 10  # 单次最大推理步数
+    agent_timeout_seconds: int = 60  # 单次循环总耗时兜底（秒），与 agent_max_steps 共同构成双重终止条件
     agent_session_ttl: int = 3600  # 会话过期时间（秒）
 
     # ── JWT 鉴权（与 q-server 保持一致）────────────────────

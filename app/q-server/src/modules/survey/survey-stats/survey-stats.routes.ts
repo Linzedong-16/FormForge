@@ -8,6 +8,7 @@
  *
  * 新增接口：
  *   GET  /stats/overview              — 平台统计概览
+ *   GET  /surveys/:id                  — 问卷结构（题目/选项，供 ai-service Agent 查询）
  *   GET  /surveys/:id/stats            — 单问卷详细统计
  *   GET  /surveys/:id/responses        — 答卷列表（增强：含搜索/筛选）
  *   GET  /surveys/:id/responses/export — CSV 导出
@@ -57,6 +58,33 @@ const surveyStatsRoutes: FastifyPluginAsync = async fastify => {
 
       try {
         const result = await statsService.getOverview(query);
+        return reply.sendSuccess(result);
+      } catch (err) {
+        if (err instanceof AppError) {
+          return reply.status(err.statusCode).send({ data: null, code: err.code, msg: err.message });
+        }
+        throw err;
+      }
+    }
+  );
+
+  // ════════════════════════════════════════════════════════════
+  // GET /surveys/:id — 问卷结构（题目/选项，供 ai-service Agent 只读查询）
+  // ════════════════════════════════════════════════════════════
+  fastify.get(
+    "/surveys/:id",
+    {
+      config: {
+        rateLimit: { max: 30, timeWindow: "1 minute" }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const surveyId = parseStatsSurveyId(id, reply);
+      if (surveyId === null) return;
+
+      try {
+        const result = await statsService.getSurveyStructure(surveyId);
         return reply.sendSuccess(result);
       } catch (err) {
         if (err instanceof AppError) {

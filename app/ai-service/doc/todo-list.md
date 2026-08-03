@@ -39,7 +39,7 @@
 
 ## P0 — LangChain Tool 定义
 
-- [-] 跳过：采用确定性数据注入模式，不依赖 LangChain Tool Calling
+- [✓] 已执行：采用 `model.bind_tools()` 自主循环模式，声明 4 个 Function Calling 工具（`get_survey_structure`/`get_survey_stats`/`list_survey_responses`/`analyze_text_batch`，见 `specs/006-survey-analysis-agent-loop/`）
 
 ## P0 — 问卷分析 Agent
 

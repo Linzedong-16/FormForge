@@ -241,6 +241,9 @@ q-server 的统计接口已实现 Redis 缓存（Cache-Aside 模式，TTL 5 分�
 
 采用**确定性数据注入**模式，而非 Agent Tool Calling。数据获取在 LLM 推理之前完成，统计摘要作为上下文直接注入 Prompt，避免 LLM 自主决策带来的额外推理开销和失败概率。
 
+> **技术路线变更说明（2026-08-03，见 `specs/006-survey-analysis-agent-loop/`）**：
+> 实际落地时该方案已由"确定性单轮注入"演进为**基于 `model.bind_tools()` 的自主 Function Calling 循环**。原因：单轮注入模式下，当统计抽样（每题仅 10 条）不足以支撑可靠结论时无法自主补充查询，只能在 Prompt 阶段一次性决定拉取哪些数据；改为自主循环后，Agent 可在 `get_survey_structure` → `get_survey_stats` 基础上自主判断是否需要调用 `list_survey_responses` 分页补充原始答卷（US2），并在步数/耗时超限或工具调用失败时降级输出（US3），弹性明显优于原确定性方案。详见 §5.3 变更说明及 [research.md](../../../specs/006-survey-analysis-agent-loop/research.md)。
+
 ```
 POST /api/v1/agent/analysis  （前端经 q-server 代理: POST /api/ai/agent/analysis）
   │
@@ -288,6 +291,9 @@ POST /api/v1/agent/analysis  （前端经 q-server 代理: POST /api/ai/agent/an
 ```
 
 > 注：q-server 的 `SurveyStatsService`（800+ 行）已完成逐题聚合分析，ai-service 无需重复实现。
+
+> **技术路线变更说明（2026-08-03，见 `specs/006-survey-analysis-agent-loop/`）**：
+> "每次分析必定需要统计摘要"这一前提本身成立，但统计摘要**是否足够支撑结论**并非恒定——文本题抽样上限为 10 条，当实际答案量远超该值时，确定性注入模式无法在运行期补充数据。最终采用 `model.bind_tools()` 自主 Function Calling 循环替代确定性注入：`SurveyAPIClient` 的 `get_survey_detail`/`get_survey_stats` 改造为 `get_survey_structure`（修复原 q-server 无对应鉴权兼容路由的阻塞项）/`get_survey_stats` 两个 LangChain 工具，并新增 `list_survey_responses`（分页补充查询，全生命周期软上限 500 条）与 `analyze_text_batch`（jieba 分词 + TF-IDF 关键词 + 关键词共现聚类）两个工具，由模型自主判断调用时机与次数，循环受 `agent_max_steps`/`agent_timeout_seconds` 双重终止条件约束，超限或工具调用重试耗尽后降级为局限性说明+已获取数据的结论。
 
 ### 5.4 Prompt 工程策略
 
