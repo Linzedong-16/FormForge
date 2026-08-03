@@ -2,7 +2,9 @@
  * 问卷统计模块 — 路由定义（管理员接口）
  *
  * 挂载前缀：/api/admin（在 routes/index.ts 中注册）
- * 所有接口需认证 + 管理员权限（问卷所有者或超级管理员均可访问）
+ * 所有接口需认证 + 超级管理员权限，或携带合法的 X-Internal-Api-Key
+ * （供 ai-service 分析 Agent 回调拉取统计数据，详见 auth.middleware.ts 的
+ *  requireSuperAdminOrInternal）
  *
  * 新增接口：
  *   GET  /stats/overview              — 平台统计概览
@@ -12,7 +14,7 @@
  */
 
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
-import { authenticate, requireSuperAdmin } from "../../user/auth/auth.middleware.js";
+import { requireSuperAdminOrInternal } from "../../user/auth/auth.middleware.js";
 import { SurveyStatsService } from "./survey-stats.service.js";
 import {
   statsOverviewQuerySchema,
@@ -36,9 +38,8 @@ function parseStatsSurveyId(id: string, reply: FastifyReply): bigint | null {
 const surveyStatsRoutes: FastifyPluginAsync = async fastify => {
   const statsService = new SurveyStatsService(fastify);
 
-  // 所有接口均需认证 + 管理员权限
-  fastify.addHook("preHandler", authenticate);
-  fastify.addHook("preHandler", requireSuperAdmin);
+  // 所有接口均需认证 + 管理员权限（或合法的内部服务凭证）
+  fastify.addHook("preHandler", requireSuperAdminOrInternal);
 
   // ════════════════════════════════════════════════════════════
   // GET /stats/overview — 平台统计概览

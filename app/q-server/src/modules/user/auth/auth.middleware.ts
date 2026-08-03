@@ -156,3 +156,27 @@ export async function requireSuperAdmin(request: FastifyRequest, _reply: Fastify
     throw new AuthError("需要超级管理员权限", 403);
   }
 }
+
+/** 校验请求是否携带合法的内部服务凭证（X-Internal-Api-Key） */
+function hasValidInternalApiKey(request: FastifyRequest): boolean {
+  const configuredKey = process.env.AI_SERVICE_INTERNAL_KEY;
+  if (!configuredKey) return false; // 未配置密钥时禁止内部通道，强制走用户鉴权
+  const providedKey = request.headers["x-internal-api-key"];
+  return providedKey === configuredKey;
+}
+
+/**
+ * 超级管理员权限中间件（内部服务可信通道版）
+ *
+ * 用于同时对外（前端用户）和对内（ai-service 回调）暴露的管理统计接口：
+ *   - 携带合法 X-Internal-Api-Key → 视为受信内部服务调用，跳过用户级 JWT 校验
+ *   - 否则回退为标准的 authenticate + requireSuperAdmin 校验
+ *
+ * ai-service 只有在 q-server 代理层（/api/ai/*）已完成用户级超级管理员校验后
+ * 才会触发对本接口的回调，因此这里的内部通道不会绕过实际的权限边界。
+ */
+export async function requireSuperAdminOrInternal(request: FastifyRequest, reply: FastifyReply) {
+  if (hasValidInternalApiKey(request)) return;
+  await authenticate(request, reply);
+  await requireSuperAdmin(request, reply);
+}

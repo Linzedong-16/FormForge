@@ -129,25 +129,33 @@ services:
   # ════════════════════════════════════════════════════════════
   #  AI 分析微服务（可选扩展，需要时加上 --profile ai）
   # ════════════════════════════════════════════════════════════
-  # ai-service:
-  #   build:
-  #     context: ../app/ai-service
-  #     dockerfile: Dockerfile
-  #   container_name: formforge-ai-service
-  #   ports:
-  #     - "8090:8090"
-  #   environment:
-  #     - Q_SERVER_BASE_URL=http://host.docker.internal:3000
-  #     - AI_PROVIDER=${AI_PROVIDER:-deepseek}
-  #     - AI_MODEL=${AI_MODEL:-deepseek-chat}
-  #     - AI_API_KEY=${AI_API_KEY}
-  #     - AI_BASE_URL=${AI_BASE_URL:-https://api.deepseek.com/v1}
-  #     - REDIS_URL=redis://redis:6379/1
-  #     - LOG_LEVEL=${LOG_LEVEL:-INFO}
-  #   restart: unless-stopped
-  #   profiles:
-  #     - ai
-  #     - full
+  ai-service:
+    build:
+      context: ../app/ai-service
+      dockerfile: Dockerfile
+    container_name: formforge-ai-service
+    ports:
+      - "8090:8090"
+    environment:
+      # q-server 运行在宿主机（未容器化），通过 host.docker.internal 回连，
+      # 端口需与 app/q-server/.env 中的 PORT 保持一致（默认 8080）
+      - Q_SERVER_BASE_URL=http://host.docker.internal:8080
+      # 必须与 app/q-server/.env 中的 AI_SERVICE_INTERNAL_KEY 保持一致，
+      # 用于回调 q-server 管理统计接口时的内部服务身份校验
+      - Q_SERVER_API_KEY=${AI_SERVICE_INTERNAL_KEY}
+      - AI_PROVIDER=${AI_PROVIDER:-deepseek}
+      - AI_MODEL=${AI_MODEL:-deepseek-chat}
+      - AI_API_KEY=${AI_API_KEY}
+      - AI_BASE_URL=${AI_BASE_URL:-https://api.deepseek.com/v1}
+      - REDIS_URL=redis://redis:6379/1
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - ai
+      - full
 
 volumes:
   postgres-data:
