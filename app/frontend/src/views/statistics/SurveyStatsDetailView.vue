@@ -8,10 +8,16 @@
         </a-button>
         <h2 class="page-title">{{ surveyTitle || "问卷答卷统计详情" }}</h2>
       </a-space>
-      <a-button type="primary" :loading="exporting" @click="handleExportCSV">
-        <template #icon><icon-download /></template>
-        导出 CSV
-      </a-button>
+      <a-space>
+        <a-button v-if="userStore.isSuperAdmin" type="outline" @click="goToAgentAnalysis">
+          <template #icon><icon-robot /></template>
+          AI 分析
+        </a-button>
+        <a-button type="primary" :loading="exporting" @click="handleExportCSV">
+          <template #icon><icon-download /></template>
+          导出 CSV
+        </a-button>
+      </a-space>
     </div>
 
     <!-- 加载态 -->
@@ -178,8 +184,10 @@ import { useRoute, useRouter } from "vue-router";
 import { getSurveyStats, exportResponses } from "@/api/modules/survey";
 import type { SurveyStatsResponse, QuestionStats, OptionDistribution } from "@common/survey/survey-stats.interface";
 import { VChart } from "@/plugins/echarts";
+import { useUserStore } from "@/store/modules/user";
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 
 // ─── 状态 ──────────────────────────────────────────────────────
 
@@ -427,6 +435,12 @@ async function handleExportCSV() {
 
 function goBack() {
   router.back();
+}
+
+/** 跳转至 AI 问卷分析页，预填当前问卷 ID */
+function goToAgentAnalysis() {
+  const surveyId = route.params.id as string;
+  router.push({ path: "/agent-analysis", query: { survey_id: surveyId } });
 }
 </script>
 
