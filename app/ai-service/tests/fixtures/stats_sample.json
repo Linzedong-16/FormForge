@@ -1,0 +1,67 @@
+{
+  "survey_id": "1",
+  "title": "员工满意度调查（样本）",
+  "total_responses": 100,
+  "valid_responses": 95,
+  "completion_rate": 95.0,
+  "questions": [
+    {
+      "component_id": "101",
+      "type": "single_select",
+      "title": "您对当前工作的整体满意度？",
+      "order_index": 1,
+      "total_answers": 100,
+      "options_distribution": [
+        { "label": "非常满意", "count": 25, "percentage": 25.0 },
+        { "label": "满意", "count": 40, "percentage": 40.0 },
+        { "label": "一般", "count": 20, "percentage": 20.0 },
+        { "label": "不满意", "count": 10, "percentage": 10.0 },
+        { "label": "非常不满意", "count": 5, "percentage": 5.0 }
+      ]
+    },
+    {
+      "component_id": "102",
+      "type": "rate_score",
+      "title": "请为工作环境打分（1-5分）",
+      "order_index": 2,
+      "total_answers": 100,
+      "average": 3.8,
+      "min": 1,
+      "max": 5,
+      "options_distribution": [
+        { "label": "1", "count": 3, "percentage": 3.0 },
+        { "label": "2", "count": 8, "percentage": 8.0 },
+        { "label": "3", "count": 25, "percentage": 25.0 },
+        { "label": "4", "count": 34, "percentage": 34.0 },
+        { "label": "5", "count": 30, "percentage": 30.0 }
+      ]
+    },
+    {
+      "component_id": "103",
+      "type": "multi_select",
+      "title": "您认为公司需要改进哪些方面？",
+      "order_index": 3,
+      "total_answers": 100,
+      "options_distribution": [
+        { "label": "薪资福利", "count": 55, "percentage": 55.0 },
+        { "label": "晋升机制", "count": 42, "percentage": 42.0 },
+        { "label": "工作氛围", "count": 30, "percentage": 30.0 },
+        { "label": "培训机会", "count": 38, "percentage": 38.0 },
+        { "label": "弹性工作", "count": 25, "percentage": 25.0 }
+      ]
+    },
+    {
+      "component_id": "104",
+      "type": "text_input",
+      "title": "请简述您的建议",
+      "order_index": 4,
+      "total_answers": 60,
+      "sample_answers": [
+        "希望能增加弹性工作时间",
+        "培训课程太少，希望多组织技术分享",
+        "食堂伙食需要改善",
+        "晋升标准不够透明"
+      ]
+    }
+  ]
+}

@@ -25,9 +25,9 @@ class Settings(BaseSettings):
 
     # ── AI 模型配置 ──────────────────────────────────────────
     ai_provider: str = "deepseek"  # deepseek / openai / anthropic
-    ai_model: str = "deepseek-chat"
+    ai_model: str = "deepseek-v4-pro"
     ai_api_key: str = ""  # 从环境变量注入
-    ai_base_url: str = "https://api.deepseek.com/v1"
+    ai_base_url: str = "https://api.deepseek.com"
     ai_temperature: float = 0.7
     ai_max_tokens: int = 4096
 

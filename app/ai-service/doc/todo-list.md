@@ -34,25 +34,24 @@
 
 ## P0 — SurveyAPIClient 扩展
 
-- [ ] 在 `src/tools/survey_client.py` 中添加 `get_survey_stats()`、`get_platform_overview()`、`export_responses_csv()` 方法
-- [ ] 确认 q-server 端 `X-Internal-Api-Key` 校验中间件已实现
+- [✓] 在 `src/tools/survey_client.py` 中添加 `get_survey_stats()`、`get_platform_overview()` 方法
+- [-] 确认 q-server 端 `X-Internal-Api-Key` 校验中间件已实现（跳过：代理模式下 q-server 统一鉴权）
 
 ## P0 — LangChain Tool 定义
 
-- [ ] 实现 `src/tools/stats_tools.py`：注册 `get_survey_statistics` Tool（调用统计 API 并返回 JSON）
-- [ ] 实现 `src/tools/text_tools.py`：注册 `extract_text_keywords` 和 `analyze_sentiment` Tool
+- [-] 跳过：采用确定性数据注入模式，不依赖 LangChain Tool Calling
 
 ## P0 — 问卷分析 Agent
 
-- [ ] 实现 `src/agents/analysis_agent.py`：使用 `create_agent`（LangChain v1 API）构建分析 Agent
-- [ ] 创建 `src/api/routes/analysis.py`：`POST /api/v1/agent/analysis` 路由
-- [ ] 实现会话存储（Redis，TTL=3600s）
+- [✓] 实现 `src/agents/analysis_agent.py`：确定性数据注入 + SSE 流式
+- [✓] 创建 `src/api/routes/analysis.py`：`POST /api/v1/agent/analysis` + `/stream`
+- [-] 实现会话存储（跳过：当前阶段无需 Redis 缓存）
 
 ## P0 — 测试基础
 
-- [ ] 创建 `tests/conftest.py`（async_client + mock_q_server + mock_llm fixtures）
-- [ ] 安装测试依赖：`pytest`, `pytest-asyncio`, `pytest-httpx`, `respx`
-- [ ] 创建 `tests/fixtures/survey_sample.json` 和 `stats_sample.json`
+- [✓] 创建 `tests/conftest.py`
+- [✓] 安装测试依赖：`pytest`, `pytest-asyncio`, `pytest-httpx`, `respx`
+- [✓] 创建 `tests/fixtures/survey_sample.json` 和 `stats_sample.json`
 - [ ] 编写 Agent 接口集成测试 + 分析全流程集成测试
 
 ## P0 — 环境变量

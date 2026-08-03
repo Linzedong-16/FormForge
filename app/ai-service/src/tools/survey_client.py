@@ -65,6 +65,22 @@ class SurveyAPIClient:
             "GET", f"/api/responses?survey_id={survey_id}"
         )
 
+    # ─── 统计分析（q-server SurveyStatsService 提供）───────────
+
+    async def get_survey_stats(self, survey_id: str) -> dict:
+        """获取单问卷统计分析结果（逐题分布、均值、文本抽样）
+        对应 GET /api/admin/surveys/:id/stats
+        """
+        return await self._request(
+            "GET", f"/api/admin/surveys/{survey_id}/stats"
+        )
+
+    async def get_platform_overview(self) -> dict:
+        """获取平台统计概览（问卷总数、答卷总数、日趋势）
+        对应 GET /api/admin/stats/overview
+        """
+        return await self._request("GET", "/api/admin/stats/overview")
+
     # ─── 系统相关 ─────────────────────────────────────────────
 
     async def get_system_logs(

@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.routes import agent, health
+from .api.routes import agent, analysis, health
 from .config import settings
 
 
@@ -64,6 +64,7 @@ app.add_middleware(
 # ── 注册路由 ──────────────────────────────────────────────
 app.include_router(health.router)
 app.include_router(agent.router, prefix="/api/v1")
+app.include_router(analysis.router, prefix="/api/v1")
 
 
 # 开发模式直接运行
