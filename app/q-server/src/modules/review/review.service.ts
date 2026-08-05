@@ -303,6 +303,7 @@ export class ReviewService {
    *      - survey：更新 Survey.review_status → approved（问卷审核通过，可发布）
    *      - template：创建 Template 记录（深拷贝问卷数据），更新 template_id
    *   4. 写入审计日志（fire-and-forget）
+   *   5. 模板审核通过时异步重建 RAG 检索索引（fire-and-forget）
    */
   async approveReview(adminId: bigint, reviewId: bigint, input: ApproveReviewInput): Promise<ReviewActionResponse> {
     this.fastify.log.info({ adminId: bigIntToStr(adminId), reviewId: bigIntToStr(reviewId) }, "[review] 审核通过请求");
@@ -403,6 +404,11 @@ export class ReviewService {
       template_id: review.template_id ? bigIntToStr(review.template_id) : null,
       comment: input.review_comment
     }).catch(() => {});
+
+    // 模板审核通过：异步重建 RAG 检索索引（fire-and-forget，索引失败不影响审核结果）
+    if (review.template_id) {
+      this.fastify.aiRag?.indexer.indexTemplate(review.template_id).catch(() => {});
+    }
 
     // 清除问卷缓存：审核后 survey.review_status 已更新，需让前端查询获取最新状态
     if (preRead?.survey_id && preRead?.submitter_id) {

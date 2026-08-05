@@ -18,6 +18,7 @@ import { trackingIngestRoutes, trackingAnalyticsRoutes } from "../modules/tracki
 import { messageRoutes, adminMessageRoutes } from "../modules/message/index.js";
 import mediaAssetRoutes from "../modules/media-asset/media-asset.routes.js";
 import aiProxyRoutes from "../modules/ai-proxy/ai-proxy.routes.js";
+import aiRagRoutes from "../modules/ai/ai-rag/ai-rag.routes.js";
 
 const routes: FastifyPluginAsync = async fastify => {
   // 健康检查 — 探测 PostgreSQL、Redis、RabbitMQ 连通性
@@ -171,6 +172,8 @@ const routes: FastifyPluginAsync = async fastify => {
   fastify.register(mediaAssetRoutes, { prefix: "/admin" });
   // ai-proxy.routes.ts 内部路径为 /health、/agent/*（代理转发至 ai-service，前缀 /api/ai）
   fastify.register(aiProxyRoutes, { prefix: "/ai" });
+  // ai-rag.routes.ts 内部路径为 /templates/search、/templates/:templateId/reindex 等（RAG 检索增强，前缀 /api/ai/rag）
+  fastify.register(aiRagRoutes, { prefix: "/ai/rag" });
 };
 
 export default routes;

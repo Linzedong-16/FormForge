@@ -12,6 +12,7 @@ import minioPlugin from "./plugins/minio.js";
 import clickhousePlugin from "./plugins/clickhouse.js";
 import logTransportPlugin from "./plugins/log-transport.js";
 import rateLimitPlugin from "./plugins/rate-limit.js";
+import aiRagPlugin from "./plugins/ai-rag.js";
 import loggerPlugin from "./utils/logger.js";
 import routes from "./routes/index.js";
 import { randomUUID } from "node:crypto";
@@ -71,6 +72,8 @@ export const buildApp = () => {
     .register(redisPlugin)
     .register(rabbitmqPlugin)
     .register(minioPlugin)
+    // RAG 检索增强能力（依赖 prisma 先注册），装饰 fastify.aiRag 供 review/ai-generate 等模块跨路由复用
+    .register(aiRagPlugin)
     // ClickHouse（埋点存储，非阻塞业务）
     .register(clickhousePlugin)
     // MongoDB（日志存储，非阻塞业务）

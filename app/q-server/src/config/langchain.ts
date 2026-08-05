@@ -1,4 +1,4 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import type { FastifyInstance } from "fastify";
 import { decrypt } from "../utils/crypto.js";
 
@@ -109,3 +109,56 @@ export const createDeepSeekChat = async (fastify: FastifyInstance, options?: Cha
   // 减少对"提示词约束 + 事后文本容错解析"的依赖
   return chatModel.bind({ response_format: { type: "json_object" } });
 };
+
+// ─── Embedding 能力（RAG 检索增强，007-rag-retrieval-augmentation） ──────────
+// 固定使用硅基流动（SiliconFlow）中转的 BAAI/bge-large-zh-v1.5 模型，
+// 不做多 Provider 切换/降级——语义向量化与上方 Chat 推理模型配置完全独立，
+// Key 单独走 SILICONFLOW_API_KEY 环境变量，不复用 system_configs 表。
+const SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1";
+const SILICONFLOW_EMBEDDING_MODEL = "BAAI/bge-large-zh-v1.5";
+
+/** 单条文本的向量化结果 */
+export interface EmbeddingResult {
+  /** 归一化向量，维度由实际生效的模型决定 */
+  vector: number[];
+  /** 实际生效的 Embedding Provider（固定为硅基流动，不做多 Provider 切换） */
+  provider: "siliconflow";
+  /** 向量维度（BAAI/bge-large-zh-v1.5 为 1024 维，调用方仍不应硬编码，以真实返回值为准） */
+  dimension: number;
+}
+
+/** 硅基流动 Embedding 客户端（模块级懒加载单例，避免重复实例化） */
+let siliconFlowEmbeddings: OpenAIEmbeddings | null = null;
+
+function getSiliconFlowEmbeddings(): OpenAIEmbeddings {
+  if (!process.env.SILICONFLOW_API_KEY) {
+    throw new Error("SILICONFLOW_API_KEY 未配置，请在 .env 中填写硅基流动 API Key");
+  }
+  if (!siliconFlowEmbeddings) {
+    siliconFlowEmbeddings = new OpenAIEmbeddings({
+      model: SILICONFLOW_EMBEDDING_MODEL,
+      apiKey: process.env.SILICONFLOW_API_KEY,
+      configuration: { baseURL: SILICONFLOW_BASE_URL }
+    });
+  }
+  return siliconFlowEmbeddings;
+}
+
+/**
+ * 批量计算文本向量：固定调用硅基流动 BAAI/bge-large-zh-v1.5，不做 Provider 间降级。
+ *
+ * @param _fastify  Fastify 实例（保留仅为不破坏 embedding.service.ts 现有调用签名，本函数不再需要查库）
+ * @param texts     待向量化文本数组
+ */
+export async function embedBatch(_fastify: FastifyInstance, texts: string[]): Promise<EmbeddingResult[]> {
+  const vectors = await getSiliconFlowEmbeddings().embedDocuments(texts);
+  return vectors.map(vector => ({ vector, provider: "siliconflow" as const, dimension: vector.length }));
+}
+
+/**
+ * 计算单条文本向量（embedBatch 的单条包装）
+ */
+export async function embedText(fastify: FastifyInstance, text: string): Promise<EmbeddingResult> {
+  const [result] = await embedBatch(fastify, [text]);
+  return result;
+}

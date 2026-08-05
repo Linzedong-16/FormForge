@@ -611,4 +611,133 @@
   - review_comment（可选，最多 500 字符）
 - **说明**：变更会写入 `reviewed_by`/`reviewed_at`/`review_comment`，并追加一条 `AuditLog`（`action: "media_asset.review_status_change"`）留存完整历史。**该状态变更仅为管理侧标记，不影响物料在其原有引用位置（如已发布问卷）的实际展示**。鉴权与其它接口相同，不因调用方可能是未来的自动化审核 Agent 而放宽。
 
+## 7. AI 检索增强接口（RAG）
+
+> 全部接口挂载于 `/api/ai/rag` 前缀下。检索类接口（`templates/search`、`knowledge/search`）使用 `authenticateOrInternal` 鉴权：携带合法 `X-Internal-Api-Key` 请求头的内部服务调用直接放行，否则回退为标准登录用户 JWT 鉴权；管理类接口（重建/清理模板索引、导入/下线知识文档）使用 `adminOnly` 鉴权，仅 `super_admin` 可调用。详见 `specs/007-rag-retrieval-augmentation/contracts/q-server-ai-rag.openapi.yaml`。
+> 检索为混合检索（向量相似度 + 关键词匹配按 `alpha` 权重合并排序），向量检索或关键词检索任一环节失败时自动降级为仅用另一环节，并在响应 `data.degraded` 字段标记降级原因（`vector_unavailable` / `keyword_unavailable`），两者皆失败则 `data.items` 返回空数组，不报错中断调用方。
+
+### 7.1 检索历史模板片段
+
+- **请求方法**：POST
+- **请求路径**：/ai/rag/templates/search
+- **权限**：`authenticateOrInternal`（登录用户或内部服务）
+- **限流**：30 次/分钟
+- **请求参数**（Body）：
+  - query：检索查询文本，1~500 字符（超长返回 `RAG_QUERY_TOO_LONG`）
+  - topK：返回结果数量，1~20，默认 5（可选）
+  - alpha：向量检索权重，0~1，默认 0.7；`alpha=1` 等价纯向量检索，`alpha=0` 等价纯关键词检索（可选）
+- **响应示例**：
+```json
+{
+  "code": 0,
+  "msg": "ok",
+  "data": {
+    "items": [
+      {
+        "id": "301",
+        "score": 0.86,
+        "vectorScore": 0.82,
+        "keywordScore": 0.91,
+        "snippet": "本模板围绕客户满意度设计了 5 道 Likert 量表题……",
+        "source": { "type": "template", "refId": "1042", "title": "客户满意度调研模板" }
+      }
+    ],
+    "degraded": null
+  }
+}
+```
+- **说明**：仅检索已建立索引的历史模板片段（模板审核通过后自动建立索引，见 6.7 之外的审核流程）；`degraded` 为 `null` 表示本次检索未降级。
+
+### 7.2 重建模板索引
+
+- **请求方法**：POST
+- **请求路径**：/ai/rag/templates/:templateId/reindex
+- **权限**：仅 `super_admin`
+- **限流**：10 次/分钟
+- **响应示例**：
+```json
+{
+  "code": 0,
+  "msg": "ok",
+  "data": { "chunkCount": 6 }
+}
+```
+- **说明**：先删除该模板已有索引片段再重新切片写入；`templateId` 格式非法返回 HTTP 400；模板不存在时按 `RAG_TEMPLATE_NOT_FOUND` 处理。Embedding Provider 调用失败时索引跳过但不抛异常。
+
+### 7.3 清理模板索引
+
+- **请求方法**：DELETE
+- **请求路径**：/ai/rag/templates/:templateId/index
+- **权限**：仅 `super_admin`
+- **限流**：10 次/分钟
+- **说明**：用于模板下线场景，清理该模板全部索引片段，成功响应 `data` 为 `null`；`templateId` 格式非法返回 HTTP 400。
+
+### 7.4 检索知识库片段
+
+- **请求方法**：POST
+- **请求路径**：/ai/rag/knowledge/search
+- **权限**：`authenticateOrInternal`（登录用户或内部服务，供 ai-service 的 `ChatAgent` 内部调用）
+- **限流**：30 次/分钟
+- **请求参数**：同 7.1（query / topK / alpha）
+- **响应示例**：
+```json
+{
+  "code": 0,
+  "msg": "ok",
+  "data": {
+    "items": [
+      {
+        "id": "89",
+        "score": 0.91,
+        "vectorScore": 0.88,
+        "keywordScore": 0.95,
+        "snippet": "建议采用 5 点或 7 点 Likert 量表……",
+        "source": { "type": "knowledge", "refId": "12", "title": "问卷设计方法论手册 v2" }
+      }
+    ],
+    "degraded": null
+  }
+}
+```
+- **说明**：仅检索 `is_active=true` 的知识文档片段，文档下线（7.6）后其片段立即不再被检索到；未命中时 `data.items` 返回空数组，`degraded` 为 `null`（区别于调用失败降级）。
+
+### 7.5 导入知识文档
+
+- **请求方法**：POST
+- **请求路径**：/ai/rag/knowledge/documents
+- **权限**：仅 `super_admin`
+- **限流**：10 次/分钟
+- **请求参数**（Body）：
+  - title：文档标题，≤200 字符
+  - source：来源说明，≤200 字符（可选）
+  - content：文档原文，≤50000 字符（超长返回 `RAG_DOCUMENT_TOO_LONG`）
+- **响应示例**：
+```json
+{
+  "code": 0,
+  "msg": "ok",
+  "data": { "documentId": "12", "chunkCount": 14 }
+}
+```
+- **说明**：按章节/长度切片写入 `KnowledgeChunk` 并批量向量化；「更新」文档内容无独立接口，需先调用 7.6 下线旧文档再调用本接口导入新文档。
+
+### 7.6 下线知识文档
+
+- **请求方法**：DELETE
+- **请求路径**：/ai/rag/knowledge/documents/:documentId
+- **权限**：仅 `super_admin`
+- **限流**：10 次/分钟
+- **说明**：软下线（`KnowledgeDocument.is_active=false`），原始片段保留但不再参与检索；成功响应 `data` 为 `null`。重复下线同一文档保持幂等；`documentId` 格式非法返回 HTTP 400；文档不存在时按 `RAG_KNOWLEDGE_DOCUMENT_NOT_FOUND` 处理。
+
+### 7.7 BizCode 说明
+
+| BizCode | 名称 | 说明 |
+|---------|------|------|
+| 4005 | RAG_TEMPLATE_NOT_FOUND | 模板不存在（重建索引/删除索引时目标模板未找到） |
+| 4006 | RAG_KNOWLEDGE_DOCUMENT_NOT_FOUND | 知识文档不存在（下线/检索时目标文档未找到） |
+| 4007 | RAG_EMBEDDING_UNAVAILABLE | Embedding 服务不可用（Provider 调用失败，检索/索引降级或中止） |
+| 4008 | RAG_QUERY_TOO_LONG | 检索查询文本超出长度上限（500 字符） |
+| 4009 | RAG_DOCUMENT_TOO_LONG | 知识文档内容超出长度上限（50000 字符） |
+| 4010 | RAG_INTERNAL_AUTH_FAILED | 内部服务鉴权失败（`X-Internal-Api-Key` 缺失或不合法） |
+
 

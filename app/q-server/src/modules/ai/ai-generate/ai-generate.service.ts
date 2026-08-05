@@ -17,7 +17,11 @@
 import type { FastifyInstance } from "fastify";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { createDeepSeekChat } from "../../../config/langchain.js";
-import { buildSystemPrompt, type SystemPromptOptions } from "../prompt-templates/system-prompt.js";
+import {
+  buildSystemPrompt,
+  type SystemPromptOptions,
+  type ReferenceSnippet
+} from "../prompt-templates/system-prompt.js";
 import { validateAIResponse } from "../schema-validator.js";
 import { checkRateLimit } from "../../../utils/rate-limiter.js";
 import { createAuditLog } from "../../../utils/audit-log.js";
@@ -35,6 +39,11 @@ const RATE_LIMIT_CONFIG = {
 
 /** 增量解析：每次最多解析的组件数限制（防止恶意超大 JSON 导致 ReDoS） */
 const MAX_PARSE_COMPONENTS = 50;
+
+/** 生成前检索的历史模板参考片段数量上限 */
+const RAG_REFERENCE_TOP_K = 3;
+/** 生成前检索超时预算（毫秒），对应 SC-005 检索 P95 < 1s；超时/异常/空结果均直接跳过增强，不阻塞生成主流程（FR-020/SC-006） */
+const RAG_RETRIEVAL_TIMEOUT_MS = 1_500;
 
 // Re-export 共用类型（向后兼容）
 export type { SSEEvent, AIGenerateRequest as GenerateOptions } from "@common/ai/ai.interface.js";
@@ -82,16 +91,21 @@ export class AIGenerateService {
       return;
     }
 
-    // 3. 构建 Prompt
+    // 3. 检索历史模板片段作为参考上下文（生成前 RAG 增强，对应 FR-020/SC-006：
+    //    检索失败/超时/空结果均直接跳过增强，按原有逻辑正常生成，不影响生成主流程）
+    const referenceSnippets = await this.retrieveReferenceSnippets(options.prompt);
+
+    // 4. 构建 Prompt
     const systemPromptOptions: SystemPromptOptions = {
       count: options.count ?? 10,
-      language: options.language ?? "zh-CN"
+      language: options.language ?? "zh-CN",
+      referenceSnippets
     };
     const systemContent = buildSystemPrompt(systemPromptOptions);
 
     const messages = [new SystemMessage(systemContent), new HumanMessage(options.prompt)];
 
-    // 4. 合并超时信号 + 客户端断连信号
+    // 5. 合并超时信号 + 客户端断连信号
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => timeoutController.abort(), GENERATE_TIMEOUT_MS);
 
@@ -161,11 +175,11 @@ export class AIGenerateService {
       }
     }
 
-    // 5. 校验最终 JSON
+    // 6. 校验最终 JSON
     const validationResult = validateAIResponse(fullText);
     const generatedCount = validationResult.data.components.length;
 
-    // 6. 推送 done 事件（含简化预览 + 完整组件数据）
+    // 7. 推送 done 事件（含简化预览 + 完整组件数据）
     yield {
       event: "done",
       data: {
@@ -181,7 +195,7 @@ export class AIGenerateService {
       }
     };
 
-    // 7. 审计日志（异步 fire-and-forget）
+    // 8. 审计日志（异步 fire-and-forget）
     const elapsed = Date.now() - startTime;
     // 优先取 API 返回的精确 token 用量，降级为 chunk 计数
     const tokenUsage = lastChunkMetadata?.tokenUsage as { totalTokens?: number } | undefined;
@@ -204,6 +218,38 @@ export class AIGenerateService {
       },
       "AI 问卷生成完成"
     );
+  }
+
+  // ============================================================
+  //  RAG 生成前检索增强
+  // ============================================================
+
+  /**
+   * 生成前检索与用户需求语义相关的历史模板片段，作为 Prompt 参考上下文
+   *
+   * 降级策略（对应 FR-020/SC-006）：fastify.aiRag 未装饰、检索超时（RAG_RETRIEVAL_TIMEOUT_MS）、
+   * 检索异常、命中为空，均直接返回空数组，跳过增强但不影响生成主流程正常进行。
+   */
+  private async retrieveReferenceSnippets(prompt: string): Promise<ReferenceSnippet[]> {
+    const retriever = this.fastify.aiRag?.retriever;
+    if (!retriever) return [];
+
+    try {
+      const result = await Promise.race([
+        retriever.hybridSearch("template", prompt, { topK: RAG_REFERENCE_TOP_K }),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), RAG_RETRIEVAL_TIMEOUT_MS))
+      ]);
+
+      if (!result) {
+        this.fastify.log.warn("RAG 生成前检索超时，跳过增强");
+        return [];
+      }
+
+      return result.items.map(item => ({ title: item.source.title, snippet: item.snippet }));
+    } catch (err) {
+      this.fastify.log.warn({ err }, "RAG 生成前检索异常，跳过增强");
+      return [];
+    }
   }
 
   // ============================================================

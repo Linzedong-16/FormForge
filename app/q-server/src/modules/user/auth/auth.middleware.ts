@@ -180,3 +180,17 @@ export async function requireSuperAdminOrInternal(request: FastifyRequest, reply
   await authenticate(request, reply);
   await requireSuperAdmin(request, reply);
 }
+
+/**
+ * 标准鉴权中间件（内部服务可信通道版）
+ *
+ * 与 requireSuperAdminOrInternal 的区别：回退分支不强制 requireSuperAdmin，
+ * 仅要求普通登录用户身份。用于"登录用户与内部服务均可访问"的只读检索端点
+ * （如模板/知识库混合检索），避免让普通用户的检索请求被误判为需要管理员权限。
+ *   - 携带合法 X-Internal-Api-Key → 视为受信内部服务调用，跳过用户级 JWT 校验
+ *   - 否则回退为标准的 authenticate 校验（不要求管理员角色）
+ */
+export async function authenticateOrInternal(request: FastifyRequest, reply: FastifyReply) {
+  if (hasValidInternalApiKey(request)) return;
+  await authenticate(request, reply);
+}

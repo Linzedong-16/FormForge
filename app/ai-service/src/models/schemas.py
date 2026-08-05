@@ -76,10 +76,14 @@ class AgentStreamEvent(BaseModel):
       - tool_call    { name, args, step }                                  宪法强制词表
       - tool_result  { name, step, summary }                               兼容性扩展
       - token        { text }                                              宪法强制词表
+      - citation     { document_title, section, chunk_id, snippet }        增量扩展（RAG 知识库问答，US3）
       - done         { session_id, reply, tool_calls, steps, degraded }    宪法强制词表
       - error        { message }                                          宪法强制词表
+
+    citation 事件顺序约束：出现在其对应内容的 token 事件之后、done 事件之前；
+    检索未命中或调用失败时直接跳过，不发出该事件（对应 contracts/ai-service-rag-tools.md §3）
     """
-    event: str  # status / tool_call / tool_result / token / done / error
+    event: str  # status / tool_call / tool_result / token / citation / done / error
     data: dict
 
 
@@ -157,6 +161,66 @@ class AnalysisConclusion(BaseModel):
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
     steps: int = 0
     degraded: bool = False
+
+
+# ─── 语义主题聚类（场景 B，一次性计算、不持久化，对应 data-model.md 第 4 节）───
+
+class SemanticClusterItem(BaseModel):
+    """单个语义簇的聚合结果"""
+    label: str = Field(..., description="主题标签（或代表性描述）")
+    representative_text: str = Field(..., description="代表性原文")
+    sample_count: int = Field(..., description="簇内样本数")
+    sentiment_score: float = Field(..., ge=-1.0, le=1.0, description="情感倾向评分，范围 [-1, 1]")
+
+
+class SemanticClusterResult(BaseModel):
+    """semantic_cluster_tool 工具出参结构"""
+    clusters: list[SemanticClusterItem] = Field(default_factory=list)
+    noise_count: int = Field(0, description="未能归类的噪声样本数（对应 FR-011）")
+    insufficient_data: bool = Field(False, description="样本量不足时为 True（对应 FR-010），此时 clusters 为空")
+
+
+# ─── RAG 检索问答（场景 C，对应 contracts/q-server-ai-rag.openapi.yaml）───
+
+class RagSource(BaseModel):
+    """检索结果来源标识（对应 q-server SearchResultItem.source）"""
+    type: str = Field(..., description="来源类型：template / knowledge")
+    ref_id: str = Field(..., alias="refId", description="来源对象 ID（模板 ID 或知识文档 ID）")
+    title: str = Field(..., description="来源标题")
+
+    model_config = {"populate_by_name": True}
+
+
+class RagSearchResultItem(BaseModel):
+    """单条检索结果（对应 q-server SearchResultItem）"""
+    id: str
+    score: float
+    vector_score: float = Field(..., alias="vectorScore")
+    keyword_score: float = Field(..., alias="keywordScore")
+    snippet: str
+    source: RagSource
+
+    model_config = {"populate_by_name": True}
+
+
+class RagSearchResponse(BaseModel):
+    """RagClient.search_knowledge/search_templates 出参结构
+
+    degraded 语义（对应 FR-020）：
+      - q-server 侧检索部分失效：透传其 vector_unavailable / keyword_unavailable
+      - 本客户端调用失败（超时/5xx/网络错误）：标记为 request_failed，不向上抛出异常
+      - 正常命中：None
+    """
+    items: list[RagSearchResultItem] = Field(default_factory=list)
+    degraded: str | None = None
+
+
+class Citation(BaseModel):
+    """知识库问答引用来源（对应 contracts/ai-service-rag-tools.md §3，citation SSE 事件负载）"""
+    document_title: str = Field(..., description="来源文档标题")
+    section: str | None = Field(None, description="来源章节，无章节信息时为 None")
+    chunk_id: str = Field(..., description="来源片段 ID")
+    snippet: str = Field(..., description="引用片段原文摘要")
 
 
 # ─── 问卷相关 ─────────────────────────────────────────────────

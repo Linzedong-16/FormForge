@@ -114,6 +114,20 @@ export enum BizCode {
   /** AI 返回内容无法解析 */
   AI_PARSE_FAILED = 4004,
 
+  // ─── AI RAG 检索增强模块 ────────────────────────────────────
+  /** 模板不存在（重建索引/删除索引时目标模板未找到） */
+  RAG_TEMPLATE_NOT_FOUND = 4005,
+  /** 知识文档不存在（下线/检索时目标文档未找到） */
+  RAG_KNOWLEDGE_DOCUMENT_NOT_FOUND = 4006,
+  /** Embedding 服务不可用（Provider 调用失败，检索/索引降级或中止） */
+  RAG_EMBEDDING_UNAVAILABLE = 4007,
+  /** 检索查询文本超出长度上限 */
+  RAG_QUERY_TOO_LONG = 4008,
+  /** 知识文档内容超出长度上限 */
+  RAG_DOCUMENT_TOO_LONG = 4009,
+  /** 内部服务鉴权失败（X-Internal-Api-Key 缺失或不合法） */
+  RAG_INTERNAL_AUTH_FAILED = 4010,
+
   // ─── 消息互动模块 ──────────────────────────────────────────
   /** 消息不存在或已被软删除 */
   MESSAGE_NOT_FOUND = 5001,

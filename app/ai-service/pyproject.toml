@@ -30,6 +30,7 @@ analysis = [
     "numpy>=2.1.0",
     "jieba>=0.42.0",
     "wordcloud>=1.9.0",
+    "scikit-learn>=1.4.0", # HDBSCAN 聚类（语义主题聚类，内置实现，不引入独立 hdbscan 包）
 ]
 # RAG 知识库
 rag = [
@@ -49,6 +50,7 @@ all = [
     "jieba>=0.42.0",
     "chromadb>=0.6.0",
     "tiktoken>=0.9.0",
+    "scikit-learn>=1.4.0",
 ]
 
 [tool.pytest.ini_options]

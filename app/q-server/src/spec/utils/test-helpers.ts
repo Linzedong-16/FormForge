@@ -44,6 +44,7 @@ interface PrismaMock {
     count: MockFn;
   };
   userProfile: { findFirst: MockFn; findUnique: MockFn; update: MockFn; upsert: MockFn };
+  knowledgeDocument: { findUnique: MockFn; create: MockFn; update: MockFn };
   $transaction: MockFn;
 }
 
@@ -189,6 +190,11 @@ export function createPrismaMock(): PrismaMock {
       update: vi.fn(),
       upsert: vi.fn(),
     },
+    knowledgeDocument: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
     $transaction,
   };
 }
@@ -226,12 +232,23 @@ export function createAmqpMock(): AmqpMock {
 
 // ─── Fastify Mock ─────────────────────────────────────────────
 
-/** 创建一个包含 prisma / redis / amqp 的 FastifyInstance mock */
+/** 创建一个包含 prisma / redis / amqp / aiRag 的 FastifyInstance mock */
 export function createFastifyMock() {
   return {
     prisma: createPrismaMock(),
     redis: createRedisMock(),
     amqp: createAmqpMock(),
+    // 对应 plugins/ai-rag.ts 装饰的 fastify.aiRag，供 review.service.ts（fire-and-forget 索引）
+    // 与 ai-generate.service.ts（生成前检索）等跨模块调用方在测试中复用同一批 mock 方法
+    aiRag: {
+      indexer: {
+        indexTemplate: vi.fn(),
+        deleteTemplateIndex: vi.fn(),
+        indexKnowledgeDocument: vi.fn(),
+        deactivateKnowledgeDocument: vi.fn(),
+      },
+      retriever: { hybridSearch: vi.fn() },
+    },
     log: {
       info: vi.fn(),
       warn: vi.fn(),
@@ -268,6 +285,9 @@ export function createRequestMock(overrides?: Record<string, unknown>) {
     params: {} as Record<string, string>,
     query: {} as Record<string, string>,
     server: createFastifyMock(),
+    // request.log 是独立于 request.server（FastifyInstance）的 pino 子日志器，
+    // 中间件在 catch 分支会调用 request.log.warn，缺失该字段会导致 TypeError 而非预期的业务异常
+    log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     user: undefined,
     ...overrides,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -240,6 +240,83 @@ describe("ReviewService", () => {
       );
       expect(result.status).toBe("approved");
     });
+
+    it("模板审核通过 — 创建 Template 记录后 fire-and-forget 触发 RAG 索引重建", async () => {
+      const createdTemplateId = BigInt(600);
+      const txMock = {
+        review: {
+          findUnique: vi.fn().mockResolvedValue({ ...MOCK_REVIEW, review_type: "template", survey_id: BigInt(300) }),
+          update: vi.fn().mockResolvedValue({
+            id: BigInt(5001),
+            survey_id: BigInt(300),
+            template_id: createdTemplateId,
+            status: "approved",
+            reviewer_id: ADMIN_ID,
+            reviewed_at: new Date("2026-06-22T10:00:00.000Z")
+          })
+        },
+        survey: {
+          findUnique: vi.fn().mockResolvedValue({
+            title: "客户满意度调查模板",
+            description: "用于收集客户反馈",
+            components: [{ type: "single-select", config: {}, order_index: 0, required: 1 }]
+          })
+        },
+        template: { create: vi.fn().mockResolvedValue({ id: createdTemplateId }) },
+        templateComponent: { createMany: vi.fn().mockResolvedValue({}) }
+      };
+      fastify.prisma.$transaction.mockImplementation((cb: Function) => cb(txMock));
+      fastify.aiRag.indexer.indexTemplate.mockResolvedValue({ chunkCount: 2 });
+
+      const result = await service.approveReview(ADMIN_ID, REVIEW_ID, approveInput);
+
+      expect(result.status).toBe("approved");
+      // 等待微任务队列，确保 .catch(() => {}) 挂接的 fire-and-forget 调用已同步触发
+      await Promise.resolve();
+      expect(fastify.aiRag.indexer.indexTemplate).toHaveBeenCalledWith(createdTemplateId);
+    });
+
+    it("模板索引重建失败 — 不影响审核通过响应（fire-and-forget 吞掉异常）", async () => {
+      const createdTemplateId = BigInt(601);
+      const txMock = {
+        review: {
+          findUnique: vi.fn().mockResolvedValue({ ...MOCK_REVIEW, review_type: "template", survey_id: BigInt(300) }),
+          update: vi.fn().mockResolvedValue({
+            id: BigInt(5001),
+            survey_id: BigInt(300),
+            template_id: createdTemplateId,
+            status: "approved",
+            reviewer_id: ADMIN_ID,
+            reviewed_at: new Date("2026-06-22T10:00:00.000Z")
+          })
+        },
+        survey: {
+          findUnique: vi.fn().mockResolvedValue({
+            title: "客户满意度调查模板",
+            description: "用于收集客户反馈",
+            components: []
+          })
+        },
+        template: { create: vi.fn().mockResolvedValue({ id: createdTemplateId }) },
+        templateComponent: { createMany: vi.fn().mockResolvedValue({}) }
+      };
+      fastify.prisma.$transaction.mockImplementation((cb: Function) => cb(txMock));
+      fastify.aiRag.indexer.indexTemplate.mockRejectedValue(new Error("向量化服务暂时不可用"));
+
+      await expect(service.approveReview(ADMIN_ID, REVIEW_ID, approveInput)).resolves.toMatchObject({
+        status: "approved"
+      });
+    });
+
+    it("普通问卷审核通过（非模板）— 不触发 RAG 索引重建", async () => {
+      fastify.prisma.review.findUnique.mockResolvedValue(MOCK_REVIEW);
+      fastify.prisma.review.update.mockResolvedValue(MOCK_APPROVED_REVIEW);
+      fastify.prisma.survey.update.mockResolvedValue({});
+
+      await service.approveReview(ADMIN_ID, REVIEW_ID, approveInput);
+
+      expect(fastify.aiRag.indexer.indexTemplate).not.toHaveBeenCalled();
+    });
   });
 
   // ============================================================
