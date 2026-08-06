@@ -76,6 +76,14 @@ describe("AIGenerateService", () => {
             keywordScore: 0.8,
             snippet: "您的性别是？",
             source: { type: "template", refId: "200", title: "客户满意度调查模板" }
+          },
+          {
+            id: "2",
+            score: 0.85,
+            vectorScore: 0.85,
+            keywordScore: 0.8,
+            snippet: "您的年龄段是？",
+            source: { type: "template", refId: "201", title: "客户满意度调查模板" }
           }
         ],
         degraded: null
@@ -115,35 +123,110 @@ describe("AIGenerateService", () => {
       expect(events.some(e => e.event === "done")).toBe(true);
     });
 
-    it("检索抛出异常 → 跳过增强，生成流程不中断也不报错", async () => {
+    it("检索抛出异常 → 重试用尽后跳过增强，生成流程不中断也不报错", async () => {
+      vi.useFakeTimers();
       fastify.aiRag.retriever.hybridSearch.mockRejectedValue(new Error("向量检索服务暂时不可用"));
 
-      const events = await collectEvents(service.generate(USER_ID, { prompt: "生成一份产品调研问卷" }));
+      const eventsPromise = collectEvents(service.generate(USER_ID, { prompt: "生成一份产品调研问卷" }));
+
+      // 推进 2 次重试退避（300ms + 600ms），让 3 次尝试全部跑完
+      await vi.advanceTimersByTimeAsync(300 + 600);
+      const events = await eventsPromise;
 
       const chatModel = await createDeepSeekChatMock.mock.results[0]!.value;
       const [messages] = chatModel.stream.mock.calls[0] as [Array<{ content: string }>];
       expect(messages[0]!.content).not.toContain("历史模板参考");
 
+      expect(fastify.aiRag.retriever.hybridSearch).toHaveBeenCalledTimes(3);
       expect(events.some(e => e.event === "done")).toBe(true);
       expect(events.some(e => e.event === "error")).toBe(false);
-      expect(fastify.log.warn).toHaveBeenCalledWith(
-        expect.objectContaining({ err: expect.any(Error) }),
-        "RAG 生成前检索异常，跳过增强"
-      );
+      expect(fastify.log.warn).toHaveBeenCalledWith({ attempts: 3 }, "RAG 生成前检索重试用尽，降级为旧路线");
     });
 
-    it("检索超时（超过 1.5s 预算）→ 跳过增强，生成流程不中断", async () => {
+    it("检索命中条目数低于阈值 → 判定为向量化数据太少，降级为旧路线", async () => {
+      fastify.aiRag.retriever.hybridSearch.mockResolvedValue({
+        items: [
+          {
+            id: "1",
+            score: 0.6,
+            vectorScore: 0.6,
+            keywordScore: 0,
+            snippet: "片段不足",
+            source: { type: "template", refId: "300", title: "样例模板" }
+          }
+        ],
+        degraded: null
+      });
+
+      const events = await collectEvents(service.generate(USER_ID, { prompt: "生成一份满意度调查问卷" }));
+
+      const chatModel = await createDeepSeekChatMock.mock.results[0]!.value;
+      const [messages] = chatModel.stream.mock.calls[0] as [Array<{ content: string }>];
+      expect(messages[0]!.content).not.toContain("历史模板参考");
+
+      // 命中数据不足无需重试，只调用一次即降级
+      expect(fastify.aiRag.retriever.hybridSearch).toHaveBeenCalledTimes(1);
+      expect(fastify.log.warn).toHaveBeenCalledWith(
+        { hitCount: 1, minHitCount: 2 },
+        "RAG 生成前检索命中数据过少，降级为旧路线"
+      );
+      expect(events.some(e => e.event === "done")).toBe(true);
+    });
+
+    it("首次检索超时，重试后命中数据达标 → 使用重试后的检索结果", async () => {
+      vi.useFakeTimers();
+      fastify.aiRag.retriever.hybridSearch
+        .mockImplementationOnce(() => new Promise(() => {})) // 第 1 次尝试：永不 resolve，触发超时
+        .mockResolvedValueOnce({
+          items: [
+            {
+              id: "1",
+              score: 0.9,
+              vectorScore: 0.9,
+              keywordScore: 0.8,
+              snippet: "您对产品的满意度如何？",
+              source: { type: "template", refId: "400", title: "满意度模板" }
+            },
+            {
+              id: "2",
+              score: 0.8,
+              vectorScore: 0.8,
+              keywordScore: 0.7,
+              snippet: "您愿意推荐给朋友吗？",
+              source: { type: "template", refId: "401", title: "满意度模板" }
+            }
+          ],
+          degraded: null
+        });
+
+      const eventsPromise = collectEvents(service.generate(USER_ID, { prompt: "生成一份满意度调查问卷" }));
+
+      // 第 1 次尝试超时（1.5s）+ 退避（300ms）后进入第 2 次尝试
+      await vi.advanceTimersByTimeAsync(1500 + 300);
+      const events = await eventsPromise;
+
+      const chatModel = await createDeepSeekChatMock.mock.results[0]!.value;
+      const [messages] = chatModel.stream.mock.calls[0] as [Array<{ content: string }>];
+      expect(messages[0]!.content).toContain("历史模板参考");
+      expect(messages[0]!.content).toContain("满意度模板");
+
+      expect(fastify.aiRag.retriever.hybridSearch).toHaveBeenCalledTimes(2);
+      expect(events.some(e => e.event === "done")).toBe(true);
+    });
+
+    it("检索超时（每次尝试均超过 1.5s 预算）→ 重试用尽后跳过增强，生成流程不中断", async () => {
       vi.useFakeTimers();
       // 永不 resolve，模拟检索卡住 → 触发 Promise.race 的超时分支
       fastify.aiRag.retriever.hybridSearch.mockImplementation(() => new Promise(() => {}));
 
       const eventsPromise = collectEvents(service.generate(USER_ID, { prompt: "生成一份满意度调查问卷" }));
 
-      // 推进到超时阈值，触发 setTimeout 回调
-      await vi.advanceTimersByTimeAsync(1500);
+      // 3 次超时（每次 1.5s）+ 2 次退避（300ms + 600ms）
+      await vi.advanceTimersByTimeAsync(1500 * 3 + 300 + 600);
       const events = await eventsPromise;
 
-      expect(fastify.log.warn).toHaveBeenCalledWith("RAG 生成前检索超时，跳过增强");
+      expect(fastify.aiRag.retriever.hybridSearch).toHaveBeenCalledTimes(3);
+      expect(fastify.log.warn).toHaveBeenCalledWith({ attempts: 3 }, "RAG 生成前检索重试用尽，降级为旧路线");
       expect(events.some(e => e.event === "done")).toBe(true);
       expect(events.some(e => e.event === "error")).toBe(false);
     });
