@@ -119,8 +119,9 @@ export const verifyRegister = (data: VerifyRegisterRequest): Promise<ApiResponse
 export const refreshToken = (data: RefreshTokenRequest): Promise<ApiResponse<LoginResponse>> =>
   authClient.post("/auth/refresh", data);
 
-/** POST /api/auth/logout — 登出 */
-export const logout = (): Promise<ApiResponse<null>> => serverClient.post("/auth/logout");
+/** POST /api/auth/logout — 登出（refreshToken 可选，传入时后端会一并拉黑） */
+export const logout = (data?: { refreshToken?: string }): Promise<ApiResponse<null>> =>
+  serverClient.post("/auth/logout", data);
 
 /** POST /api/auth/reset-password — 重置密码 */
 export const resetPassword = (data: ResetPasswordRequest): Promise<ApiResponse<null>> =>

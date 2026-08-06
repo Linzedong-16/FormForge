@@ -89,9 +89,11 @@ export const refreshToken = (data: RefreshTokenRequest): Promise<ApiResponse<Log
 
 /**
  * POST /api/auth/logout — 登出
- * @description 需要携带有效 Token，使用 serverClient 自动附加 Authorization 头
+ * @description 需要携带有效 Token，使用 serverClient 自动附加 Authorization 头；
+ *   refreshToken 可选，传入时后端会一并拉黑，防止登出后旧 RT 仍可用于刷新
  */
-export const logout = (): Promise<ApiResponse<null>> => serverClient.post("/auth/logout");
+export const logout = (data?: { refreshToken?: string }): Promise<ApiResponse<null>> =>
+  serverClient.post("/auth/logout", data);
 
 // ============================================================
 // 密码重置

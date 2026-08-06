@@ -12,6 +12,7 @@ import type { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
 import { AuthService } from "./auth.service.js";
 import { AuthError } from "../../../utils/errors.js";
 import { CacheKeys } from "../../../utils/cache.js";
+import { BizCode } from "../../../utils/response.js";
 
 // ─── 扩展 FastifyRequest 类型 ────────────────────────────────
 
@@ -123,7 +124,7 @@ export async function authenticate(request: FastifyRequest, _reply: FastifyReply
     // #region debug-point auth-no-token
     request.log.info({ latency_ms: Date.now() - t0 }, "[debug] auth: no token, returning 401");
     // #endregion
-    throw new AuthError("请先登录", 401);
+    throw new AuthError("请先登录", 401, BizCode.ACCESS_TOKEN_INVALID);
   }
 
   try {
@@ -145,7 +146,7 @@ export async function authenticate(request: FastifyRequest, _reply: FastifyReply
     if (error instanceof AuthError) {
       throw error;
     }
-    throw new AuthError("Token 无效", 401);
+    throw new AuthError("Token 无效", 401, BizCode.ACCESS_TOKEN_INVALID);
   }
 }
 

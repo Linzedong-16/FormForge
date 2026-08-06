@@ -5,6 +5,7 @@
  * 在遇到 401 时自动触发 Token 刷新并重试原请求。
  */
 import axios from "axios";
+import { BizCode } from "@common/user/user.interface";
 
 const serverClient = axios.create({
   baseURL: "/api",
@@ -49,23 +50,30 @@ serverClient.interceptors.response.use(
       return Promise.reject(new Error(error.response.data?.msg || "请求过于频繁，请稍后重试"));
     }
 
-    // 401 — 尝试刷新 Token
+    // 401 — 基于唯一业务码区分 AT/RT 失效场景，两者处理逻辑完全分离
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      try {
-        const { useUserStore } = await import("@/store/modules/user");
-        const userStore = useUserStore();
-        const newToken = await userStore.refreshAccessToken();
+      const bizCode: number | undefined = error.response.data?.code;
+      const { useUserStore } = await import("@/store/modules/user");
+      const userStore = useUserStore();
 
+      // 只有明确是 AT 失效的唯一响应码才走"静默刷新 + 重试"路径
+      if (bizCode === BizCode.AccessTokenInvalid) {
+        const newToken = await userStore.refreshAccessToken();
         if (newToken && originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return serverClient(originalRequest);
         }
-      } catch {
-        const { useUserStore } = await import("@/store/modules/user");
-        useUserStore().handleLogout();
+        // newToken 为 null：refreshAccessToken 内部已按 bizCode 做过区分处理
+        // （RT 失效已 forceLogoutToLogin；其它异常已 clearTokens），这里兜底跳转一次
+        userStore.forceLogoutToLogin();
+        return Promise.reject(error);
       }
+
+      // 非预期的 401（未识别的 bizCode，含 RT 失效）：不尝试刷新，直接强制登出
+      userStore.forceLogoutToLogin();
+      return Promise.reject(error);
     }
 
     const msg = error.response.data?.msg || `请求失败 (${error.response.status})`;

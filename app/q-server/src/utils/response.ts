@@ -61,6 +61,10 @@ export enum BizCode {
   REGISTRATION_CLOSED = 1009,
   /** SMTP 未配置 */
   SMTP_NOT_CONFIGURED = 1010,
+  /** Access Token 无效或已过期（前端应据此静默刷新重试，不弹出登录页） */
+  ACCESS_TOKEN_INVALID = 1011,
+  /** Refresh Token 无效、已过期或已被拉黑（前端应据此立即清空状态并跳转登录） */
+  REFRESH_TOKEN_INVALID = 1012,
 
   // ─── 用户资料模块 ────────────────────────────────────────
   /** 昵称包含非法字符 */

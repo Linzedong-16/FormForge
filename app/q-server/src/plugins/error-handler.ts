@@ -138,6 +138,16 @@ const errorHandlerPlugin: import("fastify").FastifyPluginAsync = async fastify =
     // ════════════════════════════════════════════════════════════
     // 5. 其他未预期错误 — 兜底 500
     // ════════════════════════════════════════════════════════════
+    // 若抛出的值不是标准 Error 实例（如被 throw 的字符串/普通对象），
+    // error.name/message/stack 全部为 undefined，pino 序列化时会丢弃这些字段，
+    // 最终仅打印出 `err: {}`，无法定位真实来源。此处补一条诊断日志固定捕获原始值。
+    if (!(error instanceof Error)) {
+      request.log.error(
+        { rawErrorType: typeof error, rawErrorValue: sanitizeForLog(error) ?? String(error) },
+        "未处理的服务器错误：抛出值非标准 Error 实例"
+      );
+    }
+
     request.log.error(
       { err: sanitizeForLog({ name: error.name, message: error.message, stack: error.stack }) },
       "未处理的服务器错误"

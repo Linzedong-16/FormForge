@@ -130,6 +130,10 @@ export interface EmbeddingResult {
 /** 硅基流动 Embedding 客户端（模块级懒加载单例，避免重复实例化） */
 let siliconFlowEmbeddings: OpenAIEmbeddings | null = null;
 
+/**
+ * 获取硅基流动 Embedding 客户端实例（单例模式）
+ * @returns 硅基流动 Embedding 客户端实例
+ */
 function getSiliconFlowEmbeddings(): OpenAIEmbeddings {
   if (!process.env.SILICONFLOW_API_KEY) {
     throw new Error("SILICONFLOW_API_KEY 未配置，请在 .env 中填写硅基流动 API Key");
@@ -149,6 +153,7 @@ function getSiliconFlowEmbeddings(): OpenAIEmbeddings {
  *
  * @param _fastify  Fastify 实例（保留仅为不破坏 embedding.service.ts 现有调用签名，本函数不再需要查库）
  * @param texts     待向量化文本数组
+ * @returns 向量化结果数组，每个元素为 EmbeddingResult 实例
  */
 export async function embedBatch(_fastify: FastifyInstance, texts: string[]): Promise<EmbeddingResult[]> {
   const vectors = await getSiliconFlowEmbeddings().embedDocuments(texts);
