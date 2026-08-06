@@ -11,7 +11,9 @@
 
 services:
   postgres:
-    image: postgres:16-alpine
+    # pgvector/pgvector:pg16 = 官方 postgres:16 镜像预装 pgvector 扩展，供 RAG 检索增强能力
+    # （007-rag-retrieval-augmentation）的 CREATE EXTENSION IF NOT EXISTS vector 使用
+    image: pgvector/pgvector:pg16
     container_name: questionnaire-postgres
     ports:
       - "5433:5432"

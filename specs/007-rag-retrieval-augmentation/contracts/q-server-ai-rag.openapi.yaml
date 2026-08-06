@@ -1,0 +1,326 @@
+openapi: 3.0.3
+info:
+  title: q-server AI RAG 模块接口契约
+  version: "1.0.0"
+  description: >
+    对应 app/q-server/src/modules/ai/ai-rag 模块新增的 6 个端点。
+    统一响应封装 { data, code, msg }（code:0 表示成功），遵循 constitution Principle III。
+    鉴权方式见各端点 security 字段：authenticateOrInternal 表示"登录用户或携带
+    X-Internal-Api-Key 的内部服务均可访问"，adminOnly 表示"仅 authenticate + requireSuperAdmin"。
+    知识文档的"更新"通过"下线旧文档（DELETE /knowledge/documents/{documentId}）+
+    重新导入新文档（POST /knowledge/documents）"组合完成，暂不提供内容级 PATCH 接口（对应 FR-012）。
+
+servers:
+  - url: /api/ai/rag
+
+paths:
+  /templates/search:
+    post:
+      summary: 检索与查询语义相关的历史问卷模板（对应 FR-003/FR-007）
+      security:
+        - authenticateOrInternal: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: 检索成功（包括未命中任何结果的空数组场景，仍返回 200 + code:0）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponseEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /knowledge/search:
+    post:
+      summary: 检索与用户问题相关的知识文档片段（对应 FR-013）
+      security:
+        - authenticateOrInternal: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: 检索成功；未命中时 data.items 为空数组，调用方据此判断"未找到相关依据"（FR-015）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponseEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /templates/{templateId}/reindex:
+    post:
+      summary: 管理员手动触发指定模板重新建立索引（对应 FR-002）
+      security:
+        - adminOnly: []
+      parameters:
+        - $ref: "#/components/parameters/TemplateId"
+      responses:
+        "200":
+          description: 重建完成，返回本次写入的片段数量
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponseEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          chunkCount:
+                            type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: 模板不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEnvelope"
+
+  /templates/{templateId}/index:
+    delete:
+      summary: 管理员删除指定模板的索引片段（对应 FR-002，用于模板下线场景）
+      security:
+        - adminOnly: []
+      parameters:
+        - $ref: "#/components/parameters/TemplateId"
+      responses:
+        "200":
+          description: 删除成功（模板本身不受影响，仅清理其 TemplateEmbedding 记录）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /knowledge/documents:
+    post:
+      summary: 管理员导入知识文档并触发切片与索引（对应 FR-012）
+      security:
+        - adminOnly: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateKnowledgeDocumentRequest"
+      responses:
+        "200":
+          description: 导入成功，返回文档 ID 与切片数量
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponseEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          documentId:
+                            type: string
+                          chunkCount:
+                            type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /knowledge/documents/{documentId}:
+    delete:
+      summary: 管理员下线（软删除）知识文档（对应 FR-012「删除」语义；"更新"需配合 POST /knowledge/documents 重新导入）
+      security:
+        - adminOnly: []
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: 下线成功，该文档 is_active 置为 false，其 KnowledgeChunk 立即不再参与检索（chunks 保留、非物理删除）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: 文档不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEnvelope"
+
+components:
+  securitySchemes:
+    authenticateOrInternal:
+      type: apiKey
+      in: header
+      name: X-Internal-Api-Key
+      description: >
+        新增中间件 authenticateOrInternal：优先校验 X-Internal-Api-Key 是否等于
+        AI_SERVICE_INTERNAL_KEY，命中则放行（供 ai-service 场景 C 调用）；
+        未命中则回退到标准 Bearer JWT authenticate（登录用户）。
+    adminOnly:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: authenticate + requireSuperAdmin，仅超级管理员可调用。
+
+  parameters:
+    TemplateId:
+      name: templateId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Template.id（BigInt 序列化为字符串）
+    DocumentId:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: KnowledgeDocument.id（BigInt 序列化为字符串）
+
+  schemas:
+    ApiResponseEnvelope:
+      type: object
+      required: [data, code, msg]
+      properties:
+        data:
+          nullable: true
+        code:
+          type: integer
+          description: 0 表示成功；业务错误码见 BizCode（本模块新增 4005~4010 段）
+        msg:
+          type: string
+
+    SearchRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: 查询文本，上限对应 FR-019
+        topK:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 5
+        alpha:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.7
+          description: 语义/关键词权重（对应 FR-005）
+
+    SearchResultItem:
+      type: object
+      properties:
+        id:
+          type: string
+        score:
+          type: number
+        vectorScore:
+          type: number
+        keywordScore:
+          type: number
+        snippet:
+          type: string
+        source:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [template, knowledge]
+            refId:
+              type: string
+            title:
+              type: string
+
+    SearchResponseEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseEnvelope"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/SearchResultItem"
+                degraded:
+                  type: string
+                  nullable: true
+                  enum: [vector_unavailable, keyword_unavailable, null]
+                  description: 检索环节部分降级时标记（对应 FR-020），完全正常时为 null
+
+    CreateKnowledgeDocumentRequest:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        source:
+          type: string
+          maxLength: 200
+        content:
+          type: string
+          maxLength: 50000
+          description: 原始文档全文，后端按章节/长度切片后写入 KnowledgeChunk
+
+  responses:
+    BadRequest:
+      description: 参数校验失败（Zod）
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiResponseEnvelope"
+    Unauthorized:
+      description: 未登录 / Token 无效 / 内部服务鉴权失败
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiResponseEnvelope"
+    Forbidden:
+      description: 非管理员访问管理类端点
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiResponseEnvelope"
+    RateLimited:
+      description: 触发 @fastify/rate-limit 限流
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiResponseEnvelope"

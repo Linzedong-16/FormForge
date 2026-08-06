@@ -504,12 +504,18 @@ export class AuthService {
     let decoded: JwtPayload;
     try {
       decoded = jwt.verify(refreshToken, this.jwtSecret) as JwtPayload;
-    } catch {
-      throw new AuthError("Refresh Token 无效或已过期", 401);
+    } catch (error) {
+      const msg = error instanceof jwt.TokenExpiredError ? "Refresh Token 已过期" : "Refresh Token 无效";
+      throw new AuthError(msg, 401, BizCode.REFRESH_TOKEN_INVALID);
     }
 
     if (decoded.type !== "refresh") {
-      throw new AuthError("无效的 Token 类型", 401);
+      throw new AuthError("无效的 Token 类型", 401, BizCode.REFRESH_TOKEN_INVALID);
+    }
+
+    // 黑名单重放校验：防止已使用过的旧 Refresh Token 被重复用于刷新
+    if (await this.isTokenBlacklisted(decoded.jti)) {
+      throw new AuthError("Refresh Token 已失效，请重新登录", 401, BizCode.REFRESH_TOKEN_INVALID);
     }
 
     // 查询用户
@@ -517,7 +523,7 @@ export class AuthService {
       where: { id: BigInt(decoded.sub), deleted_at: null }
     });
     if (!user || user.status === 0) {
-      throw new AuthError("用户不存在或已被禁用", 401);
+      throw new AuthError("用户不存在或已被禁用", 401, BizCode.REFRESH_TOKEN_INVALID);
     }
 
     // 将旧 Refresh Token 加入黑名单
@@ -554,17 +560,18 @@ export class AuthService {
     let decoded: JwtPayload;
     try {
       decoded = jwt.verify(token, this.jwtSecret) as JwtPayload;
-    } catch {
-      throw new AuthError("Token 无效或已过期", 401);
+    } catch (error) {
+      const msg = error instanceof jwt.TokenExpiredError ? "Token 已过期" : "Token 无效";
+      throw new AuthError(msg, 401, BizCode.ACCESS_TOKEN_INVALID);
     }
 
     if (decoded.type !== "access") {
-      throw new AuthError("无效的 Token 类型", 401);
+      throw new AuthError("无效的 Token 类型", 401, BizCode.ACCESS_TOKEN_INVALID);
     }
 
     // 检查黑名单
     if (await this.isTokenBlacklisted(decoded.jti)) {
-      throw new AuthError("Token 已失效", 401);
+      throw new AuthError("Token 已失效", 401, BizCode.ACCESS_TOKEN_INVALID);
     }
 
     // 查用户档案（Cache-Aside getOrSet，避免并发重复查 DB）
@@ -582,7 +589,7 @@ export class AuthService {
           select: { id: true, email: true, status: true }
         });
         if (!user || user.status === 0) {
-          throw new AuthError("用户不存在或已被禁用", 401);
+          throw new AuthError("用户不存在或已被禁用", 401, BizCode.ACCESS_TOKEN_INVALID);
         }
         return {
           userId: user.id.toString(),
@@ -601,9 +608,12 @@ export class AuthService {
     };
   }
 
-  /** 登出 — 将 Access Token 加入黑名单 */
-  async logout(token: string): Promise<void> {
+  /** 登出 — 将 Access Token（及可选的 Refresh Token）加入黑名单 */
+  async logout(token: string, refreshToken?: string): Promise<void> {
     await this.blacklistToken(token);
+    if (refreshToken) {
+      await this.blacklistToken(refreshToken);
+    }
 
     // 审计日志：从 Token 中解码用户信息
     try {

@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     ai_temperature: float = 0.7
     ai_max_tokens: int = 4096
 
+    # ── Embedding 配置（语义聚类场景 B 专用：一次性计算、不持久化）──
+    # DeepSeek 官方 API 未确认公开 Embedding 端点（research.md §3），
+    # 故 Embedding 走独立的环境驱动配置，默认对齐 OpenAI text-embedding-3-small
+    embedding_model: str = "text-embedding-3-small"
+    embedding_api_key: str = ""  # 从环境变量注入，未配置时 embedder.py 直接降级返回失败标记
+    embedding_base_url: str = "https://api.openai.com/v1"
+
     # ── Agent 配置 ───────────────────────────────────────────
     agent_max_steps: int = 10  # 单次最大推理步数
     agent_timeout_seconds: int = 60  # 单次循环总耗时兜底（秒），与 agent_max_steps 共同构成双重终止条件

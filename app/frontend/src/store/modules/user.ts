@@ -13,6 +13,8 @@
  */
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
+import { qiankunWindow } from "vite-plugin-qiankun/es/helper";
+import { BizCode } from "@common/user/user.interface";
 import {
   login as loginApi,
   logout as logoutApi,
@@ -66,9 +68,9 @@ export const useUserStore = defineStore(
       interests: []
     });
 
-    // 并发刷新控制
+    // 并发刷新控制（刷新失败时向队列 resolve(null)，避免并发请求永久挂起）
     const isRefreshing = ref(false);
-    const refreshQueue = ref<Array<(token: string) => void>>([]);
+    const refreshQueue = ref<Array<(token: string | null) => void>>([]);
 
     // ════════════════════════════════════════════════════════════
     //  计算属性
@@ -184,12 +186,24 @@ export const useUserStore = defineStore(
     /** 登出 */
     async function handleLogout() {
       try {
-        await logoutApi();
+        await logoutApi({ refreshToken: refreshTokenValue.value ?? undefined });
       } catch {
         // 即便后端登出失败也清除本地状态
       }
       clearTokens();
       clearProfile();
+    }
+
+    /**
+     * 强制登出并跳转登录页 —— Refresh Token 失效场景的唯一清空+跳转入口
+     *
+     * qiankun 子应用场景下需跳转到本子应用自己的登录页（/admin/login），
+     * 而非主壳根路径 /login（main-app 未注册该路由，直接跳会 404）
+     */
+    function forceLogoutToLogin() {
+      clearTokens();
+      clearProfile();
+      window.location.href = qiankunWindow.__POWERED_BY_QIANKUN__ ? "/admin/login" : "/login";
     }
 
     /** 获取系统状态 */
@@ -285,13 +299,25 @@ export const useUserStore = defineStore(
           return res.data.token;
         }
 
-        // 刷新失败 → 清除状态
+        // 防御性兜底：非 2xx 但业务码非 0（正常链路不会走到，authClient 对失败响应会走 catch 分支）
+        refreshQueue.value.forEach(resolve => resolve(null));
         refreshQueue.value = [];
         clearTokens();
         return null;
-      } catch {
+      } catch (err) {
+        const bizCode = (err as Error & { bizCode?: number }).bizCode;
+
+        // 无论何种失败原因，先唤醒所有排队等待者，避免并发请求永久挂起
+        refreshQueue.value.forEach(resolve => resolve(null));
         refreshQueue.value = [];
-        clearTokens();
+
+        if (bizCode === BizCode.RefreshTokenInvalid) {
+          // Refresh Token 失效的唯一响应码 —— 立即清空状态并跳转登录
+          forceLogoutToLogin();
+        } else {
+          // 网络异常/超时等其它失败：仅清空 Token，是否跳转交给调用方（server.ts 401 分支）兜底
+          clearTokens();
+        }
         return null;
       } finally {
         isRefreshing.value = false;
@@ -329,6 +355,7 @@ export const useUserStore = defineStore(
       // 业务
       handleLogin,
       handleInitRegister,
+      forceLogoutToLogin,
       handleLogout,
       fetchSystemStatus,
       // 资料

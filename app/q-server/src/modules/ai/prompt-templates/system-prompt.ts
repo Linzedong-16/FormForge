@@ -18,6 +18,14 @@ export interface SystemPromptOptions {
   count?: number;
   /** 问卷语言（默认 zh-CN） */
   language?: string;
+  /** RAG 检索到的历史模板参考片段（生成前检索增强，见 ai-generate.service.ts） */
+  referenceSnippets?: ReferenceSnippet[];
+}
+
+/** RAG 检索返回的历史模板参考片段 */
+export interface ReferenceSnippet {
+  title: string;
+  snippet: string;
 }
 
 // ─── Prompt 各部分 ─────────────────────────────────────────────
@@ -130,7 +138,7 @@ const DESIGN_GUIDELINES = `【设计规范】
  * 并注入题目数量、语言等参数化约束。
  */
 export function buildSystemPrompt(options: SystemPromptOptions = {}): string {
-  const { count = 10, language = "zh-CN" } = options;
+  const { count = 10, language = "zh-CN", referenceSnippets } = options;
 
   // 参数化约束
   const countConstraint = `\n【本次要求】\n题目数量：${count} 道左右（可浮动 ±2 道）`;
@@ -143,6 +151,16 @@ export function buildSystemPrompt(options: SystemPromptOptions = {}): string {
     (ex, i) => `\n${ex.label}：\n${JSON.stringify(ex.json, null, 2)}`
   ).join("");
 
+  // RAG 检索到的历史模板参考片段（仅供风格/结构参考，明确要求不得直接照抄，避免生成内容与历史模板高度雷同）
+  const referenceSection =
+    referenceSnippets && referenceSnippets.length > 0
+      ? [
+          "\n【历史模板参考】",
+          "以下是系统中已审核通过的历史模板片段，仅供题目风格与结构参考，禁止直接照抄其中的具体文字内容：",
+          referenceSnippets.map((s, i) => `${i + 1}. 《${s.title}》：${s.snippet}`).join("\n")
+        ].join("\n")
+      : "";
+
   // 拼接完整 Prompt
   return [
     ROLE_DEFINITION,
@@ -153,6 +171,7 @@ export function buildSystemPrompt(options: SystemPromptOptions = {}): string {
     languageConstraint,
     "\n【参考示例】",
     examplesText,
+    referenceSection,
     "\n现在请根据用户需求生成问卷 JSON。记住：只输出纯 JSON，不要包裹在代码块中，不要添加解释文字。"
   ].join("\n\n");
 }

@@ -61,6 +61,10 @@ export enum BizCode {
   REGISTRATION_CLOSED = 1009,
   /** SMTP 未配置 */
   SMTP_NOT_CONFIGURED = 1010,
+  /** Access Token 无效或已过期（前端应据此静默刷新重试，不弹出登录页） */
+  ACCESS_TOKEN_INVALID = 1011,
+  /** Refresh Token 无效、已过期或已被拉黑（前端应据此立即清空状态并跳转登录） */
+  REFRESH_TOKEN_INVALID = 1012,
 
   // ─── 用户资料模块 ────────────────────────────────────────
   /** 昵称包含非法字符 */
@@ -113,6 +117,20 @@ export enum BizCode {
   AI_TIMEOUT = 4003,
   /** AI 返回内容无法解析 */
   AI_PARSE_FAILED = 4004,
+
+  // ─── AI RAG 检索增强模块 ────────────────────────────────────
+  /** 模板不存在（重建索引/删除索引时目标模板未找到） */
+  RAG_TEMPLATE_NOT_FOUND = 4005,
+  /** 知识文档不存在（下线/检索时目标文档未找到） */
+  RAG_KNOWLEDGE_DOCUMENT_NOT_FOUND = 4006,
+  /** Embedding 服务不可用（Provider 调用失败，检索/索引降级或中止） */
+  RAG_EMBEDDING_UNAVAILABLE = 4007,
+  /** 检索查询文本超出长度上限 */
+  RAG_QUERY_TOO_LONG = 4008,
+  /** 知识文档内容超出长度上限 */
+  RAG_DOCUMENT_TOO_LONG = 4009,
+  /** 内部服务鉴权失败（X-Internal-Api-Key 缺失或不合法） */
+  RAG_INTERNAL_AUTH_FAILED = 4010,
 
   // ─── 消息互动模块 ──────────────────────────────────────────
   /** 消息不存在或已被软删除 */

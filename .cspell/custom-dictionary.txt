@@ -20,3 +20,11 @@ uuidv
 autoresize
 arcoblue
 unban
+pgvector
+ivfflat
+hdbscan
+embedding
+embeddings
+chromadb
+tiktoken
+ilike

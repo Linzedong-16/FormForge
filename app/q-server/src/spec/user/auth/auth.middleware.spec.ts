@@ -4,9 +4,10 @@
  * 覆盖：authenticate（校验 Token）、requireSuperAdmin（权限校验）
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import jwt from "jsonwebtoken";
-import { authenticate, requireSuperAdmin } from "../../../modules/user/auth/auth.middleware.js";
+import { authenticate, requireSuperAdmin, authenticateOrInternal } from "../../../modules/user/auth/auth.middleware.js";
+import { AuthError } from "../../../utils/errors.js";
 import { createRequestMock, createReplyMock, createFastifyMock, MOCK_USER } from "../../utils/test-helpers.js";
 
 describe("auth.middleware", () => {
@@ -159,6 +160,71 @@ describe("auth.middleware", () => {
       await requireSuperAdmin(req as any, reply as any);
 
       expect(reply.sendForbidden).toHaveBeenCalledWith("需要超级管理员权限");
+    });
+  });
+
+  // ============================================================
+  //  authenticateOrInternal
+  // ============================================================
+
+  describe("authenticateOrInternal", () => {
+    const ORIGINAL_INTERNAL_KEY = process.env.AI_SERVICE_INTERNAL_KEY;
+
+    afterEach(() => {
+      process.env.AI_SERVICE_INTERNAL_KEY = ORIGINAL_INTERNAL_KEY;
+    });
+
+    it("携带合法 X-Internal-Api-Key → 跳过 JWT 校验直接通过", async () => {
+      process.env.AI_SERVICE_INTERNAL_KEY = "internal-secret";
+      const req = createRequestMock({ headers: { "x-internal-api-key": "internal-secret" } });
+      req.server = fastify;
+      const reply = createReplyMock();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(authenticateOrInternal(req as any, reply as any)).resolves.toBeUndefined();
+      expect(req.user).toBeUndefined(); // 内部通道不挂载用户信息
+    });
+
+    it("Key 不匹配 → 回退标准 JWT 校验，凭有效 Token 通过", async () => {
+      process.env.AI_SERVICE_INTERNAL_KEY = "internal-secret";
+      const token = jwt.sign(
+        { sub: MOCK_USER.id.toString(), email: MOCK_USER.email, role: "user", type: "access", jti: "j-internal-fallback" },
+        process.env.JWT_SECRET!,
+        { expiresIn: 3600 }
+      );
+      fastify.prisma.user.findFirst.mockResolvedValue(MOCK_USER);
+      fastify.redis.exists.mockResolvedValue(0);
+
+      const req = createRequestMock({
+        headers: { "x-internal-api-key": "wrong-key", authorization: `Bearer ${token}` }
+      });
+      req.server = fastify;
+      const reply = createReplyMock();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await authenticateOrInternal(req as any, reply as any);
+
+      expect(req.user?.email).toBe(MOCK_USER.email);
+    });
+
+    it("未配置 AI_SERVICE_INTERNAL_KEY → 强制回退标准鉴权，即使携带任意 Key 也不生效", async () => {
+      delete process.env.AI_SERVICE_INTERNAL_KEY;
+      const req = createRequestMock({ headers: { "x-internal-api-key": "anything" } });
+      req.server = fastify;
+      const reply = createReplyMock();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(authenticateOrInternal(req as any, reply as any)).rejects.toBeInstanceOf(AuthError);
+    });
+
+    it("Key 缺失且 JWT 也无效 → 抛出 401 AuthError", async () => {
+      process.env.AI_SERVICE_INTERNAL_KEY = "internal-secret";
+      const req = createRequestMock({ headers: { authorization: "Bearer invalid-token" } });
+      req.server = fastify;
+      const reply = createReplyMock();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(authenticateOrInternal(req as any, reply as any)).rejects.toMatchObject({ statusCode: 401 });
     });
   });
 });
