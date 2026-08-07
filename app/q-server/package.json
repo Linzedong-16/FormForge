@@ -53,6 +53,7 @@
     "minio": "^8.0.7",
     "mongoose": "^9.7.0",
     "monorepo-code-common": "workspace:*",
+    "monorepo-survey-engine": "workspace:*",
     "nodemailer": "~6.0.0",
     "pg": "^8.22.0",
     "pino-pretty": "^13.1.3",

@@ -50,6 +50,11 @@
             </el-button>
           </div>
         </div>
+        <div v-if="isEditor" class="mr-10">
+          <el-button type="primary" size="small" plain @click="previewAsFiller">
+            {{ t("editor.previewAsFiller") }}
+          </el-button>
+        </div>
         <div v-if="id">
           <el-button type="primary" size="small" @click="preview">{{ t("editor.preview") }}</el-button>
         </div>
@@ -168,6 +173,16 @@ const preview = () => {
     .catch(() => {
       ElMessage.info(t("editor.previewCancelled"));
     });
+};
+
+// 填写者视角预览（T049）：无需先保存问卷，直接复用 SurveyView.vue 渲染编辑器内存中的最新配置，
+// 依据同页面 SPA 路由导航不会销毁 Vue 应用实例、Pinia store 在导航前后保持同一实例这一特性，
+// 通过 query 参数 preview=1 告知 SurveyView.vue 切换为预览数据源，不发起真实提交请求
+const previewAsFiller = () => {
+  router.push({
+    path: `/survey/${props.id || "preview"}`,
+    query: { preview: "1" }
+  });
 };
 
 const goHome = () => {

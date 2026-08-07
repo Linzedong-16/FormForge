@@ -4,6 +4,7 @@ import adminRoutes from "../modules/user/admin/admin.routes.js";
 import userCrudRoutes from "../modules/user/user-crud/user-crud.routes.js";
 import profileRoutes from "../modules/user/profile/profile.routes.js";
 import surveyCrudRoutes from "../modules/survey/survey-crud/survey-crud.routes.js";
+import surveyRuleRoutes from "../modules/survey/survey-rule/survey-rule.routes.js";
 import fileRoutes from "../modules/survey/file/file.routes.js";
 import uploadRoutes from "../modules/survey/upload/upload.routes.js";
 import aiGenerateRoutes from "../modules/ai/ai-generate/ai-generate.routes.js";
@@ -142,6 +143,8 @@ const routes: FastifyPluginAsync = async fastify => {
   fastify.register(uploadRoutes, { prefix: "/q-editor" });
   // survey-crud.routes.ts 内部路径已为 /surveys、/responses 等完整路径，无需额外前缀
   fastify.register(surveyCrudRoutes);
+  // survey-rule.routes.ts 内部路径为 /surveys/:id/validate-rules（动态规则完整性预检）
+  fastify.register(surveyRuleRoutes);
   // file.routes.ts 内部路径为 /surveys/:id/files、/survey-files/:id
   fastify.register(fileRoutes);
   // ai-generate.routes.ts 内部路径为 /surveys/generate（SSE 流式）

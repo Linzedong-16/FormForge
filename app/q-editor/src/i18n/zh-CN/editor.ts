@@ -7,6 +7,7 @@ export default {
   resetSurvey: "重置问卷",
   saveSurvey: "保存问卷",
   preview: "预览",
+  previewAsFiller: "填写视角预览",
   undo: "撤销",
   redo: "重做",
 
@@ -172,6 +173,7 @@ export default {
   clickToEdit: "点击题型进行编辑",
   selectComponentFirst: "请先选中该图片题目组件后再上传图片",
   deleteConfirm: "确定删除该组件吗？",
+  deleteRuleWarning: "以下动态规则引用了该题目，删除后这些规则将失效：",
   deleteTitle: "提示",
   keepTwoOptions: "至少保留两个选项",
   keepTwoItems: "至少保留两项",

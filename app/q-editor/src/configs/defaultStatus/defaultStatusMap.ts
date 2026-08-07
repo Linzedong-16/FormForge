@@ -13,6 +13,7 @@ import matrixSingleDefaultStatus from "./matrix/MatrixSingle";
 import sliderDefaultStatus from "./advanced/Slider";
 import transferDefaultStatus from "./advanced/Transfer";
 import signatureDefaultStatus from "./advanced/Signature";
+import computedFieldDefaultStatus from "./computed/ComputedField";
 
 import type { Status } from "@/types";
 
@@ -53,6 +54,8 @@ export const defaultStatusMap: DefaultStatusMap = {
   slider: sliderDefaultStatus,
   transfer: transferDefaultStatus,
   signature: signatureDefaultStatus,
+  // 计算/派生字段组件（伪题型，不计入题目序号）
+  "computed-field": computedFieldDefaultStatus,
   // 联系信息组件
   "personal-info-address": textInputDefaultStatus,
   "personal-info-tel": textInputDefaultStatus,

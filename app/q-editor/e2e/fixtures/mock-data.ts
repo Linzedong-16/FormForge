@@ -31,6 +31,36 @@ export const DEMO_SURVEY = {
   questionCount: 3 // 单选题 + 多选题 + 文本输入
 };
 
+/** 动态规则测试问卷 — 覆盖显示/隐藏、选项联动、跳题结束、派生计算字段四类动态表单能力，与 DEMO_SURVEY 相互独立 */
+export const DYNAMIC_SURVEY = {
+  id: "10002",
+  title: "动态规则能力验证问卷",
+  questionKeys: {
+    willing: "q_willing",
+    reason: "q_reason",
+    region: "q_region",
+    city: "q_city",
+    eligibility: "q_eligibility",
+    afterEligibility: "q_after_eligibility",
+    scoreA: "q_score_a",
+    scoreB: "q_score_b",
+    totalVisible: "q_total_visible",
+    totalHidden: "q_total_hidden"
+  },
+  questionTitles: {
+    willing: "您是否愿意参与后续深度访谈？",
+    reason: "请简单说明您的顾虑或期待",
+    region: "您目前所在的地区？",
+    city: "请选择您所在的城市",
+    eligibility: "您是否符合本次活动的报名资格？",
+    afterEligibility: "请填写您的报名联系方式",
+    scoreA: "请为方案A打分（0-100）",
+    scoreB: "请为方案B打分（0-100）",
+    totalVisible: "两项打分总和（可见）",
+    totalHidden: "两项打分总和（隐藏，仅供校验）"
+  }
+};
+
 /** 路由路径 */
 export const ROUTES = {
   land: "/",

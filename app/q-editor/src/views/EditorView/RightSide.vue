@@ -5,6 +5,7 @@
     </div>
     <div v-else>
       <EditPannel :key="store.editorVersion" :com="currentCom!" />
+      <LogicPanel :key="`logic-${store.editorVersion}`" :com="currentCom!" :index="store.currentComponentIndex" />
     </div>
   </div>
 </template>
@@ -15,6 +16,7 @@ import { computed, provide } from "vue";
 import { useEditorStore } from "@/stores/useEditor";
 const store = useEditorStore();
 import EditPannel from "@/components/SurveyComs/EditItems/EditPannel.vue";
+import LogicPanel from "@/components/Logic/LogicPanel.vue";
 
 import { ElMessage } from "element-plus";
 import type { OptionsProps, OptionsStatus, PicLink, TextProps, TypeStatus } from "@/types";

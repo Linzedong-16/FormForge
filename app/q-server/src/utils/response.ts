@@ -140,7 +140,17 @@ export enum BizCode {
   /** 管理员广播超出频率限制 */
   BROADCAST_RATE_LIMITED = 5003,
   /** 尝试创建系统通知类消息但调用方不具备权限（防御性兜底，正常路径不可达） */
-  SYSTEM_MESSAGE_TYPE_FORBIDDEN = 5004
+  SYSTEM_MESSAGE_TYPE_FORBIDDEN = 5004,
+
+  // ─── 动态表单规则引擎模块 ──────────────────────────────────
+  /** 规则集存在循环依赖（发布前拦截） */
+  RULE_CIRCULAR_DEPENDENCY = 6001,
+  /** 规则引用了不存在的题目（发布前拦截） */
+  RULE_DANGLING_REFERENCE = 6002,
+  /** 跳转目标不合法：指向自身或非严格向后跳转（发布前拦截） */
+  RULE_INVALID_JUMP_TARGET = 6003,
+  /** 选项联动规则引用了依赖题目已不存在的选项值（best-effort，发布前拦截） */
+  RULE_STALE_OPTION_REFERENCE = 6004
 }
 
 // ─── 构建函数 ────────────────────────────────────────────────

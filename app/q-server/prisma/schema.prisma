@@ -114,12 +114,18 @@ model SurveyComponent {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
+  // 稳定题目引用键：动态规则内一律用它引用题目，不用 id/order_index（避免"先删后建"场景下引用失效）
+  client_key String? @db.VarChar(64)
+  // 该题目自身的动态规则配置（显示/隐藏、跳转、选项联动、派生计算），序列化自 QuestionLogicConfig；NULL = 未启用任何规则
+  logic      Json?
+
   // 关联关系
   survey  Survey   @relation(fields: [survey_id], references: [id])
   answers Answer[]
 
   @@index([survey_id])
   @@index([survey_id, order_index])
+  @@index([survey_id, client_key])
   @@map("survey_components")
 }
 
@@ -211,6 +217,9 @@ model Answer {
   value        String? // 单值答案（文本/单选）
   values       Json? // 多选答案数组
   created_at   DateTime @default(now())
+
+  // 区分"正常作答/因规则隐藏跳过/展示但主动留空"：0=正常作答（历史行 NULL 时隐含此值，向后兼容）1=因规则隐藏跳过 2=展示但主动留空
+  answer_status Int? @db.SmallInt
 
   // 关联关系
   response  Response        @relation(fields: [response_id], references: [id])

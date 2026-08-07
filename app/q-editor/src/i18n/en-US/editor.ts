@@ -7,6 +7,7 @@ export default {
   resetSurvey: "Reset Survey",
   saveSurvey: "Save Survey",
   preview: "Preview",
+  previewAsFiller: "Preview as Filler",
   undo: "Undo",
   redo: "Redo",
 
@@ -141,6 +142,7 @@ export default {
   clickToEdit: "Click question type to edit",
   selectComponentFirst: "Please select the image question component before uploading",
   deleteConfirm: "Are you sure you want to delete this component?",
+  deleteRuleWarning: "The following dynamic rules reference this question and will become invalid after deletion: ",
   deleteTitle: "Confirmation",
   keepTwoOptions: "Keep at least two options",
   keepTwoItems: "Keep at least two items",

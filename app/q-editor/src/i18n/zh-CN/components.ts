@@ -170,6 +170,7 @@ export default {
     slider: "滑块",
     transfer: "排序题",
     signature: "电子签名",
+    computedField: "计算字段",
     inputBox: "输入框",
     textInput: "输入框",
     note: "备注说明",

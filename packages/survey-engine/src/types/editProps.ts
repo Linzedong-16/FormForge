@@ -1,4 +1,4 @@
-import type { VueComType } from "./common";
+import type { VueComType } from "./common.js";
 
 export interface BaseProps {
   id: string;
