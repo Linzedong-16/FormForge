@@ -45,7 +45,19 @@ interface PrismaMock {
   };
   userProfile: { findFirst: MockFn; findUnique: MockFn; update: MockFn; upsert: MockFn };
   knowledgeDocument: { findUnique: MockFn; create: MockFn; update: MockFn };
+  /** 统计模块需要 answer / response 模型 */
+  answer: {
+    findMany: MockFn;
+    count: MockFn;
+    groupBy: MockFn;
+  };
+  response: {
+    findMany: MockFn;
+    count: MockFn;
+  };
   $transaction: MockFn;
+  /** 原生 SQL 查询（统计批量聚合） */
+  $queryRawUnsafe: MockFn;
 }
 
 interface RedisMock {
@@ -195,7 +207,17 @@ export function createPrismaMock(): PrismaMock {
       create: vi.fn(),
       update: vi.fn(),
     },
+    answer: {
+      findMany: vi.fn(),
+      count: vi.fn(),
+      groupBy: vi.fn(),
+    },
+    response: {
+      findMany: vi.fn(),
+      count: vi.fn(),
+    },
     $transaction,
+    $queryRawUnsafe: vi.fn(),
   };
 }
 

@@ -4,7 +4,7 @@
  * 覆盖：系统状态、登录、初始化注册、邮箱验证注册、Token 管理、登录安全
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { AuthService } from "../../../modules/user/auth/auth.service.js";
@@ -444,6 +444,181 @@ describe("AuthService", () => {
       await expect(authService.login(email, "any")).rejects.toThrow();
       // Lua 脚本内部已处理锁定 set，这里验证 Lua 被调用
       expect(fastify.redis.eval).toHaveBeenCalledTimes(5);
+    });
+  });
+
+  // ============================================================
+  //  US3 — JWT Secret 生产环境强制校验
+  // ============================================================
+
+  describe("JWT Secret 启动校验 (US3)", () => {
+    const OLD_ENV = { ...process.env };
+
+    afterEach(() => {
+      process.env = { ...OLD_ENV };
+    });
+
+    it("生产环境 + 默认密钥 → 构造函数抛出 Error，阻止服务启动", () => {
+      process.env.NODE_ENV = "production";
+      process.env.JWT_SECRET = "dev-secret-change-in-production";
+
+      expect(() => new AuthService(fastify)).toThrow(
+        "生产环境必须设置 JWT_SECRET 环境变量，不得使用默认值。"
+      );
+    });
+
+    it("生产环境 + 未设置 JWT_SECRET → 构造函数抛出 Error", () => {
+      process.env.NODE_ENV = "production";
+      delete process.env.JWT_SECRET;
+
+      // JWT_SECRET 不存在时使用 ?? fallback → 等于默认值
+      expect(() => new AuthService(fastify)).toThrow(
+        "生产环境必须设置 JWT_SECRET 环境变量"
+      );
+    });
+
+    it("生产环境 + 空字符串 JWT_SECRET → 构造函数抛出 Error", () => {
+      process.env.NODE_ENV = "production";
+      process.env.JWT_SECRET = "   ";
+
+      expect(() => new AuthService(fastify)).toThrow(
+        "生产环境必须设置 JWT_SECRET 环境变量"
+      );
+    });
+
+    it("生产环境 + 自定义安全密钥 → 正常实例化", () => {
+      process.env.NODE_ENV = "production";
+      process.env.JWT_SECRET = "my-secure-random-secret-64-chars-long";
+
+      expect(() => new AuthService(fastify)).not.toThrow();
+    });
+
+    it("开发环境 + 未设置密钥 → 正常实例化并输出警告日志", () => {
+      process.env.NODE_ENV = "development";
+      delete process.env.JWT_SECRET;
+
+      expect(() => new AuthService(fastify)).not.toThrow();
+      expect(fastify.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining("开发环境使用默认 JWT_SECRET")
+      );
+    });
+  });
+
+  // ============================================================
+  //  US4 — refreshToken 操作顺序安全性
+  // ============================================================
+
+  describe("refreshToken — 操作顺序安全性 (US4)", () => {
+    const user = { ...MOCK_USER, id: BigInt(2), status: 1 };
+
+    beforeEach(() => {
+      fastify.prisma.user.findFirst.mockResolvedValue(user);
+      fastify.prisma.userRole.findMany.mockResolvedValue([{ role_code: "user" }]);
+      fastify.redis.set.mockResolvedValue("OK");
+      fastify.redis.exists.mockResolvedValue(0); // Token 不在黑名单
+    });
+
+    it("新 Token 在黑名单写入之前已生成（先生成新 → 再失效旧）", async () => {
+      const oldRefresh = jwt.sign(
+        { sub: user.id.toString(), type: "refresh", jti: "order-test-jti" },
+        process.env.JWT_SECRET!,
+        { expiresIn: 604800 }
+      );
+
+      // 记录 set 调用的 key 顺序
+      const setKeys: string[] = [];
+      fastify.redis.set.mockImplementation((key: string) => {
+        setKeys.push(key);
+        return Promise.resolve("OK");
+      });
+
+      await authService.refreshToken(oldRefresh);
+
+      // USER_ACCESS 更新应该在 JWT_BLACKLIST 写入之前发生
+      const accessUpdateIdx = setKeys.findIndex(k => k.includes("auth:user:access:"));
+      const blacklistIdx = setKeys.findIndex(k => k.includes("auth:jwt:blacklist:"));
+      expect(accessUpdateIdx).toBeGreaterThan(-1);
+      expect(blacklistIdx).toBeGreaterThan(-1);
+      // 先生成新 Token（更新 USER_ACCESS） → 再拉黑旧 Token
+      expect(accessUpdateIdx).toBeLessThan(blacklistIdx);
+    });
+
+    it("Redis 黑名单写入失败 → 新 Token 仍然正常返回，旧 Token 仍可用", async () => {
+      const oldRefresh = jwt.sign(
+        { sub: user.id.toString(), type: "refresh", jti: "redis-fail-jti" },
+        process.env.JWT_SECRET!,
+        { expiresIn: 604800 }
+      );
+
+      // 模拟：generateTokens 成功（前 N 次 set），但 blacklistToken 写入失败
+      // getUserRoles 缓存会触发 2 次 set（锁 + 数据），generateTokens 触发 1 次，
+      // 之后的 set 调用为黑名单写入 → 模拟失败
+      let setCallCount = 0;
+      fastify.redis.set.mockImplementation(() => {
+        setCallCount++;
+        // 黑名单写入在第 4+ 次 set 调用时模拟 Redis 不可用
+        if (setCallCount >= 4) {
+          return Promise.reject(new Error("Redis connection lost"));
+        }
+        return Promise.resolve("OK");
+      });
+
+      // 不应抛出异常，新 Token 应正常返回
+      const result = await authService.refreshToken(oldRefresh);
+
+      expect(result.token).toBeTruthy();
+      expect(result.refreshToken).toBeTruthy();
+      // 错误应被记录到日志
+      expect(fastify.log.error).toHaveBeenCalled();
+    });
+
+    it("已拉黑的 Refresh Token 重复使用 → 抛出 REFRESH_TOKEN_INVALID（幂等性）", async () => {
+      const usedRefresh = jwt.sign(
+        { sub: user.id.toString(), type: "refresh", jti: "replay-jti" },
+        process.env.JWT_SECRET!,
+        { expiresIn: 604800 }
+      );
+
+      // 该 jti 已在黑名单中
+      fastify.redis.exists.mockResolvedValue(1);
+
+      await expect(authService.refreshToken(usedRefresh)).rejects.toMatchObject({
+        statusCode: 401,
+        code: BizCode.REFRESH_TOKEN_INVALID,
+      });
+    });
+
+    it("进程在生成新 Token 后、黑名单写入前崩溃 → 旧 Token 仍可用（用户可以重试）", async () => {
+      const oldRefresh = jwt.sign(
+        { sub: user.id.toString(), type: "refresh", jti: "crash-recovery-jti" },
+        process.env.JWT_SECRET!,
+        { expiresIn: 604800 }
+      );
+
+      // 第一次刷新：模拟黑名单写入失败（如同进程在 blacklistToken 时崩溃）
+      let setCallCount = 0;
+      fastify.redis.set.mockImplementation(() => {
+        setCallCount++;
+        // getUserRoles 缓存(2次) + generateTokens(1次) 都成功，黑名单写入失败
+        if (setCallCount >= 4) {
+          return Promise.reject(new Error("Simulated crash"));
+        }
+        return Promise.resolve("OK");
+      });
+
+      await authService.refreshToken(oldRefresh);
+      // 应正常返回（黑名单失败被 catch）
+
+      // 重置 mock：模拟用户重试
+      vi.clearAllMocks();
+      fastify.redis.get.mockResolvedValue(null);
+      fastify.redis.set.mockResolvedValue("OK");
+      fastify.redis.exists.mockResolvedValue(0); // 旧 Token 不在黑名单（写入失败）
+      fastify.prisma.user.findFirst.mockResolvedValue(user);
+      fastify.prisma.userRole.findMany.mockResolvedValue([{ role_code: "user" }]);
+
+      // 用户可以使用旧 Refresh Token 再次刷新
+      await expect(authService.refreshToken(oldRefresh)).resolves.toBeDefined();
     });
   });
 });

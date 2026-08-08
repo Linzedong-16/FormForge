@@ -94,6 +94,26 @@ export class AuthService {
     this.accessExpire = Number(process.env.JWT_ACCESS_EXPIRE ?? 3600);
     this.refreshExpire = Number(process.env.JWT_REFRESH_EXPIRE ?? 604800);
     this.cache = createCache(fastify);
+
+    // P0-3: 生产环境 JWT Secret 强制校验
+    // 生产环境下使用默认密钥或空字符串将导致服务拒绝启动，
+    // 防止攻击者利用公开硬编码密钥伪造 JWT Token
+    const isProduction = process.env.NODE_ENV === "production";
+    const isWeakSecret =
+      !process.env.JWT_SECRET ||
+      process.env.JWT_SECRET === "dev-secret-change-in-production" ||
+      process.env.JWT_SECRET.trim() === "";
+
+    if (isProduction && isWeakSecret) {
+      throw new Error(
+        "生产环境必须设置 JWT_SECRET 环境变量，不得使用默认值。" +
+          "请生成一个安全的随机字符串并设置到 JWT_SECRET 环境变量中。"
+      );
+    }
+
+    if (!isProduction && isWeakSecret) {
+      this.fastify.log.warn("开发环境使用默认 JWT_SECRET，生产环境必须覆盖此值。");
+    }
   }
 
   // ============================================================
@@ -526,19 +546,33 @@ export class AuthService {
       throw new AuthError("用户不存在或已被禁用", 401, BizCode.REFRESH_TOKEN_INVALID);
     }
 
-    // 将旧 Refresh Token 加入黑名单
-    await this.blacklistToken(refreshToken);
+    // P0-4: 先生成新 Token，再失效旧 Token
+    // 避免「先拉黑旧 Token → 进程崩溃 → 新 Token 未生成」导致用户永久锁定
+    // 若 Redis 在黑名单写入时不可用，新 Token 已生效且旧 Token 仍可用（安全降级）
 
-    // 将旧 Access Token 加入黑名单（精准失效）
-    const oldJti = await this.fastify.redis.get(`${USER_ACCESS_PREFIX}${decoded.sub}`);
-    if (oldJti) {
-      await this.blacklistTokenByJti(oldJti, this.accessExpire);
-    }
+    // 1. 保存旧 Access Token JTI（在生成新 Token 前获取，因为 generateTokens 会覆盖）
+    const oldAccessJti = await this.fastify.redis.get(`${USER_ACCESS_PREFIX}${decoded.sub}`);
 
-    // 生成新 Token（generateTokens 内部会更新 USER_ACCESS_PREFIX）
+    // 2. 获取角色 + 生成新 Token（generateTokens 内部更新 USER_ACCESS_PREFIX）
     const roles = await this.getUserRoles(user.id);
     const role = roles.includes("super_admin") ? "super_admin" : "user";
     const tokens = await this.generateTokens({ id: user.id.toString(), email: user.email, role });
+
+    // 3. 旧 Refresh Token 加入黑名单（失败不阻塞，已生成的新 Token 正常返回）
+    try {
+      await this.blacklistToken(refreshToken);
+    } catch (err) {
+      this.fastify.log.error({ err }, "Refresh Token 黑名单写入失败，旧 Token 仍可用");
+    }
+
+    // 4. 旧 Access Token 加入黑名单（精准失效）
+    if (oldAccessJti) {
+      try {
+        await this.blacklistTokenByJti(oldAccessJti, this.accessExpire);
+      } catch (err) {
+        this.fastify.log.error({ err }, "Access Token 黑名单写入失败");
+      }
+    }
 
     // 审计日志
     createAuditLog(this.fastify, user.id, "refresh_token", "user", user.id).catch(() => {});
@@ -662,15 +696,27 @@ export class AuthService {
 
   /** 将 Token 加入黑名单（自动从 Payload 提取 jti） */
   private async blacklistToken(token: string): Promise<void> {
+    let jti: string | undefined;
+    let exp: number | undefined;
     try {
       const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8"));
-      if (payload.jti && payload.exp) {
-        const now = Math.floor(Date.now() / 1000);
-        const ttl = Math.max(1, payload.exp - now);
-        await this.fastify.redis.set(`${JWT_BLACKLIST_PREFIX}${payload.jti}`, "1", "EX", ttl);
-      }
+      jti = payload.jti;
+      exp = payload.exp;
     } catch {
-      // 解码失败忽略
+      // 解码失败忽略（Token 格式异常）
+      return;
+    }
+
+    if (!jti || !exp) return;
+
+    const now = Math.floor(Date.now() / 1000);
+    const ttl = Math.max(1, exp - now);
+
+    // Redis 写入失败单独处理：记录日志但不抛出，避免阻塞主流程
+    try {
+      await this.fastify.redis.set(`${JWT_BLACKLIST_PREFIX}${jti}`, "1", "EX", ttl);
+    } catch (err) {
+      this.fastify.log.error({ err, jti }, "JWT 黑名单写入 Redis 失败");
     }
   }
 

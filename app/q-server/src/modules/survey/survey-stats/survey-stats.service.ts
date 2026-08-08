@@ -127,6 +127,10 @@ export class SurveyStatsService {
   /**
    * 获取单个问卷的详细统计分析
    *
+   * 性能优化（P0-1/P0-2）：
+   *   - 使用按 component_id 分组的批量 SQL 替代逐题独立查询，数据库查询次数与题目数量解耦
+   *   - Promise.all 仅发起实际使用的查询，移除已废弃的全量组件查询
+   *
    * 包含：
    *   - 答卷总量、完成率
    *   - 每日答卷趋势
@@ -149,79 +153,21 @@ export class SurveyStatsService {
 
         const surveyTitle = survey.title;
 
-        // 并行查询
-        const [totalResponses, validResponses, components] = await Promise.all([
+        // 并行查询：答卷总数 + 有效答卷数 + 题目组件 + 每日趋势
+        // 仅统计题目组件（排除 text_note 展示型），不再包含已废弃的全量组件查询
+        const [totalResponses, validResponses, components, dailyTrend] = await Promise.all([
           this.fastify.prisma.response.count({ where: { survey_id: surveyId } }),
           this.fastify.prisma.response.count({ where: { survey_id: surveyId, status: 1 } }),
-          // 仅统计题目组件（排除 text_note 展示型）
           this.fastify.prisma.surveyComponent.findMany({
             where: { survey_id: surveyId, type: { notIn: Array.from(NON_QUESTION_TYPES) } },
             orderBy: { order_index: "asc" },
             select: { id: true, type: true, config: true, order_index: true }
           }),
-          // 全量组件（用于复原组件名）
-          this.fastify.prisma.surveyComponent.findMany({
-            where: { survey_id: surveyId },
-            orderBy: { order_index: "asc" },
-            select: { id: true, type: true, config: true, order_index: true }
-          })
+          this.getSurveyDailyTrend(surveyId)
         ]);
 
-        // 每日趋势
-        const dailyTrend = await this.getSurveyDailyTrend(surveyId);
-
-        // 逐题分析
-        const questions: QuestionStats[] = [];
-
-        for (const comp of components) {
-          const componentId = bigIntToStr(comp.id);
-          const compType = comp.type;
-          const compConfig = comp.config as Record<string, unknown>;
-          const compTitle = extractTitleFromConfig(compConfig) ?? TYPE_NAME_MAP[compType] ?? compType;
-
-          const stat: QuestionStats = {
-            component_id: componentId,
-            type: compType,
-            title: compTitle,
-            order_index: comp.order_index,
-            total_answers: 0
-          };
-
-          // 该题的答案总数
-          const answerCount = await this.fastify.prisma.answer.count({
-            where: { component_id: comp.id }
-          });
-          stat.total_answers = answerCount;
-
-          if (answerCount === 0) {
-            questions.push(stat);
-            continue;
-          }
-
-          // 按题型分别处理
-          if (JSON_ARRAY_TYPES.has(compType)) {
-            // 多选 / 图片多选 / 排序 → 展开 JSON 数组聚合
-            stat.options_distribution = await this.getJsonArrayDistribution(comp.id, compConfig, compType);
-          } else if (NUMERIC_TYPES.has(compType)) {
-            // 评分 / 滑块 → 数值聚合 + 分布
-            const numStats = await this.getNumericStats(comp.id);
-            stat.average = numStats.average;
-            stat.min = numStats.min;
-            stat.max = numStats.max;
-            stat.options_distribution = await this.getNumericDistribution(comp.id, compConfig);
-          } else if (TEXT_TYPES.has(compType) || compType.startsWith("personal-info-")) {
-            // 文本 / 个人信息 → 抽样
-            stat.sample_answers = await this.getTextSamples(comp.id);
-          } else if (compType === "matrix_single") {
-            // 矩阵单选 → 解析 JSON 统计
-            stat.options_distribution = await this.getMatrixDistribution(comp.id, compConfig);
-          } else {
-            // 单选 / 下拉 / 图片单选 / 日期 / 级联 → GROUP BY value
-            stat.options_distribution = await this.getSingleValueDistribution(comp.id, compConfig, compType);
-          }
-
-          questions.push(stat);
-        }
+        // 逐题分析 — 使用批量聚合，避免 N+1 查询
+        const questions = await this.buildQuestionStats(components);
 
         // 完成率
         const completionRate = totalResponses > 0 ? Math.round((validResponses / totalResponses) * 100 * 10) / 10 : 0;
@@ -599,113 +545,304 @@ export class SurveyStatsService {
     return raw.map(r => ({ date: r.date, count: Number(r.count) }));
   }
 
-  /** 单值聚合（单选/下拉/图片单选/日期/级联） */
-  private async getSingleValueDistribution(
-    componentId: bigint,
-    config: Record<string, unknown>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    compType: string
-  ): Promise<OptionDistribution[]> {
-    const raw = await this.fastify.prisma.answer.groupBy({
-      by: ["value"],
-      where: { component_id: componentId, value: { not: null } },
-      _count: { value: true },
-      orderBy: { _count: { value: "desc" } }
-    });
+  // ════════════════════════════════════════════════════════════
+  //  批量聚合（P0-1: 消除 N+1 查询）
+  // ════════════════════════════════════════════════════════════
 
-    const total = raw.reduce((sum, r) => sum + r._count.value, 0);
+  /**
+   * 批量构建所有题目的统计数据
+   *
+   * 策略：
+   *   1. 按题型将组件分组（单值/JSON数组/数值/文本/矩阵）
+   *   2. 每种题型一次批量 SQL 完成该类型所有题目的聚合
+   *   3. 文本题和矩阵题保持逐题处理（逻辑复杂，数量通常较少）
+   *
+   * @param components 题目组件列表（已排除 text_note 等非题目类型）
+   */
+  private async buildQuestionStats(
+    components: Array<{ id: bigint; type: string; config: unknown; order_index: number }>
+  ): Promise<QuestionStats[]> {
+    if (components.length === 0) return [];
 
-    // 用 config 中的 options 还原选项标签
-    const optionsMap = extractOptionLabels(config);
+    // 按题型分类组件 ID
+    const singleValueIds: bigint[] = []; // 单选/下拉/图片单选/日期/级联
+    const jsonArrayIds: bigint[] = []; // 多选/图片多选/排序
+    const numericIds: bigint[] = []; // 评分/滑块
+    const textIds: bigint[] = []; // 文本/个人信息
+    const matrixIds: bigint[] = []; // 矩阵单选
 
-    return raw.map(r => {
-      const val = r.value ?? "";
-      const label = optionsMap.get(val) ?? val;
-      return {
-        label,
-        count: r._count.value,
-        percentage: total > 0 ? Math.round((r._count.value / total) * 1000) / 10 : 0
+    for (const comp of components) {
+      if (JSON_ARRAY_TYPES.has(comp.type)) {
+        jsonArrayIds.push(comp.id);
+      } else if (NUMERIC_TYPES.has(comp.type)) {
+        numericIds.push(comp.id);
+      } else if (TEXT_TYPES.has(comp.type) || comp.type.startsWith("personal-info-")) {
+        textIds.push(comp.id);
+      } else if (comp.type === "matrix_single") {
+        matrixIds.push(comp.id);
+      } else {
+        singleValueIds.push(comp.id);
+      }
+    }
+
+    const componentIds = components.map(c => c.id);
+
+    // 并行执行所有批量查询 + 逐题查询
+    const [answerCountMap, singleValueMap, jsonArrayMap, numericStatsMap, numericDistMap] = await Promise.all([
+      this.batchAnswerCounts(componentIds),
+      singleValueIds.length > 0
+        ? this.batchSingleValueDistribution(singleValueIds)
+        : Promise.resolve(new Map<string, OptionDistribution[]>()),
+      jsonArrayIds.length > 0
+        ? this.batchJsonArrayDistribution(jsonArrayIds)
+        : Promise.resolve(new Map<string, OptionDistribution[]>()),
+      numericIds.length > 0
+        ? this.batchNumericStats(numericIds)
+        : Promise.resolve(new Map<string, { average: number; min: number; max: number }>()),
+      numericIds.length > 0
+        ? this.batchNumericDistribution(numericIds)
+        : Promise.resolve(new Map<string, OptionDistribution[]>())
+    ]);
+
+    // 文本题：逐题抽样（需 LIMIT，不适合批量）
+    const textSampleMap = new Map<string, string[]>();
+    for (const id of textIds) {
+      textSampleMap.set(bigIntToStr(id), await this.getTextSamples(id));
+    }
+
+    // 矩阵题：逐题解析 JSON（格式复杂）
+    const matrixDistMap = new Map<string, OptionDistribution[]>();
+    for (const id of matrixIds) {
+      const comp = components.find(c => c.id === id);
+      if (comp) {
+        matrixDistMap.set(
+          bigIntToStr(id),
+          await this.getMatrixDistribution(id, comp.config as Record<string, unknown>)
+        );
+      }
+    }
+
+    // ─── 组装结果 ──────────────────────────────────────────
+
+    const questions: QuestionStats[] = [];
+
+    for (const comp of components) {
+      const componentId = bigIntToStr(comp.id);
+      const compType = comp.type;
+      const compConfig = comp.config as Record<string, unknown>;
+      const compTitle = extractTitleFromConfig(compConfig) ?? TYPE_NAME_MAP[compType] ?? compType;
+
+      const stat: QuestionStats = {
+        component_id: componentId,
+        type: compType,
+        title: compTitle,
+        order_index: comp.order_index,
+        total_answers: answerCountMap.get(componentId) ?? 0
       };
-    });
+
+      if (stat.total_answers === 0) {
+        questions.push(stat);
+        continue;
+      }
+
+      // 按题型从对应 Map 中获取预计算的聚合结果
+      if (JSON_ARRAY_TYPES.has(compType)) {
+        stat.options_distribution = jsonArrayMap.get(componentId) ?? [];
+      } else if (NUMERIC_TYPES.has(compType)) {
+        const numStats = numericStatsMap.get(componentId);
+        if (numStats) {
+          stat.average = numStats.average;
+          stat.min = numStats.min;
+          stat.max = numStats.max;
+        }
+        stat.options_distribution = numericDistMap.get(componentId) ?? [];
+      } else if (TEXT_TYPES.has(compType) || compType.startsWith("personal-info-")) {
+        stat.sample_answers = textSampleMap.get(componentId) ?? [];
+      } else if (compType === "matrix_single") {
+        stat.options_distribution = matrixDistMap.get(componentId) ?? [];
+      } else {
+        // 单选 / 下拉 / 图片单选 / 日期 / 级联
+        stat.options_distribution = singleValueMap.get(componentId) ?? [];
+      }
+
+      questions.push(stat);
+    }
+
+    return questions;
   }
 
-  /** JSON 数组聚合（多选/图片多选/排序） */
-  private async getJsonArrayDistribution(
-    componentId: bigint,
-    config: Record<string, unknown>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    compType: string
-  ): Promise<OptionDistribution[]> {
-    const raw = await this.fastify.prisma.$queryRawUnsafe<Array<{ elem: string; count: bigint }>>(
-      `SELECT elem, COUNT(*) as count
+  /** 批量查询所有题目的答案计数 */
+  private async batchAnswerCounts(componentIds: bigint[]): Promise<Map<string, number>> {
+    const raw = await this.fastify.prisma.$queryRawUnsafe<Array<{ component_id: bigint; count: bigint }>>(
+      `SELECT component_id, COUNT(*) as count
        FROM answers
-       CROSS JOIN LATERAL jsonb_array_elements_text(values) AS elem
-       WHERE component_id = $1 AND values IS NOT NULL
-       GROUP BY elem
-       ORDER BY count DESC`,
-      componentId
+       WHERE component_id = ANY($1::bigint[])
+       GROUP BY component_id`,
+      componentIds
     );
 
-    const total = raw.reduce((sum, r) => sum + Number(r.count), 0);
-    const optionsMap = extractOptionLabels(config);
-
-    return raw.map(r => ({
-      label: optionsMap.get(r.elem) ?? r.elem,
-      count: Number(r.count),
-      percentage: total > 0 ? Math.round((Number(r.count) / total) * 1000) / 10 : 0
-    }));
+    const map = new Map<string, number>();
+    for (const row of raw) {
+      map.set(bigIntToStr(row.component_id), Number(row.count));
+    }
+    return map;
   }
 
-  /** 数值聚合（评分/滑块） */
-  private async getNumericStats(componentId: bigint): Promise<{
-    average: number;
-    min: number;
-    max: number;
-  }> {
-    const agg = await this.fastify.prisma.$queryRawUnsafe<
-      Array<{
-        avg: number | null;
-        min: number | null;
-        max: number | null;
-      }>
+  /**
+   * 批量单值聚合（单选/下拉/图片单选/日期/级联）
+   *
+   * 一次 SQL 完成所有同类型题目的 GROUP BY component_id, value 统计
+   */
+  private async batchSingleValueDistribution(componentIds: bigint[]): Promise<Map<string, OptionDistribution[]>> {
+    const raw = await this.fastify.prisma.$queryRawUnsafe<
+      Array<{ component_id: bigint; value: string; count: bigint }>
     >(
-      `SELECT
+      `SELECT component_id, value, COUNT(*) as count
+       FROM answers
+       WHERE component_id = ANY($1::bigint[]) AND value IS NOT NULL
+       GROUP BY component_id, value
+       ORDER BY component_id, count DESC`,
+      componentIds
+    );
+
+    // 按 component_id 分组
+    const grouped = new Map<string, Array<{ value: string; count: number }>>();
+    for (const row of raw) {
+      const cid = bigIntToStr(row.component_id);
+      if (!grouped.has(cid)) grouped.set(cid, []);
+      grouped.get(cid)!.push({ value: row.value, count: Number(row.count) });
+    }
+
+    // 计算百分比
+    const result = new Map<string, OptionDistribution[]>();
+    for (const [cid, rows] of grouped) {
+      const total = rows.reduce((sum, r) => sum + r.count, 0);
+      result.set(
+        cid,
+        rows.map(r => ({
+          label: r.value,
+          count: r.count,
+          percentage: total > 0 ? Math.round((r.count / total) * 1000) / 10 : 0
+        }))
+      );
+    }
+    return result;
+  }
+
+  /**
+   * 批量 JSON 数组聚合（多选/图片多选/排序）
+   *
+   * 使用 CROSS JOIN LATERAL jsonb_array_elements_text 展开 values 数组，
+   * 一次 SQL 完成所有多选/排序题的选项分布统计
+   */
+  private async batchJsonArrayDistribution(componentIds: bigint[]): Promise<Map<string, OptionDistribution[]>> {
+    const raw = await this.fastify.prisma.$queryRawUnsafe<Array<{ component_id: bigint; elem: string; count: bigint }>>(
+      `SELECT a.component_id, elem, COUNT(*) as count
+       FROM answers a
+       CROSS JOIN LATERAL jsonb_array_elements_text(a.values) AS elem
+       WHERE a.component_id = ANY($1::bigint[]) AND a.values IS NOT NULL
+       GROUP BY a.component_id, elem
+       ORDER BY a.component_id, count DESC`,
+      componentIds
+    );
+
+    // 按 component_id 分组
+    const grouped = new Map<string, Array<{ elem: string; count: number }>>();
+    for (const row of raw) {
+      const cid = bigIntToStr(row.component_id);
+      if (!grouped.has(cid)) grouped.set(cid, []);
+      grouped.get(cid)!.push({ elem: row.elem, count: Number(row.count) });
+    }
+
+    // 计算百分比
+    const result = new Map<string, OptionDistribution[]>();
+    for (const [cid, rows] of grouped) {
+      const total = rows.reduce((sum, r) => sum + r.count, 0);
+      result.set(
+        cid,
+        rows.map(r => ({
+          label: r.elem,
+          count: r.count,
+          percentage: total > 0 ? Math.round((r.count / total) * 1000) / 10 : 0
+        }))
+      );
+    }
+    return result;
+  }
+
+  /**
+   * 批量数值聚合（评分/滑块）
+   *
+   * 一次 SQL 完成所有数值题的 AVG/MIN/MAX 统计
+   */
+  private async batchNumericStats(
+    componentIds: bigint[]
+  ): Promise<Map<string, { average: number; min: number; max: number }>> {
+    const raw = await this.fastify.prisma.$queryRawUnsafe<
+      Array<{ component_id: bigint; avg: number | null; min: number | null; max: number | null }>
+    >(
+      `SELECT component_id,
          AVG(value::numeric) as avg,
          MIN(value::numeric) as min,
          MAX(value::numeric) as max
        FROM answers
-       WHERE component_id = $1 AND value IS NOT NULL AND value ~ '^[0-9]+(\\.[0-9]+)?$'`,
-      componentId
+       WHERE component_id = ANY($1::bigint[])
+         AND value IS NOT NULL
+         AND value ~ '^[0-9]+(\\.[0-9]+)?$'
+       GROUP BY component_id`,
+      componentIds
     );
 
-    const row = agg[0];
-    return {
-      average: row?.avg ? Math.round(Number(row.avg) * 10) / 10 : 0,
-      min: row?.min ? Number(row.min) : 0,
-      max: row?.max ? Number(row.max) : 0
-    };
+    const map = new Map<string, { average: number; min: number; max: number }>();
+    for (const row of raw) {
+      map.set(bigIntToStr(row.component_id), {
+        average: row.avg ? Math.round(Number(row.avg) * 10) / 10 : 0,
+        min: row.min ? Number(row.min) : 0,
+        max: row.max ? Number(row.max) : 0
+      });
+    }
+    return map;
   }
 
-  /** 数值分布（评分/滑块） */
-  private async getNumericDistribution(
-    componentId: bigint,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    config: Record<string, unknown>
-  ): Promise<OptionDistribution[]> {
-    const raw = await this.fastify.prisma.answer.groupBy({
-      by: ["value"],
-      where: { component_id: componentId, value: { not: null } },
-      _count: { value: true },
-      orderBy: { value: "asc" }
-    });
+  /**
+   * 批量数值分布（评分/滑块）
+   *
+   * 一次 SQL 完成所有数值题的 value 分布统计
+   */
+  private async batchNumericDistribution(componentIds: bigint[]): Promise<Map<string, OptionDistribution[]>> {
+    const raw = await this.fastify.prisma.$queryRawUnsafe<
+      Array<{ component_id: bigint; value: string; count: bigint }>
+    >(
+      `SELECT component_id, value, COUNT(*) as count
+       FROM answers
+       WHERE component_id = ANY($1::bigint[]) AND value IS NOT NULL
+       GROUP BY component_id, value
+       ORDER BY component_id, value`,
+      componentIds
+    );
 
-    const total = raw.reduce((sum, r) => sum + r._count.value, 0);
+    // 按 component_id 分组
+    const grouped = new Map<string, Array<{ value: string; count: number }>>();
+    for (const row of raw) {
+      const cid = bigIntToStr(row.component_id);
+      if (!grouped.has(cid)) grouped.set(cid, []);
+      grouped.get(cid)!.push({ value: row.value, count: Number(row.count) });
+    }
 
-    return raw.map(r => ({
-      label: r.value ?? "",
-      count: r._count.value,
-      percentage: total > 0 ? Math.round((r._count.value / total) * 1000) / 10 : 0
-    }));
+    // 计算百分比
+    const result = new Map<string, OptionDistribution[]>();
+    for (const [cid, rows] of grouped) {
+      const total = rows.reduce((sum, r) => sum + r.count, 0);
+      result.set(
+        cid,
+        rows.map(r => ({
+          label: r.value,
+          count: r.count,
+          percentage: total > 0 ? Math.round((r.count / total) * 1000) / 10 : 0
+        }))
+      );
+    }
+    return result;
   }
 
   /** 文本抽样 */
