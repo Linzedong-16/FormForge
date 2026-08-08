@@ -13,6 +13,15 @@
 // 后端服务：app/q-server/src/modules/survey/survey.service.ts
 // ──────────────────────────────────────────────────────────────────────────────
 
+// 动态表单规则配置类型统一以 packages/survey-engine 为权威来源，此处仅重导出，不重复定义。
+// 注意：必须从 logic/types 子路径导入，不能从包根入口导入——根入口 index.ts 会二次导出
+// componentMap/useEditorStore 等大量仅供浏览器/Vite 环境使用的实现（.vue 组件、window 全局对象等），
+// 一旦被导入会拖累 tsc 对整个依赖图做类型检查，导致运行在 Node 环境的 q-server 编译失败；
+// logic/types 是纯类型 + 函数签名声明文件，不含任何浏览器专属依赖，是唯一安全的跨包类型来源。
+import type { QuestionLogicConfig } from "monorepo-survey-engine/logic/types.js";
+
+export type { QuestionLogicConfig } from "monorepo-survey-engine/logic/types.js";
+
 // ============================================================
 //  1. 枚举与字面量类型
 // ============================================================
@@ -76,6 +85,13 @@ export interface SurveyComponentPayload {
   order_index: number;
   /** 是否必填：0 非必填 / 1 必填 */
   required: 0 | 1;
+  /**
+   * 题目稳定标识（survey_components.client_key），供动态表单规则引用题目
+   * 新建题目由前端生成 UUID v4；既有题目原样透传，缺省时后端自动生成
+   */
+  client_key?: string;
+  /** 动态表单规则配置（survey_components.logic），未启用规则时为 null/undefined */
+  logic?: QuestionLogicConfig | null;
 }
 
 /**
@@ -282,6 +298,11 @@ export interface AnswerItem {
   value?: string;
   /** 多选答案数组 */
   values?: string[];
+  /**
+   * 答题状态（answers.answer_status）：0 正常作答 / 1 因显示规则隐藏跳过 / 2 可见但留空
+   * 历史客户端不携带该字段时，后端保持既有行为（仅为有值题目插入行）
+   */
+  answer_status?: 0 | 1 | 2;
 }
 
 // ============================================================

@@ -17,37 +17,38 @@ datasource db {
 // 1. 用户表 (users)
 // ============================================================
 model User {
-  id            BigInt    @id @default(autoincrement())
-  email         String    @unique
-  password_hash String
-  username      String
-  role          String    @default("user") // admin / user
-  avatar_url    String?
-  status        Int       @default(1) // 0:禁用 1:启用
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  last_login_at      DateTime?
+  id                  BigInt    @id @default(autoincrement())
+  email               String    @unique
+  password_hash       String
+  username            String
+  role                String    @default("user") // admin / user
+  avatar_url          String?
+  status              Int       @default(1) // 0:禁用 1:启用
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+  last_login_at       DateTime?
   password_updated_at DateTime? // NULL = 从未改密，首次登录强制修改
-  deleted_at         DateTime? // 软删除标记
-  deleted_by         BigInt?   // 删除操作人 ID
+  deleted_at          DateTime? // 软删除标记
+  deleted_by          BigInt? // 删除操作人 ID
 
   // 关联关系
-  surveys           Survey[]
-  templates         Template[]
-  responses         Response[]
-  tokens            ApiToken[]
-  audit_logs        AuditLog[]         @relation("AuditLogUser")
-  permissions       SurveyPermission[]
-  user_roles        UserRole[]
-  submitted_reviews Review[]           @relation("ReviewSubmitter") // 自己提交的审核
-  reviewed_reviews  Review[]           @relation("ReviewReviewer") // 自己审核的记录
-  template_ratings  TemplateRating[] // 自己对模板的评分
-  profile           UserProfile? // 用户资料（1:1）
-  media_assets      MediaAsset[]            @relation("MediaAssetUploader") // 自己上传的物料
-  reviewed_media_assets MediaAsset[]         @relation("MediaAssetReviewer") // 自己审核过的物料
-  sent_messages     Message[]               @relation("MessageSender") // 自己发出的消息
-  received_messages Message[]               @relation("MessageRecipient") // 自己收到的消息
+  surveys                  Survey[]
+  templates                Template[]
+  responses                Response[]
+  tokens                   ApiToken[]
+  audit_logs               AuditLog[]              @relation("AuditLogUser")
+  permissions              SurveyPermission[]
+  user_roles               UserRole[]
+  submitted_reviews        Review[]                @relation("ReviewSubmitter") // 自己提交的审核
+  reviewed_reviews         Review[]                @relation("ReviewReviewer") // 自己审核的记录
+  template_ratings         TemplateRating[] // 自己对模板的评分
+  profile                  UserProfile? // 用户资料（1:1）
+  media_assets             MediaAsset[]            @relation("MediaAssetUploader") // 自己上传的物料
+  reviewed_media_assets    MediaAsset[]            @relation("MediaAssetReviewer") // 自己审核过的物料
+  sent_messages            Message[]               @relation("MessageSender") // 自己发出的消息
+  received_messages        Message[]               @relation("MessageRecipient") // 自己收到的消息
   message_broadcast_states MessageBroadcastState[] // 自己对各条广播的已读/隐藏状态
+  knowledge_documents      KnowledgeDocument[] // 自己导入的知识文档（RAG 知识库）
 
   @@index([email])
   @@index([status])
@@ -77,19 +78,19 @@ model Survey {
   deleted_at      DateTime? // 软删除标记
 
   deadline                  DateTime? // 问卷截止时间（此前只存在于 Redis TTL，供消息系统的
-                                       // "即将过期提醒"定时扫描使用，见消息系统 data-model.md §4）
+  // "即将过期提醒"定时扫描使用，见消息系统 data-model.md §4）
   expiring_reminder_sent_at DateTime? // "即将过期"提醒已发送时间，避免重复提醒
   last_milestone_notified   Int       @default(0) // 已通知过的最高答卷里程碑阈值（0/50/100/500）
 
-  review_status  ReviewStatus @default(none) // 审核状态：none / pending / approved / rejected
+  review_status ReviewStatus @default(none) // 审核状态：none / pending / approved / rejected
 
   // 关联关系
-  user             User               @relation(fields: [user_id], references: [id])
-  components       SurveyComponent[]
-  responses        Response[]
-  permissions      SurveyPermission[]
-  reviews          Review[] // 审核记录
-  media_assets     MediaAsset[] // 关联的物料（图片资源）
+  user         User               @relation(fields: [user_id], references: [id])
+  components   SurveyComponent[]
+  responses    Response[]
+  permissions  SurveyPermission[]
+  reviews      Review[] // 审核记录
+  media_assets MediaAsset[] // 关联的物料（图片资源）
 
   @@index([status])
   @@index([created_at])
@@ -113,12 +114,18 @@ model SurveyComponent {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
+  // 稳定题目引用键：动态规则内一律用它引用题目，不用 id/order_index（避免"先删后建"场景下引用失效）
+  client_key String? @db.VarChar(64)
+  // 该题目自身的动态规则配置（显示/隐藏、跳转、选项联动、派生计算），序列化自 QuestionLogicConfig；NULL = 未启用任何规则
+  logic      Json?
+
   // 关联关系
   survey  Survey   @relation(fields: [survey_id], references: [id])
   answers Answer[]
 
   @@index([survey_id])
   @@index([survey_id, order_index])
+  @@index([survey_id, client_key])
   @@map("survey_components")
 }
 
@@ -126,24 +133,25 @@ model SurveyComponent {
 // 4. 模板表 (templates) — 方案B：完全解耦，独立于 Survey 表
 // ============================================================
 model Template {
-  id               BigInt        @id @default(autoincrement())
+  id               BigInt       @id @default(autoincrement())
   user_id          BigInt
   title            String
   description      String?
   category         String? // 模板分类：education / market / hr / customer / event / other
   cover_url        String? // 模板封面图 URL（MinIO 对象存储）
-  download_count   Int           @default(0) // 模板使用次数（用于热门排序）
-  rating           Decimal?      @default(0) @db.Decimal(2, 1) // 模板平均评分 0.0 ~ 5.0
-  review_status    ReviewStatus  @default(approved) // 审核状态：模板上架后默认为 approved
+  download_count   Int          @default(0) // 模板使用次数（用于热门排序）
+  rating           Decimal?     @default(0) @db.Decimal(2, 1) // 模板平均评分 0.0 ~ 5.0
+  review_status    ReviewStatus @default(approved) // 审核状态：模板上架后默认为 approved
   source_survey_id BigInt? // 来源问卷 ID（通过审核的问卷，用于追溯）
-  created_at       DateTime      @default(now())
-  updated_at       DateTime      @updatedAt
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
 
   // 关联关系
   user       User                @relation(fields: [user_id], references: [id])
   components TemplateComponent[]
   ratings    TemplateRating[]
   reviews    Review[]
+  embeddings TemplateEmbedding[] // RAG 检索索引片段（模板审核通过后由 indexer.service.ts 写入）
 
   @@index([user_id])
   @@index([category])
@@ -209,6 +217,9 @@ model Answer {
   value        String? // 单值答案（文本/单选）
   values       Json? // 多选答案数组
   created_at   DateTime @default(now())
+
+  // 区分"正常作答/因规则隐藏跳过/展示但主动留空"：0=正常作答（历史行 NULL 时隐含此值，向后兼容）1=因规则隐藏跳过 2=展示但主动留空
+  answer_status Int? @db.SmallInt
 
   // 关联关系
   response  Response        @relation(fields: [response_id], references: [id])
@@ -419,17 +430,17 @@ model TemplateRating {
 //   - bound_email 与 User.email 解耦，支持换绑流程
 // ============================================================
 model UserProfile {
-  id             BigInt    @id @default(autoincrement())
-  user_id        BigInt    @unique // 与 User 一一对应
-  nickname       String?   @db.VarChar(50) // 用户昵称，最大 50 字符
-  avatar_url     String?   @db.VarChar(500) // 头像 URL（MinIO / 裁剪后上传）
-  occupation     String?   @db.VarChar(100) // 职业，最大 100 字符
-  bio            String?   @db.VarChar(500) // 个人介绍，最大 500 字符（与前端 maxlength 一致）
-  interests      Json?     @default("[]") // 兴趣标签 JSON 数组，如 ["前端","设计"]
-  bound_email    String?   @db.VarChar(255) // 绑定邮箱（与 User.email 解耦，支持换绑）
-  email_verified Boolean   @default(false) // 绑定邮箱是否已验证
-  created_at     DateTime  @default(now())
-  updated_at     DateTime  @updatedAt
+  id             BigInt   @id @default(autoincrement())
+  user_id        BigInt   @unique // 与 User 一一对应
+  nickname       String?  @db.VarChar(50) // 用户昵称，最大 50 字符
+  avatar_url     String?  @db.VarChar(500) // 头像 URL（MinIO / 裁剪后上传）
+  occupation     String?  @db.VarChar(100) // 职业，最大 100 字符
+  bio            String?  @db.VarChar(500) // 个人介绍，最大 500 字符（与前端 maxlength 一致）
+  interests      Json?    @default("[]") // 兴趣标签 JSON 数组，如 ["前端","设计"]
+  bound_email    String?  @db.VarChar(255) // 绑定邮箱（与 User.email 解耦，支持换绑）
+  email_verified Boolean  @default(false) // 绑定邮箱是否已验证
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
   // 关联关系
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -451,14 +462,14 @@ model UserProfile {
 // ============================================================
 model MediaAsset {
   id            BigInt   @id @default(autoincrement())
-  survey_id     BigInt?  // 所属问卷（可为 null，如用户头像不关联任何问卷）
-  user_id       BigInt   // 上传者
+  survey_id     BigInt? // 所属问卷（可为 null，如用户头像不关联任何问卷）
+  user_id       BigInt // 上传者
   resource_type String   @default("image") // 底层资源类型，当前恒为 "image"，为未来非图片类型预留扩展空间
   file_url      String   @db.VarChar(1024) // MinIO 完整访问 URL
-  file_key      String   @db.VarChar(512)  // MinIO 对象 key（如 "survey-images/uuid.png"），删除时需要
-  file_name     String   @db.VarChar(255)  // 原始文件名
-  mime_type     String   @db.VarChar(127)  // MIME 类型（如 "image/png"）
-  file_size     BigInt   // 文件大小（字节）
+  file_key      String   @db.VarChar(512) // MinIO 对象 key（如 "survey-images/uuid.png"），删除时需要
+  file_name     String   @db.VarChar(255) // 原始文件名
+  mime_type     String   @db.VarChar(127) // MIME 类型（如 "image/png"）
+  file_size     BigInt // 文件大小（字节）
   file_type     FileType @default(survey_option_image) // 文件来源类型（细分类别）
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
@@ -561,4 +572,80 @@ model MessageBroadcastState {
   @@unique([message_id, user_id])
   @@index([user_id, is_hidden])
   @@map("message_broadcast_states")
+}
+
+// ============================================================
+// 17. 问卷模板索引片段表 (template_embeddings)
+//
+// 设计目的：
+//   - RAG 检索增强能力（007-rag-retrieval-augmentation）的持久化 Embedding 存储，
+//     由 q-server 独立承担（constitution Principle I），ai-service 不直连本表
+//   - 关联 Template（而非 Survey）：Template 是完全解耦的独立模型
+//   - 模板审核通过后由 review.service.ts 触发全量重建（先删旧片段再写新片段）
+// ============================================================
+model TemplateEmbedding {
+  id          BigInt                 @id @default(autoincrement())
+  template_id BigInt // 关联 Template.id
+  chunk_type  String // 片段类型：overview（标题+描述整体）| question（单个题目）
+  chunk_index Int                    @default(0) // 同一 template 内的片段序号，overview 固定为 0
+  chunk_text  String                 @db.Text // 实际参与 Embedding 计算的原文
+  embedding   Unsupported("vector")? // pgvector 列，真实维度由手写迁移 SQL 指定（见迁移文件注释）
+  metadata    Json                   @default("{}") // 附加信息：题型分布、答卷数、评分等展示快照，避免检索路径 N+1
+  created_at  DateTime               @default(now())
+  updated_at  DateTime               @updatedAt
+
+  // 关联关系
+  template Template @relation(fields: [template_id], references: [id], onDelete: Cascade)
+
+  @@index([template_id])
+  @@map("template_embeddings")
+}
+
+// ============================================================
+// 18. 知识文档表 (knowledge_documents)
+//
+// 设计目的：
+//   - 管理员导入的问卷设计方法论、统计规范等知识文档的元信息与生命周期状态
+//   - is_active 承载软下线语义：置为 false 后其 KnowledgeChunk 立即不再参与检索
+// ============================================================
+model KnowledgeDocument {
+  id         BigInt   @id @default(autoincrement())
+  title      String   @db.VarChar(200)
+  source     String?  @db.VarChar(200) // 文档来源说明（如"内部方法论手册 v2"）
+  is_active  Boolean  @default(true) // 下线标记：置为 false 后其片段不再参与检索
+  created_by BigInt // 关联 User.id（管理员）
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // 关联关系
+  creator User             @relation(fields: [created_by], references: [id])
+  chunks  KnowledgeChunk[]
+
+  @@index([is_active])
+  @@index([created_by])
+  @@map("knowledge_documents")
+}
+
+// ============================================================
+// 19. 知识文档索引片段表 (knowledge_chunks)
+//
+// 设计目的：
+//   - KnowledgeDocument 原文切片后的可检索文本单元，独立于文档表以支撑
+//     document_id 级联删除与 is_active 软下线的检索过滤
+// ============================================================
+model KnowledgeChunk {
+  id          BigInt                 @id @default(autoincrement())
+  document_id BigInt
+  chunk_index Int // 文档内的片段序号，用于还原上下文顺序
+  section     String?                @db.VarChar(200) // 所属章节标题，用于引用来源展示
+  chunk_text  String                 @db.Text
+  embedding   Unsupported("vector")?
+  created_at  DateTime               @default(now())
+  updated_at  DateTime               @updatedAt
+
+  // 关联关系
+  document KnowledgeDocument @relation(fields: [document_id], references: [id], onDelete: Cascade)
+
+  @@index([document_id])
+  @@map("knowledge_chunks")
 }

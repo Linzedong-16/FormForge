@@ -15,6 +15,7 @@
  *   GET    /api/surveys/:id/responses    获取答卷列表
  */
 import type { MockMethod } from "vite-plugin-mock";
+import type { QuestionLogicConfig } from "monorepo-survey-engine";
 import { ok, fail, uid, log } from "../_utils";
 
 // ─── 安全解包工具 ────────────────────────────────────────────
@@ -83,6 +84,10 @@ interface MockComponent {
   required: 0 | 1;
   created_at: string;
   updated_at: string;
+  /** 题目稳定引用键，供动态表单规则引用题目（与后端 survey_components.client_key 对齐） */
+  client_key?: string;
+  /** 动态表单规则配置：显示/隐藏、跳转、选项联动、派生字段 */
+  logic?: QuestionLogicConfig | null;
 }
 
 interface MockSurvey {
@@ -497,6 +502,352 @@ responseStore.push({
 });
 
 log("survey 模块已加载", `(Demo 问卷: /survey/${DEMO_SURVEY_ID}, ${demoComponents.length} 组件, 1 份答卷)`);
+
+// ─── 预填充动态规则测试问卷（e2e 测试专用，与 DEMO_SURVEY 完全独立，不影响其零回归验证） ──────────
+// 10 个组件串联覆盖动态表单引擎的四类核心能力：
+//   q_willing      → 控制 q_reason 的显示/隐藏（baseVisibility=hidden + show 规则）
+//   q_region       → 控制 q_city 的候选选项联动（optionDependency，emptyStrategy=promptFillDependency）
+//   q_eligibility  → 命中"不符合资格"时跳转结束问卷（jump target.type=endSurvey），
+//                    q_after_eligibility 因此不会出现在填写者实际经历的题目路径中
+//   q_score_a/b    → 派生计算字段的数值来源题（滑块）
+//   q_total_visible/q_total_hidden → 对 q_score_a/b 求和的计算字段，分别验证
+//                    treatAsZero/skipCalculation 降级策略与 visibleToFiller:false 的隐藏但仍参与计算
+
+const DYNAMIC_SURVEY_ID = "10002";
+
+const dynamicLogicComponents: MockComponent[] = [
+  // ── 场景1：显示/隐藏的控制题 ──
+  {
+    id: "dyn_comp_01",
+    survey_id: DYNAMIC_SURVEY_ID,
+    type: "single_select",
+    client_key: "q_willing",
+    config: {
+      type: { currentStatus: 2, status: [2, 3, 10, 4], isShow: false, name: "text-type-editor" },
+      title: { status: "您是否愿意参与后续深度访谈？", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
+      options: { status: ["是", "否"], currentStatus: 0, isShow: true, name: "options-editor" },
+      position: { currentStatus: 0, status: ["左对齐", "居中"], isShow: true, name: "position-editor" },
+      titleSize: { currentStatus: 0, status: ["22", "20", "18"], isShow: true, name: "size-editor" },
+      descSize: { currentStatus: 0, status: ["16", "14", "12"], isShow: true, name: "size-editor" },
+      titleWeight: { currentStatus: 0, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      descWeight: { currentStatus: 1, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      titleItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      descItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
+    },
+    order_index: 0,
+    required: 1,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 场景1：默认隐藏，q_willing 选“是”时才显示 ──
+  {
+    id: "dyn_comp_02",
+    survey_id: DYNAMIC_SURVEY_ID,
+    type: "text_input",
+    client_key: "q_reason",
+    logic: {
+      visibility: {
+        baseVisibility: "hidden",
+        rules: [
+          {
+            action: "show",
+            condition: { combinator: "AND", conditions: [{ sourceKey: "q_willing", operator: "eq", value: "是" }] }
+          }
+        ]
+      }
+    },
+    config: {
+      type: { currentStatus: 4, status: [4], isShow: false, name: "text-type-editor" },
+      title: { status: "请简单说明您的顾虑或期待", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
+      placeholder: { status: "请在此输入...", isShow: true, name: "text-input-type-editor" },
+      position: { currentStatus: 0, status: ["左对齐", "居中"], isShow: true, name: "position-editor" },
+      titleSize: { currentStatus: 0, status: ["22", "20", "18"], isShow: true, name: "size-editor" },
+      descSize: { currentStatus: 0, status: ["16", "14", "12"], isShow: true, name: "size-editor" },
+      titleWeight: { currentStatus: 0, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      descWeight: { currentStatus: 1, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      titleItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      descItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
+    },
+    order_index: 1,
+    required: 0,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 场景3：选项联动的控制题 ──
+  {
+    id: "dyn_comp_03",
+    survey_id: DYNAMIC_SURVEY_ID,
+    type: "single_select",
+    client_key: "q_region",
+    config: {
+      type: { currentStatus: 2, status: [2, 3, 10, 4], isShow: false, name: "text-type-editor" },
+      title: { status: "您目前所在的地区？", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
+      options: { status: ["华东", "华南", "西部"], currentStatus: 0, isShow: true, name: "options-editor" },
+      position: { currentStatus: 0, status: ["左对齐", "居中"], isShow: true, name: "position-editor" },
+      titleSize: { currentStatus: 0, status: ["22", "20", "18"], isShow: true, name: "size-editor" },
+      descSize: { currentStatus: 0, status: ["16", "14", "12"], isShow: true, name: "size-editor" },
+      titleWeight: { currentStatus: 0, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      descWeight: { currentStatus: 1, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      titleItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      descItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
+    },
+    order_index: 2,
+    required: 1,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 场景3：候选城市按 q_region 收窄，未作答时提示“请先完成前面依赖的题目” ──
+  {
+    id: "dyn_comp_04",
+    survey_id: DYNAMIC_SURVEY_ID,
+    type: "single_select",
+    client_key: "q_city",
+    logic: {
+      optionDependency: {
+        dependsOnKey: "q_region",
+        optionsByAnswer: {
+          华东: ["上海", "杭州"],
+          华南: ["广州", "深圳"],
+          西部: ["成都", "重庆"]
+        },
+        emptyStrategy: "promptFillDependency"
+      }
+    },
+    config: {
+      type: { currentStatus: 2, status: [2, 3, 10, 4], isShow: false, name: "text-type-editor" },
+      title: { status: "请选择您所在的城市", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
+      options: {
+        status: ["上海", "杭州", "广州", "深圳", "成都", "重庆"],
+        currentStatus: 0,
+        isShow: true,
+        name: "options-editor"
+      },
+      position: { currentStatus: 0, status: ["左对齐", "居中"], isShow: true, name: "position-editor" },
+      titleSize: { currentStatus: 0, status: ["22", "20", "18"], isShow: true, name: "size-editor" },
+      descSize: { currentStatus: 0, status: ["16", "14", "12"], isShow: true, name: "size-editor" },
+      titleWeight: { currentStatus: 0, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      descWeight: { currentStatus: 1, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      titleItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      descItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
+    },
+    order_index: 3,
+    required: 0,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 场景2：跳转控制题，命中“不符合资格”时提前结束问卷 ──
+  {
+    id: "dyn_comp_05",
+    survey_id: DYNAMIC_SURVEY_ID,
+    type: "single_select",
+    client_key: "q_eligibility",
+    logic: {
+      jump: {
+        rules: [
+          {
+            condition: {
+              combinator: "AND",
+              conditions: [{ sourceKey: "q_eligibility", operator: "eq", value: "不符合资格" }]
+            },
+            target: { type: "endSurvey" }
+          }
+        ]
+      }
+    },
+    config: {
+      type: { currentStatus: 2, status: [2, 3, 10, 4], isShow: false, name: "text-type-editor" },
+      title: { status: "您是否符合本次活动的报名资格？", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
+      options: { status: ["符合资格", "不符合资格"], currentStatus: 0, isShow: true, name: "options-editor" },
+      position: { currentStatus: 0, status: ["左对齐", "居中"], isShow: true, name: "position-editor" },
+      titleSize: { currentStatus: 0, status: ["22", "20", "18"], isShow: true, name: "size-editor" },
+      descSize: { currentStatus: 0, status: ["16", "14", "12"], isShow: true, name: "size-editor" },
+      titleWeight: { currentStatus: 0, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      descWeight: { currentStatus: 1, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      titleItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      descItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
+    },
+    order_index: 4,
+    required: 1,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 场景2：跳转命中后应从可见题目路径中彻底消失的验证对象 ──
+  {
+    id: "dyn_comp_06",
+    survey_id: DYNAMIC_SURVEY_ID,
+    type: "text_input",
+    client_key: "q_after_eligibility",
+    config: {
+      type: { currentStatus: 4, status: [4], isShow: false, name: "text-type-editor" },
+      title: { status: "请填写您的报名联系方式", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
+      placeholder: { status: "请在此输入手机号或邮箱...", isShow: true, name: "text-input-type-editor" },
+      position: { currentStatus: 0, status: ["左对齐", "居中"], isShow: true, name: "position-editor" },
+      titleSize: { currentStatus: 0, status: ["22", "20", "18"], isShow: true, name: "size-editor" },
+      descSize: { currentStatus: 0, status: ["16", "14", "12"], isShow: true, name: "size-editor" },
+      titleWeight: { currentStatus: 0, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      descWeight: { currentStatus: 1, status: ["粗体", "正常"], isShow: true, name: "weight-editor" },
+      titleItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      descItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
+    },
+    order_index: 5,
+    required: 0,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 场景4：计算字段的数值来源题（滑块），只有交互过（拖动/输入框 change）才会产生答案 ──
+  {
+    id: "dyn_comp_07",
+    survey_id: DYNAMIC_SURVEY_ID,
+    type: "slider",
+    client_key: "q_score_a",
+    config: {
+      title: { status: "请为方案A打分（0-100）", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
+      sliderConfig: { currentStatus: 0, status: ["0", "100", "1"], isShow: true, name: "slider-config-editor" },
+      position: { currentStatus: 0, status: ["左对齐", "居中对齐"], isShow: true, name: "position-editor" },
+      titleSize: { currentStatus: 0, status: ["22", "20", "18"], isShow: true, name: "size-editor" },
+      descSize: { currentStatus: 0, status: ["16", "14", "12"], isShow: true, name: "size-editor" },
+      titleWeight: { currentStatus: 1, status: ["加粗", "正常"], isShow: true, name: "weight-editor" },
+      descWeight: { currentStatus: 1, status: ["加粗", "正常"], isShow: true, name: "weight-editor" },
+      titleItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      descItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
+    },
+    order_index: 6,
+    required: 0,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 场景4：计算字段的另一个数值来源题（滑块），用于验证 incompleteStrategy 降级（可留空不作答） ──
+  {
+    id: "dyn_comp_08",
+    survey_id: DYNAMIC_SURVEY_ID,
+    type: "slider",
+    client_key: "q_score_b",
+    config: {
+      title: { status: "请为方案B打分（0-100）", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
+      sliderConfig: { currentStatus: 0, status: ["0", "100", "1"], isShow: true, name: "slider-config-editor" },
+      position: { currentStatus: 0, status: ["左对齐", "居中对齐"], isShow: true, name: "position-editor" },
+      titleSize: { currentStatus: 0, status: ["22", "20", "18"], isShow: true, name: "size-editor" },
+      descSize: { currentStatus: 0, status: ["16", "14", "12"], isShow: true, name: "size-editor" },
+      titleWeight: { currentStatus: 1, status: ["加粗", "正常"], isShow: true, name: "weight-editor" },
+      descWeight: { currentStatus: 1, status: ["加粗", "正常"], isShow: true, name: "weight-editor" },
+      titleItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      descItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
+    },
+    order_index: 7,
+    required: 0,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 场景4：派生计算字段（求和，treatAsZero 降级），对填写者可见 ──
+  {
+    id: "dyn_comp_09",
+    survey_id: DYNAMIC_SURVEY_ID,
+    type: "computed_field",
+    client_key: "q_total_visible",
+    logic: {
+      computedField: {
+        formula: { kind: "sum", sourceKeys: ["q_score_a", "q_score_b"] },
+        incompleteStrategy: "treatAsZero",
+        visibleToFiller: true
+      }
+    },
+    config: {
+      title: { status: "两项打分总和（可见）", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
+      position: { currentStatus: 0, status: ["左对齐", "居中对齐"], isShow: true, name: "position-editor" },
+      titleSize: { currentStatus: 0, status: ["22", "20", "18"], isShow: true, name: "size-editor" },
+      descSize: { currentStatus: 0, status: ["16", "14", "12"], isShow: true, name: "size-editor" },
+      titleWeight: { currentStatus: 1, status: ["加粗", "正常"], isShow: true, name: "weight-editor" },
+      descWeight: { currentStatus: 1, status: ["加粗", "正常"], isShow: true, name: "weight-editor" },
+      titleItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      descItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
+    },
+    order_index: 8,
+    required: 0,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  },
+  // ── 场景4：派生计算字段（求和，skipCalculation 降级），visibleToFiller:false，不渲染但仍参与计算 ──
+  {
+    id: "dyn_comp_10",
+    survey_id: DYNAMIC_SURVEY_ID,
+    type: "computed_field",
+    client_key: "q_total_hidden",
+    logic: {
+      computedField: {
+        formula: { kind: "sum", sourceKeys: ["q_score_a", "q_score_b"] },
+        incompleteStrategy: "skipCalculation",
+        visibleToFiller: false
+      }
+    },
+    config: {
+      title: { status: "两项打分总和（隐藏，仅供校验）", isShow: true, name: "title-editor" },
+      desc: { status: "", isShow: true, name: "desc-editor" },
+      position: { currentStatus: 0, status: ["左对齐", "居中对齐"], isShow: true, name: "position-editor" },
+      titleSize: { currentStatus: 0, status: ["22", "20", "18"], isShow: true, name: "size-editor" },
+      descSize: { currentStatus: 0, status: ["16", "14", "12"], isShow: true, name: "size-editor" },
+      titleWeight: { currentStatus: 1, status: ["加粗", "正常"], isShow: true, name: "weight-editor" },
+      descWeight: { currentStatus: 1, status: ["加粗", "正常"], isShow: true, name: "weight-editor" },
+      titleItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      descItalic: { currentStatus: 1, status: ["斜体", "正常"], isShow: true, name: "italic-editor" },
+      titleColor: { status: "#18181b", isShow: true, name: "color-editor" },
+      descColor: { status: "#909399", isShow: true, name: "color-editor" }
+    },
+    order_index: 9,
+    required: 0,
+    created_at: DEMO_NOW,
+    updated_at: DEMO_NOW
+  }
+];
+
+surveyStore.push({
+  id: DYNAMIC_SURVEY_ID,
+  user_id: "1",
+  title: "动态规则能力验证问卷",
+  description: "用于 e2e 测试覆盖显示/隐藏、选项联动、跳题结束、派生计算字段等动态表单能力",
+  status: 1, // 已发布，可直接填写
+  page_size: 10,
+  total_questions: countQuestions(dynamicLogicComponents),
+  responses_count: 0,
+  is_public: 1,
+  access_code: null,
+  created_at: DEMO_NOW,
+  updated_at: DEMO_NOW,
+  published_at: DEMO_NOW,
+  closed_at: null,
+  components: dynamicLogicComponents
+});
+
+log(
+  "动态规则测试问卷已加载",
+  `(/survey/${DYNAMIC_SURVEY_ID}, ${dynamicLogicComponents.length} 组件, 覆盖显隐/联动/跳题/计算字段场景)`
+);
 
 // ─── Mock 接口 ─────────────────────────────────────────────────
 

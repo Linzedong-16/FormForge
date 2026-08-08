@@ -2,11 +2,7 @@
   "import": ["@cspell/dict-lorem-ipsum/cspell-ext.json"],
   "caseSensitive": false,
   "dictionaries": ["custom-dictionary"],
-  "ignoreRegExpList": [
-    // "\"[\\w\\s\\-\\:\\/\\.\\,\\;\\'\\!\\?\\[\\]]*\"",
-    "<[a-zA-Z0-9]+-[^>]*>",
-    "<\/[a-zA-Z0-9]+-[^>]*>"
-  ],
+  "ignoreRegExpList": ["<[a-zA-Z0-9]+-[^>]*>", "<\/[a-zA-Z0-9]+-[^>]*>"],
   "dictionaryDefinitions": [
     {
       "name": "custom-dictionary",

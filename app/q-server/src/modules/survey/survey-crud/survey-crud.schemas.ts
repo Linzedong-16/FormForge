@@ -7,6 +7,9 @@
 
 import { z } from "zod";
 
+// logic 字段复用 survey-rule 模块的权威 Schema 定义，避免与 QuestionLogicConfig 校验规则产生分叉
+import { questionLogicConfigSchema } from "../survey-rule/survey-rule.schemas.js";
+
 // ══════════════════════════════════════════════════════════════════
 //  基础校验规则
 // ══════════════════════════════════════════════════════════════════
@@ -34,7 +37,14 @@ const componentPayloadSchema = z.object({
   type: z.string().min(1, "组件类型不能为空"),
   config: componentConfigSchema,
   order_index: z.number().int().min(0),
-  required: z.union([z.literal(0), z.literal(1)])
+  required: z.union([z.literal(0), z.literal(1)]),
+  /**
+   * 题目稳定标识：新增题目由前端生成 UUID v4，已存在题目原样透传；
+   * 省略等价于 null，服务端在 replaceComponents() 中自动生成
+   */
+  client_key: z.string().max(64, "client_key 最多64个字符").nullable().optional(),
+  /** 动态规则配置，未启用规则时为 null/undefined，均写为 NULL */
+  logic: questionLogicConfigSchema.nullable().optional()
 });
 
 /** 模板分类枚举 */
@@ -131,7 +141,12 @@ const tokenSchema = z
 const answerItemSchema = z.object({
   component_id: z.string().min(1, "组件 ID 不能为空"),
   value: z.string().optional(),
-  values: z.array(z.string()).optional()
+  values: z.array(z.string()).optional(),
+  /**
+   * 答案状态：0=正常作答 1=因动态规则隐藏跳过 2=展示但主动留空
+   * 省略该字段按 0 处理，兼容未升级的历史前端调用方
+   */
+  answer_status: z.union([z.literal(0), z.literal(1), z.literal(2)]).optional()
 });
 
 /** POST /api/surveys/:surveyId/token — 获取临时 token（无需认证） */

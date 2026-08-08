@@ -28,6 +28,16 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 
+# Python (app/ai-service)
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
 # Misc
 coverage/
 *.local
@@ -38,3 +48,6 @@ coverage/
 .git/
 
 temp/
+
+# 本地测试脚本（造数/压测等，禁止提交）
+app/q-server/scripts/local/

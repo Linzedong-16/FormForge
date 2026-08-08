@@ -37,6 +37,7 @@
     "monorepo-code-common": "workspace:*",
     "monorepo-code-components": "workspace:*",
     "monorepo-sse-client": "workspace:*",
+    "monorepo-survey-engine": "workspace:*",
     "monorepo-tracking-sdk": "workspace:*",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",

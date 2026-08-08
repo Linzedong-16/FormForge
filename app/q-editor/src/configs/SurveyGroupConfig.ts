@@ -26,7 +26,9 @@ export function getSurveyComsList(): MaterialGroup[] {
         { materialName: "matrix-single", comName: t("components.surveyGroup.matrixSingle") },
         { materialName: "slider", comName: t("components.surveyGroup.slider") },
         { materialName: "transfer", comName: t("components.surveyGroup.transfer") },
-        { materialName: "signature", comName: t("components.surveyGroup.signature") }
+        { materialName: "signature", comName: t("components.surveyGroup.signature") },
+        // 计算/派生字段（伪题型，不计入题目序号），需在 Logic 面板中配置公式后才产出有意义的值
+        { materialName: "computed-field", comName: t("components.surveyGroup.computedField") }
       ]
     },
     {

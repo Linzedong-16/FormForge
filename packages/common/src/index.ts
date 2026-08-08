@@ -63,3 +63,17 @@ export type {
 
 /// 导出 消息互动模块前后端通用接口
 export * from "./message/message.interface.js";
+
+/// 导出 Agent 问卷分析模块前后端通用接口（显式具名导出，避免与 ai.interface.ts 的 SSEEvent 冲突）
+export type {
+  AgentAnalysisRequest,
+  AgentToolCallRecord,
+  AgentAnalysisConclusion,
+  AgentStreamEventName,
+  AgentStatusEventData,
+  AgentToolCallEventData,
+  AgentToolResultEventData,
+  AgentTokenEventData,
+  AgentDoneEventData,
+  AgentErrorEventData
+} from "./agent/agent-analysis.interface.js";

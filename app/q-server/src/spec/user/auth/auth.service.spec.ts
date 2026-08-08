@@ -329,6 +329,23 @@ describe("AuthService", () => {
         statusCode: 401,
       });
     });
+
+    it("已拉黑（已用过）的旧 Refresh Token 再次刷新 → 抛出 REFRESH_TOKEN_INVALID，防止重放", async () => {
+      const usedRefresh = jwt.sign(
+        { sub: MOCK_USER.id.toString(), type: "refresh", jti: "used-jti" },
+        process.env.JWT_SECRET!,
+        { expiresIn: 604800 },
+      );
+
+      // 该 jti 已在黑名单中（即已被使用过一次）
+      fastify.redis.exists.mockResolvedValue(1);
+
+      await expect(authService.refreshToken(usedRefresh)).rejects.toThrow(AuthError);
+      await expect(authService.refreshToken(usedRefresh)).rejects.toMatchObject({
+        statusCode: 401,
+        code: BizCode.REFRESH_TOKEN_INVALID,
+      });
+    });
   });
 
   // ============================================================

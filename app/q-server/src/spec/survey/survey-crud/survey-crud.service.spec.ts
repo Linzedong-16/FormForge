@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SurveyService } from "../../../modules/survey/survey-crud/survey-crud.service.js";
+import { SurveyRuleService } from "../../../modules/survey/survey-rule/survey-rule.service.js";
 import { AppError } from "../../../utils/errors.js";
 import {
   createFastifyMock,
@@ -216,6 +217,59 @@ describe("SurveyService", () => {
 
       // delByPattern 内部调用 redis.scan 扫描匹配的缓存 key
       expect(fastify.redis.scan).toHaveBeenCalled();
+    });
+
+    // ── D1 回归测试：首次创建问卷时必须与更新路径一样正确持久化 client_key / logic ──
+    // 修复前：create() 内联的 createMany 调用遗漏这两个字段映射，导致规则配置整体丢失
+    it("[D1回归] 创建问卷时应正确持久化题目的 client_key 与 logic 字段", async () => {
+      fastify.prisma.survey.create.mockResolvedValue(MOCK_SURVEY);
+      fastify.prisma.auditLog.create.mockResolvedValue({});
+
+      // 第二题携带一条跳转规则，验证 logic 字段随 client_key 一起完整落库
+      const jumpLogic = {
+        jump: {
+          rules: [
+            {
+              condition: {
+                combinator: "AND" as const,
+                conditions: [{ sourceKey: "q-gender", operator: "eq" as const, value: "男" }]
+              },
+              target: { type: "endSurvey" as const }
+            }
+          ]
+        }
+      };
+
+      const inputWithLogic = {
+        title: "带动态规则的问卷",
+        components: [
+          {
+            type: "single_select",
+            config: { title: { status: "您的性别是？", isShow: true } },
+            order_index: 0,
+            required: 1 as const,
+            client_key: "q-gender"
+          },
+          {
+            type: "text_input",
+            config: { title: { status: "请说明原因", isShow: true } },
+            order_index: 1,
+            required: 0 as const,
+            client_key: "q-reason",
+            logic: jumpLogic
+          }
+        ]
+      };
+
+      await service.create(USER_ID, inputWithLogic);
+
+      // 断言写入 createMany 的每个组件都携带正确的 client_key / logic，
+      // 而非当前实现（内联 createMany 遗漏字段映射）产生的 undefined
+      const callArgs = fastify.prisma.surveyComponent.createMany.mock.calls[0]?.[0];
+      expect(callArgs.data).toEqual([
+        expect.objectContaining({ client_key: "q-gender" }),
+        expect.objectContaining({ client_key: "q-reason", logic: jumpLogic })
+      ]);
     });
   });
 
@@ -711,6 +765,28 @@ describe("SurveyService", () => {
           }),
         }),
       );
+    });
+
+    it("[D3回归] 发布问卷时应将当前发布事务的 tx 传入规则校验，而非使用非事务连接读取快照（复现 FR-005 缺陷）", async () => {
+      // review_status 显式置为 approved，避免命中与本回归无关的审核前置校验分支
+      fastify.prisma.survey.findFirst.mockResolvedValue({ ...MOCK_SURVEY, review_status: "approved" });
+      fastify.prisma.survey.update.mockResolvedValue({ ...MOCK_SURVEY, status: 1, review_status: "approved" });
+      fastify.prisma.surveyComponent.findMany.mockResolvedValue([]);
+      fastify.prisma.auditLog.create.mockResolvedValue({});
+
+      // 规则校验本身的正确性由 validator.spec.ts 覆盖，这里只关心 publish() 调用它时传入了哪些参数
+      const validateSpy = vi
+        .spyOn(SurveyRuleService.prototype, "validateSurveyRules")
+        .mockResolvedValue({ valid: true, violations: [] });
+
+      await service.publish(USER_ID, SURVEY_ID);
+
+      expect(validateSpy).toHaveBeenCalledTimes(1);
+      // 修复后应显式传入当前发布事务的 tx（第三个参数），使规则校验与本次发布读取同一份事务内快照；
+      // 修复前 publish() 只传了 userId/surveyId 两个参数，此断言应失败
+      expect(validateSpy.mock.calls[0]).toHaveLength(3);
+
+      validateSpy.mockRestore();
     });
 
     it("已发布问卷再次发布 → 409", async () => {

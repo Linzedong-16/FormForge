@@ -14,6 +14,7 @@ import MatrixSingle from "@/components/SurveyComs/Materials/MatrixComs/MatrixSin
 import Slider from "@/components/SurveyComs/Materials/AdvancedComs/Slider.vue";
 import Transfer from "@/components/SurveyComs/Materials/AdvancedComs/Transfer.vue";
 import Signature from "@/components/SurveyComs/Materials/AdvancedComs/Signature.vue";
+import ComputedField from "@/components/SurveyComs/Materials/ComputedComs/ComputedField.vue";
 
 // 引入编辑组件
 import TitleEditor from "@/components/SurveyComs/EditItems/TitleEditor.vue";
@@ -68,6 +69,7 @@ export const componentMap = {
   slider: markRaw(Slider),
   transfer: markRaw(Transfer),
   signature: markRaw(Signature),
+  "computed-field": markRaw(ComputedField),
   // 编辑组件
   "title-editor": markRaw(TitleEditor),
   "desc-editor": markRaw(DescEditor),

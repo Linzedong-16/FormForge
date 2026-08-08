@@ -184,7 +184,16 @@ const onDragChange = () => {
 
 // 删除选中的组件
 const removeCom = (index: number) => {
-  ElMessageBox.confirm(t("editor.deleteConfirm"), t("editor.deleteTitle"), {
+  // 删除前检查该题目是否被其他动态规则引用（FR-012 acceptance scenario 4）：
+  // 只提示不阻断，设计者仍可选择继续删除，之后再自行清理/修复引用它的规则
+  const clientKey = store.coms[index]?.client_key;
+  const affectedViolations = clientKey ? store.findRuleReferencesTo(clientKey) : [];
+  const confirmMessage =
+    affectedViolations.length > 0
+      ? `${t("editor.deleteConfirm")} ${t("editor.deleteRuleWarning")}${affectedViolations.map(v => v.message).join("；")}`
+      : t("editor.deleteConfirm");
+
+  ElMessageBox.confirm(confirmMessage, t("editor.deleteTitle"), {
     confirmButtonText: t("editor.confirm"),
     cancelButtonText: t("editor.cancel"),
     type: "warning"

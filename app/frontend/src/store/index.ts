@@ -8,7 +8,7 @@ pinia.use(piniaPluginPersistedstate);
 
 /** 初始化用户 store 的 Token 恢复（页面刷新后从 Storage 恢复登录态） */
 export async function initUserStore() {
-  // 延迟导入 user store，避免循环依赖（user store 引用 @/utils/axios 和 @/api）
+  // 延迟导入 user store，避免循环依赖（user store 引用 @/api）
   const { useUserStore } = await import("./modules/user");
   const store = useUserStore();
   await store.restoreState();

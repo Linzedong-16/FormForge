@@ -8,11 +8,9 @@
  * - 密码修改
  * - 账号注销
  *
- * 所有接口均需登录，使用 serverClient（自动携带 Token + 401 自动刷新）
- * 头像上传使用原生 axios（multipart/form-data），手动附加 Token
+ * 所有接口均需登录，统一使用 serverClient（自动携带 Token + 401 自动刷新重试）
  */
 
-import axios from "axios";
 import type {
   ApiResponse,
   UserProfileResponse,
@@ -26,7 +24,6 @@ import type {
 } from "@common/user/user.interface";
 
 import serverClient from "../../clients/server";
-import { useUserStore } from "@/stores/useUser";
 
 // ============================================================
 //  GET /api/user/profile — 获取用户资料（含表单回显数据）
@@ -42,19 +39,15 @@ export const updateProfile = (data: UpdateProfileRequest): Promise<ApiResponse<U
 // ============================================================
 //  POST /api/user/avatar — 上传头像（multipart/form-data）
 // ============================================================
-export const uploadAvatar = async (blob: Blob, filename: string): Promise<ApiResponse<AvatarUploadResult>> => {
+export const uploadAvatar = (blob: Blob, filename: string): Promise<ApiResponse<AvatarUploadResult>> => {
   const formData = new FormData();
   formData.append("file", blob, filename);
 
-  // 使用原生 axios（multipart 上传不走 serverClient），手动解包 AxiosResponse → ApiResponse
-  const response = await axios.post("/api/user/avatar", formData, {
-    headers: {
-      Authorization: `Bearer ${useUserStore().accessToken}`,
-      "Content-Type": "multipart/form-data"
-    },
+  // 走 serverClient，自动附加 Authorization + 401 自动刷新重试
+  return serverClient.post("/user/avatar", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
     timeout: 30000
   });
-  return response.data;
 };
 
 // ============================================================

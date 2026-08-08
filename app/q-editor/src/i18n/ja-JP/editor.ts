@@ -7,6 +7,7 @@ export default {
   resetSurvey: "アンケートリセット",
   saveSurvey: "アンケート保存",
   preview: "プレビュー",
+  previewAsFiller: "回答者視点プレビュー",
   undo: "元に戻す",
   redo: "やり直す",
 
@@ -141,6 +142,7 @@ export default {
   clickToEdit: "問題タイプをクリックして編集",
   selectComponentFirst: "画像をアップロードする前に画像質問コンポーネントを選択してください",
   deleteConfirm: "このコンポーネントを削除しますか？",
+  deleteRuleWarning: "このコンポーネントを参照している以下の動的ルールは、削除後に無効になります：",
   deleteTitle: "確認",
   keepTwoOptions: "少なくとも2つのオプションを保持",
   keepTwoItems: "少なくとも2つの項目を保持",

@@ -1,0 +1,176 @@
+# ============================================================
+# FormForge 统一部署编排
+#
+# 使用方式：
+#   docker compose up -d                # 启动全部基础设施
+#   docker compose --profile ai up -d   # 包含 AI 分析服务
+#   docker compose --profile full up -d # 全部服务
+#
+# 原位置：app/q-server/docker-compose.yml（已迁移至此）
+# ============================================================
+
+services:
+  postgres:
+    # pgvector/pgvector:pg16 = 官方 postgres:16 镜像预装 pgvector 扩展，供 RAG 检索增强能力
+    # （007-rag-retrieval-augmentation）的 CREATE EXTENSION IF NOT EXISTS vector 使用
+    image: pgvector/pgvector:pg16
+    container_name: questionnaire-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: questionnaire
+      POSTGRES_PASSWORD: questionnaire123
+      POSTGRES_DB: questionnaire_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U questionnaire -d questionnaire_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: questionnaire-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: questionnaire-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: questionnaire
+      RABBITMQ_DEFAULT_PASS: questionnaire123
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: questionnaire-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: questionnaire
+      MINIO_ROOT_PASSWORD: questionnaire123
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24-alpine
+    container_name: questionnaire-clickhouse
+    ports:
+      - "8123:8123" # HTTP 接口（@clickhouse/client 使用）
+      - "9010:9000" # Native TCP 接口（避开 MinIO 的 9000）
+      - "9009:9009" # 集群间通信（预留）
+    environment:
+      CLICKHOUSE_USER: questionnaire
+      CLICKHOUSE_PASSWORD: questionnaire123
+      CLICKHOUSE_DB: questionnaire_tracking
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+      # 容器首次启动时自动执行建表脚本，避免手动执行导致的表缺失问题
+      - ../app/q-server/sql/clickhouse-tracking-schema.sql:/docker-entrypoint-initdb.d/01-tracking-schema.sql
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    restart: unless-stopped
+    healthcheck:
+      test:
+        ["CMD", "clickhouse-client", "--user", "questionnaire", "--password", "questionnaire123", "--query", "SELECT 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  mongodb:
+    image: mongo:7.0
+    container_name: questionnaire-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: questionnaire_logs
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ════════════════════════════════════════════════════════════
+  #  AI 分析微服务（可选扩展，需要时加上 --profile ai）
+  # ════════════════════════════════════════════════════════════
+  ai-service:
+    build:
+      context: ../app/ai-service
+      dockerfile: Dockerfile
+    container_name: formforge-ai-service
+    ports:
+      - "8090:8090"
+    environment:
+      # q-server 运行在宿主机（未容器化），通过 host.docker.internal 回连，
+      # 端口需与 app/q-server/.env 中的 PORT 保持一致（默认 8080）
+      - Q_SERVER_BASE_URL=http://host.docker.internal:8080
+      # 必须与 app/q-server/.env 中的 AI_SERVICE_INTERNAL_KEY 保持一致，
+      # 用于回调 q-server 管理统计接口时的内部服务身份校验
+      - Q_SERVER_API_KEY=${AI_SERVICE_INTERNAL_KEY}
+      - AI_PROVIDER=${AI_PROVIDER:-deepseek}
+      - AI_MODEL=${AI_MODEL:-deepseek-chat}
+      - AI_API_KEY=${AI_API_KEY}
+      - AI_BASE_URL=${AI_BASE_URL:-https://api.deepseek.com/v1}
+      - REDIS_URL=redis://redis:6379/1
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - ai
+      - full
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  rabbitmq-data:
+    driver: local
+  minio-data:
+    driver: local
+  mongo-data:
+    driver: local
+  clickhouse-data:
+    driver: local
+  clickhouse-logs:
+    driver: local

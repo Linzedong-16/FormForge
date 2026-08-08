@@ -42,7 +42,9 @@ export type SurveyComName =
   | "signature";
 
 // 业务组件类型(题目类型 + 非题目类型)
-export type Material = SurveyComName | "text-note";
+// "computed-field" 为派生计算字段伪题型：不由填写者直接输入，答案由其他题目计算得出，
+// 与 text-note 一样不计入 useSurveyNo() 的题目序号统计（不是"填写者作答"意义上的题目）
+export type Material = SurveyComName | "text-note" | "computed-field";
 
 // 编辑组件类型
 export type EditComName =

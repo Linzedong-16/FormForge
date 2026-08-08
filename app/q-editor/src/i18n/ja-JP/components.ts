@@ -170,6 +170,7 @@ export default {
     slider: "スライダー",
     transfer: "並べ替え",
     signature: "電子署名",
+    computedField: "計算フィールド",
     inputBox: "入力ボックス",
     textInput: "テキスト入力",
     note: "備考",

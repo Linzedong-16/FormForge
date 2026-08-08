@@ -201,6 +201,8 @@ export const CacheKeys = {
   statsOverview: "admin:stats:overview",
   /** 单问卷统计 */
   statsBySurvey: (surveyId: string) => `admin:stats:survey:${surveyId}`,
+  /** 单问卷结构（题目/选项，供内部凭证只读查询） */
+  statsSurveyStructure: (surveyId: string) => `admin:stats:survey:${surveyId}:structure`,
 
   // ─── 问卷文件模块 ──────────────────────────────────────────
   /** 问卷文件列表 */

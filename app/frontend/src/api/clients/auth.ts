@@ -33,7 +33,12 @@ authClient.interceptors.response.use(
     };
 
     const message = backendMsg || STATUS_MAP[statusCode] || `请求失败 (${statusCode})`;
-    return Promise.reject(new Error(message));
+
+    // 保留后端业务码，供上层（如 store 的刷新逻辑）区分 AT/RT 失效场景
+    const bizCode: number | undefined = err.response.data?.code;
+    const rejected = new Error(message) as Error & { bizCode?: number };
+    rejected.bizCode = bizCode;
+    return Promise.reject(rejected);
   }
 );
 

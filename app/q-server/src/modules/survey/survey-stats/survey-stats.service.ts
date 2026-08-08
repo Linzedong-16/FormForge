@@ -27,7 +27,9 @@ import type {
   OptionDistribution,
   AdminResponseListResponse,
   AdminResponseItem,
-  AnswerWithContext
+  AnswerWithContext,
+  SurveyStructureResponse,
+  QuestionStructureItem
 } from "@common/survey/survey-stats.interface.js";
 
 // ─── 工具函数 ──────────────────────────────────────────────────
@@ -235,6 +237,62 @@ export class SurveyStatsService {
         };
 
         return result;
+      },
+      CacheTTL.SURVEY
+    );
+  }
+
+  // ============================================================
+  //  问卷结构（供内部凭证只读查询，不做所有权过滤）
+  // ============================================================
+
+  /**
+   * 获取问卷结构（标题/描述/题目/选项）
+   *
+   * 与 survey-crud 模块的 GET /api/surveys/:id 区别：本方法不按 userId 过滤所有权，
+   * 供 ai-service 等内部服务通过 X-Internal-Api-Key 凭证访问，用于 Agent 自主分析
+   */
+  async getSurveyStructure(surveyId: bigint): Promise<SurveyStructureResponse> {
+    const surveyIdStr = bigIntToStr(surveyId);
+
+    return this.cache.getOrSet(
+      CacheKeys.statsSurveyStructure(surveyIdStr),
+      async () => {
+        const survey = await this.fastify.prisma.survey.findFirst({
+          where: { id: surveyId, deleted_at: null },
+          select: { id: true, title: true, description: true }
+        });
+        if (!survey) {
+          throw new AppError("问卷不存在", 404);
+        }
+
+        const components = await this.fastify.prisma.surveyComponent.findMany({
+          where: { survey_id: surveyId, type: { notIn: Array.from(NON_QUESTION_TYPES) } },
+          orderBy: { order_index: "asc" },
+          select: { id: true, type: true, config: true, required: true }
+        });
+
+        const questions: QuestionStructureItem[] = components.map(comp => {
+          const compConfig = comp.config as Record<string, unknown>;
+          const title = extractTitleFromConfig(compConfig) ?? TYPE_NAME_MAP[comp.type] ?? comp.type;
+          const optionsMap = extractOptionLabels(compConfig);
+          const options = optionsMap.size > 0 ? Array.from(optionsMap.values()) : null;
+
+          return {
+            id: bigIntToStr(comp.id),
+            type: comp.type,
+            title,
+            required: comp.required === 1,
+            options
+          };
+        });
+
+        return {
+          survey_id: surveyIdStr,
+          title: survey.title,
+          description: survey.description ?? null,
+          questions
+        };
       },
       CacheTTL.SURVEY
     );
@@ -746,16 +804,18 @@ function extractOptionLabels(config: Record<string, unknown>): Map<string, strin
   const status = options["status"] as Array<unknown> | undefined;
   if (!status || !Array.isArray(status) || status.length === 0) return map;
 
-  const first = status[0] as Record<string, unknown> | undefined;
+  const first = status[0];
+  // StringStatusArr 时 first 是原始字符串，in 运算符要求左侧为对象，需先判断类型再收窄
+  const firstIsObject = typeof first === "object" && first !== null;
 
-  if (first && "picTitle" in first) {
+  if (firstIsObject && "picTitle" in first) {
     // PicTitleDescStatusArr
     for (const item of status) {
       const i = item as Record<string, unknown>;
       const picTitle = String(i["picTitle"] ?? "");
       if (picTitle) map.set(picTitle, picTitle);
     }
-  } else if (first && "value" in first && "status" in first) {
+  } else if (firstIsObject && "value" in first && "status" in first) {
     // ValueStatusArr
     for (const item of status) {
       const i = item as Record<string, unknown>;

@@ -100,15 +100,17 @@ export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, "Refresh Token 不能为空")
 });
 
+/** POST /api/auth/logout — refreshToken 可选，传入时后端会一并拉黑，防止登出后旧 RT 仍可用于刷新 */
+export const logoutSchema = z.object({
+  refreshToken: z.string().min(1).optional()
+});
+
 /** POST /api/auth/reset-password */
 export const resetPasswordSchema = z.object({
   email: emailSchema,
   code: verifyCodeSchema,
   newPassword: passwordSchema
 });
-
-/** POST /api/auth/logout */
-export const logoutSchema = z.object({});
 
 // ══════════════════════════════════════════════════════════════════
 //  用户资料接口 Schema
@@ -187,6 +189,7 @@ export type SendCodeInput = z.infer<typeof sendCodeSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type VerifyRegisterInput = z.infer<typeof verifyRegisterSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
+export type LogoutInput = z.infer<typeof logoutSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;

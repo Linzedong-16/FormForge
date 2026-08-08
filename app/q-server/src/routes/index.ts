@@ -4,6 +4,7 @@ import adminRoutes from "../modules/user/admin/admin.routes.js";
 import userCrudRoutes from "../modules/user/user-crud/user-crud.routes.js";
 import profileRoutes from "../modules/user/profile/profile.routes.js";
 import surveyCrudRoutes from "../modules/survey/survey-crud/survey-crud.routes.js";
+import surveyRuleRoutes from "../modules/survey/survey-rule/survey-rule.routes.js";
 import fileRoutes from "../modules/survey/file/file.routes.js";
 import uploadRoutes from "../modules/survey/upload/upload.routes.js";
 import aiGenerateRoutes from "../modules/ai/ai-generate/ai-generate.routes.js";
@@ -17,6 +18,8 @@ import surveyStatsRoutes from "../modules/survey/survey-stats/survey-stats.route
 import { trackingIngestRoutes, trackingAnalyticsRoutes } from "../modules/tracking/index.js";
 import { messageRoutes, adminMessageRoutes } from "../modules/message/index.js";
 import mediaAssetRoutes from "../modules/media-asset/media-asset.routes.js";
+import aiProxyRoutes from "../modules/ai-proxy/ai-proxy.routes.js";
+import aiRagRoutes from "../modules/ai/ai-rag/ai-rag.routes.js";
 
 const routes: FastifyPluginAsync = async fastify => {
   // 健康检查 — 探测 PostgreSQL、Redis、RabbitMQ 连通性
@@ -140,6 +143,8 @@ const routes: FastifyPluginAsync = async fastify => {
   fastify.register(uploadRoutes, { prefix: "/q-editor" });
   // survey-crud.routes.ts 内部路径已为 /surveys、/responses 等完整路径，无需额外前缀
   fastify.register(surveyCrudRoutes);
+  // survey-rule.routes.ts 内部路径为 /surveys/:id/validate-rules（动态规则完整性预检）
+  fastify.register(surveyRuleRoutes);
   // file.routes.ts 内部路径为 /surveys/:id/files、/survey-files/:id
   fastify.register(fileRoutes);
   // ai-generate.routes.ts 内部路径为 /surveys/generate（SSE 流式）
@@ -168,6 +173,10 @@ const routes: FastifyPluginAsync = async fastify => {
   fastify.register(adminMessageRoutes, { prefix: "/admin" });
   // media-asset.routes.ts 内部路径为 /media-assets（管理员物料/图片资源管理）
   fastify.register(mediaAssetRoutes, { prefix: "/admin" });
+  // ai-proxy.routes.ts 内部路径为 /health、/agent/*（代理转发至 ai-service，前缀 /api/ai）
+  fastify.register(aiProxyRoutes, { prefix: "/ai" });
+  // ai-rag.routes.ts 内部路径为 /templates/search、/templates/:templateId/reindex 等（RAG 检索增强，前缀 /api/ai/rag）
+  fastify.register(aiRagRoutes, { prefix: "/ai/rag" });
 };
 
 export default routes;

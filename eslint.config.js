@@ -16,6 +16,9 @@ const ignores = [
   "dist/*",
   "**/node_modules/**",
   ".*",
+  // Python 虚拟环境目录（如 app/ai-service/.venv），其中第三方库自带的 JS 文件不属于项目源码
+  "**/.venv/**",
+  "**/venv/**",
   "scripts/**",
   "**/*.d.ts",
   "docs/**/*.md",

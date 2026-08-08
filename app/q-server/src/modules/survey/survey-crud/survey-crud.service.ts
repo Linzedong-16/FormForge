@@ -10,13 +10,17 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { randomUUID } from "node:crypto";
 import { Prisma } from "../../../generated/prisma/client.js";
 import { createCache, CacheKeys, CacheTTL } from "../../../utils/cache.js";
 import type { CacheClient } from "../../../utils/cache.js";
 import { createAuditLog } from "../../../utils/audit-log.js";
 import { buildPagination } from "../../../utils/pagination.js";
 import { AppError } from "../../../utils/errors.js";
+import { BizCode } from "../../../utils/response.js";
 import { MessageHookService } from "../../message/message-hooks.service.js";
+import { SurveyRuleService } from "../survey-rule/survey-rule.service.js";
+import type { RuleViolation } from "monorepo-survey-engine/logic/types.js";
 import type {
   CreateSurveyInput,
   UpdateSurveyInput,
@@ -63,6 +67,20 @@ function countQuestions(
   return components.filter(c => !NON_QUESTION_TYPES.has(c.type)).length;
 }
 
+/** 将动态规则校验的违规类型映射为对应的业务错误码（BizCode 6xxx 段，对应 T045） */
+function mapViolationTypeToBizCode(type: RuleViolation["type"]): number {
+  switch (type) {
+    case "circularDependency":
+      return BizCode.RULE_CIRCULAR_DEPENDENCY;
+    case "danglingReference":
+      return BizCode.RULE_DANGLING_REFERENCE;
+    case "invalidJumpTarget":
+      return BizCode.RULE_INVALID_JUMP_TARGET;
+    case "staleOptionReference":
+      return BizCode.RULE_STALE_OPTION_REFERENCE;
+  }
+}
+
 /** 将 Prisma Survey 行转为 SurveyListItem */
 function toSurveyListItem(survey: Record<string, unknown>): SurveyListItem {
   return {
@@ -93,7 +111,10 @@ function toComponentDetail(comp: Record<string, unknown>): SurveyComponentDetail
     order_index: comp.order_index as number,
     required: comp.required as SurveyComponentDetail["required"],
     created_at: (comp.created_at as Date).toISOString(),
-    updated_at: (comp.updated_at as Date).toISOString()
+    updated_at: (comp.updated_at as Date).toISOString(),
+    // client_key/logic 原样回显，供前端动态表单规则引用与编辑器回填
+    client_key: (comp.client_key as string | null) ?? undefined,
+    logic: (comp.logic as SurveyComponentDetail["logic"]) ?? null
   };
 }
 
@@ -113,7 +134,16 @@ export class SurveyService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx: any,
     surveyId: bigint,
-    components: Array<{ type: string; config: Record<string, unknown>; order_index: number; required: 0 | 1 }>
+    components: Array<{
+      type: string;
+      config: Record<string, unknown>;
+      order_index: number;
+      required: 0 | 1;
+      /** 题目稳定引用键：请求携带则原样写入，未携带或显式传 null（如存量题目首次保存）则服务端生成新 UUID */
+      client_key?: string | null;
+      /** 动态表单规则配置，原样写入；未启用规则时为 null/undefined */
+      logic?: unknown;
+    }>
   ): Promise<void> {
     await tx.surveyComponent.deleteMany({ where: { survey_id: surveyId } });
     if (components.length > 0) {
@@ -123,7 +153,10 @@ export class SurveyService {
           type: c.type,
           config: c.config as object,
           order_index: c.order_index,
-          required: c.required
+          required: c.required,
+          client_key: c.client_key ?? randomUUID(),
+          // logic 是 Json? 字段，裸 null 会被 Prisma 当作"未设置该字段"，需用 Prisma.DbNull 表示数据库 NULL
+          logic: c.logic ?? Prisma.DbNull
         }))
       });
     }
@@ -157,18 +190,9 @@ export class SurveyService {
         }
       });
 
-      // 2. 批量创建组件（使用 createMany 优化批量写入）
-      if (components && components.length > 0) {
-        await tx.surveyComponent.createMany({
-          data: components.map(c => ({
-            survey_id: created.id,
-            type: c.type,
-            config: c.config as object,
-            order_index: c.order_index,
-            required: c.required
-          }))
-        });
-      }
+      // 2. 批量创建组件 —— 复用与 update()/submitReview()/applyTemplate() 相同的 replaceComponents()，
+      //    确保 client_key/logic 兜底映射在创建与更新两条路径下行为完全一致（避免双路径实现漂移）
+      await this.replaceComponents(tx, created.id, components ?? []);
 
       return created;
     });
@@ -511,6 +535,17 @@ export class SurveyService {
       // 所有问卷发布前均需通过问卷审核
       if (existing.review_status !== "approved") {
         throw new AppError("问卷需先通过审核才能发布，请在预览页提交审核", 403);
+      }
+
+      // 动态表单规则完整性预检：循环依赖/悬空引用/非法跳转目标三类问题 100% 拦截发布，
+      // 不写入任何状态变更（校验失败时直接抛出，事务自动回滚），对应 survey-publish.contract.md FR-006；
+      // 显式传入当前发布事务的 tx，确保校验读取的题目快照与本次发布实际写入/读取的数据一致（FR-005）
+      const ruleValidation = await new SurveyRuleService(this.fastify).validateSurveyRules(userId, surveyId, tx);
+      if (!ruleValidation.valid) {
+        const bizCode = mapViolationTypeToBizCode(ruleValidation.violations[0]!.type);
+        throw new AppError("问卷动态规则校验未通过，无法发布", 400, bizCode, {
+          violations: ruleValidation.violations
+        });
       }
 
       const updated = await tx.survey.update({
@@ -1027,18 +1062,33 @@ export class SurveyService {
         }
       });
 
-      // 批量创建答案
+      // 批量创建答案：区分客户端是否已按 answer_status 语义提交
       if (input.answers.length > 0) {
-        const answerRows = input.answers
-          .filter(a => a.value !== undefined || (a.values && a.values.length > 0))
-          .map(a => ({
-            response_id: created.id,
-            component_id: BigInt(a.component_id),
-            value: a.value ?? null,
-            // values 是 Json? 字段，Prisma 要求用 Prisma.DbNull 表示数据库 NULL，
-            // 裸 null 会被当作"未设置该字段"而产生类型错误
-            values: a.values ?? Prisma.DbNull
-          }));
+        // 只要任一答案项携带 answer_status，即视为前端已按 visibleComs 计算结果升级调用，
+        // 此时以前端提交的题目清单为准（已覆盖全部题目：正常作答/可见留空/隐藏跳过），逐项落库；
+        // 历史客户端（全部答案项均不携带该字段）保持现状行为，避免新增"可见未答/隐藏跳过"行（FR-010 零回归）
+        const isUpgradedClient = input.answers.some(a => a.answer_status !== undefined);
+
+        const answerRows = isUpgradedClient
+          ? input.answers.map(a => ({
+              response_id: created.id,
+              component_id: BigInt(a.component_id),
+              value: a.value ?? null,
+              // values 是 Json? 字段，Prisma 要求用 Prisma.DbNull 表示数据库 NULL，
+              // 裸 null 会被当作"未设置该字段"而产生类型错误
+              values: a.values ?? Prisma.DbNull,
+              // 省略该字段按 0（正常作答）处理
+              answer_status: a.answer_status ?? 0
+            }))
+          : input.answers
+              .filter(a => a.value !== undefined || (a.values && a.values.length > 0))
+              .map(a => ({
+                response_id: created.id,
+                component_id: BigInt(a.component_id),
+                value: a.value ?? null,
+                values: a.values ?? Prisma.DbNull,
+                answer_status: 0
+              }));
 
         if (answerRows.length > 0) {
           await tx.answer.createMany({ data: answerRows });

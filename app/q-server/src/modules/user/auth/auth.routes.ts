@@ -14,7 +14,8 @@ import {
   registerSchema,
   verifyRegisterSchema,
   refreshTokenSchema,
-  resetPasswordSchema
+  resetPasswordSchema,
+  logoutSchema
 } from "../schemas/user.schemas.js";
 import { parseAndRespond } from "../../../utils/zod.js";
 
@@ -90,14 +91,25 @@ const authRoutes: FastifyPluginAsync = async fastify => {
     return reply.sendSuccess(result, "注册成功");
   });
 
-  // ── POST /refresh — 刷新 Token（公开） ──────────────────────
-  fastify.post("/refresh", async (request, reply) => {
-    const body = parseAndRespond(refreshTokenSchema.safeParse(request.body), reply);
-    if (!body) return;
+  // ── POST /refresh — 刷新 Token（公开，20次/分钟防重放/暴力尝试） ──
+  fastify.post(
+    "/refresh",
+    {
+      config: {
+        rateLimit: {
+          max: 20,
+          timeWindow: "1 minute"
+        }
+      }
+    },
+    async (request, reply) => {
+      const body = parseAndRespond(refreshTokenSchema.safeParse(request.body), reply);
+      if (!body) return;
 
-    const result = await authService.refreshToken(body.refreshToken);
-    return reply.sendSuccess(result, "Token 刷新成功");
-  });
+      const result = await authService.refreshToken(body.refreshToken);
+      return reply.sendSuccess(result, "Token 刷新成功");
+    }
+  );
 
   // ── POST /reset-password — 重置密码（公开） ─────────────────
   fastify.post("/reset-password", async (request, reply) => {
@@ -108,10 +120,13 @@ const authRoutes: FastifyPluginAsync = async fastify => {
     return reply.sendSuccess(null, "密码重置成功");
   });
 
-  // ── POST /logout — 登出（需认证） ────────────────────────────
+  // ── POST /logout — 登出（需认证，可选携带 refreshToken 一并拉黑） ──
   fastify.post("/logout", { preHandler: [authenticate] }, async (request, reply) => {
     const token = (request.headers.authorization ?? "").replace("Bearer ", "");
-    await authService.logout(token);
+    const body = parseAndRespond(logoutSchema.safeParse(request.body ?? {}), reply);
+    if (!body) return;
+
+    await authService.logout(token, body.refreshToken);
     return reply.sendSuccess(null, "已退出登录");
   });
 };

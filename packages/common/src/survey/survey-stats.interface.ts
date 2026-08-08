@@ -93,7 +93,37 @@ export interface SurveyStatsResponse {
 }
 
 // ============================================================
-//  3. 答卷查询
+//  3. 问卷结构（供 ai-service Agent 工具只读查询）
+// ============================================================
+
+/** 单题结构条目 */
+export interface QuestionStructureItem {
+  /** 组件 ID（BigInt → string） */
+  id: string;
+  /** 组件类型（single_select / multi_select / text_input 等） */
+  type: string;
+  /** 题目标题 */
+  title: string;
+  /** 是否必答 */
+  required: boolean;
+  /** 选项标签列表（单选/多选/矩阵题），无选项时为 null */
+  options: string[] | null;
+}
+
+/** GET /api/admin/surveys/:id — 问卷结构响应 */
+export interface SurveyStructureResponse {
+  /** 问卷 ID */
+  survey_id: string;
+  /** 问卷标题 */
+  title: string;
+  /** 问卷描述 */
+  description: string | null;
+  /** 题目结构列表（按 order_index 排序） */
+  questions: QuestionStructureItem[];
+}
+
+// ============================================================
+//  4. 答卷查询
 // ============================================================
 
 /** GET /api/admin/surveys/:id/responses — 答卷列表查询参数 */
@@ -155,7 +185,7 @@ export interface AdminResponseListResponse {
 }
 
 // ============================================================
-//  4. 报表导出
+//  5. 报表导出
 // ============================================================
 
 /** GET /api/admin/surveys/:id/responses/export — 导出查询参数 */

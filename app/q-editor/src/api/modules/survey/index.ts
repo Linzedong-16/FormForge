@@ -18,6 +18,7 @@ import type {
   SurveyListResponse,
   SurveyDetail,
   SurveyComponentPayload,
+  QuestionLogicConfig,
   ApplyTemplateRequest,
   ApplyTemplateResponse,
   SubmitReviewRequest,
@@ -174,6 +175,8 @@ export const deleteResponse = (responseId: string): Promise<ApiResponse<null>> =
  *   com.status → payload.config（整体作为 survey_components.config JSON）
  *   数组下标   → payload.order_index（0-based）
  *   required   → 从 com.status.required 字段读取，支持布尔/数字/嵌套对象形式
+ *   com.client_key → payload.client_key（题目稳定标识，原样透传，缺省时后端自动生成）
+ *   com.logic      → payload.logic（动态表单规则配置，原样透传）
  *
  * 数据清洗：config 中的 editCom（Vue 组件引用，不可序列化）和 id（UUID，仅编辑器内部使用）
  * 会被移除，以减小 JSON 体积。restoreComponentStatus 通过 name 字段即可恢复 editCom 引用。
@@ -189,6 +192,10 @@ export const serializeComponents = (
     name: string;
     /** 组件内部配置，整体作为 config JSON 发送给后端 */
     status: Record<string, unknown>;
+    /** 题目稳定标识，供动态表单规则引用 */
+    client_key?: string;
+    /** 动态表单规则配置，未启用规则时为 null/undefined */
+    logic?: QuestionLogicConfig | null;
     [key: string]: unknown;
   }>
 ): SurveyComponentPayload[] =>
@@ -210,7 +217,14 @@ export const serializeComponents = (
       required = (rawRequired as Record<string, unknown>).status ? 1 : 0;
     }
 
-    return { type, config: cleanConfig(com.status), order_index: index, required };
+    return {
+      type,
+      config: cleanConfig(com.status),
+      order_index: index,
+      required,
+      client_key: com.client_key,
+      logic: com.logic
+    };
   });
 
 /**
@@ -368,6 +382,7 @@ export const serializeAnswers = (
  *   config（完整 Status 对象）  → 解构为 Status 字段
  *   order_index（排序）         → 按序排列
  *   id / survey_id              → 保留用于答案提交
+ *   client_key / logic          → 原样透传，供动态表单规则求值/编辑使用
  */
 export const deserializeSurveyDetail = (
   components: Array<{
@@ -379,6 +394,8 @@ export const deserializeSurveyDetail = (
     required: 0 | 1;
     created_at: string;
     updated_at: string;
+    client_key?: string;
+    logic?: QuestionLogicConfig | null;
   }>
 ): Array<Record<string, unknown> & { _componentId: string }> => {
   return [...components]
@@ -389,7 +406,9 @@ export const deserializeSurveyDetail = (
       // 关键还原：serializeComponents 把 com.name → type（snake_case），
       // restoreComponentStatus 需要 com.name 查找 componentMap 中的 Vue 组件
       name: (c.type || "").replace(/_/g, "-"),
-      _componentId: c.id
+      _componentId: c.id,
+      client_key: c.client_key,
+      logic: c.logic
     }));
 };
 

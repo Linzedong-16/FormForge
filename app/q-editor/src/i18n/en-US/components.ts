@@ -170,6 +170,7 @@ export default {
     slider: "Slider",
     transfer: "Transfer",
     signature: "Signature",
+    computedField: "Computed Field",
     inputBox: "Input Box",
     textInput: "Text Input",
     note: "Note",

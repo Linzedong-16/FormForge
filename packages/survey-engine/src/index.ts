@@ -123,3 +123,40 @@ export type { Events } from "./types/eventBus";
 
 // ═══ API ══════════════════════════════════════════════════════════════════════
 export { uploadImage } from "./api/upload";
+
+// ═══ 动态表单引擎 —— 显示/隐藏、跳转、选项联动、派生字段、发布校验等规则子模块 ═══
+export {
+  normalizeAnswerValue,
+  useRuleRuntime,
+  resolveVisibility,
+  resolveJump,
+  resolveOptionPool,
+  computeDerivedField,
+  validateRuleSet
+} from "./logic";
+export type {
+  ClientKey,
+  ComparisonOperator,
+  LogicCombinator,
+  RawAnswerValue,
+  NormalizedValue,
+  Condition,
+  ConditionGroup,
+  VisibilityAction,
+  VisibilityRule,
+  QuestionVisibilityConfig,
+  JumpTargetType,
+  JumpTarget,
+  JumpRule,
+  QuestionJumpConfig,
+  OptionDependencyMapping,
+  ComputedFieldFormula,
+  ComputedFieldConfig,
+  QuestionLogicConfig,
+  RuleViolationType,
+  RuleViolation,
+  RuleValidationResult,
+  RuleRuntimeComponent,
+  UseRuleRuntimeOptions,
+  UseRuleRuntimeReturn
+} from "./logic";
