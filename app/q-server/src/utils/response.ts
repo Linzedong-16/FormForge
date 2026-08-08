@@ -150,7 +150,11 @@ export enum BizCode {
   /** 跳转目标不合法：指向自身或非严格向后跳转（发布前拦截） */
   RULE_INVALID_JUMP_TARGET = 6003,
   /** 选项联动规则引用了依赖题目已不存在的选项值（best-effort，发布前拦截） */
-  RULE_STALE_OPTION_REFERENCE = 6004
+  RULE_STALE_OPTION_REFERENCE = 6004,
+
+  // ─── 邮件服务模块 ──────────────────────────────────────────
+  /** 邮件服务不可用（RabbitMQ 未连接，验证码邮件无法投递） */
+  MAIL_SERVICE_UNAVAILABLE = 7001
 }
 
 // ─── 构建函数 ────────────────────────────────────────────────

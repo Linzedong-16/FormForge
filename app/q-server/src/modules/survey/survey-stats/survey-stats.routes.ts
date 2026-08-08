@@ -171,7 +171,7 @@ const surveyStatsRoutes: FastifyPluginAsync = async fastify => {
       if (!query) return;
 
       try {
-        const csv = await statsService.exportResponsesCSV(surveyId, query);
+        const csvStream = await statsService.exportResponsesCSV(surveyId, query);
 
         const survey = await fastify.prisma.survey.findFirst({
           where: { id: surveyId, deleted_at: null },
@@ -181,8 +181,16 @@ const surveyStatsRoutes: FastifyPluginAsync = async fastify => {
 
         reply.header("Content-Type", "text/csv; charset=utf-8");
         reply.header("Content-Disposition", `attachment; filename="${encodeURIComponent(filename)}"`);
-        // 添加 UTF-8 BOM，确保 Excel 正确识别中文
-        return reply.send("﻿" + csv);
+
+        // 监听客户端断开，销毁流以停止数据库读取
+        reply.raw.on("close", () => {
+          if (!csvStream.destroyed) {
+            csvStream.destroy();
+          }
+        });
+
+        // Fastify 原生支持返回 Readable 流（自动处理 chunked transfer）
+        return reply.send(csvStream);
       } catch (err) {
         if (err instanceof AppError) {
           return reply.status(err.statusCode).send({ data: null, code: err.code, msg: err.message });

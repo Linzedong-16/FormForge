@@ -915,7 +915,10 @@ export class SurveyService {
   async deleteResponse(userId: bigint, responseId: bigint): Promise<void> {
     const response = await this.fastify.prisma.response.findFirst({
       where: { id: responseId },
-      include: { survey: { select: { user_id: true } } }
+      select: {
+        survey_id: true,
+        survey: { select: { user_id: true } }
+      }
     });
 
     if (!response) {
@@ -927,14 +930,20 @@ export class SurveyService {
       throw new AppError("无权删除该答卷", 403);
     }
 
+    const surveyIdStr = bigIntToStr(response.survey_id);
+
     // 删除答案，再删除答卷记录
     await this.fastify.prisma.$transaction([
       this.fastify.prisma.answer.deleteMany({ where: { response_id: responseId } }),
       this.fastify.prisma.response.delete({ where: { id: responseId } })
     ]);
 
-    // 清除答卷缓存
+    // 清除答卷详情缓存
     await this.cache.del(CacheKeys.responseDetail(bigIntToStr(responseId)));
+
+    // P1-8: 答卷删除后同步清除统计缓存，与 submitResponse 保持一致
+    await this.cache.del(CacheKeys.statsOverview).catch(() => {});
+    await this.cache.del(CacheKeys.statsBySurvey(surveyIdStr)).catch(() => {});
 
     createAuditLog(this.fastify, userId, "delete_response", "survey_response", responseId).catch(() => {});
   }

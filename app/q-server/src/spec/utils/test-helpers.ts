@@ -50,10 +50,13 @@ interface PrismaMock {
     findMany: MockFn;
     count: MockFn;
     groupBy: MockFn;
+    deleteMany: MockFn;
   };
   response: {
+    findFirst: MockFn;
     findMany: MockFn;
     count: MockFn;
+    delete: MockFn;
   };
   $transaction: MockFn;
   /** 原生 SQL 查询（统计批量聚合） */
@@ -211,10 +214,13 @@ export function createPrismaMock(): PrismaMock {
       findMany: vi.fn(),
       count: vi.fn(),
       groupBy: vi.fn(),
+      deleteMany: vi.fn(),
     },
     response: {
+      findFirst: vi.fn(),
       findMany: vi.fn(),
       count: vi.fn(),
+      delete: vi.fn(),
     },
     $transaction,
     $queryRawUnsafe: vi.fn(),

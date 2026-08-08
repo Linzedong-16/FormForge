@@ -218,6 +218,7 @@ describe("AuthService", () => {
         .mockResolvedValueOnce({ value: "true" }) // smtp_enabled
         .mockResolvedValueOnce({ value: "true" }); // registration_enabled
       fastify.prisma.user.findFirst.mockResolvedValue(null);
+      fastify.redis.eval.mockResolvedValue(1); // 频率检查通过
       fastify.redis.get.mockResolvedValue(null); // 未超频
       fastify.redis.set.mockResolvedValue("OK");
     });
@@ -239,7 +240,7 @@ describe("AuthService", () => {
     });
 
     it("超出频率限制时抛出 429", async () => {
-      fastify.redis.get.mockResolvedValue("3"); // 已发3次
+      fastify.redis.eval.mockResolvedValue(0); // checkSendRate 返回 false（频率超限）
 
       await expect(authService.sendCode(email, "register")).rejects.toMatchObject({
         statusCode: 429,
@@ -619,6 +620,74 @@ describe("AuthService", () => {
 
       // 用户可以使用旧 Refresh Token 再次刷新
       await expect(authService.refreshToken(oldRefresh)).resolves.toBeDefined();
+    });
+  });
+
+  // ============================================================
+  //  US5 (P1) — sendCode AMQP 不可用告警
+  // ============================================================
+
+  describe("sendCode — AMQP 不可用告警 (US5)", () => {
+    const testEmail = "user@example.com";
+
+    beforeEach(() => {
+      // SMTP 已配置 + 注册已开放（isSmtpConfigured / isRegistrationEnabled 使用 findUnique）
+      fastify.prisma.systemConfig.findUnique
+        .mockResolvedValueOnce({ value: "true" }) // smtp_enabled
+        .mockResolvedValueOnce({ value: "true" }); // registration_enabled
+      // 邮箱未注册
+      fastify.prisma.user.findFirst.mockResolvedValue(null);
+      // 频率检查通过（checkSendRate 使用 eval Lua 脚本返回 1 表示允许）
+      fastify.redis.eval.mockResolvedValue(1);
+      // Redis 写入成功
+      fastify.redis.set.mockResolvedValue("OK");
+      // Redis 读取（验证码/系统配置缓存等）
+      fastify.redis.get.mockResolvedValue(null);
+      // 默认 amqp 可用
+      fastify.amqp = {
+        channel: {
+          sendToQueue: vi.fn().mockReturnValue(true),
+        },
+      } as unknown as typeof fastify.amqp;
+    });
+
+    it("AMQP 不可用时应返回 MAIL_SERVICE_UNAVAILABLE 错误", async () => {
+      // 清除 amqp（模拟 RabbitMQ 不可用）
+      (fastify as Record<string, unknown>).amqp = undefined;
+
+      await expect(authService.sendCode(testEmail, "register")).rejects.toThrow(
+        "邮件服务暂时不可用"
+      );
+    });
+
+    it("AMQP 不可用时应记录 WARN 日志含脱敏邮箱", async () => {
+      (fastify as Record<string, unknown>).amqp = undefined;
+
+      try {
+        await authService.sendCode(testEmail, "register");
+      } catch {
+        // 预期抛异常
+      }
+
+      // 验证 WARN 日志被调用，包含脱敏邮箱和关键词
+      const warnCalls = fastify.log.warn.mock.calls.flat();
+      const hasWarning = warnCalls.some(
+        (call: unknown) =>
+          typeof call === "string" && call.includes("RabbitMQ 不可用")
+      );
+      expect(hasWarning).toBe(true);
+    });
+
+    it("AMQP 可用时正常投递邮件到队列", async () => {
+      const result = await authService.sendCode(testEmail, "register");
+
+      // 返回 expireSeconds（数字）
+      expect(result.expireSeconds).toBeDefined();
+      expect(typeof result.expireSeconds).toBe("number");
+
+      // sendToQueue 被调用
+      const sendToQueue = (fastify.amqp as NonNullable<typeof fastify.amqp>).channel.sendToQueue;
+      expect(sendToQueue).toHaveBeenCalled();
     });
   });
 });

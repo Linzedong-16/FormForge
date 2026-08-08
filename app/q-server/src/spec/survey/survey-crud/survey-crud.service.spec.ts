@@ -1076,4 +1076,65 @@ describe("SurveyService", () => {
       }
     });
   });
+
+  // ============================================================
+  //  US4 (P1) — 答卷删除后统计缓存同步失效
+  // ============================================================
+
+  describe("deleteResponse — 统计缓存失效 (US4)", () => {
+    const RESPONSE_ID = BigInt(999);
+
+    beforeEach(() => {
+      // 默认 mock：答卷存在，所有者匹配
+      fastify.prisma.response.findFirst.mockResolvedValue({
+        id: RESPONSE_ID,
+        survey_id: SURVEY_ID,
+        survey: { user_id: USER_ID },
+      });
+      // $transaction 兼容两种形式：回调式和数组式
+      fastify.prisma.$transaction.mockImplementation((arg: unknown) => {
+        if (typeof arg === "function") {
+          return (arg as Function)(fastify.prisma);
+        }
+        // 数组式批量事务：直接返回传入的数组
+        return Promise.resolve(arg);
+      });
+      fastify.prisma.answer.deleteMany.mockResolvedValue({ count: 1 });
+      fastify.prisma.response.delete.mockResolvedValue({});
+      fastify.prisma.auditLog.create.mockResolvedValue({});
+    });
+
+    it("删除答卷后清除 statsOverview 缓存", async () => {
+      await service.deleteResponse(USER_ID, RESPONSE_ID);
+
+      // 验证 cache.del 被调用且参数包含 statsOverview
+      const delCalls = fastify.redis.del.mock.calls.flat();
+      const hasStatsOverview = delCalls.some(
+        (call: unknown) => typeof call === "string" && call.includes("admin:stats:overview")
+      );
+      expect(hasStatsOverview).toBe(true);
+    });
+
+    it("删除答卷后清除 statsBySurvey 缓存", async () => {
+      await service.deleteResponse(USER_ID, RESPONSE_ID);
+
+      // 验证 cache.del 被调用且参数含 statsBySurvey 模式（CACHE_PREFIX 为 "cache:"）
+      const delCalls = fastify.redis.del.mock.calls.flat();
+      const hasStatsBySurvey = delCalls.some(
+        (call: unknown) => typeof call === "string" && call.includes("admin:stats:survey:")
+      );
+      expect(hasStatsBySurvey).toBe(true);
+    });
+
+    it("缓存清除失败不阻塞删除事务", async () => {
+      // Redis del 失败
+      fastify.redis.del.mockRejectedValue(new Error("Redis 连接失败"));
+
+      // 不应抛出异常
+      await expect(service.deleteResponse(USER_ID, RESPONSE_ID)).resolves.toBeUndefined();
+
+      // 审计日志仍正常写入（删除本身不受影响）
+      expect(fastify.prisma.auditLog.create).toHaveBeenCalled();
+    });
+  });
 });

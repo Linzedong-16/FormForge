@@ -15,6 +15,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import stream from "node:stream";
 import { createCache, CacheKeys, CacheTTL } from "../../../utils/cache.js";
 import type { CacheClient } from "../../../utils/cache.js";
 import { AppError } from "../../../utils/errors.js";
@@ -398,67 +399,144 @@ export class SurveyStatsService {
   }
 
   // ============================================================
-  //  CSV 导出
+  //  CSV 导出（流式输出，P1-5: 防止大数据集 OOM）
   // ============================================================
 
   /**
-   * 导出问卷答卷为 CSV 格式
+   * 流式导出问卷答卷为 CSV 格式
    *
-   * CSV 结构：
-   *   第 1 行：题目标题（带题型标注）
-   *   后续行：每份答卷一行，每列一题答案
+   * 设计要点（P1-5 修复）：
+   *   - 使用 stream.Readable 逐批输出，避免一次性加载全部数据到内存
+   *   - 数据库端使用 created_at 游标分批读取，每次 LIMIT 1000 条
+   *   - 响应写入 reply.raw，利用 HTTP chunked transfer encoding
+   *   - 客户端断开时停止读取并释放资源
+   *
+   * @returns Node.js Readable 流，调用方通过 pipe 或 for-await 消费
    */
-  async exportResponsesCSV(surveyId: bigint, query: ExportQueryInput): Promise<string> {
-    // 获取组件列表（按 order_index 排序），用作文本表头
+  async exportResponsesCSV(surveyId: bigint, query: ExportQueryInput): Promise<stream.Readable> {
+    // 校验问卷存在
+    const survey = await this.fastify.prisma.survey.findFirst({
+      where: { id: surveyId, deleted_at: null },
+      select: { id: true }
+    });
+    if (!survey) {
+      throw new AppError("问卷不存在", 404);
+    }
+
+    // 获取题目组件列表（用于 CSV 表头）
     const components = await this.fastify.prisma.surveyComponent.findMany({
       where: { survey_id: surveyId, type: { notIn: Array.from(NON_QUESTION_TYPES) } },
       orderBy: { order_index: "asc" },
       select: { id: true, type: true, config: true, order_index: true }
     });
 
-    // 构建查询条件
-    const where: Record<string, unknown> = { survey_id: surveyId };
-    if (query.date_from || query.date_to) {
-      const submittedAt: Record<string, Date> = {};
-      if (query.date_from) submittedAt.gte = new Date(query.date_from);
-      if (query.date_to) submittedAt.lte = new Date(query.date_to);
-      where.submitted_at = submittedAt;
-    }
+    // 构建 CSV 表头行
+    const csvHeader = this.buildCSVHeader(components);
 
-    // 获取答卷 ID 列表
-    const responses = await this.fastify.prisma.response.findMany({
-      where,
-      select: { id: true, anonymous_id: true, submitted_at: true },
-      orderBy: { created_at: "asc" }
+    // 构建数据库查询条件（日期筛选）
+    const whereFilter = this.buildExportWhere(surveyId, query);
+
+    const BATCH_SIZE = 1000;
+
+    // 创建可读流
+    const readable = new stream.Readable({
+      read() {
+        // 由内部的异步循环 push 数据，不需要在这里实现
+      }
     });
 
-    if (responses.length === 0) {
-      return "暂无答卷数据";
-    }
+    // 异步数据生产循环（在流创建后立即启动）
+    const produceData = async () => {
+      try {
+        // 写入 UTF-8 BOM（确保 Excel 正确识别中文）
+        readable.push("﻿");
 
-    // 批量加载所有答案
-    const responseIds = responses.map(r => r.id);
-    const allAnswers = await this.fastify.prisma.answer.findMany({
-      where: { response_id: { in: responseIds } },
-      select: { response_id: true, component_id: true, value: true, values: true }
-    });
+        // 写入表头
+        readable.push(csvHeader + "\n");
 
-    // 构建答案映射：responseId → { componentId → answer }
-    const answerMap = new Map<string, Map<string, { value: string | null; values: string[] | null }>>();
-    for (const a of allAnswers) {
-      const rid = bigIntToStr(a.response_id);
-      const cid = bigIntToStr(a.component_id);
-      if (!answerMap.has(rid)) answerMap.set(rid, new Map());
-      answerMap.get(rid)!.set(cid, {
-        value: a.value,
-        values: a.values as string[] | null
-      });
-    }
+        if (components.length === 0) {
+          readable.push("暂无答卷数据\n");
+          readable.push(null);
+          return;
+        }
 
-    // 构建 CSV
-    const lines: string[] = [];
+        // 游标分页读取答卷
+        let cursor: Date | null = null;
+        let hasMore = true;
 
-    // 表头：编号, 提交时间, 匿名ID, Q1_标题(类型), Q2_标题(类型), ...
+        while (hasMore && !readable.destroyed) {
+          // 构建游标条件：WHERE survey_id = ? AND (date filter) AND created_at > cursor
+          const batchWhere: Record<string, unknown> = {
+            ...whereFilter
+          };
+          if (cursor) {
+            batchWhere.created_at = { gt: cursor };
+          }
+
+          const batch = await this.fastify.prisma.response.findMany({
+            where: batchWhere,
+            select: { id: true, anonymous_id: true, submitted_at: true, created_at: true },
+            orderBy: { created_at: "asc" },
+            take: BATCH_SIZE
+          });
+
+          if (batch.length === 0) {
+            hasMore = false;
+            break;
+          }
+
+          // 批量加载本批答卷的答案
+          const batchIds = batch.map(r => r.id);
+          const batchAnswers = await this.fastify.prisma.answer.findMany({
+            where: { response_id: { in: batchIds } },
+            select: { response_id: true, component_id: true, value: true, values: true }
+          });
+
+          // 构建答案映射
+          const answerMap = new Map<string, Map<string, { value: string | null; values: string[] | null }>>();
+          for (const a of batchAnswers) {
+            const rid = bigIntToStr(a.response_id);
+            const cid = bigIntToStr(a.component_id);
+            if (!answerMap.has(rid)) answerMap.set(rid, new Map());
+            answerMap.get(rid)!.set(cid, {
+              value: a.value,
+              values: a.values as string[] | null
+            });
+          }
+
+          // 构建 CSV 数据行并写入流
+          for (const resp of batch) {
+            if (readable.destroyed) break;
+            const rid = bigIntToStr(resp.id);
+            const row = this.buildCSVRow(rid, resp.anonymous_id, resp.submitted_at, components, answerMap.get(rid));
+            readable.push(row + "\n");
+          }
+
+          // 更新游标
+          cursor = batch[batch.length - 1].created_at;
+
+          // 最后一批不足 BATCH_SIZE 时结束
+          if (batch.length < BATCH_SIZE) {
+            hasMore = false;
+          }
+        }
+
+        readable.push(null); // 流结束
+      } catch (err) {
+        readable.destroy(err as Error);
+      }
+    };
+
+    // 启动异步数据生产（不 await，让流在后台填充）
+    produceData();
+
+    return readable;
+  }
+
+  /** 构建 CSV 表头行（不包含 BOM） */
+  private buildCSVHeader(
+    components: Array<{ id: bigint; type: string; config: unknown; order_index: number }>
+  ): string {
     const headers = ["答卷编号", "提交时间", "匿名ID"];
     for (const comp of components) {
       const cfg = comp.config as Record<string, unknown>;
@@ -466,34 +544,47 @@ export class SurveyStatsService {
       const typeLabel = TYPE_NAME_MAP[comp.type] ?? comp.type;
       headers.push(`${title}(${typeLabel})`);
     }
-    lines.push(headers.map(h => csvEscape(h)).join(","));
+    return headers.map(h => csvEscape(h)).join(",");
+  }
 
-    // 数据行
-    for (const resp of responses) {
-      const rid = bigIntToStr(resp.id);
-      const row: string[] = [rid, resp.submitted_at?.toISOString() ?? "", csvEscape(resp.anonymous_id ?? "")];
+  /** 构建导出查询的 WHERE 条件 */
+  private buildExportWhere(surveyId: bigint, query: ExportQueryInput): Record<string, unknown> {
+    const where: Record<string, unknown> = { survey_id: surveyId };
+    if (query.date_from || query.date_to) {
+      const submittedAt: Record<string, Date> = {};
+      if (query.date_from) submittedAt.gte = new Date(query.date_from);
+      if (query.date_to) submittedAt.lte = new Date(query.date_to);
+      where.submitted_at = submittedAt;
+    }
+    return where;
+  }
 
-      const respAnswers = answerMap.get(rid);
+  /** 构建单行 CSV 数据 */
+  private buildCSVRow(
+    responseId: string,
+    anonymousId: string | null,
+    submittedAt: Date | null,
+    components: Array<{ id: bigint; type: string; config: unknown; order_index: number }>,
+    respAnswers: Map<string, { value: string | null; values: string[] | null }> | undefined
+  ): string {
+    const row: string[] = [responseId, submittedAt?.toISOString() ?? "", csvEscape(anonymousId ?? "")];
 
-      for (const comp of components) {
-        const cid = bigIntToStr(comp.id);
-        const ans = respAnswers?.get(cid);
-        let cellValue = "";
-        if (ans) {
-          if (ans.values && ans.values.length > 0) {
-            // 多选：用分号连接
-            cellValue = ans.values.map(v => csvEscape(v)).join(";");
-          } else if (ans.value !== null && ans.value !== undefined) {
-            cellValue = csvEscape(ans.value);
-          }
+    for (const comp of components) {
+      const cid = bigIntToStr(comp.id);
+      const ans = respAnswers?.get(cid);
+      let cellValue = "";
+      if (ans) {
+        if (ans.values && ans.values.length > 0) {
+          // 多选：用分号连接
+          cellValue = ans.values.map(v => csvEscape(v)).join(";");
+        } else if (ans.value !== null && ans.value !== undefined) {
+          cellValue = csvEscape(ans.value);
         }
-        row.push(cellValue);
       }
-
-      lines.push(row.join(","));
+      row.push(cellValue);
     }
 
-    return lines.join("\n");
+    return row.join(",");
   }
 
   // ════════════════════════════════════════════════════════════

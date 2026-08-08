@@ -347,4 +347,121 @@ describe("SurveyStatsService", () => {
       await expect(service.getSurveyStats(BigInt(999))).rejects.toThrow("问卷不存在");
     });
   });
+
+  // ============================================================
+  //  US1 (P1) — CSV 流式导出
+  // ============================================================
+
+  describe("exportResponsesCSV — 流式导出 (US1)", () => {
+    /** 辅助函数：收集 Readable 流的所有数据块并拼接为完整字符串 */
+    async function collectStream(stream: NodeJS.ReadableStream): Promise<string> {
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
+      }
+      return Buffer.concat(chunks).toString("utf-8");
+    }
+
+    it("流式导出正常返回完整 CSV（含 BOM、表头、数据行）", async () => {
+      // 问卷存在
+      fastify.prisma.survey.findFirst.mockResolvedValue({
+        id: BigInt(1),
+        title: "测试问卷",
+      });
+
+      const components = [
+        makeComponent(BigInt(101), "single_select", "您的性别？", 0, ["男", "女"]),
+        makeComponent(BigInt(102), "text_input", "您的建议？", 1),
+      ];
+      fastify.prisma.surveyComponent.findMany.mockResolvedValue(components);
+
+      // 第 1 批答卷（游标查询，共 2 条）
+      fastify.prisma.response.findMany.mockResolvedValue([
+        { id: BigInt(1001), anonymous_id: "user_a", submitted_at: new Date("2026-01-01T10:00:00Z"), created_at: new Date("2026-01-01T10:00:00Z") },
+        { id: BigInt(1002), anonymous_id: "user_b", submitted_at: new Date("2026-01-02T12:00:00Z"), created_at: new Date("2026-01-02T12:00:00Z") },
+      ]);
+
+      // 对应答案
+      fastify.prisma.answer.findMany.mockResolvedValue([
+        { response_id: BigInt(1001), component_id: BigInt(101), value: "男", values: null },
+        { response_id: BigInt(1001), component_id: BigInt(102), value: "很好", values: null },
+        { response_id: BigInt(1002), component_id: BigInt(101), value: "女", values: null },
+        { response_id: BigInt(1002), component_id: BigInt(102), value: "不错", values: null },
+      ]);
+
+      const stream = await service.exportResponsesCSV(BigInt(1), {});
+      const csv = await collectStream(stream);
+
+      // BOM + 表头 + 2 数据行
+      expect(csv).toContain("﻿");
+      expect(csv).toContain("答卷编号,提交时间,匿名ID");
+      expect(csv).toContain("您的性别？(单选题)");
+      expect(csv).toContain("您的建议？(文本输入)");
+
+      const lines = csv.trim().split("\n");
+      // BOM+表头行 + 2 数据行 = 3 行（含 BOM）
+      expect(lines.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("流式导出空问卷返回提示文本", async () => {
+      fastify.prisma.survey.findFirst.mockResolvedValue({
+        id: BigInt(1),
+        title: "空问卷",
+      });
+
+      fastify.prisma.surveyComponent.findMany.mockResolvedValue([]);
+
+      // 无答卷
+      fastify.prisma.response.findMany.mockResolvedValue([]);
+
+      const stream = await service.exportResponsesCSV(BigInt(1), {});
+      const csv = await collectStream(stream);
+
+      expect(csv).toContain("暂无答卷数据");
+    });
+
+    it("导出过程中客户端断开时流正确销毁", async () => {
+      fastify.prisma.survey.findFirst.mockResolvedValue({
+        id: BigInt(1),
+        title: "测试",
+      });
+
+      const components = [
+        makeComponent(BigInt(101), "single_select", "Q1", 0, ["A"]),
+      ];
+      fastify.prisma.surveyComponent.findMany.mockResolvedValue(components);
+
+      // 大量数据 → 分批
+      const responseBatch = Array.from({ length: 1000 }, (_, i) => ({
+        id: BigInt(2001 + i),
+        anonymous_id: `user_${i}`,
+        submitted_at: new Date(),
+        created_at: new Date(Date.now() + i * 1000),
+      }));
+      fastify.prisma.response.findMany.mockResolvedValue(responseBatch);
+
+      fastify.prisma.answer.findMany.mockResolvedValue(
+        responseBatch.map(r => ({
+          response_id: r.id,
+          component_id: BigInt(101),
+          value: "A",
+          values: null,
+        }))
+      );
+
+      const stream = await service.exportResponsesCSV(BigInt(1), {});
+
+      // 读取第一个 chunk 后立即销毁流（模拟客户端断开）
+      const reader = stream[Symbol.asyncIterator]();
+      const first = await reader.next();
+      expect(first.done).toBe(false);
+
+      // 销毁流
+      stream.destroy();
+
+      // 流销毁后不应抛出未处理异常
+      // 验证流已被销毁
+      expect(stream.destroyed).toBe(true);
+    });
+  });
 });

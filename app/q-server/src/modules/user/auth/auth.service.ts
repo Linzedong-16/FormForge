@@ -386,6 +386,10 @@ export class AuthService {
         // 邮件发送失败不影响验证码存储，仅记录日志
         this.fastify.log.warn(`邮件队列发送失败: ${maskEmail(email)}`);
       }
+    } else {
+      // P1-9: RabbitMQ 不可用时显式告警，返回明确错误而非静默跳过
+      this.fastify.log.warn({ target: maskEmail(email), type }, "邮件未发送——RabbitMQ 不可用，验证码已生成但无法投递");
+      throw new AuthError("邮件服务暂时不可用，请稍后重试", 503, BizCode.MAIL_SERVICE_UNAVAILABLE);
     }
 
     // 7. 记录审计日志（未登录操作，userId 为 null）

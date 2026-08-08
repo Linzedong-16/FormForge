@@ -56,7 +56,7 @@ const redisPlugin: FastifyPluginAsync = async fastify => {
     // 启用就绪检查（确保 INFO 命令成功后才标记 ready）
     enableReadyCheck: true,
     // 不启用离线队列（Redis 不可用时命令直接失败，不排队）
-    enableOfflineQueue: true,
+    enableOfflineQueue: false,
     // 连接断开后等待重连的最大时间
     maxLoadingRetryTime: 5000,
     // lazyConnect + 手动 connect，避免构造函数抛错
