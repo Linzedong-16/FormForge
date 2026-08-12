@@ -129,6 +129,9 @@ importers:
       monorepo-code-common:
         specifier: workspace:*
         version: link:../../packages/common
+      monorepo-sse-client:
+        specifier: workspace:*
+        version: link:../../packages/sse-client
       monorepo-survey-engine:
         specifier: workspace:*
         version: link:../../packages/survey-engine
@@ -266,6 +269,9 @@ importers:
       monorepo-sse-client:
         specifier: workspace:*
         version: link:../../packages/sse-client
+      monorepo-survey-engine:
+        specifier: workspace:*
+        version: link:../../packages/survey-engine
       monorepo-tracking-sdk:
         specifier: workspace:*
         version: link:../../packages/tracking-sdk
@@ -465,6 +471,9 @@ importers:
       monorepo-code-common:
         specifier: workspace:*
         version: link:../../packages/common
+      monorepo-survey-engine:
+        specifier: workspace:*
+        version: link:../../packages/survey-engine
       nodemailer:
         specifier: ~6.0.0
         version: 6.0.0
@@ -560,7 +569,11 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@22.19.20)(happy-dom@20.10.6)(jsdom@25.0.1)(less@4.5.1)(sass-embedded@1.97.3)(sass@1.97.3)(terser@5.46.1)
 
-  packages/common: {}
+  packages/common:
+    dependencies:
+      monorepo-survey-engine:
+        specifier: workspace:*
+        version: link:../survey-engine
 
   packages/components:
     devDependencies:
