@@ -42,7 +42,9 @@
       "Bash(pnpm run *)",
       "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File \".specify/scripts/powershell/setup-plan.ps1\" -Json)",
       "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File \".specify/scripts/powershell/setup-tasks.ps1\" -Json)",
-      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -RequireTasks -IncludeTasks)"
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -RequireTasks -IncludeTasks)",
+      "Bash(uv tool *)",
+      "Bash(specify --version)"
     ],
     "additionalDirectories": [
       "C:\\Users\\linze\\.claude\\projects\\D--coding-project-questionnaireSys\\2a9e2a12-0654-488d-9658-1c387340c917\\workflows\\scripts"
