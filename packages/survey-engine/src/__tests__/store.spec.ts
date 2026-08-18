@@ -9,11 +9,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 
-// mock 重模块 — 避免引入 .vue 文件、IndexedDB、axios 等运行时依赖
-vi.mock("../configs/componentMap", () => ({
-  componentMap: { "single-select": {}, "title-editor": {}, "text-note": {} } as Record<string, object>
-}));
-
+// mock 重模块 — 避免引入 IndexedDB、axios 等运行时依赖
+// （componentMap 已随 T014 从 stores/useEditor.ts 的引入链中移除，无需再 mock）
 vi.mock("../utils/i18n", () => ({
   t: vi.fn((key: string) => key),
   i18n: { global: { locale: { value: "zh-CN" } } },
@@ -236,7 +233,8 @@ describe("useEditorStore", () => {
       store.addCom(com);
       const idx = store.coms.length - 1;
       store.setCurrentComponentIndex(idx);
-      store.setTextStatus(store.coms[idx]!.status.title, "新标题");
+      // status 索引签名返回 TextProps | OptionsProps 联合类型，title 字段实际固定为 TextProps
+      store.setTextStatus(store.coms[idx]!.status.title as TextProps, "新标题");
       expect(store.coms[idx]!.status.title!.status).toBe("新标题");
     });
 
@@ -301,7 +299,7 @@ describe("useEditorStore", () => {
   describe("setStore", () => {
     it("加载已有问卷数据到 store", () => {
       const com = makeCom("rate-score", "id-100", "评分题");
-      store.setStore({ coms: [com], surveyCount: 1, pageSize: 20 });
+      store.setStore({ coms: [com], surveyCount: 1, pageSize: 20, createDate: 0, updateDate: 0, title: "测试问卷" });
       expect(store.coms.length).toBe(1);
       expect(store.surveyCount).toBe(1);
       expect(store.pageSize).toBe(20);
@@ -311,7 +309,7 @@ describe("useEditorStore", () => {
     it("加载后清空撤销历史", () => {
       store.addCom(makeCom("single-select", "id-1", "Q1"));
       const com = makeCom("rate-score", "id-100", "评分题");
-      store.setStore({ coms: [com], surveyCount: 1, pageSize: 20 });
+      store.setStore({ coms: [com], surveyCount: 1, pageSize: 20, createDate: 0, updateDate: 0, title: "测试问卷" });
       expect(store.canUndo).toBe(false);
       expect(store.canRedo).toBe(false);
     });

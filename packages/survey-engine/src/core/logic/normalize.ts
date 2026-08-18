@@ -2,9 +2,13 @@
 // 动态表单引擎 —— 答案值规范化
 // 对应 specs/008-dynamic-form-engine/data-model.md §1.2 与 research.md §3
 // 依据：app/q-editor/src/components/SurveyComs/Materials/ 下各题型组件的真实 emit 数据形态
+//
+// 迁移说明（T022，原路径 src/logic/normalize.ts）：迁移至 core/logic/ 时，Material 的
+// 导入来源由 "../types/material" 改为 "../schema/types"，与 types.ts（T020）保持一致，
+// 切断到 vue 的 type-only 依赖链，使本文件符合 core/ 边界约束（research.md R1）
 // ──────────────────────────────────────────────────────────────────────────────
 
-import type { Material } from "../types/material";
+import type { Material } from "../schema/types";
 import type { RawAnswerValue, NormalizedValue } from "./types";
 
 /**

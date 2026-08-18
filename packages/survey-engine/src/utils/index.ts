@@ -1,5 +1,7 @@
 ﻿// 工具库
-import { componentMap } from "../configs/componentMap";
+// restoreComponentStatus 已随 T014 迁移到 adapters/vue3/restoreComponentStatus.ts：
+// 本文件若继续引入 componentMap，会与 Materials 业务组件反向引入本文件的纯工具函数形成循环依赖
+// （componentMap.ts → 业务组件.vue → utils/index.ts → componentMap.ts），故不在此处保留 componentMap 依赖
 import { ageStatus, careerStatus, educationStatus, genderStatus } from "../configs/defaultStatus/initStatus";
 import {
   type TextProps,
@@ -318,45 +320,6 @@ export function formatDate(row: SurveyDBData, column: TableColumnCtx<SurveyDBDat
   };
   return new Intl.DateTimeFormat("zh-CN", options).format(new Date(cellValue));
 }
-
-/**
- * 还原组件状态（从持久化数据中恢复 Vue 组件引用）
- *
- * 数据流：JSON 序列化/IndexedDB 存储会丢失 Vue 组件引用（type/editCom），
- * 本函数通过 componentMap 按 name 字段重新挂载组件引用。
- *
- * 兼容性说明：
- *   - 不依赖 id 字段（UUID），仅依赖 name 字段
- *   - 对于缺少 name 字段的 status 属性，跳过 editCom 恢复
- *   - 后端返回的清洗后数据（无 editCom/id）可正常工作
- *
- * @param coms 组件状态数组（从 IndexedDB 或后端 API 反序列化后）
- */
-export const restoreComponentStatus = (coms: Status[]) => {
-  coms.forEach(com => {
-    // 业务组件的还原
-    const component = componentMap[com.name as keyof typeof componentMap];
-    if (component) {
-      com.type = component;
-    }
-
-    // 还原编辑组件引用
-    if (!com.status || typeof com.status !== "object") return;
-
-    for (const key in com.status) {
-      const prop = com.status[key];
-      if (!prop || typeof prop !== "object") continue;
-
-      const name = (prop as unknown as Record<string, unknown>).name as string | undefined;
-      if (name) {
-        const editCom = componentMap[name as keyof typeof componentMap];
-        if (editCom) {
-          (prop as unknown as Record<string, unknown>).editCom = editCom;
-        }
-      }
-    }
-  });
-};
 
 /**
  * 在新标签页打开路由链接

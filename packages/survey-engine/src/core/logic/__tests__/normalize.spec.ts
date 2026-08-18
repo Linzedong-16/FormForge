@@ -2,11 +2,15 @@
 // normalizeAnswerValue — 单元测试
 // 覆盖现有 14+ 种题型（含 personal-info-* 复用题型）的答案规范化分支与空值/边界场景
 // 依据：app/q-editor/src/components/SurveyComs/Materials/ 下各题型组件的真实 emit 数据形态
+//
+// 迁移说明（T019，原路径 src/logic/__tests__/normalize.spec.ts）：迁移至 core/logic/__tests__/
+// 时，Material 类型的导入来源由 "../../types/material" 改为 "../../schema/types"，
+// 与 normalize.ts 本身（T022）的迁移保持一致，断言内容不变
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from "vitest";
 import { normalizeAnswerValue } from "../normalize";
-import type { Material } from "../../types/material";
+import type { Material } from "../../schema/types";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 空值/未作答场景：任意题型，rawValue 为 null/undefined 均判定为空

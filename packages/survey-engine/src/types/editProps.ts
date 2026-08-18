@@ -1,4 +1,23 @@
 import type { VueComType } from "./common.js";
+// StringStatusArr/ValueStatusArr/PicTitleDescStatusArr/CascaderOptionItem/CascaderStatusArr/OptionsStatusArr
+// 本身从未依赖过 Vue，已随 core/schema/types.ts 整体迁移（data-model.md §3），此处重新导出以保持
+// 现有内部 import 路径不破坏（research.md R1）。
+import type {
+  StringStatusArr,
+  ValueStatusArr,
+  PicTitleDescStatusArr,
+  CascaderOptionItem,
+  CascaderStatusArr,
+  OptionsStatusArr
+} from "../core/schema/types.js";
+export type {
+  StringStatusArr,
+  ValueStatusArr,
+  PicTitleDescStatusArr,
+  CascaderOptionItem,
+  CascaderStatusArr,
+  OptionsStatusArr
+};
 
 export interface BaseProps {
   id: string;
@@ -8,26 +27,9 @@ export interface BaseProps {
   isUse?: boolean;
 }
 
-export type StringStatusArr = string[];
-export type ValueStatusArr = Array<{ value: string; status: string }>;
-export type PicTitleDescStatusArr = Array<{
-  picTitle: string;
-  picDesc: string;
-  value: string;
-}>;
-
-// 级联选项节点（树形，深度最高 4 级），用于多级联动题的自定义模式
-export interface CascaderOptionItem {
-  label: string;
-  value: string;
-  children?: CascaderOptionItem[];
-}
-export type CascaderStatusArr = CascaderOptionItem[];
-
 export interface TextProps extends BaseProps {
   status: string;
 }
-export type OptionsStatusArr = StringStatusArr | ValueStatusArr | PicTitleDescStatusArr | CascaderStatusArr;
 export interface OptionsProps extends BaseProps {
   status: OptionsStatusArr;
   currentStatus: number;

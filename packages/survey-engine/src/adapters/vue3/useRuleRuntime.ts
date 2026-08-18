@@ -7,13 +7,18 @@
 //   resolveVisibility（T018）/resolveJump（T027）/resolveOptionPool（T033）/computeDerivedField（T038）
 //   届时均以 `normalizedAnswers` 为输入，各自在调用处以 computed(() => resolveXxx(logic, normalizedAnswers.value))
 //   的形式接入，无需回头改动本文件——避免此处提前依赖尚未落地的 declare function（types.ts 中仅为类型契约）。
+//
+// 迁移说明（T024，原路径 src/logic/useRuleRuntime.ts）：本文件依赖 vue（computed/ComputedRef/Ref），
+// 不满足 core/ 的框架无关约束（research.md R1），故迁移至 adapters/vue3/；纯规则引擎符号
+// （normalizeAnswerValue 及 ClientKey/NormalizedValue/RawAnswerValue 类型）改为从 core/logic 的
+// 统一导出入口引入，Material 仍从 src/types/material 引入（该文件本身尚未迁移，仅调整相对路径层级）
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { computed } from "vue";
 import type { ComputedRef, Ref } from "vue";
-import type { Material } from "../types/material";
-import { normalizeAnswerValue } from "./normalize";
-import type { ClientKey, NormalizedValue, RawAnswerValue } from "./types";
+import type { Material } from "../../types/material";
+import { normalizeAnswerValue } from "../../core/logic";
+import type { ClientKey, NormalizedValue, RawAnswerValue } from "../../core/logic";
 
 /** 单个题目参与规则求值所需的最小上下文，不感知具体 UI 组件形态 */
 export interface RuleRuntimeComponent {

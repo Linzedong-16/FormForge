@@ -1,5 +1,8 @@
-﻿/**
+/**
  * 编辑器撤销/重做管理器 —— 全量快照策略
+ *
+ * 原位于 src/utils/undoManager.ts，随 T030 迁移至 core/orchestration/，
+ * 仅调整相对 import 路径，算法与实现保持不变。
  *
  * 每次变更前通过 JSON 序列化深拷贝 coms 数组存入历史栈，
  * 撤销时从栈中弹出恢复。50 层上限，超出自动丢弃最旧快照。
@@ -8,7 +11,7 @@
  * 因为 Status.type 是 Vue 组件引用（函数），structuredClone 无法克隆。
  * 快照恢复后由 store 调用 restoreComponentStatus() 通过 name 重新挂载组件引用。
  */
-import type { Status } from "../types";
+import type { Status } from "../../types";
 
 /** 快照数据结构：记录 coms 数组 + 辅助字段 */
 export interface Snapshot {

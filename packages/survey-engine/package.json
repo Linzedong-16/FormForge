@@ -18,7 +18,8 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:core": "vitest run --config vitest.core.config.ts"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",

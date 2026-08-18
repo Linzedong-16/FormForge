@@ -2,6 +2,9 @@
 // resolveVisibility — 单元测试
 // 覆盖：隐藏优先裁决（FR-002/Clarification Q2）、AND/OR 组合、baseVisibility 两种默认态、
 // 各比较运算符在不同 NormalizedValue kind 下的求值语义
+//
+// 迁移说明（T019，原路径 src/logic/__tests__/evaluator.spec.ts）：仅调整 import 路径迁移至
+// core/logic/__tests__/，断言内容不变；用于验证 pnpm test:core（不加载 vue/jsdom）下可独立通过
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from "vitest";

@@ -3,6 +3,9 @@
 // 覆盖：循环依赖 DFS 三色标记检测、无效引用检测（visibility/jump/optionDependency/
 // computedField 四类 logic 配置均可产生悬空引用）、非法跳转目标检测、多违规并存场景
 // 对应 data-model.md §1.9 / research.md §6 / quickstart.md 场景5 / FR-006
+//
+// 迁移说明（T019，原路径 src/logic/__tests__/validator.spec.ts）：仅调整 import 路径迁移至
+// core/logic/__tests__/，断言内容不变
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from "vitest";

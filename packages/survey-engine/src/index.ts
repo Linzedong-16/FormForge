@@ -15,7 +15,9 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 // ═══ 组件注册表 ═══════════════════════════════════════════════════════════════
-export { componentMap } from "./configs/componentMap";
+// componentMap 已随 T013 迁移到 adapters/vue3/（原 configs/componentMap.ts 已删除），
+// 此处改为指向新路径，对外导出符号名称与用法保持不变
+export { componentMap } from "./adapters/vue3/componentMap";
 
 // ═══ 题型面板配置 ═════════════════════════════════════════════════════════════
 export { getSurveyComsList } from "./configs/SurveyGroupConfig";
@@ -45,9 +47,10 @@ export {
   changeEditorIsShowStatus,
   updateInitStatusBeforeAdd,
   formatDate,
-  restoreComponentStatus,
   openNewTab
 } from "./utils/index";
+// restoreComponentStatus 已随 T014 迁移到 adapters/vue3/（避免循环依赖），此处改为指向新路径
+export { restoreComponentStatus } from "./adapters/vue3/restoreComponentStatus";
 
 export { useSurveyNo } from "./utils/hooks";
 
@@ -114,8 +117,9 @@ export {
 export { engineMessages } from "./i18n/messages";
 
 // ═══ 撤销/重做 ════════════════════════════════════════════════════════════════
-export { UndoManager } from "./utils/undoManager";
-export type { Snapshot } from "./utils/undoManager";
+// UndoManager 已随 T030 迁移到 core/orchestration/，此处改为指向新路径，对外导出符号名称不变
+export { UndoManager } from "./core/orchestration/undoManager";
+export type { Snapshot } from "./core/orchestration/undoManager";
 
 // ═══ 事件总线 ═════════════════════════════════════════════════════════════════
 export { default as emitter } from "./utils/eventBus";
@@ -125,15 +129,16 @@ export type { Events } from "./types/eventBus";
 export { uploadImage } from "./api/upload";
 
 // ═══ 动态表单引擎 —— 显示/隐藏、跳转、选项联动、派生字段、发布校验等规则子模块 ═══
+// 纯规则引擎符号（框架无关）已随 T020-T023 迁移至 core/logic/；useRuleRuntime 依赖 vue，
+// 已迁移至 adapters/vue3/useRuleRuntime（T024），此处按来源拆分为两个导出块，对外符号名称不变
 export {
   normalizeAnswerValue,
-  useRuleRuntime,
   resolveVisibility,
   resolveJump,
   resolveOptionPool,
   computeDerivedField,
   validateRuleSet
-} from "./logic";
+} from "./core/logic";
 export type {
   ClientKey,
   ComparisonOperator,
@@ -155,8 +160,8 @@ export type {
   QuestionLogicConfig,
   RuleViolationType,
   RuleViolation,
-  RuleValidationResult,
-  RuleRuntimeComponent,
-  UseRuleRuntimeOptions,
-  UseRuleRuntimeReturn
-} from "./logic";
+  RuleValidationResult
+} from "./core/logic";
+
+export { useRuleRuntime } from "./adapters/vue3/useRuleRuntime";
+export type { RuleRuntimeComponent, UseRuleRuntimeOptions, UseRuleRuntimeReturn } from "./adapters/vue3/useRuleRuntime";

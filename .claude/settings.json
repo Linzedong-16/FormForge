@@ -44,7 +44,21 @@
       "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File \".specify/scripts/powershell/setup-tasks.ps1\" -Json)",
       "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -RequireTasks -IncludeTasks)",
       "Bash(uv tool *)",
-      "Bash(specify --version)"
+      "Bash(specify --version)",
+      "Bash(powershell -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly)",
+      "Bash(pwsh -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly)",
+      "Bash(git log *)",
+      "Bash(pwsh -NoProfile -File .specify/scripts/powershell/setup-tasks.ps1 -Json)",
+      "Bash(pwsh -NoProfile -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks)",
+      "Bash(powershell -NoProfile -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks)",
+      "Bash(xargs grep -l \"componentMap\\\\|restoreComponentStatus\\\\|defaultStatusMap\")",
+      "Bash(pnpm test:core)",
+      "Bash(echo \"EXIT_CODE:$?\")",
+      "Bash(tee /tmp/vite_dev.log)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:5174/)",
+      "Bash(curl -s http://localhost:5174/src/views/survey-preview/detail/SurveyPreviewDetail.vue -o /dev/null -w \"SurveyPreviewDetail module transform: HTTP %{http_code}\\\\n\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\linze\\.claude\\projects\\D--coding-project-questionnaireSys\\2a9e2a12-0654-488d-9658-1c387340c917\\workflows\\scripts"

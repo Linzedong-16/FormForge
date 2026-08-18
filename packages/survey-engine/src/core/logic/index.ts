@@ -1,13 +1,9 @@
 // ──────────────────────────────────────────────────────────────────────────────
-// 动态表单引擎 logic 子模块 —— 统一导出入口
-// 随各任务落地逐步补全：当前 normalizeAnswerValue（T005）/useRuleRuntime（T016）/resolveVisibility（T018）/
-// resolveJump（T027）/resolveOptionPool（T033）/computeDerivedField（T038）/validateRuleSet（T044）
-// 均已有真实实现
+// core/logic 子模块 —— 统一导出入口（框架无关，可在 vitest.core.config.ts 下独立运行）
+// useRuleRuntime 依赖 vue，不属于本目录，已迁移至 adapters/vue3/useRuleRuntime.ts（T024）
 // ──────────────────────────────────────────────────────────────────────────────
 
 export { normalizeAnswerValue } from "./normalize";
-export { useRuleRuntime } from "./useRuleRuntime";
-export type { RuleRuntimeComponent, UseRuleRuntimeOptions, UseRuleRuntimeReturn } from "./useRuleRuntime";
 export { resolveVisibility, resolveJump, resolveOptionPool, computeDerivedField } from "./evaluator";
 export { validateRuleSet } from "./validator";
 

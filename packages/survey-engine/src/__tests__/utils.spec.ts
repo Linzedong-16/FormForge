@@ -1,6 +1,7 @@
 // ──────────────────────────────────────────────────────────────────────────────
 // 问卷引擎工具函数 — 单元测试
-// 覆盖 utils/index.ts 中全部 14 个导出函数
+// 覆盖 utils/index.ts 中全部 13 个导出函数
+// （restoreComponentStatus 已随 T014 迁移到 adapters/vue3/__tests__/restoreComponentStatus.spec.ts）
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect, vi } from "vitest";
@@ -17,10 +18,9 @@ import {
   changeEditorIsShowStatus,
   updateInitStatusBeforeAdd,
   formatDate,
-  restoreComponentStatus,
   openNewTab
 } from "../utils/index";
-import type { TextProps, OptionsProps, Status, TypeStatus, Material } from "../types";
+import type { TextProps, OptionsProps, Status, TypeStatus, Material, OptionsStatusArr } from "../types";
 
 // ─── 辅助：构造测试用 Props ────────────────────────────────────────────────
 
@@ -28,7 +28,9 @@ function makeTextProps(status: string): TextProps {
   return { id: "t1", isShow: true, name: "title", editCom: {} as never, status };
 }
 
-function makeOptionsProps(status: string[], currentStatus = 0): OptionsProps {
+// status 类型放宽为 OptionsStatusArr（字符串数组仅是其中一种形态），
+// 以便测试用例可直接构造 ValueStatusArr / PicTitleDescStatusArr 数据
+function makeOptionsProps(status: OptionsStatusArr, currentStatus = 0): OptionsProps {
   return { id: "o1", isShow: true, name: "options", editCom: {} as never, status, currentStatus };
 }
 
@@ -276,62 +278,6 @@ describe("formatDate", () => {
     expect(result).toContain("2025");
     expect(result).toContain("01");
     expect(result).toContain("15");
-  });
-});
-
-// ──────────────────────────────────────────────────────────────────────────────
-// restoreComponentStatus
-// ──────────────────────────────────────────────────────────────────────────────
-describe("restoreComponentStatus", () => {
-  it("恢复 name 对应的 Vue 组件引用 type", () => {
-    const mockComponent = {};
-    // 临时注入一个 name 到 componentMap
-    const coms: Status[] = [
-      {
-        name: "single-select" as Material,
-        id: "a",
-        type: undefined as never,
-        status: {
-          title: {
-            id: "t1",
-            isShow: true,
-            name: "title",
-            editCom: undefined as never,
-            status: "标题"
-          }
-        }
-      }
-    ];
-    restoreComponentStatus(coms);
-    // type 被 componentMap 恢复（single-select 肯定注册了）
-    expect(coms[0]!.type).toBeDefined();
-  });
-
-  it("编辑组件 editCom 也被恢复", () => {
-    const coms: Status[] = [
-      {
-        name: "single-select" as Material,
-        id: "a",
-        type: undefined as never,
-        status: {
-          title: {
-            id: "t1",
-            isShow: true,
-            name: "title-editor",
-            editCom: undefined as never,
-            status: "标题"
-          }
-        }
-      }
-    ];
-    restoreComponentStatus(coms);
-    expect(coms[0]!.status.title!.editCom).toBeDefined();
-  });
-
-  it("安全处理无 status 的情况", () => {
-    expect(() =>
-      restoreComponentStatus([{ name: "single-select" as Material, id: "a", type: undefined as never, status: {} }])
-    ).not.toThrow();
   });
 });
 

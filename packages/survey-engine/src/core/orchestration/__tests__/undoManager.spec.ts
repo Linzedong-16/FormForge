@@ -1,11 +1,12 @@
 // ──────────────────────────────────────────────────────────────────────────────
 // 问卷引擎 撤销/重做 管理器 — 单元测试
-// 覆盖 utils/undoManager.ts 中 UndoManager 的全部功能
+// 覆盖 core/orchestration/undoManager.ts 中 UndoManager 的全部功能
+// 原位于 src/__tests__/undoManager.spec.ts，随 T029 迁移至此，仅调整 import 路径
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { UndoManager, type Snapshot } from "../utils/undoManager";
-import type { Status } from "../types";
+import { UndoManager, type Snapshot } from "../undoManager";
+import type { Status } from "../../../types";
 
 // ─── 辅助：构造测试快照 ──────────────────────────────────────────────────────
 

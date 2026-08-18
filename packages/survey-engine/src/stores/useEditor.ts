@@ -25,8 +25,10 @@ import {
 } from "./actions";
 import { saveSurvey, updateSurveyById } from "../db/operation";
 import { initStore } from "../configs/defaultStatus/initStatus";
-import { UndoManager, type Snapshot } from "../utils/undoManager";
-import { restoreComponentStatus } from "../utils";
+// UndoManager 已随 T030 迁移到 core/orchestration/（编排状态纯逻辑下沉），此处改为指向新路径
+import { UndoManager, type Snapshot } from "../core/orchestration/undoManager";
+// restoreComponentStatus 已随 T014 迁移到 adapters/vue3/（避免与 utils/index.ts 形成循环依赖）
+import { restoreComponentStatus } from "../adapters/vue3/restoreComponentStatus";
 import { toRaw } from "vue";
 
 // ─── 模块级 UndoManager（非响应式，避免 Pinia reactive 代理干扰 structuredClone）───

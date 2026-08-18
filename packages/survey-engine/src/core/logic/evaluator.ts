@@ -2,6 +2,9 @@
 // 动态表单引擎 —— 规则求值算法
 // 对应 specs/008-dynamic-form-engine/tasks.md T018（resolveVisibility）/ T027（resolveJump）/
 // T033（resolveOptionPool）/ T038（computeDerivedField）
+//
+// 迁移说明（T021，原路径 src/logic/evaluator.ts）：仅调整相对 import 路径迁移至
+// core/logic/，本身只依赖同目录的 ./types（纯类型），算法与行为不变
 // ──────────────────────────────────────────────────────────────────────────────
 
 import type {
