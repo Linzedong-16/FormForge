@@ -33,7 +33,7 @@ import { isSurveyComName } from "@/types";
 // 事件总线
 import EventBus from "@/utils/eventBus";
 // 仓库
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore } from "monorepo-survey-engine";
 const store = useEditorStore();
 // 组合式函数
 import { useSurveyNo } from "@/utils/hooks";

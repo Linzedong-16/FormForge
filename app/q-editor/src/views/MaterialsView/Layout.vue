@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { useMaterialStore } from "@/stores/useMaterial";
-import EditPannel from "@/components/SurveyComs/EditItems/EditPannel.vue";
+import { EditPannel } from "monorepo-survey-engine";
 import { computed, provide, watch } from "vue";
 import { ElMessage } from "element-plus";
 import { useRoute } from "vue-router";
@@ -210,7 +210,7 @@ watch(
       if (!store.coms[componentName]) {
         import(
           /* @vite-ignore */
-          /* webpackChunkName: "default-status" */ `@/configs/defaultStatus/${componentName.charAt(0).toUpperCase() + componentName.slice(1)}`
+          /* webpackChunkName: "default-status" */ `monorepo-survey-engine/configs/defaultStatus/${componentName.charAt(0).toUpperCase() + componentName.slice(1)}`
         )
           .then(() => {
             // const defaultStatusFn = module.default;

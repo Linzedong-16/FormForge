@@ -13,9 +13,8 @@
 <script setup lang="ts">
 import { computed, provide } from "vue";
 // 仓库
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore, EditPannel } from "monorepo-survey-engine";
 const store = useEditorStore();
-import EditPannel from "@/components/SurveyComs/EditItems/EditPannel.vue";
 import LogicPanel from "@/components/Logic/LogicPanel.vue";
 
 import { ElMessage } from "element-plus";

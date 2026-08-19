@@ -12,10 +12,9 @@
 </template>
 
 <script setup lang="ts">
-import { defaultStatusMap } from "@/configs/defaultStatus/defaultStatusMap";
 import { updateInitStatusBeforeAdd } from "@/utils";
 import type { Material, Status } from "@/types";
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore, defaultStatusMap } from "monorepo-survey-engine";
 const store = useEditorStore();
 // 事件总线
 import EventBus from "@/utils/eventBus";

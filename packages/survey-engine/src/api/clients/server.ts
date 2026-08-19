@@ -11,4 +11,8 @@ const serverClient = axios.create({
   timeout: 15000
 });
 
+// 响应拦截器：直接返回业务信封 { code, msg, data }，而非裸的 AxiosResponse
+// 对应 Constitution Principle III 统一响应信封要求；错误处理（401 刷新等）由消费方按需自行注入
+serverClient.interceptors.response.use(response => response.data);
+
 export default serverClient;

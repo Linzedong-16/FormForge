@@ -115,7 +115,7 @@ const router = useRouter();
 const { t } = useI18n();
 import { ref, inject } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore } from "monorepo-survey-engine";
 import SurveyPagination from "@/components/Common/SurveyPagination.vue";
 import UserProfile from "@/components/Common/UserProfile.vue";
 import AIGenPanel from "@/extension/components/AI-GenPanel.vue";

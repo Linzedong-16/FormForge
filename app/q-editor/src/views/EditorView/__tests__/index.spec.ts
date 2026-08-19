@@ -58,6 +58,17 @@ vi.mock("@/db/operation", () => ({
   saveSurvey: (...args: unknown[]) => saveSurveyMock(...args)
 }));
 
+// EditorView 的 store 已随迁移改由 monorepo-survey-engine 提供，其 updateComs/saveComs
+// 内部直接调用包自身的 ../db/operation（真实 IndexedDB），并非 q-editor 本地的 @/db/operation，
+// 因此上面这条 mock 无法拦截到。这里借助该包 "./*": "./src/*" 的 exports 通配声明，
+// 按同一物理文件路径（packages/survey-engine/src/db/operation.ts）单独 mock 一次，
+// 复用同一批 spy，避免测试环境缺失原生 IndexedDB 导致保存流程真实抛错
+vi.mock("monorepo-survey-engine/db/operation", () => ({
+  getSurveyById: (...args: unknown[]) => getSurveyByIdMock(...args),
+  updateSurveyById: (...args: unknown[]) => updateSurveyByIdMock(...args),
+  saveSurvey: (...args: unknown[]) => saveSurveyMock(...args)
+}));
+
 vi.mock("@/api/modules/survey", () => ({
   createSurvey: vi.fn(),
   updateSurvey: vi.fn().mockResolvedValue({ code: 0, msg: "ok", data: { survey_id: "remote-1" } }),

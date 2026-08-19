@@ -12,7 +12,7 @@
 import { ref, computed } from "vue";
 import { createAIPolishStream } from "@/api/modules/survey";
 import { aiComponentsToStatus } from "@/utils/aiToStatus";
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore } from "monorepo-survey-engine";
 import { useUserStore } from "@/stores/useUser";
 import type { AIPolishResult } from "monorepo-sse-client/ai";
 import type { SurveyContent } from "monorepo-code-common";

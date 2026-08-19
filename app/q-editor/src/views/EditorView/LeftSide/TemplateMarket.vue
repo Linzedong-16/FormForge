@@ -172,7 +172,7 @@ import type {
   TemplateListQuery,
   TemplateCategory
 } from "@common/survey/survey.interface";
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore } from "monorepo-survey-engine";
 
 const { t } = useI18n();
 const store = useEditorStore();

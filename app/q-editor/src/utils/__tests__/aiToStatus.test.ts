@@ -29,7 +29,10 @@ const { mockFactory, mockRestoreComponentStatus } = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/configs/defaultStatus/defaultStatusMap", () => ({
+// defaultStatusMap 已随迁移改由 monorepo-survey-engine 提供，物理文件路径为
+// packages/survey-engine/src/configs/defaultStatus/defaultStatusMap.ts，借助该包
+// "./*": "./src/*" 的 exports 通配声明按同一物理文件单独 mock
+vi.mock("monorepo-survey-engine/configs/defaultStatus/defaultStatusMap", () => ({
   defaultStatusMap: {
     "single-select": mockFactory,
     "multi-select": () => ({
@@ -56,13 +59,19 @@ vi.mock("@/configs/defaultStatus/defaultStatusMap", () => ({
   }
 }));
 
-vi.mock("@/configs/componentMap", () => ({
-  componentMap: {
-    "single-select": {} as any,
-    "multi-select": {} as any,
-    "text-note": {} as any
-  }
-}));
+// componentMap 已随迁移改由 monorepo-survey-engine 提供，通过 importOriginal 保留该包其余
+// 真实导出（如 useEditorStore），仅覆盖 componentMap 为测试所需的最小假组件表
+vi.mock("monorepo-survey-engine", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("monorepo-survey-engine")>();
+  return {
+    ...actual,
+    componentMap: {
+      "single-select": {} as any,
+      "multi-select": {} as any,
+      "text-note": {} as any
+    }
+  };
+});
 
 vi.mock("@/utils", () => ({
   restoreComponentStatus: mockRestoreComponentStatus

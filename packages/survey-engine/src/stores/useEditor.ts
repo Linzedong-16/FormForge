@@ -30,6 +30,8 @@ import { UndoManager, type Snapshot } from "../core/orchestration/undoManager";
 // restoreComponentStatus 已随 T014 迁移到 adapters/vue3/（避免与 utils/index.ts 形成循环依赖）
 import { restoreComponentStatus } from "../adapters/vue3/restoreComponentStatus";
 import { toRaw } from "vue";
+import { v4 as uuidv4 } from "uuid";
+import { validateRuleSet, type QuestionLogicConfig, type RuleViolation } from "../core/logic";
 
 // ─── 模块级 UndoManager（非响应式，避免 Pinia reactive 代理干扰 structuredClone）───
 const undoManager = new UndoManager();
@@ -180,6 +182,11 @@ export const useEditorStore = defineStore("editor", {
 
     addCom(newCom: Status) {
       this._recordSnapshot();
+      // 新增题目生成稳定引用键 UUID v4，供动态表单规则引用；
+      // 加载既有问卷走 setStore() 而非 addCom()，故已有 client_key 不会被此处覆盖
+      if (!newCom.client_key) {
+        newCom.client_key = uuidv4();
+      }
       this.coms.push(newCom);
       this.currentComponentIndex = -1;
       if (isSurveyComName(newCom.name)) {
@@ -197,6 +204,75 @@ export const useEditorStore = defineStore("editor", {
 
     setCurrentComponentIndex(index: number) {
       this.currentComponentIndex = index;
+    },
+
+    // ─── 按 client_key 索引的动态规则读写 ────────────────────────────────
+
+    /** 按题目稳定标识查找对应组件，供规则编辑器/求值运行时按 client_key 定位题目 */
+    getComByClientKey(clientKey: string): Status | undefined {
+      return this.coms.find(com => com.client_key === clientKey);
+    },
+
+    /**
+     * 确保指定下标的题目具备 client_key：存量问卷（发布于本功能上线前）的题目可能没有该字段，
+     * 首次尝试为其配置动态规则时惰性补齐，不影响未打开规则面板的其他题目，不产生新的破坏性变更
+     */
+    ensureComClientKey(index: number): string {
+      const com = this.coms[index];
+      if (!com) return "";
+      if (!com.client_key) {
+        com.client_key = uuidv4();
+        this.dirty = true;
+      }
+      return com.client_key;
+    },
+
+    /** 按题目稳定标识更新其动态规则配置（记录快照，可撤销） */
+    setComLogicByClientKey(clientKey: string, logic: QuestionLogicConfig | null) {
+      const target = this.coms.find(com => com.client_key === clientKey);
+      if (!target) {
+        console.warn(`setComLogicByClientKey: 未找到 client_key=${clientKey} 对应的题目`);
+        return;
+      }
+      this._recordSnapshot();
+      target.logic = logic;
+    },
+
+    /**
+     * 查找所有引用了指定题目（按 client_key）的动态规则：
+     * 复用 validateRuleSet() 而非重新实现引用图遍历——只需把目标题目从传入的题目全集中
+     * 排除掉，使其 client_key 不再存在于 fullKeys 全集中，validateRuleSet 内部现成的
+     * danglingReference 检测就会自动捕获所有仍引用该 key 的规则，据此反推"删除会影响哪些规则"。
+     */
+    findRuleReferencesTo(clientKey: string): RuleViolation[] {
+      const components = this.coms
+        .filter((com): com is typeof com & { client_key: string } => !!com.client_key && com.client_key !== clientKey)
+        .map((com, index) => ({
+          clientKey: com.client_key,
+          orderIndex: index,
+          logic: com.logic ?? null
+        }));
+
+      const { violations } = validateRuleSet(components);
+      return violations.filter(v => v.type === "danglingReference" && v.involvedKeys.includes(clientKey));
+    },
+
+    /**
+     * 反向查找：指定题目（按 client_key）自身的动态规则中，是否引用了当前已不存在的题目（悬空引用）。
+     * involvedKeys[0] 始终是规则拥有者（见 validator.ts checkReference），故直接匹配首位即可，
+     * 无需像 findRuleReferencesTo 那样排除目标 key——这里不删除任何题目，只是原样体检当前全集。
+     */
+    getDanglingReferencesFrom(clientKey: string): RuleViolation[] {
+      const components = this.coms
+        .filter((com): com is typeof com & { client_key: string } => !!com.client_key)
+        .map((com, index) => ({
+          clientKey: com.client_key,
+          orderIndex: index,
+          logic: com.logic ?? null
+        }));
+
+      const { violations } = validateRuleSet(components);
+      return violations.filter(v => v.type === "danglingReference" && v.involvedKeys[0] === clientKey);
     },
 
     // ─── 属性编辑（包装 actions.ts 函数，调用前记录快照）─────────────────

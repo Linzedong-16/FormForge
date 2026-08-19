@@ -35,7 +35,7 @@
 import draggable from "vuedraggable";
 
 import { computed, nextTick, ref, type ComponentPublicInstance, onMounted, onUnmounted, provide, toRaw } from "vue";
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore } from "monorepo-survey-engine";
 import type { Snapshot } from "@/utils/undoManager";
 const store = useEditorStore();
 /** 提供函数式 surveyId 获取器，确保上传时始终获取最新的 remoteSurveyId */

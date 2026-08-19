@@ -33,6 +33,8 @@ import { Upload } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import type { UploadProps, UploadRequestOptions } from "element-plus";
 import { uploadSurveyFile } from "../../../api/upload";
+import type { SurveyFileUploadResponse } from "../../../api/upload";
+import type { ApiResponse } from "../../../types";
 
 const { t } = useI18n();
 
@@ -83,15 +85,14 @@ const customUpload = async (options: UploadRequestOptions) => {
 };
 
 /**
- * 上传成功回调 — 适配新接口响应格式
+ * 上传成功回调 — 读取 T014 拦截器生效后的标准响应信封
  *
- * 新接口（uploadSurveyFile）返回的数据结构直接包含 file_url，
- * 旧接口（uploadImage）返回 imageUrl，此处兼容处理。
+ * uploadSurveyFile 的返回值即为业务信封 { code, msg, data }（T014/T015 已统一为该形状），
+ * 后端接口已统一返回标准信封，故不再兼容扁平结构（response.file_url/imageUrl），
+ * 直接从 response.data.file_url 中取值；取不到值时视为失败，走 ElMessage 提示分支
  */
-const handleAvatarSuccess: UploadProps["onSuccess"] = async (response: Record<string, unknown>) => {
-  console.log("图片上传响应:", response);
-  // 新接口返回 data 内嵌 file_url 格式，或旧接口的 imageUrl
-  const url = (response.file_url as string) || (response.imageUrl as string) || "";
+const handleAvatarSuccess: UploadProps["onSuccess"] = async (response: ApiResponse<SurveyFileUploadResponse>) => {
+  const url = response.data?.file_url ?? "";
   if (getLink && url) {
     getLink({
       index: props.index,

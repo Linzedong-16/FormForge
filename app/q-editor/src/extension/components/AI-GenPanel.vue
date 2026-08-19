@@ -12,7 +12,7 @@
 
 import { ref, computed } from "vue";
 import { useAIGenerate } from "@/composables/useAIGenerate";
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore } from "monorepo-survey-engine";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
 

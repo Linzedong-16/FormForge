@@ -1,4 +1,7 @@
 export default {
+  // 选项联动：依赖题目未作答且 emptyStrategy 为 promptFillDependency 时的填写者提示（T010/T011）
+  optionDependencyPrompt: "请先完成前面依赖的题目",
+
   // PicItem 组件
   picItem: {
     addImage: "添加图片",
@@ -144,7 +147,8 @@ export default {
     undo: "撤销",
     clear: "清空",
     signed: "已签名",
-    unsigned: "未签名"
+    unsigned: "未签名",
+    uploading: "上传中..."
   },
 
   // SignatureConfigEditor 组件

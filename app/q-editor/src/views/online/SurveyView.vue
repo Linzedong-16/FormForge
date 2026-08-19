@@ -82,7 +82,7 @@ import {
   deserializeSurveyDetail,
   getSurveyMetadata
 } from "@/api/modules/survey";
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore } from "monorepo-survey-engine";
 
 const { t } = useI18n();
 const route = useRoute();

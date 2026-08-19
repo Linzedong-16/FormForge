@@ -37,7 +37,10 @@
         <el-button size="small" plain @click="clearCanvas">
           {{ t("components.signature.clear") }}
         </el-button>
-        <span class="signed-hint" :class="{ 'is-signed': isSigned }">
+        <span v-if="uploading" class="signed-hint is-uploading">
+          {{ t("components.signature.uploading") }}
+        </span>
+        <span v-else class="signed-hint" :class="{ 'is-signed': isSigned }">
           {{ isSigned ? t("components.signature.signed") : t("components.signature.unsigned") }}
         </span>
       </div>
@@ -46,13 +49,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, inject, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { ElMessage } from "element-plus";
+import { useEditorStore } from "../../../../stores/useEditor";
+import { uploadSignature } from "../../../../api/upload";
 import { getTextStatus, getStringStatusByCurrentStatus, getCurrentStatus } from "../../../../utils";
 import MaterialsHeader from "../../../../components/SurveyComs/Common/MaterialsHeader.vue";
 import type { SignatureStatus } from "../../../../types";
 
 const { t } = useI18n();
+const editorStore = useEditorStore();
 
 const props = defineProps<{
   status: SignatureStatus;
@@ -60,6 +67,15 @@ const props = defineProps<{
 }>();
 
 const emits = defineEmits(["updateAnswer"]);
+
+/**
+ * 函数式 surveyId 获取器：优先取 Center/SurveyView 通过 provide 注入的取值函数，
+ * 未提供时回退到 Store 的 remoteSurveyId。
+ * 注意：inject 第二参数（默认值）必须是函数类型本身或 undefined，不能是字面量 null
+ * （否则触发 TS2345：null 无法赋给 () => string | null 类型的形参）
+ */
+const injectedGetSurveyId = inject<(() => string | null) | undefined>("getSurveyId", undefined);
+const getSurveyId = injectedGetSurveyId ?? (() => editorStore.remoteSurveyId);
 
 // ── 从 Status 配置提取当前渲染参数 ─────────────────────────────────
 const computedState = computed(() => ({
@@ -84,6 +100,7 @@ const computedState = computed(() => ({
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const isDrawing = ref(false);
 const isSigned = ref(false);
+const uploading = ref(false);
 const historyStack = ref<ImageData[]>([]);
 let lastX = 0;
 let lastY = 0;
@@ -159,12 +176,52 @@ const drawing = (e: MouseEvent) => {
   lastY = y;
 };
 
-const endDraw = () => {
+/**
+ * 结束绘制：将 canvas 转为 PNG blob 上传，答案存储 MinIO URL 而非 base64
+ *
+ * 上传失败或 surveyId 为空时，降级为存储 base64 dataURL
+ */
+const endDraw = async () => {
   if (!isDrawing.value) return;
   isDrawing.value = false;
   isSigned.value = true;
-  const data = canvasRef.value?.toDataURL("image/png") ?? "";
-  emits("updateAnswer", data);
+
+  const canvas = canvasRef.value;
+  if (!canvas) return;
+
+  // 若无 surveyId，降级为 base64 dataURL
+  const sid = getSurveyId();
+  if (!sid) {
+    const dataUrl = canvas.toDataURL("image/png");
+    emits("updateAnswer", dataUrl);
+    return;
+  }
+
+  // 尝试 canvas → blob → 上传到 MinIO
+  uploading.value = true;
+  try {
+    const blob = await new Promise<Blob | null>(resolve => {
+      canvas.toBlob(resolve, "image/png");
+    });
+    if (!blob) {
+      // toBlob 失败，降级 dataURL
+      emits("updateAnswer", canvas.toDataURL("image/png"));
+      return;
+    }
+
+    const result = await uploadSignature(blob, sid);
+    if (result.code === 0 && result.data?.file_url) {
+      emits("updateAnswer", result.data.file_url);
+    } else {
+      ElMessage.error(result.msg || "签名上传失败");
+      emits("updateAnswer", canvas.toDataURL("image/png"));
+    }
+  } catch {
+    ElMessage.warning("签名上传失败，已使用本地存储");
+    emits("updateAnswer", canvas.toDataURL("image/png"));
+  } finally {
+    uploading.value = false;
+  }
 };
 
 // ── 触摸事件（移动端） ────────────────────────────────────────────
@@ -257,6 +314,10 @@ const clearCanvas = () => {
 
   &.is-signed {
     color: var(--success-color, #67c23a);
+  }
+
+  &.is-uploading {
+    color: var(--el-color-primary, #409eff);
   }
 }
 </style>

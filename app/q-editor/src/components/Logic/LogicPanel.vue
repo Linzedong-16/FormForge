@@ -56,7 +56,7 @@ import type {
   QuestionVisibilityConfig
 } from "monorepo-survey-engine";
 import type { Status } from "@/types";
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore } from "monorepo-survey-engine";
 import {
   getAvailableComputedFieldSources,
   getAvailableConditionSources,

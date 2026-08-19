@@ -1,4 +1,7 @@
 export default {
+  // 選択肢連動：依存質問が未回答で emptyStrategy が promptFillDependency の場合の回答者向け案内（T010/T011）
+  optionDependencyPrompt: "先に前の依存質問にご回答ください",
+
   // PicItem コンポーネント
   picItem: {
     addImage: "画像を追加",
@@ -144,7 +147,8 @@ export default {
     undo: "元に戻す",
     clear: "クリア",
     signed: "署名済み",
-    unsigned: "未署名"
+    unsigned: "未署名",
+    uploading: "アップロード中..."
   },
 
   // SignatureConfigEditor コンポーネント

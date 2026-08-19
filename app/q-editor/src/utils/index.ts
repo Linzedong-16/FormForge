@@ -1,6 +1,5 @@
 // 工具库
-import { componentMap } from "@/configs/componentMap";
-import { ageStatus, careerStatus, educationStatus, genderStatus } from "@/configs/defaultStatus/initStatus";
+import { componentMap, ageStatus, careerStatus, educationStatus, genderStatus } from "monorepo-survey-engine";
 import {
   type TextProps,
   type OptionsProps,

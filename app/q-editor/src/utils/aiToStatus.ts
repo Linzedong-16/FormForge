@@ -7,8 +7,7 @@
  *   3. 将 AI 生成的 config 字段合并到默认模板中（仅覆盖可映射字段）
  *   4. 过滤无效组件类型，返回有效组件列表 + 警告信息
  */
-import { defaultStatusMap } from "@/configs/defaultStatus/defaultStatusMap";
-import { componentMap } from "@/configs/componentMap";
+import { componentMap, defaultStatusMap } from "monorepo-survey-engine";
 import { restoreComponentStatus } from "@/utils";
 import type { Status } from "@/types";
 import type { AIComponent } from "monorepo-code-common";

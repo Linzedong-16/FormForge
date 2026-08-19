@@ -35,7 +35,7 @@ import { getPerformanceCollector, getErrorCollector } from "@/plugins/tracking";
 const route = useRoute();
 const { t } = useI18n();
 // 仓库
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore } from "monorepo-survey-engine";
 const store = useEditorStore();
 
 const id = computed(() => (route.params.id ? String(route.params.id) : ""));

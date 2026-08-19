@@ -28,7 +28,12 @@ export type { RegionNode } from "./configs/regionData";
 
 // ═══ 默认状态配置 ═════════════════════════════════════════════════════════════
 export { defaultStatusMap } from "./configs/defaultStatus/defaultStatusMap";
-export { initStore } from "./configs/defaultStatus/initStatus";
+export { initStore, genderStatus, educationStatus, careerStatus, ageStatus } from "./configs/defaultStatus/initStatus";
+
+// ═══ 编辑面板组件 ═════════════════════════════════════════════════════════════
+// EditPannel 被 q-editor 侧的 Layout.vue/RightSide.vue 直接引用（非经 componentMap 查找），
+// 需单独具名导出，供消费方替换本地硬编码 import
+export { default as EditPannel } from "./components/SurveyComs/EditItems/EditPannel.vue";
 
 // ═══ Store ════════════════════════════════════════════════════════════════════
 export { useEditorStore } from "./stores/useEditor";
@@ -59,6 +64,7 @@ export type {
   // common.ts
   VueComType,
   Status,
+  ApiResponse,
   // editProps.ts
   BaseProps,
   StringStatusArr,
@@ -126,7 +132,8 @@ export { default as emitter } from "./utils/eventBus";
 export type { Events } from "./types/eventBus";
 
 // ═══ API ══════════════════════════════════════════════════════════════════════
-export { uploadImage } from "./api/upload";
+export { uploadImage, uploadSurveyFile, uploadSignature } from "./api/upload";
+export type { UploadImageResponse, SurveyFileUploadResponse, SignatureUploadResponse } from "./api/upload";
 
 // ═══ 动态表单引擎 —— 显示/隐藏、跳转、选项联动、派生字段、发布校验等规则子模块 ═══
 // 纯规则引擎符号（框架无关）已随 T020-T023 迁移至 core/logic/；useRuleRuntime 依赖 vue，

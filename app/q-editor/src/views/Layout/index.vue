@@ -225,7 +225,7 @@ import { useI18n } from "vue-i18n";
 // 数据库操作
 import { deleteSurveyById, getAllSurvey, updateSurveyById, saveSurvey } from "@/db/operation";
 // Store
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore } from "monorepo-survey-engine";
 // UI
 import { ElMessage, ElMessageBox } from "element-plus";
 // 远程 API

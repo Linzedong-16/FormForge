@@ -45,27 +45,32 @@ export function createAppRouter(base = "/"): Router {
               {
                 path: "/single-select",
                 name: "single-select",
-                component: () => import("@/components/SurveyComs/Materials/SelectComs/SingleSelect.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/SelectComs/SingleSelect.vue")
               },
               {
                 path: "/multi-select",
                 name: "multi-select",
-                component: () => import("@/components/SurveyComs/Materials/SelectComs/MultiSelect.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/SelectComs/MultiSelect.vue")
               },
               {
                 path: "/option-select",
                 name: "option-select",
-                component: () => import("@/components/SurveyComs/Materials/SelectComs/OptionSelect.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/SelectComs/OptionSelect.vue")
               },
               {
                 path: "/single-pic-select",
                 name: "single-pic-select",
-                component: () => import("@/components/SurveyComs/Materials/SelectComs/SinglePicSelect.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/SelectComs/SinglePicSelect.vue")
               },
               {
                 path: "/multi-pic-select",
                 name: "multi-pic-select",
-                component: () => import("@/components/SurveyComs/Materials/SelectComs/MultiPicSelect.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/SelectComs/MultiPicSelect.vue")
               }
             ]
           },
@@ -78,7 +83,8 @@ export function createAppRouter(base = "/"): Router {
               {
                 path: "/text-input",
                 name: "text-input",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               }
             ]
           },
@@ -91,32 +97,38 @@ export function createAppRouter(base = "/"): Router {
               {
                 path: "/date-time",
                 name: "date-time",
-                component: () => import("@/components/SurveyComs/Materials/AdvancedComs/DateTime.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/AdvancedComs/DateTime.vue")
               },
               {
                 path: "/rate-score",
                 name: "rate-score",
-                component: () => import("@/components/SurveyComs/Materials/AdvancedComs/RateScore.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/AdvancedComs/RateScore.vue")
               },
               {
                 path: "/cascader",
                 name: "cascader",
-                component: () => import("@/components/SurveyComs/Materials/AdvancedComs/Cascader.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/AdvancedComs/Cascader.vue")
               },
               {
                 path: "/matrix-single",
                 name: "matrix-single",
-                component: () => import("@/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/MatrixComs/MatrixSingle.vue")
               },
               {
                 path: "/slider",
                 name: "slider",
-                component: () => import("@/components/SurveyComs/Materials/AdvancedComs/Slider.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/AdvancedComs/Slider.vue")
               },
               {
                 path: "/transfer",
                 name: "transfer",
-                component: () => import("@/components/SurveyComs/Materials/AdvancedComs/Transfer.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/AdvancedComs/Transfer.vue")
               }
             ]
           },
@@ -129,7 +141,7 @@ export function createAppRouter(base = "/"): Router {
               {
                 path: "/text-note",
                 name: "text-note",
-                component: () => import("@/components/SurveyComs/Materials/NoteComs/TextNote.vue")
+                component: () => import("monorepo-survey-engine/components/SurveyComs/Materials/NoteComs/TextNote.vue")
               }
             ]
           },
@@ -142,57 +154,68 @@ export function createAppRouter(base = "/"): Router {
               {
                 path: "/personal-info-name",
                 name: "personal-info-name",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               },
               {
                 path: "/personal-info-id",
                 name: "personal-info-id",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               },
               {
                 path: "/personal-info-gender",
                 name: "personal-info-gender",
-                component: () => import("@/components/SurveyComs/Materials/SelectComs/SingleSelect.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/SelectComs/SingleSelect.vue")
               },
               {
                 path: "/personal-info-age",
                 name: "personal-info-age",
-                component: () => import("@/components/SurveyComs/Materials/SelectComs/SingleSelect.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/SelectComs/SingleSelect.vue")
               },
               {
                 path: "/personal-info-education",
                 name: "personal-info-education",
-                component: () => import("@/components/SurveyComs/Materials/SelectComs/SingleSelect.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/SelectComs/SingleSelect.vue")
               },
               {
                 path: "/personal-info-collage",
                 name: "personal-info-collage",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               },
               {
                 path: "/personal-info-major",
                 name: "personal-info-major",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               },
               {
                 path: "/personal-info-industry",
                 name: "personal-info-industry",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               },
               {
                 path: "/personal-info-career",
                 name: "personal-info-career",
-                component: () => import("@/components/SurveyComs/Materials/SelectComs/SingleSelect.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/SelectComs/SingleSelect.vue")
               },
               {
                 path: "/personal-info-company",
                 name: "personal-info-company",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               },
               {
                 path: "/personal-info-position",
                 name: "personal-info-position",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               }
             ]
           },
@@ -205,27 +228,32 @@ export function createAppRouter(base = "/"): Router {
               {
                 path: "/personal-info-tel",
                 name: "personal-info-tel",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               },
               {
                 path: "/personal-info-wechat",
                 name: "personal-info-wechat",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               },
               {
                 path: "/personal-info-qq",
                 name: "personal-info-qq",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               },
               {
                 path: "/personal-info-email",
                 name: "personal-info-email",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               },
               {
                 path: "/personal-info-address",
                 name: "personal-info-address",
-                component: () => import("@/components/SurveyComs/Materials/InputComs/TextInput.vue")
+                component: () =>
+                  import("monorepo-survey-engine/components/SurveyComs/Materials/InputComs/TextInput.vue")
               }
             ]
           }

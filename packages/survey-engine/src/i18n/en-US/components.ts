@@ -1,4 +1,7 @@
 export default {
+  // Option dependency: hint shown to fillers when the dependency question is unanswered and emptyStrategy is promptFillDependency (T010/T011)
+  optionDependencyPrompt: "Please complete the preceding required question first",
+
   // PicItem 组件
   picItem: {
     addImage: "Add Image",
@@ -144,7 +147,8 @@ export default {
     undo: "Undo",
     clear: "Clear",
     signed: "Signed",
-    unsigned: "Unsigned"
+    unsigned: "Unsigned",
+    uploading: "Uploading..."
   },
 
   // SignatureConfigEditor component

@@ -335,4 +335,108 @@ describe("useEditorStore", () => {
       expect(store.dirty).toBe(false);
     });
   });
+
+  // ─── client_key 动态规则管理（T004-T008） ─────────────────────────────
+
+  describe("getComByClientKey", () => {
+    it("存在的 client_key 应返回对应题目", () => {
+      store.addCom(makeCom("single-select", "id-1", "Q1"));
+      const idx = store.coms.length - 1;
+      const clientKey = store.coms[idx]!.client_key!;
+      expect(store.getComByClientKey(clientKey)).toBe(store.coms[idx]);
+    });
+
+    it("不存在的 client_key 应返回 undefined", () => {
+      expect(store.getComByClientKey("不存在的key")).toBeUndefined();
+    });
+  });
+
+  describe("ensureComClientKey", () => {
+    it("缺少 client_key 的题目应生成并写回", () => {
+      const com = makeCom("single-select", "id-1", "Q1");
+      delete com.client_key;
+      store.addCom(com);
+      const idx = store.coms.length - 1;
+      const clientKey = store.ensureComClientKey(idx);
+      expect(clientKey).toBeTruthy();
+      expect(store.coms[idx]!.client_key).toBe(clientKey);
+    });
+
+    it("重复调用同一题目应幂等，不二次生成", () => {
+      store.addCom(makeCom("single-select", "id-1", "Q1"));
+      const idx = store.coms.length - 1;
+      const first = store.ensureComClientKey(idx);
+      const second = store.ensureComClientKey(idx);
+      expect(second).toBe(first);
+    });
+
+    it("下标越界应返回空字符串", () => {
+      expect(store.ensureComClientKey(9999)).toBe("");
+    });
+  });
+
+  describe("setComLogicByClientKey", () => {
+    it("按 client_key 更新题目的规则配置", () => {
+      store.addCom(makeCom("single-select", "id-1", "Q1"));
+      const idx = store.coms.length - 1;
+      const clientKey = store.coms[idx]!.client_key!;
+      const logic = { visibility: { baseVisibility: "visible" as const, rules: [] } };
+      store.setComLogicByClientKey(clientKey, logic);
+      expect(store.coms[idx]!.logic).toEqual(logic);
+    });
+
+    it("找不到对应题目时仅告警不抛异常", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      expect(() => store.setComLogicByClientKey("不存在的key", null)).not.toThrow();
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+  });
+
+  describe("findRuleReferencesTo / getDanglingReferencesFrom", () => {
+    it("findRuleReferencesTo 应找出所有引用了目标 client_key 的规则", () => {
+      const comA = makeCom("single-select", "id-a", "题目A");
+      const comB = makeCom("single-select", "id-b", "题目B");
+      store.addCom(comA);
+      store.addCom(comB);
+      const idxA = store.coms.length - 2;
+      const idxB = store.coms.length - 1;
+      const keyA = store.coms[idxA]!.client_key!;
+      const keyB = store.coms[idxB]!.client_key!;
+      store.coms[idxB]!.logic = {
+        visibility: {
+          baseVisibility: "hidden",
+          rules: [{ action: "show", condition: { combinator: "AND", conditions: [{ sourceKey: keyA, operator: "isNotEmpty" }] } }]
+        }
+      };
+
+      const violations = store.findRuleReferencesTo(keyA);
+      expect(violations.length).toBeGreaterThan(0);
+      expect(violations.every(v => v.involvedKeys.includes(keyA))).toBe(true);
+      expect(violations.some(v => v.involvedKeys.includes(keyB))).toBe(true);
+    });
+
+    it("getDanglingReferencesFrom 应体检指定题目自身规则中的悬空引用", () => {
+      const comB = makeCom("single-select", "id-b", "题目B");
+      store.addCom(comB);
+      const idxB = store.coms.length - 1;
+      const keyB = store.coms[idxB]!.client_key!;
+      // 引用一个当前题目全集中不存在的 client_key，构造悬空引用
+      store.coms[idxB]!.logic = {
+        visibility: {
+          baseVisibility: "hidden",
+          rules: [
+            {
+              action: "show",
+              condition: { combinator: "AND", conditions: [{ sourceKey: "已删除的题目key", operator: "isNotEmpty" }] }
+            }
+          ]
+        }
+      };
+
+      const violations = store.getDanglingReferencesFrom(keyB);
+      expect(violations.length).toBeGreaterThan(0);
+      expect(violations.every(v => v.involvedKeys[0] === keyB)).toBe(true);
+    });
+  });
 });

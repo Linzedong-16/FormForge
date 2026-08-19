@@ -23,7 +23,7 @@ vi.mock("element-plus", async () => {
   };
 });
 
-// test-setup.ts 已全局将 @/configs/componentMap mock 为空对象，真实 restoreComponentStatus
+// test-setup.ts 已全局将 monorepo-survey-engine 导出的 componentMap mock 为空对象，真实 restoreComponentStatus
 // 在测试环境下永远无法回填 com.type；此处覆盖为可控实现：为每个题目注入一个基于 h() 渲染函数的
 // stub 组件（避免依赖运行时模板编译器），点击即触发 update-answer 事件，模拟填写者的作答交互
 vi.mock("@/utils", async () => {

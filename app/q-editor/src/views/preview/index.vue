@@ -42,7 +42,7 @@ const route = useRoute();
 const router = useRouter();
 import { getSurveyById } from "@/db/operation";
 // 仓库
-import { useEditorStore } from "@/stores/useEditor";
+import { useEditorStore } from "monorepo-survey-engine";
 const store = useEditorStore();
 // 工具方法
 import { restoreComponentStatus } from "@/utils";

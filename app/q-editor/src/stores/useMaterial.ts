@@ -1,6 +1,6 @@
 // 组件市场里面所有组件状态的仓库
 import { defineStore } from "pinia";
-import { defaultStatusMap } from "@/configs/defaultStatus/defaultStatusMap";
+import { defaultStatusMap } from "monorepo-survey-engine";
 import {
   addOption,
   removeOption,

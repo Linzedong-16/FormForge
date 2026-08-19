@@ -10,12 +10,22 @@
 import { vi } from "vitest";
 
 // Mock componentMap — 测试中不需要真实的 Vue 组件引用
-vi.mock("@/configs/componentMap", () => ({
-  componentMap: {}
-}));
+// 注意：componentMap 已随迁移改由 monorepo-survey-engine 提供，该包同时导出
+// useEditorStore/uploadSurveyFile 等其他真实实现，因此这里必须保留 importOriginal
+// 返回的其余导出、仅覆盖 componentMap 一项，避免整包被静默替换为 undefined
+vi.mock("monorepo-survey-engine", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("monorepo-survey-engine")>();
+  return {
+    ...actual,
+    componentMap: {}
+  };
+});
 
 // Mock initStore — 返回符合 Status[] 结构的最小有效数据
-vi.mock("@/configs/defaultStatus/initStatus", () => ({
+// 注意：initStore/genderStatus 等已随迁移改由 monorepo-survey-engine 提供，其物理文件路径为
+// packages/survey-engine/src/configs/defaultStatus/initStatus.ts，借助该包 "./*": "./src/*"
+// 的 exports 通配声明按同一物理文件单独 mock（与 T027 处理 db/operation 的手法一致）
+vi.mock("monorepo-survey-engine/configs/defaultStatus/initStatus", () => ({
   initStore: () => [
     {
       id: "init-1",

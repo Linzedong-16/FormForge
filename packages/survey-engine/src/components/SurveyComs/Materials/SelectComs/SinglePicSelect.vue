@@ -18,7 +18,7 @@
       :desc-color="computedState.descColor"
     />
     <div class="flex wrap">
-      <el-radio-group v-model="radioValue" class="flex wrap">
+      <el-radio-group v-model="radioValue" class="flex wrap" @click.stop @change="emitAnswer">
         <el-radio
           v-for="(item, index) in computedState.options"
           :key="index"
@@ -47,6 +47,7 @@ const props = defineProps<{
   serialNum: number;
   status: OptionsStatus;
 }>();
+const emits = defineEmits(["updateAnswer"]);
 const radioValue = ref("");
 const computedState = computed(() => ({
   title: getTextStatus(props.status.title),
@@ -62,6 +63,10 @@ const computedState = computed(() => ({
   titleColor: getTextStatus(props.status.titleColor),
   descColor: getTextStatus(props.status.descColor)
 }));
+/** 选择变化时向上层 SurveyView 发射答案 */
+const emitAnswer = () => {
+  emits("updateAnswer", radioValue.value);
+};
 </script>
 
 <style scoped lang="scss">
